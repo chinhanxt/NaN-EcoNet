@@ -18,3 +18,8 @@
 - Thoi diem: 2026-08-30 22:34:47 +0700
 - Trang thai: Verified & Recorded.
 - Noi dung nghien cuu: docs(research): khao sat han che cua thuat toan Genetic Algorithm doi voi ngo hem do thi.
+
+### Record 005 [2026-08-31]: docs(survey): thong ke kich thuoc trung binh va ty le vat lieu cua sofa va nem cu
+- Thoi diem: 2026-08-31 10:23:21 +0700
+- Trang thai: Verified & Recorded.
+- Noi dung nghien cuu: docs(survey): thong ke kich thuoc trung binh va ty le vat lieu cua sofa va nem cu.
