@@ -13,3 +13,8 @@
 - Thoi diem: 2026-09-01 15:11:48 +0700
 - Trang thai: Verified & Recorded.
 - Noi dung nghien cuu: docs(survey): khao sat mat do thung rac cong cong va truyen thong phan loai tai nguon.
+
+### Record 009 [2026-09-01]: docs(architecture): phac thao kien truc 3 phan he doc lap cho he sinh thai NaN-EcoNet
+- Thoi diem: 2026-09-01 19:08:53 +0700
+- Trang thai: Verified & Recorded.
+- Noi dung nghien cuu: docs(architecture): phac thao kien truc 3 phan he doc lap cho he sinh thai NaN-EcoNet.
