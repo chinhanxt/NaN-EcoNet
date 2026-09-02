@@ -13,3 +13,8 @@
 - Thoi diem: 2026-09-02 17:19:39 +0700
 - Trang thai: Verified & Recorded.
 - Noi dung nghien cuu: docs(notes): thiet ke so do luong du lieu BulkyOrderPayload giua app dan cu va engine.
+
+### Record 014 [2026-09-02]: docs(research): phan tich han che cua ban do thuong mai khi tinh toan ngo hem xe hoi
+- Thoi diem: 2026-09-02 18:47:42 +0700
+- Trang thai: Verified & Recorded.
+- Noi dung nghien cuu: docs(research): phan tich han che cua ban do thuong mai khi tinh toan ngo hem xe hoi.
