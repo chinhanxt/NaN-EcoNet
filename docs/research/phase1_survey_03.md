@@ -18,3 +18,8 @@
 - Thoi diem: 2026-09-02 18:47:42 +0700
 - Trang thai: Verified & Recorded.
 - Noi dung nghien cuu: docs(research): phan tich han che cua ban do thuong mai khi tinh toan ngo hem xe hoi.
+
+### Record 015 [2026-09-02]: docs(survey): khao sat nhu cau doi voucher HighLands Coffee cua sinh vien Dai hoc HUTECH
+- Thoi diem: 2026-09-02 20:44:17 +0700
+- Trang thai: Verified & Recorded.
+- Noi dung nghien cuu: docs(survey): khao sat nhu cau doi voucher HighLands Coffee cua sinh vien Dai hoc HUTECH.
