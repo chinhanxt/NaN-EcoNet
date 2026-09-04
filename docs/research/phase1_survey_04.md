@@ -8,3 +8,8 @@
 - Thoi diem: 2026-09-03 22:02:30 +0700
 - Trang thai: Verified & Recorded.
 - Noi dung nghien cuu: docs(notes): xac dinh 4 diem nghen cot loi trong chuoi gia tri kinh te tuan hoan.
+
+### Record 018 [2026-09-04]: docs(research): khao sat cac mo hinh thi giac may tinh nhan dien vat the 3D tu anh 2D
+- Thoi diem: 2026-09-04 14:37:30 +0700
+- Trang thai: Verified & Recorded.
+- Noi dung nghien cuu: docs(research): khao sat cac mo hinh thi giac may tinh nhan dien vat the 3D tu anh 2D.
