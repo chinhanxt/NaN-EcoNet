@@ -13,3 +13,8 @@
 - Thoi diem: 2026-09-04 14:37:30 +0700
 - Trang thai: Verified & Recorded.
 - Noi dung nghien cuu: docs(research): khao sat cac mo hinh thi giac may tinh nhan dien vat the 3D tu anh 2D.
+
+### Record 019 [2026-09-04]: docs(notes): lap danh muc 5 nhom do cong kenh chinh can ho tro thu gom
+- Thoi diem: 2026-09-04 19:30:42 +0700
+- Trang thai: Verified & Recorded.
+- Noi dung nghien cuu: docs(notes): lap danh muc 5 nhom do cong kenh chinh can ho tro thu gom.
