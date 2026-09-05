@@ -3,3 +3,8 @@
 - Thoi diem: 2026-09-05 15:42:52 +0700
 - Trang thai: Verified & Recorded.
 - Noi dung nghien cuu: docs(legal): danh gia rui ro phap ly ve ToS mang xa hoi khi tu dong hoa dang tin.
+
+### Record 022 [2026-09-05]: docs(notes): thiet ke tieu chuan thu gom an toan lao dong cho cong nhan ve sinh
+- Thoi diem: 2026-09-05 21:56:27 +0700
+- Trang thai: Verified & Recorded.
+- Noi dung nghien cuu: docs(notes): thiet ke tieu chuan thu gom an toan lao dong cho cong nhan ve sinh.
