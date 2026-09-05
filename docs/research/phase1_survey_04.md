@@ -18,3 +18,8 @@
 - Thoi diem: 2026-09-04 19:30:42 +0700
 - Trang thai: Verified & Recorded.
 - Noi dung nghien cuu: docs(notes): lap danh muc 5 nhom do cong kenh chinh can ho tro thu gom.
+
+### Record 020 [2026-09-05]: docs(research): phan tich thuat toan Clarke-Wright Savings ung dung trong VRP
+- Thoi diem: 2026-09-05 09:27:01 +0700
+- Trang thai: Verified & Recorded.
+- Noi dung nghien cuu: docs(research): phan tich thuat toan Clarke-Wright Savings ung dung trong VRP.
