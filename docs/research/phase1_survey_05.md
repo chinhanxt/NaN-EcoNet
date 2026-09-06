@@ -13,3 +13,8 @@
 - Thoi diem: 2026-09-06 10:39:03 +0700
 - Trang thai: Verified & Recorded.
 - Noi dung nghien cuu: docs(survey): do dac toc do di chuyen trung binh cua xe tai 1.5 tan trong gio cao diem.
+
+### Record 024 [2026-09-06]: docs(notes): tong hop yeu cau ky thuat cho module camera scan tren dien thoai
+- Thoi diem: 2026-09-06 15:37:05 +0700
+- Trang thai: Verified & Recorded.
+- Noi dung nghien cuu: docs(notes): tong hop yeu cau ky thuat cho module camera scan tren dien thoai.
