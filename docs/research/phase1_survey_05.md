@@ -18,3 +18,8 @@
 - Thoi diem: 2026-09-06 15:37:05 +0700
 - Trang thai: Verified & Recorded.
 - Noi dung nghien cuu: docs(notes): tong hop yeu cau ky thuat cho module camera scan tren dien thoai.
+
+### Record 025 [2026-09-06]: docs(research): danh gia phuong phap dong goi container cho do noi that cu
+- Thoi diem: 2026-09-06 16:41:10 +0700
+- Trang thai: Verified & Recorded.
+- Noi dung nghien cuu: docs(research): danh gia phuong phap dong goi container cho do noi that cu.
