@@ -17,3 +17,4 @@ iteration,date,component,distance_km,fuel_l,runtime_ms,status
 41,2026-09-11,feat(ecopass): xay d,41.4,11.59,705,PASS
 42,2026-09-11,feat(ecopass): tich ,40.95,11.47,710,PASS
 43,2026-09-11,test(pricing): viet ,40.5,11.34,715,PASS
+44,2026-09-12,feat(engine): xay du,40.05,11.21,720,PASS
