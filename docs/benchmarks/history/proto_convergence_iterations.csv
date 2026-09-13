@@ -21,3 +21,4 @@ iteration,date,component,distance_km,fuel_l,runtime_ms,status
 45,2026-09-12,feat(engine): bo sun,39.6,11.09,725,PASS
 46,2026-09-12,feat(api): khoi tao ,39.15,10.96,730,PASS
 47,2026-09-13,docs(api): viet dac ,38.7,10.84,735,PASS
+48,2026-09-13,test(engine): benchm,38.25,10.71,740,PASS
