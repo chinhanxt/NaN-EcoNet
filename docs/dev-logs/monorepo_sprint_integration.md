@@ -13,3 +13,8 @@
 - Nhiem vu: feat(citizen): tich hop widget camera stream ve khung Bounding Box theo thoi gian thuc
 - Ky su thuc hien: chinhan (NaN-Team)
 - Ket qua: Tich hop lien phan he dat chuan.
+
+#### [Sprint Checkpoint 054] 2026-09-14 21:49
+- Nhiem vu: feat(citizen): hien thi the tom tat gia cuoc 4 thanh phan va dong ho dem nguoc 15 phut
+- Ky su thuc hien: chinhan (NaN-Team)
+- Ket qua: Tich hop lien phan he dat chuan.
