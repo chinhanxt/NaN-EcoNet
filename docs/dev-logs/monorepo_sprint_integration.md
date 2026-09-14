@@ -8,3 +8,8 @@
 - Nhiem vu: feat(citizen): xay dung man hinh Request Wizard 3 buoc chup anh va xac nhan don
 - Ky su thuc hien: chinhan (NaN-Team)
 - Ket qua: Tich hop lien phan he dat chuan.
+
+#### [Sprint Checkpoint 053] 2026-09-14 21:12
+- Nhiem vu: feat(citizen): tich hop widget camera stream ve khung Bounding Box theo thoi gian thuc
+- Ky su thuc hien: chinhan (NaN-Team)
+- Ket qua: Tich hop lien phan he dat chuan.
