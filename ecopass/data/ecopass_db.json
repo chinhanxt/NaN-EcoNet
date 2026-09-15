@@ -1,0 +1,302 @@
+{
+  "storeQrs": [
+    {
+      "id": "qr-1",
+      "qrCode": "BIN-HL-01",
+      "storeId": "highlands",
+      "storeName": "Highlands Coffee",
+      "location": "Khu B - Sảnh Căn Tin FPT",
+      "status": "active",
+      "scanCount": 160,
+      "createdAt": "2026-09-18 08:00:00"
+    },
+    {
+      "id": "qr-2",
+      "qrCode": "BIN-PL-02",
+      "storeId": "phuclong",
+      "storeName": "Phúc Long Tea & Coffee",
+      "location": "Khu E - Cửa Hàng Phúc Long",
+      "status": "active",
+      "scanCount": 90,
+      "createdAt": "2026-09-18 09:30:00"
+    },
+    {
+      "id": "qr-3",
+      "qrCode": "BIN-TCH-03",
+      "storeId": "tch",
+      "storeName": "The Coffee House",
+      "location": "Tòa Alpha - Hành Lang Tầng 1",
+      "status": "active",
+      "scanCount": 65,
+      "createdAt": "2026-09-19 08:15:00"
+    },
+    {
+      "id": "qr-4",
+      "qrCode": "BIN-CHEESE-04",
+      "storeId": "cheese",
+      "storeName": "Cheese Coffee",
+      "location": "Tòa Gamma - Cổng Tây",
+      "status": "active",
+      "scanCount": 38,
+      "createdAt": "2026-09-19 14:20:00"
+    }
+  ],
+  "partnerStores": [
+    {
+      "id": "highlands",
+      "name": "Highlands Coffee",
+      "category": "Cà phê & Đồ uống",
+      "activeStickers": 7,
+      "totalScans": 48,
+      "portalPort": 3013,
+      "status": "connected"
+    },
+    {
+      "id": "phuclong",
+      "name": "Phúc Long Tea & Coffee",
+      "category": "Trà & Cà phê",
+      "activeStickers": 2,
+      "totalScans": 26,
+      "portalPort": 3012,
+      "status": "connected"
+    },
+    {
+      "id": "tch",
+      "name": "The Coffee House",
+      "category": "Cà phê",
+      "activeStickers": 2,
+      "totalScans": 19,
+      "portalPort": 3012,
+      "status": "connected"
+    },
+    {
+      "id": "cheese",
+      "name": "Cheese Coffee",
+      "category": "Cà phê sáng tạo",
+      "activeStickers": 1,
+      "totalScans": 12,
+      "portalPort": 3012,
+      "status": "connected"
+    }
+  ],
+  "orderStickers": [
+    {
+      "id": "stk-1",
+      "barcode": "1089215437",
+      "code": "#HL-8921",
+      "storeId": "highlands",
+      "storeName": "Highlands Coffee",
+      "drinkName": "Phindi Hạnh Nhân",
+      "price": 45000,
+      "posTerminal": "POS 1",
+      "status": "active",
+      "syncedAt": "2026-09-20 10:30:00",
+      "source": "Cổng Đối Tác :3012",
+      "usedAt": null,
+      "usedBy": null
+    },
+    {
+      "id": "stk-2",
+      "barcode": "2789229104",
+      "code": "#HL-8922",
+      "storeId": "highlands",
+      "storeName": "Highlands Coffee",
+      "drinkName": "Trà Sen Vàng",
+      "price": 49000,
+      "posTerminal": "POS 1",
+      "status": "active",
+      "syncedAt": "2026-09-20 10:35:00",
+      "source": "Cổng Đối Tác :3012",
+      "usedAt": null,
+      "usedBy": null
+    },
+    {
+      "id": "stk-3",
+      "barcode": "3989231846",
+      "code": "#HL-8923",
+      "storeId": "highlands",
+      "storeName": "Highlands Coffee",
+      "drinkName": "Phindi Hạnh Nhân",
+      "price": 45000,
+      "posTerminal": "POS 2",
+      "status": "used",
+      "syncedAt": "2026-09-20 10:41:00",
+      "source": "Cổng Đối Tác :3012",
+      "usedAt": "2026-09-20 14:36:00"
+    },
+    {
+      "id": "stk-4",
+      "barcode": "4889247215",
+      "code": "#HL-8924",
+      "storeId": "highlands",
+      "storeName": "Highlands Coffee",
+      "drinkName": "Freeze Matcha",
+      "price": 55000,
+      "posTerminal": "POS 2",
+      "status": "active",
+      "syncedAt": "2026-09-20 09:40:00",
+      "source": "Cổng Đối Tác :3012",
+      "usedAt": null
+    },
+    {
+      "id": "stk-5",
+      "barcode": "5289256390",
+      "code": "#HL-8925",
+      "storeId": "highlands",
+      "storeName": "Highlands Coffee",
+      "drinkName": "Bánh Mì Que",
+      "price": 22000,
+      "posTerminal": "POS 1",
+      "status": "active",
+      "syncedAt": "2026-09-20 08:50:00",
+      "source": "Cổng Đối Tác :3012",
+      "usedAt": null
+    },
+    {
+      "id": "stk-6",
+      "barcode": "6389198041",
+      "code": "#HL-8919",
+      "storeId": "highlands",
+      "storeName": "Highlands Coffee",
+      "drinkName": "Trà Sen Vàng",
+      "price": 49000,
+      "posTerminal": "POS 1",
+      "status": "active",
+      "usedAt": null,
+      "source": "Cổng Đối Tác :3012"
+    },
+    {
+      "id": "stk-7",
+      "barcode": "7589184319",
+      "code": "#HL-8918",
+      "storeId": "highlands",
+      "storeName": "Highlands Coffee",
+      "drinkName": "Freeze Matcha",
+      "price": 55000,
+      "posTerminal": "POS 2",
+      "status": "active",
+      "usedAt": null,
+      "source": "Cổng Đối Tác :3012"
+    },
+    {
+      "id": "stk-8",
+      "barcode": "4921008711",
+      "code": "#PL-7721",
+      "storeId": "phuclong",
+      "storeName": "Phúc Long Tea & Coffee",
+      "drinkName": "Trà Đào Cam Sả",
+      "price": 52000,
+      "posTerminal": "POS 1",
+      "status": "active",
+      "syncedAt": "2026-09-20 09:15:00",
+      "source": "Cổng Đối Tác :3012",
+      "usedAt": null
+    },
+    {
+      "id": "stk-9",
+      "barcode": "4921008712",
+      "code": "#PL-7722",
+      "storeId": "phuclong",
+      "storeName": "Phúc Long Tea & Coffee",
+      "drinkName": "Trà Sữa Phúc Long",
+      "price": 48000,
+      "posTerminal": "POS 1",
+      "status": "active",
+      "syncedAt": "2026-09-20 09:30:00",
+      "source": "Cổng Đối Tác :3012",
+      "usedAt": null
+    },
+    {
+      "id": "stk-10",
+      "barcode": "5501192834",
+      "code": "#TCH-5501",
+      "storeId": "tch",
+      "storeName": "The Coffee House",
+      "drinkName": "Cà phê Sữa Đá",
+      "price": 39000,
+      "posTerminal": "POS 2",
+      "status": "active",
+      "syncedAt": "2026-09-20 08:20:00",
+      "source": "Cổng Đối Tác :3012",
+      "usedAt": null
+    },
+    {
+      "id": "stk-11",
+      "barcode": "5501192835",
+      "code": "#TCH-5502",
+      "storeId": "tch",
+      "storeName": "The Coffee House",
+      "drinkName": "Hi-Tea Yuzu Vải",
+      "price": 55000,
+      "posTerminal": "POS 1",
+      "status": "active",
+      "syncedAt": "2026-09-20 10:10:00",
+      "source": "Cổng Đối Tác :3012",
+      "usedAt": null
+    },
+    {
+      "id": "stk-12",
+      "barcode": "7829104419",
+      "code": "#CHEESE-101",
+      "storeId": "cheese",
+      "storeName": "Cheese Coffee",
+      "drinkName": "Arabica Bạc Xỉu",
+      "price": 45000,
+      "posTerminal": "POS 1",
+      "status": "active",
+      "syncedAt": "2026-09-20 10:05:00",
+      "source": "Cổng Đối Tác :3012",
+      "usedAt": null
+    }
+  ],
+  "voucherClaims": [
+    {
+      "id": "claim-1789878877432",
+      "voucherCode": "ECO-HIGHLANDS-10K-483",
+      "barcode": "1089215437",
+      "storeName": "Highlands Coffee",
+      "discountAmount": 10000,
+      "createdAt": "2026-09-20 04:34:37"
+    },
+    {
+      "id": "claim-1789879727181",
+      "voucherCode": "ECO-HIGHLANDS-10K-959",
+      "barcode": "2789229104",
+      "storeName": "Highlands Coffee",
+      "discountAmount": 10000,
+      "createdAt": "2026-09-20 04:48:47"
+    },
+    {
+      "id": "claim-1789882105189",
+      "voucherCode": "ECO-HIGHLANDS-10K-763",
+      "barcode": "2789229104",
+      "storeName": "Highlands Coffee",
+      "discountAmount": 10000,
+      "createdAt": "2026-09-20 05:28:25"
+    },
+    {
+      "id": "claim-1789912223975",
+      "voucherCode": "ECO-HIGHLANDS-10K-530",
+      "barcode": "2789229104",
+      "storeName": "Highlands Coffee",
+      "discountAmount": 10000,
+      "createdAt": "2026-09-20 13:50:23"
+    },
+    {
+      "id": "claim-1789914910009",
+      "voucherCode": "ECO-HIGHLANDS-10K-213",
+      "barcode": "1089215437",
+      "storeName": "Highlands Coffee",
+      "discountAmount": 10000,
+      "createdAt": "2026-09-20 14:35:10"
+    },
+    {
+      "id": "claim-1789914960997",
+      "voucherCode": "ECO-HIGHLANDS-10K-178",
+      "barcode": "3989231846",
+      "storeName": "Highlands Coffee",
+      "discountAmount": 10000,
+      "createdAt": "2026-09-20 14:36:00"
+    }
+  ]
+}
