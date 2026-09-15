@@ -33,3 +33,8 @@
 - Nhiem vu: feat(ecopass): tich hop Model Context Protocol (Anthropic MCP SDK v1.x)
 - Ky su thuc hien: chinhan (NaN-Team)
 - Ket qua: Tich hop lien phan he dat chuan.
+
+#### [Sprint Checkpoint 058] 2026-09-15 22:03
+- Nhiem vu: feat(ecopass): xay dung MCP tool truy van bao cao kiem toan EPR cho doanh nghiep
+- Ky su thuc hien: chinhan (NaN-Team)
+- Ket qua: Tich hop lien phan he dat chuan.
