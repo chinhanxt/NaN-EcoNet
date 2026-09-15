@@ -1,0 +1,182 @@
+# ==============================================================================
+# 🌿 NaN-EcoNet: Monorepo Root .gitignore
+# Multilingual Coverage: Python, TypeScript/Node.js, Dart/Flutter, Docker & OS
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Environment Variables & Credentials (Security First)
+# ------------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.env
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+*.p12
+*.jks
+*.keystore
+id_rsa*
+secrets/
+
+# ------------------------------------------------------------------------------
+# 2. Node.js & TypeScript / Frontend Frameworks
+# ------------------------------------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+.bun/
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+.nuxt/
+.turbo/
+.cache/
+
+# Linter & Typecheck caches
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+
+# ------------------------------------------------------------------------------
+# 3. Python Ecosystem (Backend, AI & Solver Engines)
+# ------------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Packaging & Distribution
+*.egg-info/
+.installed.cfg
+*.egg
+eggs/
+.eggs/
+develop-eggs/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+
+# Virtual Environments
+venv/
+.venv/
+env/
+.env/
+ENV/
+env.bak/
+venv.bak/
+
+# Testing & Type Checking
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+
+# Jupyter Notebook Checkpoints
+.ipynb_checkpoints/
+
+# ------------------------------------------------------------------------------
+# 4. Dart & Flutter (Mobile App)
+# ------------------------------------------------------------------------------
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+pubspec.lock.bak
+
+# Android platform builds
+apps/citizen-bulky-app/mobile/android/app/build/
+apps/citizen-bulky-app/mobile/android/local.properties
+apps/citizen-bulky-app/mobile/android/.gradle/
+
+# iOS platform builds
+apps/citizen-bulky-app/mobile/ios/Pods/
+apps/citizen-bulky-app/mobile/ios/.symlinks/
+apps/citizen-bulky-app/mobile/ios/Flutter/Flutter.framework
+apps/citizen-bulky-app/mobile/ios/Flutter/Flutter.podspec
+*.xcworkspace
+*.xcuserdata
+
+# Executable / Compiled mobile artifacts
+*.apk
+*.aab
+*.ipa
+*.app
+
+# ------------------------------------------------------------------------------
+# 5. C++ / CMake (Smart Collection Solver)
+# ------------------------------------------------------------------------------
+apps/smart-collection-engine/src/build/
+*.o
+*.obj
+*.dylib
+*.dll
+*.exe
+
+# ------------------------------------------------------------------------------
+# 6. Docker & Heavy GIS Data
+# ------------------------------------------------------------------------------
+.docker/
+docker-compose.override.yml
+*.osrm*
+!apps/smart-collection-engine/map_ui/route_cache.json
+osrm_data/
+volume-data/
+
+# ------------------------------------------------------------------------------
+# 7. Logs, PIDs & Runtime Artifacts
+# ------------------------------------------------------------------------------
+logs/
+*.log
+pids.txt
+*.pid
+/tmp/nan_*.log
+tmp/
+temp/
+
+# ------------------------------------------------------------------------------
+# 8. Operating System & IDE Files
+# ------------------------------------------------------------------------------
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+*.swp
+*.swo
+
+# IDEs
+.idea/
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.settings/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
