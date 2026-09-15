@@ -23,3 +23,8 @@
 - Nhiem vu: feat(citizen): xay dung danh sach don gom dang cho cho tai xe (Driver Stop List)
 - Ky su thuc hien: chinhan (NaN-Team)
 - Ket qua: Tich hop lien phan he dat chuan.
+
+#### [Sprint Checkpoint 056] 2026-09-15 17:33
+- Nhiem vu: test(citizen): viet bo 30 unit tests cho cac models va price calculator
+- Ky su thuc hien: chinhan (NaN-Team)
+- Ket qua: Tich hop lien phan he dat chuan.
