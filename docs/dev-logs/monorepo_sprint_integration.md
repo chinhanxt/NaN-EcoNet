@@ -38,3 +38,8 @@
 - Nhiem vu: feat(ecopass): xay dung MCP tool truy van bao cao kiem toan EPR cho doanh nghiep
 - Ky su thuc hien: chinhan (NaN-Team)
 - Ket qua: Tich hop lien phan he dat chuan.
+
+#### [Sprint Checkpoint 059] 2026-09-16 11:13
+- Nhiem vu: feat(ecopass): hien thuc hoa Dynamic Diagram Engine sinh ma Mermaid tu hoi thoai
+- Ky su thuc hien: chinhan (NaN-Team)
+- Ket qua: Tich hop lien phan he dat chuan.
