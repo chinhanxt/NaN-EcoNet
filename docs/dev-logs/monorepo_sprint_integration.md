@@ -43,3 +43,8 @@
 - Nhiem vu: feat(ecopass): hien thuc hoa Dynamic Diagram Engine sinh ma Mermaid tu hoi thoai
 - Ky su thuc hien: chinhan (NaN-Team)
 - Ket qua: Tich hop lien phan he dat chuan.
+
+#### [Sprint Checkpoint 060] 2026-09-16 11:35
+- Nhiem vu: feat(gateway): khoi tao proxy agy-image-gateway ket noi FLUX.1 va Google Imagen
+- Ky su thuc hien: chinhan (NaN-Team)
+- Ket qua: Tich hop lien phan he dat chuan.
