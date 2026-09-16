@@ -1,0 +1,57 @@
+cff-version: 1.2.0
+message: "If you use this software, system architecture, or research framework in your work, please cite it using the metadata below."
+title: "NaN-EcoNet: The Agentic Green Ecosystem for Autonomous Waste Logistics & Circular 4-Win Economy"
+version: 1.0.0
+date-released: "2026-09-26"
+license: Apache-2.0
+repository-code: "https://github.com/chinhanxt/NaN-EcoNet"
+url: "https://github.com/chinhanxt/NaN-EcoNet"
+abstract: >-
+  NaN-EcoNet is an integrated, agentic green ecosystem uniting autonomous waste logistics,
+  high-performance vehicle routing optimization (3D-PACO and Google OR-Tools CVRPTW),
+  computer vision AI for bulky item classification and dimension estimation (Gemini 2.5 Flash),
+  Model Context Protocol (MCP) enterprise business intelligence, and a circular 4-Win reward
+  platform that seamlessly bridges citizens, municipal operators, recycling aggregators, and
+  commercial brands under Extended Producer Responsibility (EPR) compliance.
+authors:
+  - family-names: "Nguyen"
+    given-names: "Chi Nhan"
+    alias: "chinhanxt"
+    affiliation: "NaN-EcoNet Core Team"
+  - family-names: "Bui"
+    given-names: "Nguyen Cong Nghiep"
+    alias: "congnghip"
+    email: "buinguyencongnghiep@gmail.com"
+    affiliation: "NaN-EcoNet Core Team"
+  - family-names: "Le"
+    given-names: "Quoc Anh"
+    alias: "EnglandLee"
+    email: "lequocanh125@gmail.com"
+    affiliation: "NaN-EcoNet Core Team"
+keywords:
+  - "waste-logistics"
+  - "vehicle-routing-problem"
+  - "3d-paco"
+  - "computer-vision"
+  - "gemini-flash"
+  - "model-context-protocol"
+  - "circular-economy"
+  - "epr-compliance"
+identifiers:
+  - type: url
+    value: "https://github.com/chinhanxt/NaN-EcoNet"
+    description: "Source code and release artifacts"
+preferred-citation:
+  type: software
+  title: "NaN-EcoNet: The Agentic Green Ecosystem for Autonomous Waste Logistics & Circular 4-Win Economy"
+  authors:
+    - family-names: "Nguyen"
+      given-names: "Chi Nhan"
+    - family-names: "Bui"
+      given-names: "Nguyen Cong Nghiep"
+    - family-names: "Le"
+      given-names: "Quoc Anh"
+  year: 2026
+  month: 9
+  version: "1.0.0"
+  url: "https://github.com/chinhanxt/NaN-EcoNet"
