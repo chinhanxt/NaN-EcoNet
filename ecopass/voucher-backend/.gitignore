@@ -1,0 +1,41 @@
+# ignore virtual environment folder
+venv/
+
+# ignore secret .env
+**.env**
+
+# ignore database
+*.db
+*.sqlite3
+
+# ignore pyc files
+*.pyc
+
+# ignore secretsdump sess recovery
+*sessionresume*
+
+# ignore logs
+/logs/
+*.log
+*.bak
+
+# ignore file uploads
+database/uploads/
+
+# ignore signed licenses
+**license.txt
+
+# ignore gpg stuff
+.kbx
+.gpg
+
+# ignore potential hash files
+.hashes
+.pot
+
+# ignore traefik certs and logs
+acme.json
+**/logs/**
+
+# ignore file uploads
+**/uploads/**

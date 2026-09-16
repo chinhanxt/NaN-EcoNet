@@ -1,0 +1,189 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: write
+  packages: write
+  pull-requests: write
+
+jobs:
+
+  changelog:
+    name: Changelog
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+
+    outputs:
+      skipped: ${{ steps.changelog.outputs.skipped }}
+      tag: ${{ steps.changelog.outputs.tag }}
+      clean_changelog: ${{ steps.changelog.outputs.clean_changelog }}
+      version: ${{ steps.changelog.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Conventional Changelog Action
+        id: changelog
+        uses: TriPSs/conventional-changelog-action@v5
+        with:
+          preset: "conventionalcommits"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  bandit:
+    name: SAST with Bandit
+    needs: [changelog]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Bandit
+        run: pip install bandit
+
+      - name: Run Bandit
+        id: bandit
+        run: |
+          bandit -r myapp myproject -f html -o bandit_report.html
+
+      - name: Upload Bandit report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report
+          path: bandit_report.html
+
+  grype:
+    name: SCA with Syft & Grype
+    needs: [changelog]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate SBOM with Syft
+        run: |
+          docker run --rm -v "$PWD:/pwd" anchore/syft:latest /pwd -o cyclonedx-json > sbom.json
+
+      - name: Scan SBOM with Grype
+        run: |
+          docker run --rm -v "$PWD:/pwd" anchore/grype:latest sbom:/pwd/sbom.json --fail-on high
+
+      - name: Upload SBOM artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.json
+
+  semgrep:
+    name: SAST with Semgrep
+    needs: [changelog]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep
+        run: |
+          docker run --rm -v "${PWD}:/src" semgrep/semgrep semgrep scan \
+            --config "p/default" \
+            --config "p/secrets" \
+            --config "p/owasp-top-ten" \
+            --config "p/python" \
+            --config "p/xss" \
+            --severity ERROR --error
+
+  deploy:
+    name: Deploy Image
+    needs: [changelog, bandit, grype, semgrep]
+    if: github.event_name != 'pull_request' && needs.changelog.outputs.skipped == 'false'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get repository name
+        id: get_repo
+        run: echo "REPO_NAME=$(echo ${{ github.repository }} | cut -d'/' -f2 | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+    
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+
+      - name: Login to Dockerhub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v2          
+
+      - name: Extract version parts
+        id: extract_version
+        run: |
+          VERSION=${{ needs.changelog.outputs.version }}
+          MAJOR_MINOR=$(echo $VERSION | cut -d'.' -f1,2)
+          echo "MAJOR_MINOR_TAG=${MAJOR_MINOR}.x" >> $GITHUB_ENV
+
+      - name: Setup Docker Metadata
+        uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: |
+            docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.REPO_NAME }}
+          tags: |
+            latest
+            ${{ needs.changelog.outputs.version }}
+            ${{ env.MAJOR_MINOR_TAG }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@4a13e500e55cf31b7a5d59a38ab2040ab0f42f56 # v5
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/amd64, linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+              VERSION=${{ needs.changelog.outputs.version }}          
+
+  release:
+    name: Release
+    needs: [changelog, deploy]
+    if: github.event_name != 'pull_request' && needs.changelog.outputs.skipped == 'false'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+  
+      - name: Debug Changelog Outputs
+        run: echo ${{ needs.changelog.outputs.tag }}
+        
+      - name: Create Release
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ needs.changelog.outputs.tag }}
+          prerelease: false
+          draft: false
+          generate_release_notes: true
+          name: ${{ needs.changelog.outputs.tag }}
+          body: |
+            <details>
+              <summary>🤖 Autogenerated Conventional Changelog</summary>
+  
+            ${{ needs.changelog.outputs.clean_changelog }}
+            </details>
