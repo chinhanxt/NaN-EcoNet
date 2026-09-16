@@ -48,3 +48,8 @@
 - Nhiem vu: feat(gateway): khoi tao proxy agy-image-gateway ket noi FLUX.1 va Google Imagen
 - Ky su thuc hien: chinhan (NaN-Team)
 - Ket qua: Tich hop lien phan he dat chuan.
+
+#### [Sprint Checkpoint 061] 2026-09-16 13:10
+- Nhiem vu: feat(gateway): them co che bam SHA-256 prompt cache tiet kiem chi phi API sinh anh
+- Ky su thuc hien: chinhan (NaN-Team)
+- Ket qua: Tich hop lien phan he dat chuan.
