@@ -1,0 +1,101 @@
+{
+  "name": "veganify",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "check": "concurrently -c \"#FF8700,#5DE4C7,#A8E6CF,#ADD7FF\" -n lint,types,unit \"bun run lint\" \"bun run type-check\" \"bun test src/components src/hooks --concurrent --timeout=10000 --reporter=dots --bail\"",
+    "check:code": "ultracite check",
+    "dev": "next dev --turbopack",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "lint-staged": "lint-staged",
+    "prepare": "husky",
+    "stage": "next start -p 1031",
+    "start": "next start -p 1030",
+    "test": "bun test src/components src/hooks",
+    "test:coverage": "bun test --coverage src/components",
+    "test:e2e": "bunx playwright test",
+    "test:watch": "bun test --watch src/components",
+    "type-check": "tsc --noEmit && tsc --noEmit --project tsconfig.test.json",
+    "ultracite:fix": "ultracite fix"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,css}": [
+      "biome check --write --no-errors-on-unmatched"
+    ]
+  },
+  "resolutions": {
+    "indent-string": "npm:@socketregistry/indent-string@^1",
+    "shell-quote": "npm:shell-quote@^1"
+  },
+  "overrides": {
+    "@babel/helpers": ">=7.26.10",
+    "@babel/runtime": ">=7.26.10",
+    "@types/react": "19.2.16",
+    "@types/react-dom": "19.2.3",
+    "core-js": "^3.36.0",
+    "diff": ">=4.0.4",
+    "flatted": ">=3.4.2",
+    "form-data": ">=2.5.4",
+    "glob": "^10.5.0",
+    "glob>minimatch": "^9.0.9",
+    "minimatch>brace-expansion": "^2.0.3",
+    "postcss": ">=8.5.10",
+    "qs": ">=6.14.1",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "sourcemap-codec": "^1.4.8",
+    "tinyglobby>picomatch": "^4.0.4"
+  },
+  "dependencies": {
+    "@ericblade/quagga2": "^1.12.1",
+    "@frontendnetwork/veganify": "2.1.13",
+    "@radix-ui/react-dialog": "^1.1.23",
+    "@radix-ui/react-slot": "^1.3.3",
+    "@radix-ui/react-switch": "^1.3.7",
+    "@radix-ui/react-tooltip": "^1.2.16",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "26.5.1",
+    "@types/react-dom": "19.2.3",
+    "class-variance-authority": "^0.7.1",
+    "cn": "^0.2.6",
+    "html5-qrcode": "^2.3.8",
+    "lucide-react": "^1.41.0",
+    "motion": "^13.2.0",
+    "next": "16.3.4",
+    "next-intl": "4.14.3",
+    "qrcode.react": "^4.2.0",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "tailwindcss": "^4",
+    "tesseract.js": "^7.0.0",
+    "typescript": "7.0.2"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.13",
+    "@playwright/test": "1.63.0",
+    "@semantic-release/exec": "^7.1.0",
+    "@testing-library/jest-dom": "7.0.1",
+    "@types/bun": "1.4.2",
+    "@types/react": "19.2.16",
+    "concurrently": "10.0.5",
+    "happy-dom": "20.14.3",
+    "husky": "^9.1.7",
+    "lint-staged": "17.5.1",
+    "semantic-release": "^25.0.9",
+    "ultracite": "7.11.1"
+  },
+  "packageManager": "bun@1.4.1",
+  "volta": {
+    "node": "20.0.0"
+  },
+  "registries": {
+    "@fluid": "https://www.fluidfunctionalism.com/r/{name}.json"
+  },
+  "trustedDependencies": [
+    "@parcel/watcher",
+    "@swc/core",
+    "unrs-resolver"
+  ]
+}
