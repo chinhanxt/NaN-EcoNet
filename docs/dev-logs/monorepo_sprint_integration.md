@@ -58,3 +58,8 @@
 - Nhiem vu: feat(gateway): xay dung bo presets 50+ phong cach thi giac xanh ben vung
 - Ky su thuc hien: chinhan (NaN-Team)
 - Ket qua: Tich hop lien phan he dat chuan.
+
+#### [Sprint Checkpoint 063] 2026-09-17 17:18
+- Nhiem vu: feat(social): viet script Playwright tu dong dang bai len Facebook Page
+- Ky su thuc hien: chinhan (NaN-Team)
+- Ket qua: Tich hop lien phan he dat chuan.
