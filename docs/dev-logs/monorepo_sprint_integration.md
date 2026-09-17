@@ -68,3 +68,8 @@
 - Nhiem vu: feat(social): xay dung pipeline FFmpeg dung video doc 9:16 co hieu ung Pan/Zoom
 - Ky su thuc hien: chinhan (NaN-Team)
 - Ket qua: Tich hop lien phan he dat chuan.
+
+#### [Sprint Checkpoint 065] 2026-09-17 21:16
+- Nhiem vu: feat(social): viet script upload video TikTok Studio kem hashtag SongXanh
+- Ky su thuc hien: chinhan (NaN-Team)
+- Ket qua: Tich hop lien phan he dat chuan.
