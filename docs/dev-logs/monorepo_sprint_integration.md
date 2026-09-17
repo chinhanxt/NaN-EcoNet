@@ -73,3 +73,8 @@
 - Nhiem vu: feat(social): viet script upload video TikTok Studio kem hashtag SongXanh
 - Ky su thuc hien: chinhan (NaN-Team)
 - Ket qua: Tich hop lien phan he dat chuan.
+
+#### [Sprint Checkpoint 066] 2026-09-17 21:45
+- Nhiem vu: feat(social): viet script xuat ban video YouTube Shorts tu dong
+- Ky su thuc hien: chinhan (NaN-Team)
+- Ket qua: Tich hop lien phan he dat chuan.
