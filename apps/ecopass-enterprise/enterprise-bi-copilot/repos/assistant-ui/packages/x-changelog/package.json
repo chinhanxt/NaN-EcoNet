@@ -1,0 +1,13 @@
+{
+  "name": "@assistant-ui/x-changelog",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Internal changesets changelog generator for assistant-ui",
+  "main": "./index.mjs",
+  "files": [
+    "index.mjs"
+  ],
+  "dependencies": {
+    "@changesets/get-github-info": "^1.0.1"
+  }
+}

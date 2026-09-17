@@ -1,0 +1,55 @@
+{
+  "name": "@assistant-ui/x-buildutils",
+  "private": false,
+  "version": "0.0.28",
+  "description": "Internal build utilities for assistant-ui packages",
+  "keywords": [
+    "build",
+    "typescript",
+    "internal",
+    "assistant-ui"
+  ],
+  "author": "AgentbaseAI Inc.",
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "bin",
+    "src",
+    "ts",
+    "types",
+    "README.md"
+  ],
+  "bin": {
+    "aui-build": "./bin/aui-build.js"
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "@babel/core": "^7.29.7",
+    "@tsconfig/strictest": "^2.0.8",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "jiti": "^2.7.0",
+    "rolldown": "^1.2.8",
+    "tsdown": "^0.23.0",
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
+  },
+  "devDependencies": {
+    "@types/babel__core": "^7.20.5",
+    "@types/node": "^26.5.1"
+  },
+  "homepage": "https://www.assistant-ui.com/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/assistant-ui/assistant-ui.git",
+    "directory": "packages/x-buildutils"
+  },
+  "bugs": {
+    "url": "https://github.com/assistant-ui/assistant-ui/issues"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

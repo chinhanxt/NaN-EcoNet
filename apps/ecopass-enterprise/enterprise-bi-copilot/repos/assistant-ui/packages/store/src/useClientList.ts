@@ -1,0 +1,121 @@
+import { useEffect, useRef, useState } from "react";
+import { withKey, type Resource } from "@assistant-ui/tap";
+
+import { useClientLookup } from "./useClientLookup";
+import type { ClientMethods, InferClientState } from "./types/client";
+
+type DataHandle<TData> = { data: TData | undefined; hasData: boolean };
+
+const createProps = <TData>(
+  key: string,
+  data: DataHandle<TData>,
+  remove: () => void,
+): useClientList.ResourceProps<TData> => {
+  return {
+    key,
+    getInitialData: () => {
+      if (!data.hasData) {
+        throw new Error(
+          "getInitialData may only be called during initial render",
+        );
+      }
+      return data.data!;
+    },
+    remove,
+  };
+};
+
+export const useClientList = <TData, TMethods extends ClientMethods>(
+  props: useClientList.Props<TData, TMethods>,
+): {
+  state: InferClientState<TMethods>[];
+  get: (lookup: { index: number } | { key: string }) => TMethods;
+  add: (initialData: TData) => void;
+} => {
+  const { initialValues, getKey, resource: Resource } = props;
+
+  type Props = useClientList.ResourceProps<TData>;
+
+  const initialDataHandles = useRef<DataHandle<TData>[]>([]).current;
+
+  const [items, setItems] = useState<Map<string, Props>>(() => {
+    const entries: [string, Props][] = [];
+    for (const data of initialValues) {
+      const key = getKey(data);
+      const handle = { data, hasData: true };
+      entries.push([
+        key,
+        createProps(key, handle, () => {
+          setItems((items) => {
+            const newItems = new Map(items);
+            newItems.delete(key);
+            return newItems;
+          });
+        }),
+      ]);
+      initialDataHandles.push(handle);
+    }
+    return new Map(entries);
+  });
+
+  const lookup = useClientLookup<TMethods>(
+    // `props` is stable per item (held in state), so reuse unchanged items.
+    [...items.values()].map((props) =>
+      withKey(props.key, Resource(props), [props]),
+    ),
+  );
+
+  // Clear on commit, not during render, so discarded renders can replay
+  useEffect(() => {
+    for (const handle of initialDataHandles) {
+      handle.data = undefined;
+      handle.hasData = false;
+    }
+    initialDataHandles.length = 0;
+  });
+
+  const add = (data: TData) => {
+    const key = getKey(data);
+    setItems((items) => {
+      if (items.has(key)) {
+        throw new Error(
+          `Tried to add item with a key ${key} that already exists`,
+        );
+      }
+
+      const handle = { data, hasData: true };
+      initialDataHandles.push(handle);
+
+      return new Map(items).set(
+        key,
+        createProps(key, handle, () => {
+          setItems((items) => {
+            const newItems = new Map(items);
+            newItems.delete(key);
+            return newItems;
+          });
+        }),
+      );
+    });
+  };
+
+  return {
+    state: lookup.state,
+    get: lookup.get,
+    add,
+  };
+};
+
+export namespace useClientList {
+  export type ResourceProps<TData> = {
+    key: string;
+    getInitialData: () => TData;
+    remove: () => void;
+  };
+
+  export type Props<TData, TMethods extends ClientMethods> = {
+    initialValues: TData[];
+    getKey: (data: TData) => string;
+    resource: Resource<TMethods, [ResourceProps<TData>]>;
+  };
+}

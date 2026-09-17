@@ -1,0 +1,128 @@
+using System.ClientModel;
+using System.ComponentModel;
+using System.Net.Http;
+using System.Text.Json;
+using Microsoft.Agents.AI;
+using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Logging;
+using OpenAI;
+
+/// <summary>
+/// Factory for the Declarative Generative UI (A2UI — Dynamic Schema) agent.
+///
+/// Mirrors the LangGraph `src/agents/a2ui_dynamic.py` reference: the agent
+/// owns a single `generate_a2ui` tool that delegates to a secondary LLM call
+/// which produces an A2UI v0.9 component tree against the frontend catalog
+/// (declared on the provider via `a2ui={{ catalog: myCatalog }}`). The
+/// runtime's A2UI middleware serialises that catalog schema into the agent's
+/// <c>copilotkit.context</c> so the secondary LLM knows which components are
+/// available.
+/// </summary>
+public class DeclarativeGenUiAgent
+{
+    private readonly IConfiguration _configuration;
+    private readonly OpenAIClient _openAiClient;
+    private readonly ILogger _logger;
+    private readonly JsonSerializerOptions _jsonSerializerOptions;
+
+    public DeclarativeGenUiAgent(IConfiguration configuration, ILoggerFactory loggerFactory, JsonSerializerOptions jsonSerializerOptions)
+    {
+        ArgumentNullException.ThrowIfNull(configuration);
+        ArgumentNullException.ThrowIfNull(loggerFactory);
+        ArgumentNullException.ThrowIfNull(jsonSerializerOptions);
+
+        _configuration = configuration;
+        _logger = loggerFactory.CreateLogger<DeclarativeGenUiAgent>();
+        _jsonSerializerOptions = jsonSerializerOptions;
+
+        var apiKey = ApiKeyResolver.ResolveApiKey(configuration);
+
+        var endpoint = ApiKeyResolver.ResolveEndpoint(configuration);
+
+        _openAiClient = new(
+            new ApiKeyCredential(apiKey),
+            AimockHeaderPolicy.CreateOpenAIClientOptions(endpoint));
+    }
+
+    public AIAgent Create()
+    {
+        var chatClient = _openAiClient.GetChatClient("gpt-5-mini").AsIChatClient();
+
+        // Instructions (not Description) is the system prompt ChatClientAgent
+        // actually sends to the model. Without it the agent narrates walls of
+        // text and only sometimes calls generate_a2ui.
+        return new ChatClientAgent(
+            chatClient,
+            instructions: """
+                You are the embedded sales analyst for Vantage Threads. Answer every
+                business question by calling `generate_a2ui` exactly once to draw a
+                rich visual surface. After the tool returns, reply with at most ONE
+                short sentence (or nothing). Never paste tables, metrics, or chart
+                data into the chat message — the A2UI surface is the product.
+
+                When calling generate_a2ui, set `context` to a short brief that names
+                the view (dashboard / rep performance / at-risk / account details)
+                and reminds the designer to use the Vantage Threads Q2 numbers with
+                non-empty chart data arrays and full table rows.
+
+                Catalog only: Card, Metric, PieChart, BarChart, DataTable, StatusBadge,
+                InfoRow, PrimaryButton, Row, Column, Text. Never DashboardCard.
+                """,
+            name: "DeclarativeGenUiAgent",
+            description: "Declarative A2UI dynamic-schema demo agent",
+            tools: [
+                AIFunctionFactory.Create(GenerateA2ui, options: new() { Name = "generate_a2ui", SerializerOptions = _jsonSerializerOptions })
+            ]);
+    }
+
+    [Description("Generate dynamic A2UI components using a secondary LLM call")]
+    private async Task<object> GenerateA2ui(
+        [Description("Conversation context to generate UI from.")] string context = "",
+        CancellationToken cancellationToken = default)
+    {
+        context ??= "";
+
+        var errorId = Guid.NewGuid().ToString("n")[..16];
+        var userContent = string.IsNullOrWhiteSpace(context)
+            ? "KPI dashboard with 3-4 metrics, pie chart sales by region, bar chart quarterly revenue, status report."
+            : context;
+        _logger.LogInformation("DeclarativeGenUi: Generating A2UI (errorId={ErrorId}) for: {Request}", errorId, userContent);
+
+        string? content;
+        try
+        {
+            content = await A2uiSecondaryToolCaller.GetDesignToolArgumentsAsync(
+                _configuration,
+                BeautifulChatA2ui.DeclarativeGenUiDesignSystemPrompt(),
+                userContent,
+                cancellationToken).ConfigureAwait(false);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "DeclarativeGenUi GenerateA2ui (errorId={ErrorId}): upstream transport failure", errorId);
+            return SalesAgentFactory.StructuredError("upstream_unavailable", "The upstream AI service is currently unreachable. Please retry.", "Retry the request in a few seconds.", errorId);
+        }
+        catch (ClientResultException ex)
+        {
+            _logger.LogError(ex, "DeclarativeGenUi GenerateA2ui (errorId={ErrorId}): upstream returned error status {Status}", errorId, ex.Status);
+            return SalesAgentFactory.StructuredError("upstream_error", "The upstream AI service returned an error.", "Try rephrasing the request or retrying later.", errorId);
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation("DeclarativeGenUi GenerateA2ui (errorId={ErrorId}): cancelled", errorId);
+            throw;
+        }
+
+        if (string.IsNullOrEmpty(content))
+        {
+            _logger.LogError("DeclarativeGenUi GenerateA2ui (errorId={ErrorId}): upstream returned no text content", errorId);
+            return SalesAgentFactory.StructuredError("empty_llm_output", "Model returned no text content", "Retry or check model availability", errorId);
+        }
+
+        return SalesAgentFactory.BuildA2uiResponseFromContent(
+            content,
+            errorId,
+            _logger,
+            forcedCatalogId: BeautifulChatA2ui.DeclarativeGenUiCatalogId);
+    }
+}

@@ -1,0 +1,60 @@
+{
+  "name": "safe-content-frame",
+  "version": "0.0.31",
+  "description": "Secure iframe rendering for untrusted content using SafeContentFrame",
+  "keywords": [
+    "iframe",
+    "sandbox",
+    "security",
+    "html",
+    "content",
+    "safe"
+  ],
+  "author": "AgentbaseAI Inc.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./shadow_dom": {
+      "types": "./dist/shadow_dom.d.ts",
+      "default": "./dist/shadow_dom.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "shadow_dom",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "aui-build",
+    "dev": "vite demo",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@assistant-ui/x-buildutils": "workspace:*",
+    "jsdom": "^30.0.1",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.1"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "homepage": "https://www.assistant-ui.com/safe-content-frame",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/assistant-ui/assistant-ui.git",
+    "directory": "packages/safe-content-frame"
+  },
+  "bugs": {
+    "url": "https://github.com/assistant-ui/assistant-ui/issues"
+  }
+}

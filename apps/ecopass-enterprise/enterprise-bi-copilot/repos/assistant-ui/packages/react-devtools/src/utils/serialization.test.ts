@@ -1,0 +1,309 @@
+import { describe, expect, it } from "vitest";
+import {
+  REDACTED,
+  redactSensitive,
+  sanitizeAndRedact,
+  sanitizeForMessage,
+  serializeModelContext,
+} from "./serialization";
+
+describe("sanitizeForMessage", () => {
+  it("preserves shared (non-cyclic) sibling references instead of marking them circular", () => {
+    const shared = { value: 1 };
+
+    expect(sanitizeForMessage({ a: shared, b: shared })).toEqual({
+      a: { value: 1 },
+      b: { value: 1 },
+    });
+
+    const sharedArray = [1, 2];
+    expect(sanitizeForMessage({ a: sharedArray, b: sharedArray })).toEqual({
+      a: [1, 2],
+      b: [1, 2],
+    });
+  });
+
+  it("still detects genuine circular references", () => {
+    const cyclic: Record<string, unknown> = { name: "root" };
+    cyclic.self = cyclic;
+    expect(sanitizeForMessage(cyclic)).toEqual({
+      name: "root",
+      self: "[Circular]",
+    });
+
+    const cyclicArray: unknown[] = [];
+    cyclicArray.push(cyclicArray);
+    expect(sanitizeForMessage(cyclicArray)).toEqual(["[Circular]"]);
+
+    const cyclicMap = new Map<string, unknown>();
+    cyclicMap.set("self", cyclicMap);
+    expect(sanitizeForMessage(cyclicMap)).toEqual({ self: "[Circular]" });
+
+    const cyclicSet = new Set<unknown>();
+    cyclicSet.add(cyclicSet);
+    expect(sanitizeForMessage(cyclicSet)).toEqual(["[Circular]"]);
+  });
+
+  it("converts non-JSON primitives to strings", () => {
+    const result = sanitizeForMessage({
+      bigint: 42n,
+      symbol: Symbol("status"),
+    });
+
+    expect(result).toEqual({
+      bigint: "42",
+      symbol: "Symbol(status)",
+    });
+    expect(() => JSON.stringify(result)).not.toThrow();
+  });
+
+  it("sanitizes invalid dates without throwing", () => {
+    expect(sanitizeForMessage(new Date(Number.NaN))).toBe("Invalid Date");
+  });
+
+  it("preserves readable properties when an enumerable getter throws", () => {
+    const value = { readable: "value" };
+    Object.defineProperty(value, "broken", {
+      enumerable: true,
+      get: () => {
+        throw new Error("getter failed");
+      },
+    });
+
+    expect(sanitizeForMessage(value)).toEqual({
+      readable: "value",
+      broken: "[Unserializable]",
+    });
+  });
+
+  it("handles proxies that reject key enumeration", () => {
+    const value = new Proxy(
+      {},
+      {
+        ownKeys: () => {
+          throw new Error("enumeration failed");
+        },
+      },
+    );
+
+    expect(sanitizeForMessage(value)).toBe("[Unserializable]");
+  });
+
+  it("preserves readable array entries when an indexed getter throws", () => {
+    const value = ["first", "second", "third"];
+    Object.defineProperty(value, 1, {
+      get: () => {
+        throw new Error("getter failed");
+      },
+    });
+
+    expect(sanitizeForMessage(value)).toEqual([
+      "first",
+      "[Unserializable]",
+      "third",
+    ]);
+  });
+
+  it("snapshots proxy array length before reading entries", () => {
+    let lengthReads = 0;
+    const value = new Proxy(["first", "second"], {
+      get: (target, property, receiver) => {
+        if (property === "length") return lengthReads++ === 0 ? 2 : 0;
+        return Reflect.get(target, property, receiver);
+      },
+    });
+
+    expect(sanitizeForMessage(value)).toEqual(["first", "second"]);
+  });
+
+  it("preserves map entries when a key cannot be converted to a string", () => {
+    const brokenKey = {
+      toString: () => {
+        throw new Error("key conversion failed");
+      },
+    };
+    const secondBrokenKey = {
+      toString: () => {
+        throw new Error("key conversion failed");
+      },
+    };
+    const value = new Map<unknown, unknown>([
+      [brokenKey, "broken key value"],
+      [secondBrokenKey, "second broken key value"],
+      ["readable", "readable value"],
+    ]);
+
+    expect(sanitizeForMessage(value)).toEqual({
+      "[Unserializable]": "broken key value",
+      "[Unserializable] (2)": "second broken key value",
+      readable: "readable value",
+    });
+  });
+
+  it("preserves prototype-named object and map entries as own properties", () => {
+    const objectResult = sanitizeAndRedact(
+      JSON.parse('{"__proto__":{"visible":true}}'),
+    ) as Record<string, unknown>;
+    const mapResult = sanitizeForMessage(
+      new Map([["__proto__", "map value"]]),
+    ) as Record<string, unknown>;
+
+    expect(Object.hasOwn(objectResult, "__proto__")).toBe(true);
+    expect(objectResult["__proto__"]).toEqual({ visible: true });
+    expect(Object.getPrototypeOf(objectResult)).toBe(Object.prototype);
+    expect(JSON.stringify(objectResult)).toBe('{"__proto__":{"visible":true}}');
+
+    expect(Object.hasOwn(mapResult, "__proto__")).toBe(true);
+    expect(mapResult["__proto__"]).toBe("map value");
+    expect(Object.getPrototypeOf(mapResult)).toBe(Object.prototype);
+  });
+});
+
+describe("redactSensitive", () => {
+  it("masks credential-named keys but leaves lookalikes alone", () => {
+    const out = redactSensitive({
+      apiKey: "sk-123",
+      authorization: "Bearer abc",
+      maxTokens: 100,
+      tokenCount: 42,
+      nested: { client_secret: "shh", model: "gpt" },
+    }) as Record<string, unknown>;
+
+    expect(out.apiKey).toBe(REDACTED);
+    expect(out.authorization).toBe(REDACTED);
+    expect(out.maxTokens).toBe(100);
+    expect(out.tokenCount).toBe(42);
+    expect(out.nested).toEqual({ client_secret: REDACTED, model: "gpt" });
+  });
+
+  it("recurses through arrays", () => {
+    const out = redactSensitive([{ token: "a" }, { ok: 1 }]) as unknown[];
+    expect(out).toEqual([{ token: REDACTED }, { ok: 1 }]);
+  });
+
+  it("masks every value inside env/headers, including arbitrary names", () => {
+    const out = redactSensitive({
+      env: { OPENAI_API_KEY: "sk-1", GITHUB_TOKEN: "ghp", PATH: "/bin" },
+      headers: { "X-Custom-Auth": "abc", "Content-Type": "application/json" },
+      url: "https://mcp.example.com",
+    }) as Record<string, Record<string, unknown>>;
+
+    expect(out.env).toEqual({
+      OPENAI_API_KEY: REDACTED,
+      GITHUB_TOKEN: REDACTED,
+      PATH: REDACTED,
+    });
+    expect(out.headers).toEqual({
+      "X-Custom-Auth": REDACTED,
+      "Content-Type": REDACTED,
+    });
+    expect(out.url).toBe("https://mcp.example.com");
+  });
+});
+
+describe("serializeModelContext", () => {
+  it("redacts secrets in config and call settings, keeps the rest", () => {
+    const result = serializeModelContext({
+      config: { apiKey: "sk-123", baseUrl: "https://api.example.com" },
+      callSettings: {
+        maxTokens: 256,
+        headers: { Authorization: "Bearer xyz" },
+      },
+    } as never);
+
+    expect(result?.config).toEqual({
+      apiKey: REDACTED,
+      baseUrl: "https://api.example.com",
+    });
+    expect(result?.callSettings).toEqual({
+      maxTokens: 256,
+      headers: { Authorization: REDACTED },
+    });
+  });
+
+  it("redacts tool providerOptions/server but never the parameters schema", () => {
+    const result = serializeModelContext({
+      tools: {
+        search: {
+          type: "frontend",
+          parameters: {
+            type: "object",
+            properties: { token: { type: "string" } },
+          },
+          providerOptions: { openai: { apiKey: "sk-xyz" } },
+        },
+        mcp_tool: {
+          type: "mcp",
+          server: { type: "http", url: "https://x", headers: { token: "t" } },
+        },
+      },
+    } as never);
+
+    const search = result?.tools?.find((t) => t.name === "search");
+    const mcpTool = result?.tools?.find((t) => t.name === "mcp_tool");
+
+    expect(search?.providerOptions).toEqual({ openai: { apiKey: REDACTED } });
+    expect(search?.parameters).toEqual({
+      type: "object",
+      properties: { token: { type: "string" } },
+    });
+    expect(mcpTool?.server).toEqual({
+      type: "http",
+      url: "https://x",
+      headers: { token: REDACTED },
+    });
+  });
+
+  it("masks arbitrary env names on an MCP stdio server tool", () => {
+    const result = serializeModelContext({
+      tools: {
+        gh: {
+          type: "mcp",
+          server: {
+            type: "stdio",
+            command: "mcp-github",
+            env: { GITHUB_TOKEN: "ghp_secret", OPENAI_API_KEY: "sk" },
+          },
+        },
+      },
+    } as never);
+
+    const gh = result?.tools?.find((t) => t.name === "gh");
+    expect(gh?.server).toEqual({
+      type: "stdio",
+      command: "mcp-github",
+      env: { GITHUB_TOKEN: REDACTED, OPENAI_API_KEY: REDACTED },
+    });
+  });
+
+  it("returns undefined when there is no context", () => {
+    expect(serializeModelContext(undefined)).toBeUndefined();
+  });
+
+  it("preserves readable fields when a model-context getter throws", () => {
+    const context = {
+      tools: {
+        search: { type: "frontend", description: "Search documents" },
+      },
+      config: { model: "test-model" },
+    };
+    Object.defineProperty(context, "system", {
+      enumerable: true,
+      get: () => {
+        throw new Error("system unavailable");
+      },
+    });
+
+    expect(serializeModelContext(context as never)).toEqual({
+      system: "[Unserializable]",
+      tools: [
+        {
+          name: "search",
+          type: "frontend",
+          description: "Search documents",
+        },
+      ],
+      config: { model: "test-model" },
+    });
+  });
+});

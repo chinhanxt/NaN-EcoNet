@@ -1,0 +1,52 @@
+name: pkg.pr.new
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, labeled, synchronize, reopened, ready_for_review]
+    paths:
+      - "packages/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "turbo.json"
+      - ".github/workflows/pkg-pr-new.yaml"
+
+permissions:
+  contents: read
+
+jobs:
+  publish-preview:
+    name: Publish Package Previews
+    if: >-
+      !github.event.pull_request.draft
+      && contains(github.event.pull_request.labels.*.name, 'preview')
+      && (github.event.action != 'labeled' || github.event.label.name == 'preview')
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
+        with:
+          fetch-depth: 1
+
+      - name: Setup pnpm and node.js
+        uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # ratchet:pnpm/setup@v2.1.0
+        with:
+          runtime: node@24
+          cache: true
+          install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        env:
+          TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+          TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+        run: pnpm turbo build --filter="./packages/*"
+
+      - name: Publish PR previews
+        run: pnpm exec pkg-pr-new publish --comment=update --packageManager=pnpm "./packages/*"

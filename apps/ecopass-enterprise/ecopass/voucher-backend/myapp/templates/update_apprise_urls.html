@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+{% load extras %}
+
+{% block content %}
+<div class="pagetitle">
+  <nav>
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">{% trans "User" %}</li>
+      <li class="breadcrumb-item active"><a href="{% url 'update_apprise_urls' %}">{% trans "Notification Settings" %}</a></li>
+    </ol>
+  </nav>
+</div><!-- End Page Title -->
+
+<section class="section">
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body">
+          <h6 class="card-title">{% trans "Configure Your Apprise URLs" %}</h6>
+          <span>{% trans "These URLs will be used to send out personal expiry notifications. Leave empty to disable notifications." %}</span><p>
+          <p><span class="badge bg-info"><span class="badge bg-info">{% trans "Threshold" %}: {{ "EXPIRY_THRESHOLD"|env }}d</span></span></p>
+          <!-- Apprise URLs Form -->
+          <form method="POST" action="">
+            {% csrf_token %}
+            <div class="row mb-3">
+              <label for="apprise_urls" class="col-sm-2 col-form-label">Apprise URLs
+                <a href="https://github.com/caronc/apprise?tab=readme-ov-file#supported-notifications" target="_blank">
+                  <i class="bi bi-info-circle"></i>
+                </a>
+              </label>
+              <div class="col-sm-10">
+                {{ form.apprise_urls }}
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-sm-10 offset-sm-2">
+                <button type="submit" class="btn btn-primary">{% trans "Update" %}</button>
+                <button type="button" class="btn btn-secondary" id="verify-button">{% trans "Test" %}</button>
+              </div>
+            </div>
+          </form><!-- End Apprise URLs Form -->
+
+          <div id="verify-result"></div>
+          <div id="spinner" class="text-center mt-3" style="display: none;">
+            <div class="spinner-border" role="status">
+              <span class="visually-hidden">{% trans "Loading..." %}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const appriseField = document.querySelector("#id_apprise_urls");
+    appriseField.addEventListener("focus", function() {
+      if (this.value.includes("Apprise URLs")) {
+        this.value = "";
+      }
+    });
+
+    document.getElementById("verify-button").addEventListener("click", function() {
+        const appriseUrls = appriseField.value;
+        const spinner = document.getElementById("spinner");
+        const resultDiv = document.getElementById("verify-result");
+        
+        // Show spinner
+        spinner.style.display = "block";
+        resultDiv.innerHTML = "";
+
+        fetch("{% url 'verify_apprise_urls' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({ apprise_urls: appriseUrls })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Hide spinner
+            spinner.style.display = "none";
+
+            if (data.success) {
+                resultDiv.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+            } else {
+                resultDiv.innerHTML = `<div class="alert alert-danger">${data.message}</div>`;
+            }
+        });
+    });
+});
+</script>
+{% endblock content %}

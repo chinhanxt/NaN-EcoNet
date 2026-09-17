@@ -1,0 +1,145 @@
+---
+title: Perplexity Clone
+description: Open-source Perplexity-style chat in React — theme-aware composer, functional Search and Model dropdowns, four-state primary action, and a Search-icon assistant avatar.
+---
+
+## Overview
+
+The Perplexity Clone demonstrates how to customize assistant-ui to match Perplexity's search-focused interface. The empty state centers the `perplexity` wordmark above a multi-line composer with functional Search and Model dropdowns; the chat state keeps the composer pinned as a sticky follow-up footer.
+
+## Features
+
+- **Theme-Aware Styling**: Cream `#f6f2ec` light, espresso `#171615` dark — no forced theme
+- **Hero Wordmark**: Large centered `perplexity` headline that scales down on mobile
+- **Multi-line Composer**: `rows={2}` with `min-h-20` so the input feels as tall as Perplexity's hero
+- **Functional Search Dropdown**: Search / Research / Labs modes, each with an icon and description
+- **Functional Model Dropdown**: Best / Sonar / Claude 4.5 Sonnet / GPT-5 / Gemini 3 Pro (hidden on small screens)
+- **Four-State Primary Action**: Cancel, StopDictation, Send, Dictate — mutually exclusive via priority
+- **Inline Attachment Chips**: Compact previews render above the input
+- **Sticky Follow-up**: Once a chat starts, the composer becomes a pinned footer with a fade-out gradient over the cream background
+
+## Quick Start
+
+```bash
+npx assistant-ui add thread
+```
+
+## Code
+
+The empty state and chat state share the same `Composer`. The composer uses `--thread-max-width: 40rem` to stay tighter than the typical max-w-3xl:
+
+```tsx
+import {
+  AuiIf,
+  ThreadPrimitive,
+  ComposerPrimitive,
+  AttachmentPrimitive,
+} from "@assistant-ui/react";
+
+export const Perplexity = () => (
+  <ThreadPrimitive.Root
+    className="bg-[#f6f2ec] dark:bg-[#171615]"
+    style={{ ["--thread-max-width"]: "40rem" }}
+  >
+    <AuiIf condition={(s) => s.thread.isEmpty}>
+      <EmptyState />
+    </AuiIf>
+    <AuiIf condition={(s) => !s.thread.isEmpty}>
+      <ThreadPrimitive.Viewport>
+        <ThreadPrimitive.Messages />
+        <ThreadPrimitive.ViewportFooter className="sticky bottom-0">
+          <Composer placeholder="Ask a follow-up..." />
+        </ThreadPrimitive.ViewportFooter>
+      </ThreadPrimitive.Viewport>
+    </AuiIf>
+  </ThreadPrimitive.Root>
+);
+
+const Composer = ({ placeholder }) => (
+  <ComposerPrimitive.Root className="rounded-3xl border border-[#d7d0c5] bg-[#fcfbf8] dark:border-[#4a433b] dark:bg-[#23211f]">
+    <ComposerPrimitive.Input rows={2} placeholder={placeholder} />
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-1.5">
+        <ComposerPrimitive.AddAttachment />
+        <SearchModePicker />
+      </div>
+      <div className="flex items-center gap-1">
+        <ModelPicker />
+        <ComposerPrimaryAction />
+      </div>
+    </div>
+  </ComposerPrimitive.Root>
+);
+```
+
+### Functional Search & Model Dropdowns
+
+```tsx
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+
+const SEARCH_MODES = [
+  { id: "search", name: "Search", description: "Fast answers to everyday questions", Icon: Search },
+  { id: "research", name: "Research", description: "In-depth reports on complex topics", Icon: Telescope },
+  { id: "labs", name: "Labs", description: "Apps, slides, and dashboards", Icon: Sparkles },
+];
+
+<DropdownMenu>
+  <DropdownMenuTrigger className="rounded-full border border-[#e0d8cb] bg-[#f5f1eb] px-3">
+    <CurrentIcon /> {current.name} <ChevronDown />
+  </DropdownMenuTrigger>
+  <DropdownMenuContent>
+    {SEARCH_MODES.map((m) => (
+      <DropdownMenuItem onClick={() => setMode(m.id)}>
+        {m.id === mode ? <Check /> : <m.Icon />}
+        {m.name} — {m.description}
+      </DropdownMenuItem>
+    ))}
+  </DropdownMenuContent>
+</DropdownMenu>
+```
+
+The Model picker uses `hidden sm:flex` so it collapses on mobile and the Search pill keeps room.
+
+### Four-State Primary Action
+
+```tsx
+<AuiIf condition={(s) => s.thread.isRunning}>
+  <ComposerPrimitive.Cancel />
+</AuiIf>
+<AuiIf condition={(s) => s.composer.dictation != null}>
+  <ComposerPrimitive.StopDictation />
+</AuiIf>
+<AuiIf condition={(s) => s.composer.dictation == null && !s.composer.isEmpty}>
+  <ComposerPrimitive.Send />
+</AuiIf>
+<AuiIf condition={(s) => s.composer.dictation == null && s.composer.isEmpty}>
+  <ComposerPrimitive.Dictate />
+</AuiIf>
+```
+
+The conditions are mutually exclusive in priority order so dictation can be paused even when transcribed text fills the composer.
+
+### Color Palette
+
+| Element | Light | Dark |
+|---------|-------|------|
+| Background | `#f6f2ec` | `#171615` |
+| Composer surface | `#fcfbf8` | `#23211f` |
+| Composer border | `#d7d0c5` | `#4a433b` |
+| Primary text | `#1f1b17` | `#f5f2ed` |
+| Muted text | `#7d7468` | `#a19a91` |
+| Primary action | `#25211c` | `#f5f2ed` |
+| Search pill | `#f5f1eb` | `#2a2724` |
+
+### Styling Details
+
+- **Composer Shell**: `rounded-3xl` card with a soft layered shadow and explicit light/dark borders
+- **Multi-line Input**: `rows={2}` and `min-h-20` keep the composer tall like Perplexity's hero input
+- **Wordmark**: `text-5xl sm:text-[3.1rem]` so it stays readable on mobile
+- **User Bubble**: `rounded-3xl rounded-tr-md` (chopped top-right corner) with a subtle border
+- **Assistant Avatar**: Search icon on the left of every assistant message
+- **Sticky Footer Gradient**: Fade from `transparent` to the cream background so messages don't sit flush against the composer
+
+## Source
+
+<SourceLink href="https://github.com/assistant-ui/assistant-ui/blob/main/apps/docs/components/pages/examples/perplexity.tsx" />

@@ -1,0 +1,844 @@
+/**
+ * Process-singleton session supervisor — the node host that drives the real Pi
+ * SDK (`@earendil-works/pi-coding-agent`) and exposes a multi-thread view of
+ * Pi's single-active-session runtime.
+ *
+ * This is the one file (with `extensionUi`) that imports the Pi SDK at
+ * runtime. It is reachable only from `node.ts`, never from `index.ts`, so the
+ * browser boundary holds.
+ *
+ * The host keeps catalog reads, read-only snapshots, and live runtimes separate:
+ * catalog reads use cached `SessionManager.list()` metadata, cold `getThread()`
+ * reads a session-file snapshot, and a live `AgentSession` record is created
+ * only when an operation needs Pi execution or explicit live events. A browser
+ * disconnect (last `subscribe` unsubscribe) does NOT abort the run — only an
+ * explicit `cancelRun` or process exit stops it.
+ */
+import {
+  type AgentSession,
+  type AgentSessionEvent,
+  createAgentSession,
+  ModelRuntime,
+  SessionManager,
+} from "@earendil-works/pi-coding-agent";
+import { unlink } from "node:fs/promises";
+import {
+  deriveReadiness,
+  mapModelInfo,
+  mapReadonlyMetadata,
+  mapSessionEvent,
+  mapSessionInfo,
+  type PiRegistryModel,
+  readinessFromSessionContext,
+  toPiMessages,
+} from "./mapping";
+import { deriveContextUsage } from "./contextUsage";
+import { errorText } from "../utils";
+import { piQueueItemId } from "../queueIds";
+import {
+  createSupervisorUiBridge,
+  type SupervisorUiBridge,
+} from "./extensionUi";
+import type {
+  PiClientEvent,
+  PiClientEventBody,
+  PiContextUsage,
+  PiModelInfo,
+  PiQueuedMessage,
+  PiThinkingLevel,
+  PiThreadMetadata,
+  PiThreadSnapshot,
+  PiThreadStatus,
+  PiHostUiRequest,
+  PiHostUiResponse,
+  PiRuntimeReadiness,
+  PiSendMessageInput,
+} from "../types";
+
+/** The `model` shape `createAgentSession` accepts (a Pi `Model`), derived from
+ * the SDK so the supervisor stays the only file that names it. The host resolves
+ * it (e.g. env-seeded via `ModelRuntime.getModel`) and forwards it opaquely. */
+type PiSessionModel = NonNullable<
+  Parameters<typeof createAgentSession>[0]
+>["model"];
+type PiSessionInfo = Awaited<ReturnType<typeof SessionManager.list>>[number];
+
+type CatalogCacheEntry = {
+  infos: readonly PiSessionInfo[] | undefined;
+  promise: Promise<readonly PiSessionInfo[]> | undefined;
+};
+
+type PendingOpen = {
+  promise: Promise<ThreadRecord>;
+  controller: AbortController;
+};
+
+export interface PiThreadSupervisorOptions {
+  /** Default workspace for `listThreads`/`createThread` when a call omits one.
+   * Defaults to `process.cwd()`. */
+  workspacePath?: string;
+  /** Global Pi config dir (`~/.pi/agent` by default). Forwarded to the SDK. */
+  agentDir?: string;
+  /** Explicit model for new sessions. When omitted, Pi resolves from its own
+   * settings, else the first available model. */
+  model?: PiSessionModel;
+}
+
+type ThreadRecord = {
+  threadId: string;
+  session: AgentSession;
+  uiBridge: SupervisorUiBridge;
+  unsubscribe: () => void;
+  listeners: Set<(event: PiClientEvent) => void>;
+  /** Monotonic per-thread sequence stamped on every emitted event. */
+  seq: number;
+  /** Derived turn index (counts `turn_start`s; first turn = 0). */
+  turnIndex: number;
+  /** Mirror of the UI bridge's pending requests, for snapshots/reconnect. */
+  hostUiRequests: PiHostUiRequest[];
+  requestCounter: number;
+  workspacePath: string;
+  lastError: string | undefined;
+};
+
+export class PiThreadSupervisor {
+  private readonly records = new Map<string, ThreadRecord>();
+  /** In-flight cold opens, so concurrent calls for the same thread (e.g. an
+   * SSE subscribe racing a send) share one `AgentSession` instead of creating
+   * two on the same session file. */
+  private readonly pendingOpens = new Map<string, PendingOpen>();
+  /** Per-send cancellation tokens for the window between a send starting its
+   * cold open and launching the prompt. `cancelRun` flips every token for the
+   * thread so the open resolves without firing the prompt, since the thread has
+   * no live record yet for `session.abort()` to reach. A set (not one token per
+   * thread) because a second send can start while the first shares the same
+   * in-flight cold open, and cancel must reach both. */
+  private readonly startingSends = new Map<
+    string,
+    Set<{ cancelled: boolean }>
+  >();
+  private readonly pendingDeletes = new Map<string, Promise<void>>();
+  private readonly recordsBySessionFile = new Map<string, ThreadRecord>();
+  private readonly workspacePath: string;
+  private readonly agentDir: string | undefined;
+  private readonly model: PiSessionModel | undefined;
+  /** Lazily-created Pi model/auth runtime backing the model catalog, picker, and
+   *  cold-snapshot context-window lookups. `ModelRuntime.create` is async (it
+   *  loads models.json and runs an availability refresh), so the promise is
+   *  cached and shared by every caller, keeping the supervisor constructor sync. */
+  private modelRuntimePromise: Promise<ModelRuntime> | undefined;
+  private readonly archivedSessionFiles = new Set<string>();
+  private readonly catalogCache = new Map<string, CatalogCacheEntry>();
+  private readonly catalogInfoByThreadId = new Map<string, PiSessionInfo>();
+  private generation = 0;
+
+  constructor(options: PiThreadSupervisorOptions = {}) {
+    this.workspacePath = options.workspacePath ?? process.cwd();
+    this.agentDir = options.agentDir;
+    this.model = options.model;
+  }
+
+  // --- Catalog ---------------------------------------------------------------
+
+  async listThreads(input?: {
+    workspacePath?: string;
+    includeArchived?: boolean;
+  }): Promise<PiThreadMetadata[]> {
+    const cwd = input?.workspacePath ?? this.workspacePath;
+    const infos = await this.listSessionInfos(cwd);
+    return infos
+      .filter(
+        (info) =>
+          input?.includeArchived || !this.archivedSessionFiles.has(info.path),
+      )
+      .map((info) => {
+        const liveStatus = this.liveStatusFor(info.id);
+        return {
+          ...mapSessionInfo(info, liveStatus ? { liveStatus } : undefined),
+          ...(this.archivedSessionFiles.has(info.path)
+            ? { archived: true }
+            : {}),
+        };
+      });
+  }
+
+  async createThread(input?: {
+    workspacePath?: string;
+    title?: string;
+    initialMessage?: PiSendMessageInput;
+  }): Promise<PiThreadSnapshot> {
+    const cwd = input?.workspacePath ?? this.workspacePath;
+    const sessionManager = SessionManager.create(cwd);
+    const record = await this.openSession(sessionManager, cwd);
+    this.invalidateCatalog(cwd);
+    if (input?.title) record.session.setSessionName(input.title);
+    if (input?.initialMessage) await this.send(record, input.initialMessage);
+    return this.snapshotOf(record);
+  }
+
+  async getThread(threadId: string): Promise<PiThreadSnapshot> {
+    const live = this.records.get(threadId);
+    if (live) return this.snapshotOf(live);
+    const info = await this.findSessionInfo(threadId);
+    if (!info) throw new Error(`Unknown Pi thread: ${threadId}`);
+    return this.snapshotFromSessionFile(info);
+  }
+
+  // --- Run loop --------------------------------------------------------------
+
+  async sendMessage(
+    threadId: string,
+    input: PiSendMessageInput,
+  ): Promise<void> {
+    const token = { cancelled: false };
+    let tokens = this.startingSends.get(threadId);
+    if (!tokens) {
+      tokens = new Set();
+      this.startingSends.set(threadId, tokens);
+    }
+    tokens.add(token);
+    try {
+      const record = await this.ensureOpen(threadId);
+      // A cancel that arrived while the session was still opening leaves no
+      // live record to abort. Reject rather than resolve silently: the caller
+      // has already marked the thread running with an optimistic message, and a
+      // silent success leaves the run spinning forever with no event to settle
+      // it. Rejecting drives the caller's send-rollback (drops the optimistic
+      // message, clears running), and the prompt never launches.
+      if (token.cancelled) {
+        throw new Error("Pi run was cancelled before it started");
+      }
+      await this.send(record, input);
+    } finally {
+      tokens.delete(token);
+      if (tokens.size === 0) this.startingSends.delete(threadId);
+    }
+  }
+
+  async cancelRun(threadId: string): Promise<void> {
+    const tokens = this.startingSends.get(threadId);
+    if (tokens) for (const token of tokens) token.cancelled = true;
+    await this.records.get(threadId)?.session.abort();
+  }
+
+  /** Clear all queued messages, returning the cleared text. The session emits
+   * its own `queue_update`, which the event relay forwards to subscribers.
+   * Cold threads hold no live session and therefore no queue. */
+  async clearQueue(
+    threadId: string,
+  ): Promise<{ steering: string[]; followUp: string[] }> {
+    const record = this.records.get(threadId);
+    if (!record) return { steering: [], followUp: [] };
+    return record.session.clearQueue();
+  }
+
+  async getAvailableModels(): Promise<PiModelInfo[]> {
+    const runtime = await this.getModelRuntime();
+    try {
+      await runtime.refresh();
+    } catch {
+      // A failed availability refresh must not hide the cached catalog.
+    }
+    const available = runtime.getAvailableSnapshot();
+    const catalog = available.length > 0 ? available : runtime.getModels();
+    return catalog.map(mapModelInfo);
+  }
+
+  async setModel(
+    threadId: string,
+    input: { provider: string; modelId: string },
+  ): Promise<void> {
+    const record = await this.ensureOpen(threadId);
+    const runtime = await this.getModelRuntime();
+    const model = runtime.getModel(input.provider, input.modelId);
+    if (!model) {
+      throw new Error(
+        `${input.provider}/${input.modelId} is not in Pi's model registry`,
+      );
+    }
+    await record.session.setModel(model);
+    record.lastError = undefined;
+    this.emit(record, { type: "snapshot", snapshot: this.snapshotOf(record) });
+  }
+
+  async setThinkingLevel(
+    threadId: string,
+    level: PiThinkingLevel,
+  ): Promise<void> {
+    const record = await this.ensureOpen(threadId);
+    record.session.setThinkingLevel(level as never);
+  }
+
+  async renameThread(threadId: string, title: string): Promise<void> {
+    const record = this.records.get(threadId);
+    if (record) {
+      record.session.setSessionName(title);
+      this.invalidateCatalog(record.workspacePath);
+      return;
+    }
+
+    const info = await this.findSessionInfo(threadId);
+    if (!info) throw new Error(`Unknown Pi thread: ${threadId}`);
+    SessionManager.open(info.path).appendSessionInfo(title);
+    this.invalidateCatalog(info.cwd || this.workspacePath);
+  }
+
+  async archiveThread(threadId: string): Promise<void> {
+    const record = this.records.get(threadId);
+    const info = record ? undefined : await this.findSessionInfo(threadId);
+    const sessionFile = record?.session.sessionFile ?? info?.path;
+    if (!sessionFile) throw new Error(`Unknown Pi thread: ${threadId}`);
+    this.archivedSessionFiles.add(sessionFile);
+    this.invalidateCatalog(
+      record?.workspacePath ?? info?.cwd ?? this.workspacePath,
+    );
+    if (record) {
+      this.emit(record, {
+        type: "snapshot",
+        snapshot: this.snapshotOf(record),
+      });
+    }
+  }
+
+  async unarchiveThread(threadId: string): Promise<void> {
+    const info = await this.findSessionInfo(threadId);
+    if (info) this.archivedSessionFiles.delete(info.path);
+    const record = this.records.get(threadId);
+    if (record) {
+      this.emit(record, {
+        type: "snapshot",
+        snapshot: this.snapshotOf(record),
+      });
+    }
+  }
+
+  deleteThread(threadId: string): Promise<void> {
+    const pendingDelete = this.pendingDeletes.get(threadId);
+    if (pendingDelete) return pendingDelete;
+    const deletion = this.deleteThreadNow(threadId).finally(() => {
+      if (this.pendingDeletes.get(threadId) === deletion) {
+        this.pendingDeletes.delete(threadId);
+      }
+    });
+    this.pendingDeletes.set(threadId, deletion);
+    return deletion;
+  }
+
+  private async deleteThreadNow(threadId: string): Promise<void> {
+    const pendingOpen = this.pendingOpens.get(threadId);
+    pendingOpen?.controller.abort();
+    const record = this.records.get(threadId);
+    const info = record ? undefined : await this.findSessionInfo(threadId);
+    const sessionFile = record?.session.sessionFile ?? info?.path;
+    const workspacePath = record?.workspacePath ?? info?.cwd;
+    if (!sessionFile) throw new Error(`Unknown Pi thread: ${threadId}`);
+    if (record) {
+      record.unsubscribe();
+      record.uiBridge.dismissAll();
+      record.session.dispose();
+      this.records.delete(threadId);
+      if (sessionFile) this.recordsBySessionFile.delete(sessionFile);
+    }
+    this.archivedSessionFiles.delete(sessionFile);
+    this.catalogInfoByThreadId.delete(threadId);
+    await unlink(sessionFile).catch((err: unknown) => {
+      if ((err as { code?: string }).code !== "ENOENT") throw err;
+    });
+    if (this.pendingOpens.get(threadId) === pendingOpen) {
+      this.pendingOpens.delete(threadId);
+    }
+    if (workspacePath) this.invalidateCatalog(workspacePath);
+  }
+
+  async respondToHostUiRequest(
+    threadId: string,
+    response: PiHostUiResponse,
+  ): Promise<void> {
+    this.records.get(threadId)?.uiBridge.resolve(response);
+  }
+
+  subscribe(
+    threadId: string,
+    listener: (event: PiClientEvent) => void,
+    options?: { includeSnapshot?: boolean },
+  ): () => void {
+    let active = true;
+    let record: ThreadRecord | undefined;
+    void this.ensureOpen(threadId)
+      .then((r) => {
+        if (!active) return;
+        record = r;
+        r.listeners.add(listener);
+        if (options?.includeSnapshot !== false) {
+          // Snapshot-first when requested: the authoritative current state,
+          // stamped with the record's seq so subsequent live events apply on top.
+          this.notifyListener(listener, {
+            type: "snapshot",
+            snapshot: this.snapshotOf(r),
+            threadId,
+            seq: r.seq,
+          });
+        }
+      })
+      .catch((err) => {
+        if (active) {
+          this.notifyListener(listener, {
+            type: "error",
+            error: errorText(err),
+            threadId,
+            seq: 0,
+          });
+        }
+      });
+    return () => {
+      // Disconnect ≠ abort: keep the record and its run alive.
+      active = false;
+      record?.listeners.delete(listener);
+    };
+  }
+
+  /** Tear down every record and cancel pending cold opens. Active runs are not
+   * aborted implicitly; call `cancelRun` first if a graceful stop is wanted. */
+  async dispose(): Promise<void> {
+    this.generation++;
+    for (const pending of this.pendingOpens.values()) {
+      pending.controller.abort();
+    }
+    this.pendingOpens.clear();
+    for (const record of [...this.records.values()]) {
+      record.unsubscribe();
+      record.uiBridge.dismissAll();
+      record.session.dispose();
+    }
+    this.records.clear();
+    this.recordsBySessionFile.clear();
+  }
+
+  // --- Internals -------------------------------------------------------------
+
+  /** The process-wide Pi model/auth runtime, created on first use and shared by
+   *  every catalog/picker/snapshot call. Passing `authPath` makes `ModelRuntime`
+   *  back the credentials at `agentDir/auth.json`, so auth orchestration lives
+   *  inside the runtime rather than an explicit credential store. A creation
+   *  failure (e.g. the async availability refresh timing out) clears the cache so
+   *  the next call retries instead of rejecting forever. */
+  private getModelRuntime(): Promise<ModelRuntime> {
+    if (!this.modelRuntimePromise) {
+      this.modelRuntimePromise = ModelRuntime.create(
+        this.agentDir ? { authPath: `${this.agentDir}/auth.json` } : undefined,
+      ).catch((error) => {
+        this.modelRuntimePromise = undefined;
+        throw error;
+      });
+    }
+    return this.modelRuntimePromise;
+  }
+
+  private async openSession(
+    sessionManager: SessionManager,
+    cwd: string,
+    signal?: AbortSignal,
+  ): Promise<ThreadRecord> {
+    const generation = this.generation;
+    this.throwIfOpenCancelled(signal, generation);
+    const { session } = await createAgentSession({
+      cwd,
+      sessionManager,
+      ...(this.agentDir ? { agentDir: this.agentDir } : {}),
+      ...(this.model ? { model: this.model } : {}),
+    });
+    if (this.openWasCancelled(signal, generation)) {
+      session.dispose();
+      this.throwOpenCancelled();
+    }
+    const threadId = session.sessionId;
+
+    const record: ThreadRecord = {
+      threadId,
+      session,
+      uiBridge: undefined as unknown as SupervisorUiBridge,
+      unsubscribe: () => {},
+      listeners: new Set(),
+      seq: 0,
+      turnIndex: -1,
+      hostUiRequests: [],
+      requestCounter: 0,
+      workspacePath: cwd,
+      lastError: undefined,
+    };
+
+    const uiBridge = createSupervisorUiBridge({
+      nextRequestId: () => `${threadId}:ui:${++record.requestCounter}`,
+      currentToolCallId: () => {
+        // Single-tool causality: only correlate when exactly one tool runs.
+        const pending = session.state.pendingToolCalls;
+        return pending.size === 1 ? [...pending][0] : undefined;
+      },
+      emitRequest: (request) => {
+        record.hostUiRequests = uiBridge.pending();
+        this.emit(record, { type: "extension_ui_request", request });
+      },
+      emitResolved: (requestId) => {
+        record.hostUiRequests = uiBridge.pending();
+        this.emit(record, { type: "extension_ui_resolved", requestId });
+      },
+    });
+    record.uiBridge = uiBridge;
+
+    try {
+      await session.bindExtensions({
+        uiContext: uiBridge.ui,
+        onError: (error) => {
+          record.lastError = error.error;
+          this.emit(record, { type: "error", error: error.error });
+        },
+      });
+    } catch (error) {
+      uiBridge.dismissAll();
+      session.dispose();
+      throw error;
+    }
+
+    if (this.openWasCancelled(signal, generation)) {
+      uiBridge.dismissAll();
+      session.dispose();
+      this.throwOpenCancelled();
+    }
+
+    record.unsubscribe = session.subscribe((event) =>
+      this.onSessionEvent(record, event),
+    );
+    this.records.set(threadId, record);
+    if (session.sessionFile) {
+      this.recordsBySessionFile.set(session.sessionFile, record);
+    }
+    return record;
+  }
+
+  private async ensureOpen(threadId: string): Promise<ThreadRecord> {
+    if (this.pendingDeletes.has(threadId)) this.throwOpenCancelled();
+    const existing = this.records.get(threadId);
+    if (existing) return existing;
+    const pending = this.pendingOpens.get(threadId);
+    if (pending) return pending.promise;
+    const controller = new AbortController();
+    const open = this.openCold(threadId, controller.signal).finally(() => {
+      if (this.pendingOpens.get(threadId)?.promise === open) {
+        this.pendingOpens.delete(threadId);
+      }
+    });
+    this.pendingOpens.set(threadId, { promise: open, controller });
+    return open;
+  }
+
+  private async openCold(
+    threadId: string,
+    signal: AbortSignal,
+  ): Promise<ThreadRecord> {
+    const info = await this.findSessionInfo(threadId);
+    this.throwIfOpenCancelled(signal);
+    if (!info) throw new Error(`Unknown Pi thread: ${threadId}`);
+    const existingBySessionFile = this.recordsBySessionFile.get(info.path);
+    if (existingBySessionFile) {
+      this.records.set(threadId, existingBySessionFile);
+      return existingBySessionFile;
+    }
+    const sessionManager = SessionManager.open(info.path);
+    return this.openSession(
+      sessionManager,
+      info.cwd || this.workspacePath,
+      signal,
+    );
+  }
+
+  private openWasCancelled(
+    signal?: AbortSignal,
+    generation = this.generation,
+  ): boolean {
+    return signal?.aborted === true || generation !== this.generation;
+  }
+
+  private throwIfOpenCancelled(
+    signal?: AbortSignal,
+    generation = this.generation,
+  ): void {
+    if (this.openWasCancelled(signal, generation)) this.throwOpenCancelled();
+  }
+
+  private throwOpenCancelled(): never {
+    throw new Error("Pi session open was cancelled");
+  }
+
+  private async listSessionInfos(
+    workspacePath: string,
+  ): Promise<readonly PiSessionInfo[]> {
+    const existing = this.catalogCache.get(workspacePath);
+    if (existing?.infos) return existing.infos;
+    if (existing?.promise) return existing.promise;
+
+    const entry: CatalogCacheEntry = { infos: undefined, promise: undefined };
+    const promise = SessionManager.list(workspacePath)
+      .then((infos) => {
+        entry.infos = infos;
+        this.rememberSessionInfos(infos);
+        return infos;
+      })
+      .finally(() => {
+        entry.promise = undefined;
+      });
+    entry.promise = promise;
+    this.catalogCache.set(workspacePath, entry);
+    return promise;
+  }
+
+  private invalidateCatalog(workspacePath = this.workspacePath) {
+    this.catalogCache.delete(workspacePath);
+  }
+
+  private async findSessionInfo(threadId: string) {
+    const cached = this.catalogInfoByThreadId.get(threadId);
+    if (cached) return cached;
+    const local = await this.listSessionInfos(this.workspacePath);
+    const hit = local.find((info) => info.id === threadId);
+    if (hit) return hit;
+    const all = await SessionManager.listAll();
+    this.rememberSessionInfos(all);
+    return all.find((info) => info.id === threadId);
+  }
+
+  private rememberSessionInfos(infos: readonly PiSessionInfo[]) {
+    for (const info of infos) {
+      this.catalogInfoByThreadId.set(info.id, info);
+    }
+  }
+
+  private async send(
+    record: ThreadRecord,
+    input: PiSendMessageInput,
+  ): Promise<void> {
+    const options: NonNullable<Parameters<AgentSession["prompt"]>[1]> = {};
+    if (input.streamingBehavior)
+      options.streamingBehavior = input.streamingBehavior;
+    if (input.attachments?.length) options.images = input.attachments;
+
+    let settlePreflight: (error?: unknown) => void = () => {};
+    let preflightSettled = false;
+    const accepted = new Promise<void>((resolve, reject) => {
+      settlePreflight = (error) => {
+        if (preflightSettled) return;
+        preflightSettled = true;
+        if (error) reject(error);
+        else resolve();
+      };
+    });
+
+    options.preflightResult = (success) => {
+      // Pi follows a failed preflight by rejecting prompt() with the real error.
+      if (success) settlePreflight();
+    };
+
+    void record.session
+      .prompt(input.content, options)
+      .then(() => {
+        settlePreflight();
+        record.lastError = undefined;
+      })
+      .catch((err: unknown) => {
+        record.lastError = errorText(err);
+        if (preflightSettled) {
+          this.emit(record, { type: "error", error: record.lastError });
+        } else {
+          settlePreflight(err);
+        }
+      });
+
+    try {
+      await accepted;
+      record.lastError = undefined;
+    } catch (err) {
+      record.lastError = errorText(err);
+      this.emit(record, { type: "error", error: record.lastError });
+      throw err;
+    }
+  }
+
+  private onSessionEvent(record: ThreadRecord, event: AgentSessionEvent): void {
+    if (event.type === "turn_start") record.turnIndex += 1;
+    // Pi renames sessions itself (e.g. auto-titling after the first turn);
+    // without this the cached catalog would keep serving the stale title.
+    if (event.type === "session_info_changed") {
+      this.invalidateCatalog(record.workspacePath);
+    }
+    this.emit(record, mapSessionEvent(event, { turnIndex: record.turnIndex }));
+
+    // Context usage isn't its own SDK event — synthesize it at run boundaries
+    // (the "am I about to auto-compact?" affordance).
+    if (
+      event.type === "turn_end" ||
+      event.type === "agent_end" ||
+      event.type === "compaction_end"
+    ) {
+      this.emitContextUsage(record);
+    }
+    // Surface a failed/aborted assistant turn's error.
+    if (event.type === "agent_end") {
+      const message = record.session.state.errorMessage;
+      if (message) {
+        record.lastError = message;
+        this.emit(record, { type: "error", error: message });
+      }
+    }
+  }
+
+  private emitContextUsage(record: ThreadRecord): void {
+    const usage = record.session.getContextUsage();
+    if (usage) {
+      this.emit(record, {
+        type: "context_usage",
+        contextUsage: usage satisfies PiContextUsage,
+      });
+    }
+  }
+
+  /** Stamp the per-thread seq and deliver to listeners. Pi invokes the session
+   * subscription synchronously, so direct delivery is already ordered. */
+  private emit(record: ThreadRecord, body: PiClientEventBody): void {
+    record.seq += 1;
+    const event = {
+      ...body,
+      threadId: record.threadId,
+      seq: record.seq,
+    } as PiClientEvent;
+    for (const listener of [...record.listeners]) {
+      this.notifyListener(listener, event);
+    }
+  }
+
+  private notifyListener(
+    listener: (event: PiClientEvent) => void,
+    event: PiClientEvent,
+  ): void {
+    try {
+      listener(event);
+    } catch {
+      // A faulty listener must not break delivery to the others.
+    }
+  }
+
+  private liveStatusFor(threadId: string): PiThreadStatus | undefined {
+    const record = this.records.get(threadId);
+    return record ? this.runStatus(record) : undefined;
+  }
+
+  private runStatus(record: ThreadRecord): PiThreadStatus {
+    const session = record.session;
+    if (session.isStreaming || session.isCompacting || session.isRetrying) {
+      return "running";
+    }
+    return record.lastError ? "failed" : "idle";
+  }
+
+  private readinessOf(record: ThreadRecord): PiRuntimeReadiness {
+    const model = record.session.model;
+    return deriveReadiness({
+      model: model ? { provider: model.provider, id: model.id } : undefined,
+      source: "session",
+    });
+  }
+
+  private queuedMessagesOf(record: ThreadRecord): PiQueuedMessage[] {
+    const session = record.session;
+    return [
+      ...session.getSteeringMessages().map((content, i) => ({
+        id: piQueueItemId("steer", i),
+        mode: "steer" as const,
+        content,
+      })),
+      ...session.getFollowUpMessages().map((content, i) => ({
+        id: piQueueItemId("followUp", i),
+        mode: "followUp" as const,
+        content,
+      })),
+    ];
+  }
+
+  private metadataOf(record: ThreadRecord): PiThreadMetadata {
+    const session = record.session;
+    const model = session.model;
+    const usage = session.getContextUsage();
+    const queued = this.queuedMessagesOf(record);
+    return {
+      id: record.threadId,
+      status: this.runStatus(record),
+      compactionActive: session.isCompacting,
+      retryActive: session.isRetrying,
+      retryAttempt: session.retryAttempt,
+      workspacePath: record.workspacePath,
+      messageCount: session.messages.length,
+      ...(session.sessionName ? { title: session.sessionName } : {}),
+      ...(session.sessionFile ? { sessionFile: session.sessionFile } : {}),
+      ...(model
+        ? {
+            config: {
+              provider: model.provider,
+              modelId: model.id,
+              thinkingLevel: session.thinkingLevel,
+            },
+          }
+        : { config: { thinkingLevel: session.thinkingLevel } }),
+      ...(usage ? { contextUsage: usage satisfies PiContextUsage } : {}),
+      ...(session.sessionFile &&
+      this.archivedSessionFiles.has(session.sessionFile)
+        ? { archived: true }
+        : {}),
+      ...(queued.length ? { queuedMessages: queued } : {}),
+    };
+  }
+
+  private snapshotOf(record: ThreadRecord): PiThreadSnapshot {
+    return {
+      metadata: this.metadataOf(record),
+      messages: toPiMessages(record.session.messages),
+      readiness: this.readinessOf(record),
+      seq: record.seq,
+      ...(record.hostUiRequests.length
+        ? { hostUiRequests: [...record.hostUiRequests] }
+        : {}),
+      ...(record.lastError ? { lastError: record.lastError } : {}),
+    };
+  }
+
+  private async snapshotFromSessionFile(
+    info: PiSessionInfo,
+  ): Promise<PiThreadSnapshot> {
+    const sessionManager = SessionManager.open(info.path);
+    const branch = sessionManager.getBranch();
+    const context = sessionManager.buildSessionContext();
+    // The model lookup only feeds `contextWindow` for context-usage estimation;
+    // a model-runtime failure (e.g. the async availability refresh timing out)
+    // must not break a cold read, so fall back to no model rather than throw.
+    let model: PiRegistryModel | undefined;
+    if (context.model) {
+      try {
+        const runtime = await this.getModelRuntime();
+        model = runtime.getModel(context.model.provider, context.model.modelId);
+      } catch {
+        model = undefined;
+      }
+    }
+    const contextUsage = deriveContextUsage(
+      model?.contextWindow ?? 0,
+      branch,
+      context.messages,
+    );
+    const metadata = mapReadonlyMetadata(info, branch, context, {
+      archived: this.archivedSessionFiles.has(info.path),
+      contextUsage,
+    });
+    return {
+      metadata,
+      messages: toPiMessages(context.messages as never),
+      readiness: readinessFromSessionContext(context),
+    };
+  }
+}

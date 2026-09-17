@@ -1,0 +1,1228 @@
+# @assistant-ui/react-ai-sdk
+
+## 1.4.12
+
+### Patch Changes
+
+- Updated dependencies [[`43b587d`](https://github.com/assistant-ui/assistant-ui/commit/43b587d9bc15adf624437950c270e50b749602d0), [`f1c4a27`](https://github.com/assistant-ui/assistant-ui/commit/f1c4a27ddc346f38a856a10e9e4112ef1298471d), [`b7f9a96`](https://github.com/assistant-ui/assistant-ui/commit/b7f9a960dda7c7548ac1ebdf3bae368fe28bcbfc)]:
+  - @assistant-ui/ai-sdk@0.0.7
+
+## 1.4.11
+
+### Patch Changes
+
+- Updated dependencies [[`09d5925`](https://github.com/assistant-ui/assistant-ui/commit/09d592523e33961e6c032379d78ad6b3d6a2e8a5), [`4e5fde6`](https://github.com/assistant-ui/assistant-ui/commit/4e5fde6c2d09909c5b286fee098c9950615a26d3), [`e54bf9a`](https://github.com/assistant-ui/assistant-ui/commit/e54bf9aacd73a2431e3194aaced86dfdff67ed2d), [`063b9ec`](https://github.com/assistant-ui/assistant-ui/commit/063b9ec8c92098c51b6924d49b1a6c3cc80eec45), [`f6b7ba9`](https://github.com/assistant-ui/assistant-ui/commit/f6b7ba98cbd88154e5e7b8e51de5729d2b950c4e)]:
+  - @assistant-ui/ai-sdk@0.0.6
+
+## 1.4.10
+
+### Patch Changes
+
+- Updated dependencies [[`9d218b3`](https://github.com/assistant-ui/assistant-ui/commit/9d218b33513eb0b71f9854604bda72a833bc071e), [`be61444`](https://github.com/assistant-ui/assistant-ui/commit/be614442ba1d6a0152aed5c639fb0b29292e2ac3), [`37eaa19`](https://github.com/assistant-ui/assistant-ui/commit/37eaa1951a5ea393e50058cff5d48933b206f192), [`91689ab`](https://github.com/assistant-ui/assistant-ui/commit/91689ab92fa8ccaecff463c6fdc3e6a666bf93e5), [`1d371db`](https://github.com/assistant-ui/assistant-ui/commit/1d371db254fae7b15fa93e34f10369d61a0fc301), [`cf6fac8`](https://github.com/assistant-ui/assistant-ui/commit/cf6fac8764dd0defb81d0ad26de70c4cdf6b096e), [`6c85699`](https://github.com/assistant-ui/assistant-ui/commit/6c85699526007e2febe3add80515af16ae84111f), [`40f0978`](https://github.com/assistant-ui/assistant-ui/commit/40f0978744647043bac9089d63ab4a777d29d5ec), [`5febc06`](https://github.com/assistant-ui/assistant-ui/commit/5febc06a6af98ed4aa48eea8f7737d890bd35015)]:
+  - @assistant-ui/ai-sdk@0.0.5
+
+## 1.4.9
+
+### Patch Changes
+
+- Updated dependencies [[`9fa3778`](https://github.com/assistant-ui/assistant-ui/commit/9fa3778ed84ee3a43cbdc6cf57d0b323c51adb08), [`bc75ef5`](https://github.com/assistant-ui/assistant-ui/commit/bc75ef57f40b50f3ab5f6fa47cdc4d761849f564), [`9322628`](https://github.com/assistant-ui/assistant-ui/commit/9322628c36d8dc86fa66359445aacfd2a00dc75a), [`65d449b`](https://github.com/assistant-ui/assistant-ui/commit/65d449bf225e190f308de00f85196420b72dc6d4), [`dabe8f2`](https://github.com/assistant-ui/assistant-ui/commit/dabe8f21f5cea21fa7fdd1b9c1987e0ac7367c07), [`dc2cab3`](https://github.com/assistant-ui/assistant-ui/commit/dc2cab3aecc0466c6c2274974e42b3196e0763bc), [`1fa3e09`](https://github.com/assistant-ui/assistant-ui/commit/1fa3e099eeab5c19e414da25fcae1b213da3ff10), [`152a35d`](https://github.com/assistant-ui/assistant-ui/commit/152a35daae0e80b5307865e59af683c4ae720794), [`05e3e6d`](https://github.com/assistant-ui/assistant-ui/commit/05e3e6d3971dac4ce20fc7e2a87d187d78b0e449)]:
+  - @assistant-ui/ai-sdk@0.0.4
+
+## 1.4.8
+
+### Patch Changes
+
+- Updated dependencies [[`c70c911`](https://github.com/assistant-ui/assistant-ui/commit/c70c911d9537e6f3e87da44768e3363d65e6a19d), [`d7ec59b`](https://github.com/assistant-ui/assistant-ui/commit/d7ec59b91668f961cfd90b4b53328b45b5c26505), [`8f76003`](https://github.com/assistant-ui/assistant-ui/commit/8f7600310b5c1f9695dfe764cb8a303aabbc6fdf), [`cd23a05`](https://github.com/assistant-ui/assistant-ui/commit/cd23a05b62dab99cc51594d13b463e40d153b862), [`8217a6e`](https://github.com/assistant-ui/assistant-ui/commit/8217a6e7105b682871211e5c93b1965f25198624), [`7e03b66`](https://github.com/assistant-ui/assistant-ui/commit/7e03b669d08b4cadaf4b381a4d1e57c2fc22d139), [`c4b39b5`](https://github.com/assistant-ui/assistant-ui/commit/c4b39b507c2ae6f371d205f7264bff6145cb2cdf), [`e96d3de`](https://github.com/assistant-ui/assistant-ui/commit/e96d3dea9370159e04f82bf4eb39d6b1b1c4d21d)]:
+  - @assistant-ui/ai-sdk@0.0.3
+
+## 1.4.7
+
+### Patch Changes
+
+- Updated dependencies [[`06b04a7`](https://github.com/assistant-ui/assistant-ui/commit/06b04a7976d10fac3af40ae9ca59b52385ef2ae2)]:
+  - @assistant-ui/ai-sdk@0.0.2
+
+## 1.4.6
+
+### Patch Changes
+
+- [#6071](https://github.com/assistant-ui/assistant-ui/pull/6071) [`c3fd447`](https://github.com/assistant-ui/assistant-ui/commit/c3fd447f23cbaa36381b2f62058b420bd54cc148) - feat: host assistant-cloud thread lists on AISDKThreads via RemoteThreadList ([@okisdev](https://github.com/okisdev))
+  
+  AISDKThreads({ cloud }) uses RemoteThreadList and remounts each thread like useChatRuntime. Cloud history withFormat resolves persistence per call so one adapter can serve many threads. useExternalHistory waits for threadListItem.remoteId instead of latching on the first empty paint.
+
+- [#5774](https://github.com/assistant-ui/assistant-ui/pull/5774) [`61d29f4`](https://github.com/assistant-ui/assistant-ui/commit/61d29f4157b525d3e36ac721d1fcef7d1baf987e) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- [#5923](https://github.com/assistant-ui/assistant-ui/pull/5923) [`ab2ee15`](https://github.com/assistant-ui/assistant-ui/commit/ab2ee155f70e93a713daf151f4f50957e0420675) - refactor: the package now re-exports `@assistant-ui/ai-sdk`. all existing imports keep working unchanged. ([@okisdev](https://github.com/okisdev))
+
+- [#5774](https://github.com/assistant-ui/assistant-ui/pull/5774) [`61d29f4`](https://github.com/assistant-ui/assistant-ui/commit/61d29f4157b525d3e36ac721d1fcef7d1baf987e) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+- Updated dependencies [[`d68918e`](https://github.com/assistant-ui/assistant-ui/commit/d68918ee5c862ca6a261a01ea0b961e7b2b66af2), [`ab2ee15`](https://github.com/assistant-ui/assistant-ui/commit/ab2ee155f70e93a713daf151f4f50957e0420675), [`833fbe8`](https://github.com/assistant-ui/assistant-ui/commit/833fbe84f12a23a8caebd121d60a32528e33378d), [`9d920cc`](https://github.com/assistant-ui/assistant-ui/commit/9d920cc89c25459e602ee0c3037b5f84fd626e01), [`c3fd447`](https://github.com/assistant-ui/assistant-ui/commit/c3fd447f23cbaa36381b2f62058b420bd54cc148), [`bec0753`](https://github.com/assistant-ui/assistant-ui/commit/bec075348dbdcd377c38074dd179d2751463ba35), [`0f6e9e9`](https://github.com/assistant-ui/assistant-ui/commit/0f6e9e9b56c648249781cef7689f4587209948d0), [`9ad48f4`](https://github.com/assistant-ui/assistant-ui/commit/9ad48f40006c9d05fcd5a44c1bc47ae1f2e63754), [`be0f698`](https://github.com/assistant-ui/assistant-ui/commit/be0f698c766bff1a667d9ea3ef1f897cee54c540), [`f44163f`](https://github.com/assistant-ui/assistant-ui/commit/f44163f8030e8a12d33f1412de96ecdda4000f7c), [`9bb4735`](https://github.com/assistant-ui/assistant-ui/commit/9bb4735bbec2a22507e4dcad6aa8c691caef0a74)]:
+  - @assistant-ui/ai-sdk@0.0.1
+
+## 1.4.5
+
+### Patch Changes
+
+- [#5723](https://github.com/assistant-ui/assistant-ui/pull/5723) [`94dc3e5`](https://github.com/assistant-ui/assistant-ui/commit/94dc3e509fa2b4fae1a14c88ec34b910c8d95af8) - chore: update dependencies ([@okisdev](https://github.com/okisdev))
+
+- Updated dependencies [[`94dc3e5`](https://github.com/assistant-ui/assistant-ui/commit/94dc3e509fa2b4fae1a14c88ec34b910c8d95af8), [`ab57969`](https://github.com/assistant-ui/assistant-ui/commit/ab5796932c97bc5bade19022e2ac8762949d2967)]:
+  - assistant-stream@0.3.36
+  - assistant-cloud@0.1.39
+  - @assistant-ui/core@0.3.10
+  - @assistant-ui/store@0.3.8
+
+## 1.4.4
+
+### Patch Changes
+
+- [#5441](https://github.com/assistant-ui/assistant-ui/pull/5441) [`c7ff5aa`](https://github.com/assistant-ui/assistant-ui/commit/c7ff5aa7ed482b15fb1131c756d6cc191e4f48d0) - fix(react-ai-sdk): forward audio message parts as file parts instead of throwing ([@okisdev](https://github.com/okisdev))
+
+- [#5452](https://github.com/assistant-ui/assistant-ui/pull/5452) [`9579a63`](https://github.com/assistant-ui/assistant-ui/commit/9579a63e450bcbb6c259dbe5e6acead41ca17ba0) - fix: wrap bare base64 file and image payloads in a data URL envelope ([@okisdev](https://github.com/okisdev))
+
+  `convertToModelMessages` passes a file part's `url` to an unguarded `new URL()`, so a `FileMessagePart` or `ImageMessagePart` whose payload is raw base64 rather than a data URL or an http source rejected with `Invalid URL`. Both branches now wrap a non-URL payload using the part's own media type; data URLs and http sources are still forwarded untouched.
+
+- [#5336](https://github.com/assistant-ui/assistant-ui/pull/5336) [`9f12130`](https://github.com/assistant-ui/assistant-ui/commit/9f12130a6c9532aeea1d90ce7ef042fc93243f9e) - feat: resume stream ids discovered after the chat runtime mounts ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#5466](https://github.com/assistant-ui/assistant-ui/pull/5466) [`2b24bd4`](https://github.com/assistant-ui/assistant-ui/commit/2b24bd465e1beb13573e0ee7f7cd2c9919722258) - fix: detect the media type of a bare base64 image instead of assuming png ([@okisdev](https://github.com/okisdev))
+
+  `getImageMediaType` resolved an explicit `contentType`, then a data URL envelope, then fell back to `image/png`. An `ImageMessagePart` carrying raw base64 has neither, so JPEG, GIF and WebP payloads were all announced to the provider as png. The leading bytes are now read with `detectMediaType` from `@ai-sdk/provider-utils`, the same helper the AI SDK uses internally, and `image/png` remains the fallback when no signature matches.
+
+  The sniff only runs on a payload that is not a parsable url, and never propagates a throw: `detectMediaType` raises on input that is not valid base64.
+
+- [#5459](https://github.com/assistant-ui/assistant-ui/pull/5459) [`22b05a4`](https://github.com/assistant-ui/assistant-ui/commit/22b05a43ec921a6dd7015692a77a746656a61f5f) - fix: wrap a file part payload that is not a parsable url ([@okisdev](https://github.com/okisdev))
+
+  `getPromptParts` put `FileMessagePart.data` straight into the OpenCode file part's `url`. OpenCode forwards that into an AI SDK file part (`sst/opencode`, `session/message-v2.ts`), whose `url` reaches an unguarded `new URL()`, so a payload that is raw base64 rather than a data URL or an http source failed there. A non-parsable payload is now wrapped in a `data:<mime>;base64,` envelope; data URLs and http sources are forwarded untouched, and a `sourceType: "id"` reference is left alone so it fails loudly instead of shipping a corrupt payload.
+
+  The predicate behind that decision moves to `isParsableUrl` in `@assistant-ui/core/internal`, next to the `httpUrlPattern` and `parseDataUrl` it belongs with, and react-ai-sdk now imports it instead of keeping its own copy. No behavior change there.
+
+- [#5337](https://github.com/assistant-ui/assistant-ui/pull/5337) [`bb5a0d9`](https://github.com/assistant-ui/assistant-ui/commit/bb5a0d954d840833a37dbc69249eb04951679928) - fix: pass null-body-status responses through the resumable fetch wrapper instead of reconstructing them, avoiding a `TypeError` on WebKit when a 204/205/304 carries a non-null empty body ([@rupic-app](https://github.com/apps/rupic-app))
+
+- [#5332](https://github.com/assistant-ui/assistant-ui/pull/5332) [`d610323`](https://github.com/assistant-ui/assistant-ui/commit/d610323f9c87cadf4b4b0e4252cbf055231abf7b) - feat: allow the resumable stream id storage key to be derived lazily from a getter, so apps can scope it per thread (see the Resumable Streams guide) ([@rupic-app](https://github.com/apps/rupic-app))
+
+- [#5479](https://github.com/assistant-ui/assistant-ui/pull/5479) [`011e275`](https://github.com/assistant-ui/assistant-ui/commit/011e275c4df5cd85942b5fd545a74d9c7cf549a6) - fix: read an image's media type from its leading bytes in both adapters ([@okisdev](https://github.com/okisdev))
+
+  `detectImageMediaType` and `dataUrlMediaType` join `parseDataUrl` and `isParsableUrl` in `@assistant-ui/core/internal`. An `ImageMessagePart` carries no media type, so an adapter that must declare one on the wire now reads it from the payload rather than assuming a format. It never throws, whatever a caller put on the part.
+
+  react-ai-sdk and react-opencode run the same ladder rung for rung: the attachment's `contentType`, then a data URL's declared type when that is itself an image type (read whether or not the payload is base64, so an SVG data URL keeps its type), then the leading bytes, then `image/png`. Previously react-opencode had no byte rung at all, and react-ai-sdk's was skipped for any `data:` payload, so a JPEG inside a generic `application/octet-stream` envelope resolved to png on both.
+
+  Resolving the label alone was not enough, because a data URL's own media type wins over the declared one downstream. Both adapters now rebuild the envelope when it disagrees with the resolved type and forward it untouched when it agrees. That applies to file parts too, where a `mimeType: "application/pdf"` part carrying an `application/octet-stream` envelope was announced as pdf and delivered as octet-stream. File parts also gain the same three rungs, so an empty `mimeType` falls to the envelope and then to `application/octet-stream` rather than producing a malformed `data:;base64,` url; `vercelAttachmentAdapter` emits exactly that shape for a file the OS cannot type.
+
+- [#5485](https://github.com/assistant-ui/assistant-ui/pull/5485) [`da32fe0`](https://github.com/assistant-ui/assistant-ui/commit/da32fe0b2f51c8a340935c5f4d2e31e747d39460) - refactor: share the media type ladder and wire url between adapters ([@okisdev](https://github.com/okisdev))
+
+  `resolveImageMediaType`, `resolveFileMediaType` and `toMediaWireUrl` join the data URL helpers in `@assistant-ui/core/internal`. react-ai-sdk and react-opencode had arrived at identical ladders and an identical wire url builder by construction rather than by sharing code, and they had already drifted apart twice while getting there. Both now call the shared functions and keep only their own part-shape plumbing.
+
+  No behavior change: both adapters' existing suites pass untouched.
+
+- Updated dependencies [[`b19c2f5`](https://github.com/assistant-ui/assistant-ui/commit/b19c2f5efd37e1203502c76d92e0554b63020952), [`01140bd`](https://github.com/assistant-ui/assistant-ui/commit/01140bde14fbfa89af9bdd080bbf79b3a509b524), [`8c99934`](https://github.com/assistant-ui/assistant-ui/commit/8c99934ca7fe9a8ffea0aa972e3579ff74e18553), [`ece5a54`](https://github.com/assistant-ui/assistant-ui/commit/ece5a5422e8b45429e1681b7a845d68be2879834), [`2fdff87`](https://github.com/assistant-ui/assistant-ui/commit/2fdff878211979b1f24d746bf2f16d8b6254102d), [`90b3003`](https://github.com/assistant-ui/assistant-ui/commit/90b3003b943e083fa6cd81e30181bf5b88904361), [`4c313cf`](https://github.com/assistant-ui/assistant-ui/commit/4c313cfabe9802a7e59362c323ec926a24d089d4), [`55b2824`](https://github.com/assistant-ui/assistant-ui/commit/55b282476bf3075beff391978a72a13968b6418a), [`22b05a4`](https://github.com/assistant-ui/assistant-ui/commit/22b05a43ec921a6dd7015692a77a746656a61f5f), [`f913c21`](https://github.com/assistant-ui/assistant-ui/commit/f913c2142708d8cd1f4ac63bd801e5b6defcb74e), [`c868710`](https://github.com/assistant-ui/assistant-ui/commit/c8687104b0407f424d55dd0a369d692fe7a4c708), [`011e275`](https://github.com/assistant-ui/assistant-ui/commit/011e275c4df5cd85942b5fd545a74d9c7cf549a6), [`da32fe0`](https://github.com/assistant-ui/assistant-ui/commit/da32fe0b2f51c8a340935c5f4d2e31e747d39460), [`f913c21`](https://github.com/assistant-ui/assistant-ui/commit/f913c2142708d8cd1f4ac63bd801e5b6defcb74e), [`5bb2573`](https://github.com/assistant-ui/assistant-ui/commit/5bb25733674396d496046b7c5443366171d0e8cf), [`5ececc1`](https://github.com/assistant-ui/assistant-ui/commit/5ececc1df536e098f8ee252addd2e62be7d61a7a)]:
+  - @assistant-ui/core@0.3.4
+  - assistant-stream@0.3.32
+  - @assistant-ui/store@0.3.3
+
+## 1.4.3
+
+### Patch Changes
+
+- [#5413](https://github.com/assistant-ui/assistant-ui/pull/5413) [`e61ed61`](https://github.com/assistant-ui/assistant-ui/commit/e61ed610f75d444aa150a11e8e965731cf988566) - feat: map AI SDK text and reasoning part state onto the per-part status ([@rupic-app](https://github.com/apps/rupic-app))
+
+- Updated dependencies [[`aa74b0d`](https://github.com/assistant-ui/assistant-ui/commit/aa74b0d7c5e334385fabbe48ed79e90b36f63029), [`6e5c450`](https://github.com/assistant-ui/assistant-ui/commit/6e5c450d71242acda30b41c8601b7edb6ed5c701), [`59ec21b`](https://github.com/assistant-ui/assistant-ui/commit/59ec21b5f610aaf7c0082508b3a6cbf950ffc1db), [`4fd698b`](https://github.com/assistant-ui/assistant-ui/commit/4fd698ba5a3b23ea57b667a02c6f784147f5c42d)]:
+  - @assistant-ui/core@0.3.3
+
+## 1.4.2
+
+### Patch Changes
+
+- [#5329](https://github.com/assistant-ui/assistant-ui/pull/5329) [`f30b54c`](https://github.com/assistant-ui/assistant-ui/commit/f30b54c9856d50a18f738c4d485c02bcd039151c) - refactor: move createRuntimeExtras to the @assistant-ui/core/react entry and drop the internal re-export ([@okisdev](https://github.com/okisdev))
+
+- [#5318](https://github.com/assistant-ui/assistant-ui/pull/5318) [`ee87dd9`](https://github.com/assistant-ui/assistant-ui/commit/ee87dd9fef1389165bbfe0019be2a6995b2cfb24) - fix: accept case-insensitive `data:` URL schemes and normalize parsed mime types to lowercase ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#5314](https://github.com/assistant-ui/assistant-ui/pull/5314) [`3d45df9`](https://github.com/assistant-ui/assistant-ui/commit/3d45df9626ebb8f8403e6e209329de2accdaa0a4) - feat: read the canonical nested `_meta.ui.resourceUri` MCP Apps pointer, keeping the deprecated flat `"ui/resourceUri"` key as a fallback ([@okisdev](https://github.com/okisdev))
+
+- Updated dependencies [[`d2e7a4a`](https://github.com/assistant-ui/assistant-ui/commit/d2e7a4a1c71c214fd8c4363ec16e879d1122639e), [`ecd7c87`](https://github.com/assistant-ui/assistant-ui/commit/ecd7c879cace69d6371b3f673c52a80669377fc0), [`2daf2d5`](https://github.com/assistant-ui/assistant-ui/commit/2daf2d5dfcb77938f6deb63d048575540e1806a2), [`a5bdbed`](https://github.com/assistant-ui/assistant-ui/commit/a5bdbed993d8f14c919b692b40d51f5cd64467b9), [`fb993c3`](https://github.com/assistant-ui/assistant-ui/commit/fb993c34ca1623bac373137c5ab207dd79cb500c), [`3ae058c`](https://github.com/assistant-ui/assistant-ui/commit/3ae058c5d275e2444701da70a6513528439ecb3e), [`f30b54c`](https://github.com/assistant-ui/assistant-ui/commit/f30b54c9856d50a18f738c4d485c02bcd039151c), [`936c52c`](https://github.com/assistant-ui/assistant-ui/commit/936c52c4301b89242572d9890c870050f63cbe93), [`ee87dd9`](https://github.com/assistant-ui/assistant-ui/commit/ee87dd9fef1389165bbfe0019be2a6995b2cfb24), [`e41734c`](https://github.com/assistant-ui/assistant-ui/commit/e41734c102a192ab772703899d7980bb5c055d07), [`1c5266c`](https://github.com/assistant-ui/assistant-ui/commit/1c5266c1fb32bc71647fedc485372f6ffa25171f), [`cdcdbd0`](https://github.com/assistant-ui/assistant-ui/commit/cdcdbd0a9354483a72edbc01f51a850a1d6b5dc5), [`42dbc69`](https://github.com/assistant-ui/assistant-ui/commit/42dbc697642c0fa327728860f78a8ce5270bf32d), [`25f1e4f`](https://github.com/assistant-ui/assistant-ui/commit/25f1e4f9d33073216458d3c5a05e8d79845d4b3b), [`d16e62d`](https://github.com/assistant-ui/assistant-ui/commit/d16e62d25b5c1e7e2bc1504fb4a5e97c3c25b6e3), [`60d049e`](https://github.com/assistant-ui/assistant-ui/commit/60d049eeadf681f4235157c903543493c98cc258), [`8643393`](https://github.com/assistant-ui/assistant-ui/commit/8643393490ebe1aa86661f705bb9ac907bfb4eac), [`2eca438`](https://github.com/assistant-ui/assistant-ui/commit/2eca4386778618f555258855ee6612eb44d89bb2), [`23ee5db`](https://github.com/assistant-ui/assistant-ui/commit/23ee5dbb60e6ac7993b8ce4023fb63a5f7eea713)]:
+  - @assistant-ui/store@0.3.2
+  - @assistant-ui/core@0.3.2
+  - assistant-stream@0.3.31
+
+## 1.4.1
+
+### Patch Changes
+
+- [#5285](https://github.com/assistant-ui/assistant-ui/pull/5285) [`d72c2b6`](https://github.com/assistant-ui/assistant-ui/commit/d72c2b6b5fd0e0158b07ecf00bfe4c8ac5b3e861) - refactor: migrate to aui property accessors ([@Yonom](https://github.com/Yonom))
+
+- Updated dependencies [[`9a7e776`](https://github.com/assistant-ui/assistant-ui/commit/9a7e77603d59b5e091ee922e2e087f0101679321), [`ae5f831`](https://github.com/assistant-ui/assistant-ui/commit/ae5f83129b20edb38b7f9e7f92b6c60f3c8fe8d9), [`a196711`](https://github.com/assistant-ui/assistant-ui/commit/a1967113d52c6e5751af7ae4109c13b6a322fe23), [`f78e579`](https://github.com/assistant-ui/assistant-ui/commit/f78e5794d8d9d2f1c815485cb39a56f1072ed795), [`dcc41bb`](https://github.com/assistant-ui/assistant-ui/commit/dcc41bb50948f64744a052b22720f0f8dffa510e), [`2f5d0d4`](https://github.com/assistant-ui/assistant-ui/commit/2f5d0d441caf6a152bf4eef13566a2f9a161541c)]:
+  - @assistant-ui/store@0.3.0
+  - @assistant-ui/core@0.3.0
+  - assistant-stream@0.3.29
+
+## 1.4.0
+
+### Minor Changes
+
+- [#5075](https://github.com/assistant-ui/assistant-ui/pull/5075) [`65f4a1f`](https://github.com/assistant-ui/assistant-ui/commit/65f4a1f3260d12411be954ad8adef76bc96d42d8) - feat: formally open the AI SDK v7 line at 1.4. `1.3.41` shipped the v7 hard-dep switch as a patch inside the documented v6 line; from `1.4.0` the mapping is explicit: `^1.4` targets `ai@^7`, v6 users pin `1.3.40`, v5 users pin `1.1.21`. ([@okisdev](https://github.com/okisdev))
+
+### Patch Changes
+
+- [#5179](https://github.com/assistant-ui/assistant-ui/pull/5179) [`2ca4512`](https://github.com/assistant-ui/assistant-ui/commit/2ca4512eb86649d62d7ba6d7f6ad8708182a6767) - test: pin history append retry semantics after a failed persistence pass ([@okisdev](https://github.com/okisdev))
+
+- [#5070](https://github.com/assistant-ui/assistant-ui/pull/5070) [`8719ba3`](https://github.com/assistant-ui/assistant-ui/commit/8719ba31f3d3d0ec7be519ab3ace0f8c0ffc2a5d) - fix: close MCP clients that resolve after a connection timeout ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#5051](https://github.com/assistant-ui/assistant-ui/pull/5051) [`26ef13d`](https://github.com/assistant-ui/assistant-ui/commit/26ef13d296aa691a24ab4132d9d307f77d5944b1) - fix(react-ai-sdk): persist pending tool approvals and append post-approval continuations ([@okisdev](https://github.com/okisdev))
+
+- [#4963](https://github.com/assistant-ui/assistant-ui/pull/4963) [`83e204f`](https://github.com/assistant-ui/assistant-ui/commit/83e204fa4db0850f95fdf47fd303670e04d86e61) - feat: expose the AI SDK chat helpers and error via runtime extras accessor hooks (useAISDKChat, useAISDKError) ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#5178](https://github.com/assistant-ui/assistant-ui/pull/5178) [`6081fda`](https://github.com/assistant-ui/assistant-ui/commit/6081fda0a885b4b958a493d0f55b5a3c3d574b52) - fix(react-ai-sdk): pass the initialized remote thread id to prepareSendMessagesRequest ([@rupic-app](https://github.com/apps/rupic-app))
+
+  `AssistantChatTransport` resolved the remote thread id from `threadListItem.initialize()` and used it in the default request body, but `optionsEx` spread the original `options`, so a custom `prepareSendMessagesRequest` still received the unresolved local chat id as `options.id`. Integrations that build their request body from `options.id` (e.g. Mastra) sent the wrong id. The settled id is now spread into `optionsEx` so the callback receives it, while the default body and the public callback type are unchanged.
+
+- [#4947](https://github.com/assistant-ui/assistant-ui/pull/4947) [`95daadd`](https://github.com/assistant-ui/assistant-ui/commit/95daadda08258ea24df3f5cac789a429e824c824) - fix: wait for external thread history to load before resuming a stream ([@Gujiassh](https://github.com/Gujiassh))
+
+- [#5087](https://github.com/assistant-ui/assistant-ui/pull/5087) [`6c652b9`](https://github.com/assistant-ui/assistant-ui/commit/6c652b972c30a47745baeafe608a65426dd68668) - fix: serialize history persistence to prevent duplicate appends ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#5052](https://github.com/assistant-ui/assistant-ui/pull/5052) [`0dbc58a`](https://github.com/assistant-ui/assistant-ui/commit/0dbc58a1c4794008e7b54a99447c19648f2f8059) - fix(react-ai-sdk): skip rewriting unchanged messages after each run ([@okisdev](https://github.com/okisdev))
+
+- [#4948](https://github.com/assistant-ui/assistant-ui/pull/4948) [`e82a48d`](https://github.com/assistant-ui/assistant-ui/commit/e82a48d92dc6e9b2557a06e59dd540f87742ad3d) - fix: replace stale useVercelAIThreadState name in the sliceMessagesUntil error and include the missing id ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#5079](https://github.com/assistant-ui/assistant-ui/pull/5079) [`390e417`](https://github.com/assistant-ui/assistant-ui/commit/390e4177ca47f7ece839613ad0f076add9313328) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- Updated dependencies [[`8630186`](https://github.com/assistant-ui/assistant-ui/commit/8630186c86f651bd5e3db9901de14b3feff073ec), [`908ec91`](https://github.com/assistant-ui/assistant-ui/commit/908ec91a15b247b629fbcee6fd8b7af620af6632), [`0d0834d`](https://github.com/assistant-ui/assistant-ui/commit/0d0834d77967eb3f68198c48597a3bb9c6f474cb), [`3355098`](https://github.com/assistant-ui/assistant-ui/commit/33550987bbed0ffaa424218e4d415cb8a4191f72), [`3f90440`](https://github.com/assistant-ui/assistant-ui/commit/3f90440a45d8b7bc11745a1d3cf242d4f40934ed), [`79034bb`](https://github.com/assistant-ui/assistant-ui/commit/79034bbfe8da82c3739969bf7b4cc744910d203a), [`7207b19`](https://github.com/assistant-ui/assistant-ui/commit/7207b19041c4ceed31acc1b28d39836f99d4eae6), [`446a118`](https://github.com/assistant-ui/assistant-ui/commit/446a1187d38f3ca8ce12b1f0ac739400cb32d63e), [`a081656`](https://github.com/assistant-ui/assistant-ui/commit/a0816568bcb0632a67f6e09dc0c90e76cc2b50cc), [`25a5be0`](https://github.com/assistant-ui/assistant-ui/commit/25a5be0c8b7101a382ee7fc31102bdf4fb7ad114), [`b17d392`](https://github.com/assistant-ui/assistant-ui/commit/b17d3929d785cb418615d18b739fb9e3b7b53728), [`20643e2`](https://github.com/assistant-ui/assistant-ui/commit/20643e299a3d9eeb73d73dca72d4b70220f4dc0b), [`47562fd`](https://github.com/assistant-ui/assistant-ui/commit/47562fd231b35fe41c61b437ff66021f9cf0e554), [`ccebbf9`](https://github.com/assistant-ui/assistant-ui/commit/ccebbf9317c04e1f93dd6141544e8811b42a0154), [`85d7c25`](https://github.com/assistant-ui/assistant-ui/commit/85d7c251a9846422f693dcd9ac7c727ed22e6d09), [`23a9925`](https://github.com/assistant-ui/assistant-ui/commit/23a9925415b92e9138e6f5e07755b89a0f17468f), [`7fde141`](https://github.com/assistant-ui/assistant-ui/commit/7fde141c094d122034804f9b9e19b4f17fb516ba), [`afacb10`](https://github.com/assistant-ui/assistant-ui/commit/afacb1081447b899e6e84df969ec1ac9b6d8609f), [`af6c945`](https://github.com/assistant-ui/assistant-ui/commit/af6c9450f0242c4eee3d9e03f82f20efe8c9a89b), [`33924df`](https://github.com/assistant-ui/assistant-ui/commit/33924df40ad3463f4e589617876d2496f48936ec), [`19cfdcd`](https://github.com/assistant-ui/assistant-ui/commit/19cfdcdfdc6778a3ed3f607f694787fe1ef54612), [`044def8`](https://github.com/assistant-ui/assistant-ui/commit/044def8b0c6173dbed5a888993c55933d6a81177), [`039b75f`](https://github.com/assistant-ui/assistant-ui/commit/039b75f91f189a8cb391bb6ea75c87cddefaaebb), [`5e4dd9f`](https://github.com/assistant-ui/assistant-ui/commit/5e4dd9fd00161fd79df60821d2b9af0cd7ebcefd), [`5da0d93`](https://github.com/assistant-ui/assistant-ui/commit/5da0d93808089b9fca35667ab442dff196de46b8), [`85d4976`](https://github.com/assistant-ui/assistant-ui/commit/85d49764ca3585fc553257dafa00a47830727e36), [`5135400`](https://github.com/assistant-ui/assistant-ui/commit/5135400d054297889312b9ae03fe803443ee2fae), [`fc6b4ad`](https://github.com/assistant-ui/assistant-ui/commit/fc6b4ad0c77d195bb69148536e52759d13df2a99), [`121ee83`](https://github.com/assistant-ui/assistant-ui/commit/121ee830d7d26a7db0a8007c0394ffa86c7d56d9), [`2b2587a`](https://github.com/assistant-ui/assistant-ui/commit/2b2587ac09bfe09d552915300b8dcf5b5bb7107d), [`ca80153`](https://github.com/assistant-ui/assistant-ui/commit/ca801537e02bbab09532d0f505992778d282dddb), [`e4ce1a2`](https://github.com/assistant-ui/assistant-ui/commit/e4ce1a2a59faaa117cd8bd819a7c2a5c3bc9c6a6), [`f2f5e83`](https://github.com/assistant-ui/assistant-ui/commit/f2f5e8361fa5cee5c67ede5b5dac239416aa32ac), [`ec8ee6a`](https://github.com/assistant-ui/assistant-ui/commit/ec8ee6a84975632c2ec28f20e7d9cb8a16573495), [`9a343db`](https://github.com/assistant-ui/assistant-ui/commit/9a343db871ceab7e574bfcec9ab22af0ddaf1841), [`666aaab`](https://github.com/assistant-ui/assistant-ui/commit/666aaab6ac3a64ec0f58c3ae958186a9880d8764), [`c1b1750`](https://github.com/assistant-ui/assistant-ui/commit/c1b175040e49ecb82b43d2713536aef7a1f2300e), [`f263c9e`](https://github.com/assistant-ui/assistant-ui/commit/f263c9e827f3ed96f6773b3d8d14f573e53ee941), [`475fca3`](https://github.com/assistant-ui/assistant-ui/commit/475fca35d81a2f30909566e2b3703f5fbce76869), [`8faad07`](https://github.com/assistant-ui/assistant-ui/commit/8faad07801875f2877635380179a18a7fd4f3193), [`61518b9`](https://github.com/assistant-ui/assistant-ui/commit/61518b99c11c49f439fc9411187b1cb148777b79), [`5412099`](https://github.com/assistant-ui/assistant-ui/commit/541209975bdc380edf7b34ecc270c201abd14788), [`1eb7275`](https://github.com/assistant-ui/assistant-ui/commit/1eb72757257d1919b2c198c8700deb79ff280253), [`c47bdf4`](https://github.com/assistant-ui/assistant-ui/commit/c47bdf475381d2b79abed6201157984afa1e22c4), [`ba948d8`](https://github.com/assistant-ui/assistant-ui/commit/ba948d8192b8c4bf12cbe60ece4d0f2d11506aa6), [`de54334`](https://github.com/assistant-ui/assistant-ui/commit/de54334ab8416be1a5ec9ebcebc58258bb80cbd5), [`44aac58`](https://github.com/assistant-ui/assistant-ui/commit/44aac5834cff3a4f985b3b0aefe31c8b7951732f), [`9402648`](https://github.com/assistant-ui/assistant-ui/commit/94026488709d1fcc4ed446f39e2dcb78f9eb1daf), [`4651ea5`](https://github.com/assistant-ui/assistant-ui/commit/4651ea5b003bcd56d82e0bb3de16f918d6722906), [`2f69f68`](https://github.com/assistant-ui/assistant-ui/commit/2f69f682d2490c945acb378cdf33052e69d40790), [`390e417`](https://github.com/assistant-ui/assistant-ui/commit/390e4177ca47f7ece839613ad0f076add9313328), [`2bc6798`](https://github.com/assistant-ui/assistant-ui/commit/2bc6798346378fd6c1f8b7e8423fda162d7f3a27)]:
+  - assistant-stream@0.3.27
+  - @assistant-ui/core@0.2.22
+  - assistant-cloud@0.1.36
+  - @assistant-ui/store@0.2.21
+
+## 1.3.41
+
+### Patch Changes
+
+- [#4730](https://github.com/assistant-ui/assistant-ui/pull/4730) [`41aaa6d`](https://github.com/assistant-ui/assistant-ui/commit/41aaa6de5d2872db5319e36e6de0ffdb385df927) - fix: preserve direct file parts in AI SDK message creation ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#4729](https://github.com/assistant-ui/assistant-ui/pull/4729) [`638692a`](https://github.com/assistant-ui/assistant-ui/commit/638692a0a7fe05d1cf50b80d472e148a971c1b5c) - fix: preserve image media types when creating AI SDK messages ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#4837](https://github.com/assistant-ui/assistant-ui/pull/4837) [`40f5fb0`](https://github.com/assistant-ui/assistant-ui/commit/40f5fb03a245ff2c3992a491c43ed29019df6dbb) - feat: forward onResumeToolCall to the external store adapter ([@okisdev](https://github.com/okisdev))
+
+- [#4833](https://github.com/assistant-ui/assistant-ui/pull/4833) [`8282269`](https://github.com/assistant-ui/assistant-ui/commit/8282269f0864bc43c999cd209fbbee035ee53641) - feat: adapters.suggestion generates follow-up suggestions after each run ([@okisdev](https://github.com/okisdev))
+
+- [#4849](https://github.com/assistant-ui/assistant-ui/pull/4849) [`4b68fc6`](https://github.com/assistant-ui/assistant-ui/commit/4b68fc624ad22357ff4f1cf13373092aba19796f) - docs: move the resumable streams cross-links into jsdoc so the api-reference generator preserves them ([@okisdev](https://github.com/okisdev))
+
+- [#4672](https://github.com/assistant-ui/assistant-ui/pull/4672) [`486c3c8`](https://github.com/assistant-ui/assistant-ui/commit/486c3c89c0f831ac0079bef0f4607e7e2945d19c) - feat: expose chat runtime resume errors ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#4761](https://github.com/assistant-ui/assistant-ui/pull/4761) [`d2f7a61`](https://github.com/assistant-ui/assistant-ui/commit/d2f7a61fe288eb89e3e025a24ce7360b3428d789) - feat: export a FrontendTools type for typing uploaded frontend tool definitions. ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#4671](https://github.com/assistant-ui/assistant-ui/pull/4671) [`84fdba2`](https://github.com/assistant-ui/assistant-ui/commit/84fdba27d69f459d368c3fe2fe21a28285fb5d00) - feat: add MCP toolkit entry names to close errors ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#4675](https://github.com/assistant-ui/assistant-ui/pull/4675) [`c814c9c`](https://github.com/assistant-ui/assistant-ui/commit/c814c9cf562a66ab3864ca0472d667902ebc131b) - feat: support prefixed MCP toolkit tool names ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#4667](https://github.com/assistant-ui/assistant-ui/pull/4667) [`c590a21`](https://github.com/assistant-ui/assistant-ui/commit/c590a21a63405f5a52a6d372e003afca06cf4a1e) - feat: support disabled MCP toolkit tools ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#4670](https://github.com/assistant-ui/assistant-ui/pull/4670) [`32f5977`](https://github.com/assistant-ui/assistant-ui/commit/32f5977a1827c461dd7cd203d4e7370fa5372b77) - feat: add MCP toolkit entry names to connection and tool-listing errors ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#4898](https://github.com/assistant-ui/assistant-ui/pull/4898) [`a84cf6d`](https://github.com/assistant-ui/assistant-ui/commit/a84cf6ddc37ba7a7ea7244eb73e5d40a00ea5e24) - feat: plumb an optional serverId through MCP Apps metadata and host calls for multi-MCP routing ([@okisdev](https://github.com/okisdev))
+
+- [#4806](https://github.com/assistant-ui/assistant-ui/pull/4806) [`9f99c46`](https://github.com/assistant-ui/assistant-ui/commit/9f99c46ca1ca724081466f97c7e17eda316e8fb3) - feat: preserve providerMetadata on text, reasoning, and tool-call message parts ([@DLOVRIC2](https://github.com/DLOVRIC2))
+
+  The AI SDK message converter already kept `providerMetadata` on source parts but
+  dropped it on text, reasoning, and tool-call parts (where the AI SDK surfaces it
+  as `callProviderMetadata`). Provider- or app-scoped metadata such as agent
+  attribution now survives the conversion to assistant-ui messages.
+
+- [#4651](https://github.com/assistant-ui/assistant-ui/pull/4651) [`1224380`](https://github.com/assistant-ui/assistant-ui/commit/1224380f9f7432f6d1e448edc7fde4d307538569) - refactor: use addToolOutput instead of the deprecated addToolResult for tool results ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#4648](https://github.com/assistant-ui/assistant-ui/pull/4648) [`b373639`](https://github.com/assistant-ui/assistant-ui/commit/b3736393ed699ccb0c36953ae218bb87e4641ad1) - fix: guard converters against missing parts and mediaType on non-spec payloads ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#4654](https://github.com/assistant-ui/assistant-ui/pull/4654) [`c980086`](https://github.com/assistant-ui/assistant-ui/commit/c98008682d993d03cfb20d5daef6fbaa0f3b4e10) - feat: upgrade to AI SDK v7 (ai@^7, @ai-sdk/react@^4, @ai-sdk/mcp@^2); pin the previous release to stay on v6 ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#4771](https://github.com/assistant-ui/assistant-ui/pull/4771) [`fcd3c9e`](https://github.com/assistant-ui/assistant-ui/commit/fcd3c9e773b735eab011f6f0a727994c53d851ac) - fix: guard resumable session storage access ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#4887](https://github.com/assistant-ui/assistant-ui/pull/4887) [`d03e5cf`](https://github.com/assistant-ui/assistant-ui/commit/d03e5cf0e6efada832503fedc565a1fb8f14676a) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- [#4650](https://github.com/assistant-ui/assistant-ui/pull/4650) [`e3aba86`](https://github.com/assistant-ui/assistant-ui/commit/e3aba86b7a788261d25921e4a58cebbe7a59fb44) - fix: make the default attachment adapter work without FileReader (Node, react-ink, SSR) by sharing a single getFileDataURL from @assistant-ui/core/internal, whose base64 fallback chunks large inputs and works on runtimes without Buffer ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#4901](https://github.com/assistant-ui/assistant-ui/pull/4901) [`25f9eb2`](https://github.com/assistant-ui/assistant-ui/commit/25f9eb2caacade2e5522f92e3221ee8173da0608) - refactor: host the streaming-stable tool-args stringifier in @assistant-ui/core/internal ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#4902](https://github.com/assistant-ui/assistant-ui/pull/4902) [`698f1f4`](https://github.com/assistant-ui/assistant-ui/commit/698f1f4a3401927a1f9b463d5c421b203e5a19e1) - refactor: emit file tool output parts instead of deprecated image-data/file-data ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#4899](https://github.com/assistant-ui/assistant-ui/pull/4899) [`c79e634`](https://github.com/assistant-ui/assistant-ui/commit/c79e6341d13756b6251b8e8027ee692271df3c6b) - fix: guard toolOutputConversion against missing mediaType on non-spec tool output ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#4756](https://github.com/assistant-ui/assistant-ui/pull/4756) [`14ccfd5`](https://github.com/assistant-ui/assistant-ui/commit/14ccfd53c1e8e041184a6b6830c6dbf7fca01dd5) - fix: validate frontend tool schemas before conversion ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#4815](https://github.com/assistant-ui/assistant-ui/pull/4815) [`5325f09`](https://github.com/assistant-ui/assistant-ui/commit/5325f0985768b750b050cf07f592fdfed34eccac) - chore: update dependencies ([@okisdev](https://github.com/okisdev))
+
+- Updated dependencies [[`43b8ce8`](https://github.com/assistant-ui/assistant-ui/commit/43b8ce862520e1f53d837407c5fcd7106c9ffd7c), [`1e926b6`](https://github.com/assistant-ui/assistant-ui/commit/1e926b68a8f61d5d099a53c89ad25b168872b853), [`d6c7571`](https://github.com/assistant-ui/assistant-ui/commit/d6c757149df4cc66aa3261a3bd3beb041cac6c49), [`4d7a447`](https://github.com/assistant-ui/assistant-ui/commit/4d7a4479b2dd673e3f5a356c4dd763f3aa72053d), [`ca751f4`](https://github.com/assistant-ui/assistant-ui/commit/ca751f41905a82e9b1622d100af62b8b31314a5c), [`2aca5e0`](https://github.com/assistant-ui/assistant-ui/commit/2aca5e09337b5b867562e6280b8cc6d49763e845), [`908af6d`](https://github.com/assistant-ui/assistant-ui/commit/908af6d6104b355c3097fcf77367bed1bf5541b8), [`0ea628f`](https://github.com/assistant-ui/assistant-ui/commit/0ea628fedba37d2e95195e250c60129d43af213c), [`1b46551`](https://github.com/assistant-ui/assistant-ui/commit/1b465515f38be1d7d4e844ab5d95c90537745d15), [`7865f67`](https://github.com/assistant-ui/assistant-ui/commit/7865f6730d0a98e43bc27d5a0482bc43f2678de5), [`7cf5acc`](https://github.com/assistant-ui/assistant-ui/commit/7cf5acc8ae31bc01102d170b854aaaf7c260eff9), [`7a85307`](https://github.com/assistant-ui/assistant-ui/commit/7a85307390287a341618ac58b8967395df38a56b), [`438ecd3`](https://github.com/assistant-ui/assistant-ui/commit/438ecd350d5f14e5c5d329d6f4c0689b491c0845), [`e4da8c5`](https://github.com/assistant-ui/assistant-ui/commit/e4da8c57e259e7276570ff05ea605e59321b1a3f), [`5a34e8c`](https://github.com/assistant-ui/assistant-ui/commit/5a34e8c2721b02e7a115d085bc09a447e0d3caa9), [`5dbbac4`](https://github.com/assistant-ui/assistant-ui/commit/5dbbac4f49b6269c1017f11c9bf6da2909fa6c96), [`d3bd0ed`](https://github.com/assistant-ui/assistant-ui/commit/d3bd0ede457f50043ff59f8987f59b16c675ef01), [`84e8ddf`](https://github.com/assistant-ui/assistant-ui/commit/84e8ddf548d808d74d84b6be5a8ed28642baad3d), [`8282269`](https://github.com/assistant-ui/assistant-ui/commit/8282269f0864bc43c999cd209fbbee035ee53641), [`03ffe44`](https://github.com/assistant-ui/assistant-ui/commit/03ffe44808f4898a2862e608db7258682cf12383), [`38bf104`](https://github.com/assistant-ui/assistant-ui/commit/38bf1045406da7eff1b9c5847e4e7db96d327c2c), [`19b2a00`](https://github.com/assistant-ui/assistant-ui/commit/19b2a00add7f1900bc3fed579759400fc241747c), [`77c7b26`](https://github.com/assistant-ui/assistant-ui/commit/77c7b269795c7aad03ce83e7e574425c3e0f26c8), [`026a7ae`](https://github.com/assistant-ui/assistant-ui/commit/026a7aeabc8134d3ecb26127225ebf0070267261), [`160b0af`](https://github.com/assistant-ui/assistant-ui/commit/160b0afa773b13a5e0f462cf05b7661baa1627f5), [`c814c9c`](https://github.com/assistant-ui/assistant-ui/commit/c814c9cf562a66ab3864ca0472d667902ebc131b), [`6be3b67`](https://github.com/assistant-ui/assistant-ui/commit/6be3b6781b3ddd178208bc9de15326ab35d496d4), [`c590a21`](https://github.com/assistant-ui/assistant-ui/commit/c590a21a63405f5a52a6d372e003afca06cf4a1e), [`0686f4e`](https://github.com/assistant-ui/assistant-ui/commit/0686f4e6b8ee5f6e17c968997ef11622ef8f9c98), [`a84cf6d`](https://github.com/assistant-ui/assistant-ui/commit/a84cf6ddc37ba7a7ea7244eb73e5d40a00ea5e24), [`9f99c46`](https://github.com/assistant-ui/assistant-ui/commit/9f99c46ca1ca724081466f97c7e17eda316e8fb3), [`c2d2271`](https://github.com/assistant-ui/assistant-ui/commit/c2d2271b9709c235da18036a0edd5283ce279916), [`e3aba86`](https://github.com/assistant-ui/assistant-ui/commit/e3aba86b7a788261d25921e4a58cebbe7a59fb44), [`25f9eb2`](https://github.com/assistant-ui/assistant-ui/commit/25f9eb2caacade2e5522f92e3221ee8173da0608), [`84e8ddf`](https://github.com/assistant-ui/assistant-ui/commit/84e8ddf548d808d74d84b6be5a8ed28642baad3d), [`d03e5cf`](https://github.com/assistant-ui/assistant-ui/commit/d03e5cf0e6efada832503fedc565a1fb8f14676a), [`ef81c86`](https://github.com/assistant-ui/assistant-ui/commit/ef81c869a3292175a32f0d924e911564a07d439b), [`5ade3a5`](https://github.com/assistant-ui/assistant-ui/commit/5ade3a500498b59a4449f46d443ced8a1e3136be), [`1f284ac`](https://github.com/assistant-ui/assistant-ui/commit/1f284ac2f4e20b0daebfdb6829a44ba0a56033b3), [`65ba32a`](https://github.com/assistant-ui/assistant-ui/commit/65ba32a956661804203450cfb9a2b0285450da9d), [`5325f09`](https://github.com/assistant-ui/assistant-ui/commit/5325f0985768b750b050cf07f592fdfed34eccac)]:
+  - assistant-stream@0.3.26
+  - @assistant-ui/core@0.2.21
+  - assistant-cloud@0.1.35
+  - @assistant-ui/store@0.2.20
+
+## 1.3.40
+
+### Patch Changes
+
+- [#4659](https://github.com/assistant-ui/assistant-ui/pull/4659) [`ea41c9c`](https://github.com/assistant-ui/assistant-ui/commit/ea41c9c077d1a6c88cde07e4686a968275893be4) - fix: detect MCP tool name collisions with toolkit tools ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#4687](https://github.com/assistant-ui/assistant-ui/pull/4687) [`f833bc1`](https://github.com/assistant-ui/assistant-ui/commit/f833bc118b49641f3f6e0ab22bcfc63bf0a04408) - feat: support server-side MCP connection timeouts ([@Kinfe123](https://github.com/Kinfe123))
+
+- Updated dependencies [[`523e0b5`](https://github.com/assistant-ui/assistant-ui/commit/523e0b563a71a656f050473c42c414b26c2d5ab4), [`f833bc1`](https://github.com/assistant-ui/assistant-ui/commit/f833bc118b49641f3f6e0ab22bcfc63bf0a04408)]:
+  - @assistant-ui/core@0.2.20
+  - assistant-stream@0.3.25
+
+## 1.3.39
+
+### Patch Changes
+
+- [#4608](https://github.com/assistant-ui/assistant-ui/pull/4608) [`a7b06f7`](https://github.com/assistant-ui/assistant-ui/commit/a7b06f76876078fc2fcbb92a86fa0e1530fde782) - chore: update dependencies ([@okisdev](https://github.com/okisdev))
+
+## 1.3.38
+
+### Patch Changes
+
+- [#4551](https://github.com/assistant-ui/assistant-ui/pull/4551) [`49175f3`](https://github.com/assistant-ui/assistant-ui/commit/49175f3ecedb2652f6b79c9d116917478abefaef) - refactor: delegate useStreamingTiming to the shared core primitive, with no public API change ([@okisdev](https://github.com/okisdev))
+
+- [#4517](https://github.com/assistant-ui/assistant-ui/pull/4517) [`cefcf27`](https://github.com/assistant-ui/assistant-ui/commit/cefcf27b4b53ceafef18e469644d51797c11c8ff) - chore: update dependencies ([@okisdev](https://github.com/okisdev))
+
+- [#4515](https://github.com/assistant-ui/assistant-ui/pull/4515) [`f5e94b7`](https://github.com/assistant-ui/assistant-ui/commit/f5e94b767ab23fdae4739fbf73cf4d75c6ce4778) - feat: forward `onThreadIdChange` through the adapter entry hooks (`useLangGraphRuntime`, `useStreamRuntime`, `useChatRuntime`, `useAdkRuntime`, `useOpenCodeRuntime`, `usePiRuntime`). the option already existed on `useRemoteThreadListRuntime` but every wrapper dropped it, so routing/persistence built on the settled remote thread id never fired from these hooks. only the settled remote id is emitted; the transient `__LOCALID_*` placeholder is never surfaced. ([@okisdev](https://github.com/okisdev))
+
+- [#4310](https://github.com/assistant-ui/assistant-ui/pull/4310) [`0c51b90`](https://github.com/assistant-ui/assistant-ui/commit/0c51b905d22418b93532636b1028c080ecc819e0) - feat: add `unstable_injectInteractableContext` for AI SDK route handlers ([@AVGVSTVS96](https://github.com/AVGVSTVS96))
+
+  When using AI SDK's `convertToModelMessages`, call `unstable_injectInteractableContext(messages)` first so the model can read current interactable state:
+
+  ```diff
+  import { convertToModelMessages } from "ai";
+  +import { unstable_injectInteractableContext } from "@assistant-ui/react-ai-sdk";
+
+  - messages: await convertToModelMessages(messages),
+  + messages: await convertToModelMessages(unstable_injectInteractableContext(messages)),
+  ```
+
+  Existing interactables apps using AI SDK need this call after upgrading.
+
+- Updated dependencies [[`ddc40b7`](https://github.com/assistant-ui/assistant-ui/commit/ddc40b7791563057749ecf1121e15d19574479ff), [`ea52de0`](https://github.com/assistant-ui/assistant-ui/commit/ea52de06368853b7af7ac6755b157ec5305a8494), [`29c6fdb`](https://github.com/assistant-ui/assistant-ui/commit/29c6fdbc8ede04fb2647b0a47184003ee3c2f090), [`d0987a3`](https://github.com/assistant-ui/assistant-ui/commit/d0987a32540880e5058ee529fd52a3efb4298706), [`cefcf27`](https://github.com/assistant-ui/assistant-ui/commit/cefcf27b4b53ceafef18e469644d51797c11c8ff), [`0c51b90`](https://github.com/assistant-ui/assistant-ui/commit/0c51b905d22418b93532636b1028c080ecc819e0), [`3a8f685`](https://github.com/assistant-ui/assistant-ui/commit/3a8f685e23a3e7ad76ac41e3ce6fff05714e04d3), [`ec6adf4`](https://github.com/assistant-ui/assistant-ui/commit/ec6adf4adc91fe12c7de47fc93adcc347ece8245), [`4acd4c0`](https://github.com/assistant-ui/assistant-ui/commit/4acd4c0f608da1c62bf23a666bc0fec870a27dca)]:
+  - @assistant-ui/core@0.2.19
+  - assistant-stream@0.3.24
+  - assistant-cloud@0.1.34
+  - @assistant-ui/store@0.2.19
+
+## 1.3.37
+
+### Patch Changes
+
+- [#4422](https://github.com/assistant-ui/assistant-ui/pull/4422) [`e100f90`](https://github.com/assistant-ui/assistant-ui/commit/e100f906489f27d5193b6c8be80a6f87c5667850) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- Updated dependencies [[`344f737`](https://github.com/assistant-ui/assistant-ui/commit/344f7370511f7238db17e1982f2a43a10829604c), [`a2e21ee`](https://github.com/assistant-ui/assistant-ui/commit/a2e21ee797761907db9b7e4559da2a41afd00fc9)]:
+  - @assistant-ui/core@0.2.17
+
+## 1.3.36
+
+### Patch Changes
+
+- [#4390](https://github.com/assistant-ui/assistant-ui/pull/4390) [`bb38d08`](https://github.com/assistant-ui/assistant-ui/commit/bb38d085b04b59f68c8cf16b23c2211454384668) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- Updated dependencies [[`434bba5`](https://github.com/assistant-ui/assistant-ui/commit/434bba5f7c59ab7cf6f1c78a8898fd4d3addb12d), [`bb38d08`](https://github.com/assistant-ui/assistant-ui/commit/bb38d085b04b59f68c8cf16b23c2211454384668), [`4cc7eaa`](https://github.com/assistant-ui/assistant-ui/commit/4cc7eaac61d68ae970b998465bb7e5c722cc9dda), [`4cc7eaa`](https://github.com/assistant-ui/assistant-ui/commit/4cc7eaac61d68ae970b998465bb7e5c722cc9dda)]:
+  - assistant-stream@0.3.23
+  - @assistant-ui/core@0.2.16
+  - assistant-cloud@0.1.33
+  - @assistant-ui/store@0.2.18
+
+## 1.3.35
+
+### Patch Changes
+
+- [#4344](https://github.com/assistant-ui/assistant-ui/pull/4344) [`d51fe1c`](https://github.com/assistant-ui/assistant-ui/commit/d51fe1cd216827f98bb8080284f49e23ed23276e) - fix: attach partial-JSON meta to streaming tool args so consumers can tell which field is still mid-arrival ([@Yonom](https://github.com/Yonom))
+
+- Updated dependencies [[`ab8e5bc`](https://github.com/assistant-ui/assistant-ui/commit/ab8e5bc8650b1e39c8f01ab6c0efb80aa8baf723), [`59d252f`](https://github.com/assistant-ui/assistant-ui/commit/59d252fa09c1511acd7e31c9d8178514c5a5cb77), [`feecac3`](https://github.com/assistant-ui/assistant-ui/commit/feecac38c6ba0f8f30ec356376d1d6b19188e08f), [`3e58253`](https://github.com/assistant-ui/assistant-ui/commit/3e5825369c7206f4df3532d5fabfbe5cf5e4fd40), [`5a4f20e`](https://github.com/assistant-ui/assistant-ui/commit/5a4f20e75dcd93aeb70a4a5582a0a5a1f870b4f2), [`f10b8ae`](https://github.com/assistant-ui/assistant-ui/commit/f10b8ae6659ed8df8b0c25b5bb2bb8cfa7d7a718), [`1fb5862`](https://github.com/assistant-ui/assistant-ui/commit/1fb586241534064fa48e3498f422bdaa7f382139)]:
+  - @assistant-ui/core@0.2.14
+  - @assistant-ui/store@0.2.16
+
+## 1.3.34
+
+### Patch Changes
+
+- [#4320](https://github.com/assistant-ui/assistant-ui/pull/4320) [`0e923b4`](https://github.com/assistant-ui/assistant-ui/commit/0e923b4a11bd71a3af7a9c094d21193f1a2540a8) - fix: declare assistant-stream as a regular dependency so it is externalized instead of bundled into dist (the bundled copy broke consumers on its transitive secure-json-parse import) ([@Yonom](https://github.com/Yonom))
+
+- [#4315](https://github.com/assistant-ui/assistant-ui/pull/4315) [`60ef0e9`](https://github.com/assistant-ui/assistant-ui/commit/60ef0e9ed26ceab722468332ff93c4751cc631fb) - feat: add runtime support for deleting messages ([@Yonom](https://github.com/Yonom))
+
+- Updated dependencies [[`60ef0e9`](https://github.com/assistant-ui/assistant-ui/commit/60ef0e9ed26ceab722468332ff93c4751cc631fb), [`1b6a0d6`](https://github.com/assistant-ui/assistant-ui/commit/1b6a0d6ae40b343b233c8c12ab119b13c43cb69b), [`1b6a0d6`](https://github.com/assistant-ui/assistant-ui/commit/1b6a0d6ae40b343b233c8c12ab119b13c43cb69b), [`1b6a0d6`](https://github.com/assistant-ui/assistant-ui/commit/1b6a0d6ae40b343b233c8c12ab119b13c43cb69b)]:
+  - @assistant-ui/core@0.2.13
+  - @assistant-ui/store@0.2.15
+
+## 1.3.33
+
+### Patch Changes
+
+- [#4271](https://github.com/assistant-ui/assistant-ui/pull/4271) [`2a84174`](https://github.com/assistant-ui/assistant-ui/commit/2a8417422996920c4a58be80eddc1c1740158518) - feat: expose `joinStrategy` on `useAISDKRuntime` / `useChatRuntime` ([@okisdev](https://github.com/okisdev))
+
+  the new AI SDK runtime always merged consecutive `role: "assistant"` UIMessages into a single rendered turn, with no supported way to opt out (the converter accepts `joinStrategy` but the runtime never forwarded it, and `AISDKMessageConverter` is not exported). this follows up on [#1633](https://github.com/assistant-ui/assistant-ui/issues/1633), where the same knob shipped on the legacy `useVercelUseChatRuntime` as `unstable_joinStrategy`. pass `joinStrategy: "none"` to keep proactive or history loaded consecutive assistant messages as separate turns.
+
+  core now exports a shared `JoinStrategy` type so the `"concat-content" | "none"` union has a single source of truth across the converter and the runtimes.
+
+- [#4266](https://github.com/assistant-ui/assistant-ui/pull/4266) [`906fae9`](https://github.com/assistant-ui/assistant-ui/commit/906fae9f7fa6a8b022119c893e4f906f1b74dc60) - chore: deprecate `generativeTools` in favor of `AISDKToolkit` ([@Yonom](https://github.com/Yonom))
+
+  `generativeTools({ toolkit, frontendTools })` is deprecated. Use `new AISDKToolkit({ toolkit }).tools({ frontend })` instead: it is a strict superset that also opens MCP server connections, so it replaces `generativeTools` for every toolkit. The `frontendTools` option is named `frontend` on `.tools()`, and `.tools()` is async. `generativeTools` keeps working and will be removed in a future version.
+
+- [#4306](https://github.com/assistant-ui/assistant-ui/pull/4306) [`15878d8`](https://github.com/assistant-ui/assistant-ui/commit/15878d8114edbbb82c2a467cf811478e5f4e08bc) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- [#4285](https://github.com/assistant-ui/assistant-ui/pull/4285) [`d4629c4`](https://github.com/assistant-ui/assistant-ui/commit/d4629c432c1930aa78810ff843db5969a040ab6b) - fix(react-ai-sdk): make the package metro-bundleable in react native / expo by serving a client-only entry under the react-native export condition ([@okisdev](https://github.com/okisdev))
+
+  importing @assistant-ui/react-ai-sdk in an expo / react native app failed metro bundling because the root entry re-exports the server-only generativeTools / AISDKToolkit, which pull in @ai-sdk/mcp/mcp-stdio and node's child_process. react native now resolves a client-only entry that omits the server toolkit, so metro never reaches the node-only code. the node / server entry is unchanged and still exports the full api.
+
+- [#4304](https://github.com/assistant-ui/assistant-ui/pull/4304) [`a18bdad`](https://github.com/assistant-ui/assistant-ui/commit/a18bdadf07f789fa0e6aaf847f9df9de73a7ce54) - fix(react-ai-sdk): make the package root bundle on edge, cloudflare workers, deno, and browsers, not just react native. the node-only stdio MCP transport is now resolved through a package.json "imports" condition (`#mcp-stdio`), so importing `@assistant-ui/react-ai-sdk` at root carries the full server toolkit on every target with http/sse MCP working on edge, while stdio MCP throws a clear runtime error only where a subprocess cannot be spawned (browser, react native, edge, workers) instead of breaking the build via `@ai-sdk/mcp/mcp-stdio` -> `node:child_process`. node, bun, and deno keep the real stdio transport. ([@okisdev](https://github.com/okisdev))
+
+- Updated dependencies [[`2a84174`](https://github.com/assistant-ui/assistant-ui/commit/2a8417422996920c4a58be80eddc1c1740158518), [`a0a0769`](https://github.com/assistant-ui/assistant-ui/commit/a0a076915dafdb7152c9fde75b40cfddebcb2676), [`19c5b5f`](https://github.com/assistant-ui/assistant-ui/commit/19c5b5f3b1616a82ddfa928325c5e02c5786e867), [`dbdfb15`](https://github.com/assistant-ui/assistant-ui/commit/dbdfb15e8b609d3886c71fedb25a9d8345e5fc3c), [`ca191dc`](https://github.com/assistant-ui/assistant-ui/commit/ca191dc63f4a63c7d3f98566e9febd7d7f857aec), [`15878d8`](https://github.com/assistant-ui/assistant-ui/commit/15878d8114edbbb82c2a467cf811478e5f4e08bc), [`44ff4bf`](https://github.com/assistant-ui/assistant-ui/commit/44ff4bf5765ec2675454362a00214cd9de5cfb60), [`01cf957`](https://github.com/assistant-ui/assistant-ui/commit/01cf957c209b1a58c69f5621565397de6d1eb794), [`26a365b`](https://github.com/assistant-ui/assistant-ui/commit/26a365bb2b5bf840e21cd0caf1870627fb57c045)]:
+  - @assistant-ui/core@0.2.11
+  - assistant-cloud@0.1.32
+  - @assistant-ui/store@0.2.14
+
+## 1.3.32
+
+### Patch Changes
+
+- [#4196](https://github.com/assistant-ui/assistant-ui/pull/4196) [`b3655bc`](https://github.com/assistant-ui/assistant-ui/commit/b3655bcebf233d2de986d4f1f51ac0261ea3ea7a) - fix: strip stale approval object when cancelling a tool pending approval so the next request passes validateUIMessages ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#4192](https://github.com/assistant-ui/assistant-ui/pull/4192) [`4f2e077`](https://github.com/assistant-ui/assistant-ui/commit/4f2e077e10840faf8748d9aa13b782dd828ea776) - fix: support data message parts in toCreateMessage instead of throwing ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#4216](https://github.com/assistant-ui/assistant-ui/pull/4216) [`d440594`](https://github.com/assistant-ui/assistant-ui/commit/d44059483e366b4763328545754ff50b81fe110c) - fix: convert generative tool `toModelOutput` to AI SDK content shape ([@AVGVSTVS96](https://github.com/AVGVSTVS96))
+
+- [#4212](https://github.com/assistant-ui/assistant-ui/pull/4212) [`5fe118d`](https://github.com/assistant-ui/assistant-ui/commit/5fe118d6e61fd661859ee0d6b5ef10a370992a84) - feat: add MCP server support to generative toolkits ([@Yonom](https://github.com/Yonom))
+
+- [#4213](https://github.com/assistant-ui/assistant-ui/pull/4213) [`dcd5897`](https://github.com/assistant-ui/assistant-ui/commit/dcd5897f6dd6ca6bfe6978c3c03371e070965eab) - feat: add provider-executed tool support to generative toolkits ([@Yonom](https://github.com/Yonom))
+
+- [#4199](https://github.com/assistant-ui/assistant-ui/pull/4199) [`d9b3119`](https://github.com/assistant-ui/assistant-ui/commit/d9b311977759818fcdcea6037c938e7070276f47) - feat: a `defineToolkit` entry may now be an already-formed `ToolDefinition` (carrying its own `type`), not only an inline definition whose `type` the compiler infers. This is what lets a factory like `new JSONGenerativeUI({ library }).present()` be used directly as a tool. ([@Yonom](https://github.com/Yonom))
+
+  Renames the authoring types to match `defineToolkit`: `ToolkitDeclaration` → `ToolkitDefinition`, and adds `ToolkitDefinitionEntry` (the union of an inline tool definition and a pre-formed `ToolDefinition`). The per-tool inline type is now an internal `ToolkitDefinitionInput` and is no longer exported.
+
+- Updated dependencies [[`4145caa`](https://github.com/assistant-ui/assistant-ui/commit/4145caaa23452f38c71366b55c03f8ec4da3fd54), [`78ff336`](https://github.com/assistant-ui/assistant-ui/commit/78ff336028ce125608a4b716a93a2519ad6d9eab), [`5fe118d`](https://github.com/assistant-ui/assistant-ui/commit/5fe118d6e61fd661859ee0d6b5ef10a370992a84), [`dcd5897`](https://github.com/assistant-ui/assistant-ui/commit/dcd5897f6dd6ca6bfe6978c3c03371e070965eab), [`0558db2`](https://github.com/assistant-ui/assistant-ui/commit/0558db28952fcd1c05a2ea3f15020cf50ca52489), [`69540af`](https://github.com/assistant-ui/assistant-ui/commit/69540af906f4301af0fd453b0ab425fd62703a46), [`d9b3119`](https://github.com/assistant-ui/assistant-ui/commit/d9b311977759818fcdcea6037c938e7070276f47), [`ae54c55`](https://github.com/assistant-ui/assistant-ui/commit/ae54c55c8c8b0f9e9ef455ced1498f37d998c6cb), [`7640b31`](https://github.com/assistant-ui/assistant-ui/commit/7640b319f704414bd5eb197f34e11ae0b2324a1d)]:
+  - @assistant-ui/core@0.2.10
+  - assistant-cloud@0.1.31
+
+## 1.3.31
+
+### Patch Changes
+
+- [#4172](https://github.com/assistant-ui/assistant-ui/pull/4172) [`1315789`](https://github.com/assistant-ui/assistant-ui/commit/13157895e4d69ad4266d6ab278edfc2e3ea1de92) - feat: add `generativeTools({ toolkit, frontendTools })` — builds an AI SDK `ToolSet` from an assistant-ui toolkit (server-side `execute`) merged with the frontend-uploaded tools, for use in `streamText`/`generateText`. Pairs with the `"use generative"` compiler so a backend tool's `execute` runs on the server while its `render` ships to the client. ([@Yonom](https://github.com/Yonom))
+
+- [#4151](https://github.com/assistant-ui/assistant-ui/pull/4151) [`299d448`](https://github.com/assistant-ui/assistant-ui/commit/299d4488c8a5bbec0679680866f5975055fe71b3) - chore: drop stale `biome-ignore` pragmas now that the repo lints with oxlint ([@okisdev](https://github.com/okisdev))
+
+- [#4169](https://github.com/assistant-ui/assistant-ui/pull/4169) [`8518a29`](https://github.com/assistant-ui/assistant-ui/commit/8518a292cf5045b03a17e3750800ecaad61ed8bd) - fix: don't abort the whole history load when a stored row fails to convert. `toExportedMessageRepository` now drops a row whose `content` can't be decoded to a valid message (e.g. a hand-seeded `{ "foo": "bar" }` with no `role`), along with any descendants that referenced it, and discards a `headId` that points at a dropped row. previously a single bad row emitted an `undefined` message (or left a dangling `parentId` / `headId`) that threw `Cannot read properties of undefined (reading 'id')` or `Parent message not found` during `thread.import`, taking down the entire thread. the rest of the thread now loads, matching how the cloud adapter filters out rows it can't decode rather than throwing. ([@okisdev](https://github.com/okisdev))
+
+- [#4136](https://github.com/assistant-ui/assistant-ui/pull/4136) [`4429aa3`](https://github.com/assistant-ui/assistant-ui/commit/4429aa32f6bd4fd50a7a8ddbad1e19f6ccad192b) - centralize thread-level shared options forwarding across runtime wrapper hooks. follow-up to [#4135](https://github.com/assistant-ui/assistant-ui/issues/4135). ([@okisdev](https://github.com/okisdev))
+
+  new public exports from `@assistant-ui/core` (re-exported from `@assistant-ui/react`):
+  - `ExternalStoreSharedOptions`, a typed `Pick` over `ExternalStoreAdapter` covering the four thread-level optional fields every wrapper forwards: `isDisabled`, `isSendDisabled`, `unstable_capabilities`, `suggestions`.
+  - `pickExternalStoreSharedOptions(options)`, plucks those four fields from a wider options object. the body uses `satisfies Required<...>` so adding a key to the type without copying it in the function is a compile error rather than a silent missing-field bug.
+  - `useExternalStoreSharedOptions(options)` (from `@assistant-ui/core/react`), a memoized variant for wrappers that wrap their store in `useMemo`. lets the wrapper list a single stable `shared` reference as a dep instead of enumerating the four fields. same `satisfies` guard internally so the destructure stays in sync with the type.
+
+  internal: every runtime wrapper hook (`useChatRuntime`, `useAISDKRuntime`, `useLangGraphRuntime`, `useA2ARuntime`, `useAgUiRuntime`, `useAdkRuntime`, `useStreamRuntime`, `useOpenCodeRuntime`) now uses these helpers instead of inlining the conditional spreads added in [#4135](https://github.com/assistant-ui/assistant-ui/issues/4135). each wrapper sheds 20 to 40 lines of duplicated declarations and conditional spreads; future additions to the shared option set propagate through a single edit in `pickExternalStoreSharedOptions` instead of touching every wrapper. no user-facing behavior change.
+
+- [#4162](https://github.com/assistant-ui/assistant-ui/pull/4162) [`eef724e`](https://github.com/assistant-ui/assistant-ui/commit/eef724efe4a9075337577c626d7ea7aead45cfbe) - fix: drop phantom sibling messages when an external store swaps an optimistic message id mid-run ([#4037](https://github.com/assistant-ui/assistant-ui/issues/4037)). ([@Yonom](https://github.com/Yonom))
+
+  Messages can now be flagged `metadata.isOptimistic`. Optimistic messages are treated as ephemeral: they only ever live on the current head branch (the repository evicts off-branch optimistic messages whenever the head moves) and they are never written to persisted state (`export()` omits them). The AI SDK v6 adapter flags the streaming assistant message as optimistic, so when its client-generated id is replaced by a server-provided one mid-run, the stale placeholder no longer lingers as a phantom branch (e.g. `BranchPicker` showing `2/2` on a turn the user never branched). Unlike the reverted blanket id-diff ([#4040](https://github.com/assistant-ui/assistant-ui/issues/4040)), only explicitly-optimistic messages are affected, so legitimate `onEdit` / `onReload` / `switchToBranch` branches are preserved.
+
+- [#4175](https://github.com/assistant-ui/assistant-ui/pull/4175) [`2dec3ae`](https://github.com/assistant-ui/assistant-ui/commit/2dec3aeba0431178f4ca26e470b304f5a89390ba) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- [#4135](https://github.com/assistant-ui/assistant-ui/pull/4135) [`e7c2396`](https://github.com/assistant-ui/assistant-ui/commit/e7c2396a6a212404657e9b537add0b5534fe807c) - align the runtime wrapper hooks so every distribution forwards the same set of optional adapter-level fields to `useExternalStoreRuntime`. closes [#4134](https://github.com/assistant-ui/assistant-ui/issues/4134). ([@okisdev](https://github.com/okisdev))
+
+  `useChatRuntime` and `useAISDKRuntime` (which already accepted `suggestions`) gain three new options:
+  - `isDisabled`, disables the composer input entirely.
+  - `isSendDisabled`, keeps the input usable but makes `send()` a no-op (paired with `composer.canSend`).
+  - `unstable_capabilities`, per-thread capability overrides (currently `{ copy?: boolean }`).
+
+  `useLangGraphRuntime`, `useA2ARuntime`, `useAgUiRuntime`, `useAdkRuntime`, `useStreamRuntime`, `useOpenCodeRuntime` gain all four (the three above plus `suggestions`).
+
+  adapter-level additions, where missing:
+  - `useChatRuntime` / `useAISDKRuntime` already accepted `dictation` and `voice` through the `ExternalStoreAdapter` adapter shape; this just confirms the typing.
+  - `useLangGraphRuntime`, `useA2ARuntime`, `useAgUiRuntime`, `useAdkRuntime`, `useStreamRuntime`, `useOpenCodeRuntime` now accept `dictation` and `voice` in their `adapters` object and forward them through.
+  - `useOpenCodeRuntime` gains an `adapters` option for the first time (attachments / speech / dictation / voice / feedback).
+
+  every new field is optional and defaults to the prior behavior, so existing call sites need no changes.
+
+- [#4133](https://github.com/assistant-ui/assistant-ui/pull/4133) [`c4d3eea`](https://github.com/assistant-ui/assistant-ui/commit/c4d3eeac6907a2fc15718f3c710d73d24eaeb652) - forward per-tool `providerOptions` from `useAssistantTool` through `toToolsJSONSchema` and `frontendTools` into the AI SDK request body, and emit tool entries in alphabetical order so identical tool sets produce byte-identical request bodies for stable prompt caching. `react-ag-ui` inherits the sort via `toAgUiTools`, so identical tool sets reach the AG-UI runtime in a stable order regardless of mount order. ([@okisdev](https://github.com/okisdev))
+
+  this lets you opt into provider-specific tool features (e.g. Anthropic's `defer_loading`, Anthropic Tool Search Tool) without any provider-aware code in assistant-ui:
+
+  ```ts
+  useAssistantTool({
+    toolName: "get_weather",
+    parameters: schema,
+    providerOptions: { anthropic: { deferLoading: true } },
+    execute: async ({ city }) => fetchWeather(city),
+  });
+  ```
+
+  the value is passed through verbatim; the AI SDK provider (`@ai-sdk/anthropic`, `@ai-sdk/openai`, ...) interprets it.
+
+- Updated dependencies [[`1315789`](https://github.com/assistant-ui/assistant-ui/commit/13157895e4d69ad4266d6ab278edfc2e3ea1de92), [`299d448`](https://github.com/assistant-ui/assistant-ui/commit/299d4488c8a5bbec0679680866f5975055fe71b3), [`4429aa3`](https://github.com/assistant-ui/assistant-ui/commit/4429aa32f6bd4fd50a7a8ddbad1e19f6ccad192b), [`e76611f`](https://github.com/assistant-ui/assistant-ui/commit/e76611fcb80a39d7b6071d82bcfaf1bb7345110b), [`76f7d16`](https://github.com/assistant-ui/assistant-ui/commit/76f7d161c2d802b72e07a12f67595f94c9ad7e4d), [`eef724e`](https://github.com/assistant-ui/assistant-ui/commit/eef724efe4a9075337577c626d7ea7aead45cfbe), [`2dec3ae`](https://github.com/assistant-ui/assistant-ui/commit/2dec3aeba0431178f4ca26e470b304f5a89390ba), [`fcb6baf`](https://github.com/assistant-ui/assistant-ui/commit/fcb6baf161a9ee7dda65191e0b42de12b368724d), [`331f2f7`](https://github.com/assistant-ui/assistant-ui/commit/331f2f7f432285fd0cdc14e0862b550e5d15769e)]:
+  - @assistant-ui/core@0.2.8
+  - @assistant-ui/store@0.2.13
+  - assistant-cloud@0.1.30
+
+## 1.3.30
+
+### Patch Changes
+
+- [#4125](https://github.com/assistant-ui/assistant-ui/pull/4125) [`e639a11`](https://github.com/assistant-ui/assistant-ui/commit/e639a11838642aa111644077ba51acf6277051f2) - chore: drop tracker-behaviour explainer comments left behind in satellite runtimes ([@Yonom](https://github.com/Yonom))
+
+## 1.3.29
+
+### Patch Changes
+
+- [#4123](https://github.com/assistant-ui/assistant-ui/pull/4123) [`4b95d4c`](https://github.com/assistant-ui/assistant-ui/commit/4b95d4c9510febbd5175f30884a87afa69f5adf8) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- Updated dependencies [[`7395092`](https://github.com/assistant-ui/assistant-ui/commit/73950929dbebadb275e3bdee23331f65f2635a33), [`a6e0653`](https://github.com/assistant-ui/assistant-ui/commit/a6e0653bad29fb93627646a77c3383000c57ee33)]:
+  - @assistant-ui/core@0.2.7
+
+## 1.3.28
+
+### Patch Changes
+
+- [#4107](https://github.com/assistant-ui/assistant-ui/pull/4107) [`32ae846`](https://github.com/assistant-ui/assistant-ui/commit/32ae846a91b61eccd01330693868a48f2f3bb0c4) - feat: surface AI SDK v6 tool approvals as a first-class `respondToApproval` prop on tool components. tool-call parts in the `approval-requested` state now carry `part.approval = { id, isAutomatic? }`; tool components call `respondToApproval({ approved, reason? })` to ack the gate without threading `chatHelpers` through application context. also fixes a transient `requires-action` flicker for the `approval-responded` state and tightens the external-message converter so interrupt vs pending tool calls are distinguished by an actual `interrupt`/`approval` field rather than by `result === undefined`. ([@okisdev](https://github.com/okisdev))
+
+- Updated dependencies [[`372d4f0`](https://github.com/assistant-ui/assistant-ui/commit/372d4f0c538a766fd9a849fef74e413dde86d74a), [`32ae846`](https://github.com/assistant-ui/assistant-ui/commit/32ae846a91b61eccd01330693868a48f2f3bb0c4)]:
+  - @assistant-ui/core@0.2.6
+
+## 1.3.27
+
+### Patch Changes
+
+- [#4085](https://github.com/assistant-ui/assistant-ui/pull/4085) [`01244a5`](https://github.com/assistant-ui/assistant-ui/commit/01244a56026ee92bd4e49cb985136f9eb6d45154) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- Updated dependencies [[`0a0c306`](https://github.com/assistant-ui/assistant-ui/commit/0a0c306286598ea885b046a1dfb85016f720051c), [`6a0ecb2`](https://github.com/assistant-ui/assistant-ui/commit/6a0ecb2e49f24c5f066052018db5a9f1411dcc59), [`e4634a5`](https://github.com/assistant-ui/assistant-ui/commit/e4634a59b7a926d158e929d559326f243efe438b), [`325de4c`](https://github.com/assistant-ui/assistant-ui/commit/325de4c73b348d4c20dafa4a2ac6d436c69dbf28), [`01244a5`](https://github.com/assistant-ui/assistant-ui/commit/01244a56026ee92bd4e49cb985136f9eb6d45154), [`f2ec01c`](https://github.com/assistant-ui/assistant-ui/commit/f2ec01ce0f01317a8444b779d88f9b6a26d691c5), [`1e21076`](https://github.com/assistant-ui/assistant-ui/commit/1e2107648bc281f1673f4ad053fd019b28a602d0)]:
+  - @assistant-ui/core@0.2.5
+  - assistant-cloud@0.1.29
+  - @assistant-ui/store@0.2.12
+
+## 1.3.26
+
+### Patch Changes
+
+- [#4030](https://github.com/assistant-ui/assistant-ui/pull/4030) [`798a5ce`](https://github.com/assistant-ui/assistant-ui/commit/798a5ceec9dc6ea4688a66d42b6293a50ef5295a) - fix(react-ai-sdk): resolve MCP app metadata from tool output `_meta["ui/resourceUri"]` as a fallback when it isn't present in `callProviderMetadata.mcp.app`. MCP-UI tools (e.g. xmcp) surface the UI pointer in the call result, so the renderer previously never picked it up. ([@Yonom](https://github.com/Yonom))
+
+## 1.3.25
+
+### Patch Changes
+
+- [#4024](https://github.com/assistant-ui/assistant-ui/pull/4024) [`19d4d94`](https://github.com/assistant-ui/assistant-ui/commit/19d4d9412234628ae850b4b04da594201022a398) - feat: add native MCP Apps renderer — `McpAppRenderer` composes into `Tools` to render MCP UI resources inline in chat over a JSON-RPC postMessage bridge on `SafeContentFrame`. Adds an `mcp` field to `ToolCallMessagePart` and forwards `callProviderMetadata.mcp.app` through the AI SDK message converter. ([@Yonom](https://github.com/Yonom))
+
+- Updated dependencies [[`19d4d94`](https://github.com/assistant-ui/assistant-ui/commit/19d4d9412234628ae850b4b04da594201022a398)]:
+  - @assistant-ui/core@0.2.2
+
+## 1.3.24
+
+### Patch Changes
+
+- [#4003](https://github.com/assistant-ui/assistant-ui/pull/4003) [`717bed2`](https://github.com/assistant-ui/assistant-ui/commit/717bed2810b0841cac43bc998ba8aef69f5c4979) - feat: expose `suggestions` on `useAISDKRuntime` and `useChatRuntime` ([@okisdev](https://github.com/okisdev))
+
+  both hooks now accept an optional `suggestions: readonly ThreadSuggestion[]` option that is forwarded to the underlying `useExternalStoreRuntime`. this lets AI SDK callers drive follow up suggestions from application state, tool results, or backend responses without dropping down to the raw external store runtime.
+
+- [#4001](https://github.com/assistant-ui/assistant-ui/pull/4001) [`283c250`](https://github.com/assistant-ui/assistant-ui/commit/283c250d2aba5633022b59634dbd18a870b28fe0) - feat(react-ai-sdk): expose `onResume` on `useAISDKRuntime` and `useChatRuntime` ([@okisdev](https://github.com/okisdev))
+
+  `AISDKRuntimeAdapter` and `UseChatRuntimeOptions` now accept `onResume`, which is forwarded to the underlying `useExternalStoreRuntime` adapter. `runtime.thread.resumeRun(config)` previously threw `"Runtime does not support resuming runs."` because the inner adapter literal omitted the field; consumers had to monkey-patch `runtime.thread.__internal_threadBinding.getState().resumeRun` to bridge their own replay channels (e.g. SSE reconnect endpoints keyed by turn id). This is a thin pass-through; the existing transport-level resume on `AssistantChatTransport` (auto-fired by `useChatRuntime` on mount) is unchanged and complementary.
+
+- [#3979](https://github.com/assistant-ui/assistant-ui/pull/3979) [`9ecda1d`](https://github.com/assistant-ui/assistant-ui/commit/9ecda1dfdd96f2c638e7b51cc951319ccacd06c9) - feat(react-ai-sdk): native resumable stream client integration ([@okisdev](https://github.com/okisdev))
+
+  `AssistantChatTransport` accepts a `resumable: { storage, resumeApi, isFinishEvent? }` option that captures the stream id from the response header, watches the SSE body for the AI SDK `finish` marker so the stored id is cleared on natural completion (cancellation leaves it intact for the next mount), and redirects `chat.resumeStream()` reconnects to `resumeApi`. `createResumableSessionStorage` is the default `sessionStorage`-backed `ResumableClientStorage`. `useChatRuntime` auto-fires `chat.resumeStream()` once on mount when storage already has an id, so adopters drop the manual `useEffect`.
+
+- [#4008](https://github.com/assistant-ui/assistant-ui/pull/4008) [`fa4510a`](https://github.com/assistant-ui/assistant-ui/commit/fa4510a3f3a23e0458ce8f3a397c352e3b0cde07) - feat: support multi-modal tool results via `toModelOutput` ([@okisdev](https://github.com/okisdev))
+
+  frontend tools can now project their execution output into multi-modal model content (text + image / pdf / arbitrary file parts), aligning with the AI SDK v6 `toModelOutput` callback. previously, tool results were always serialized as a single JSON value, so a "read pdf" style tool had no way to send the PDF back to a multi-modal model.
+  - `assistant-stream` exports a new `ToolModelContentPart` type (`{ type: "text", text } | { type: "file", data, mediaType, filename? }`) and a `ToolModelOutputFunction<TArgs, TResult>` callback type. `Tool.toModelOutput` is wired through `unstable_runPendingTools` and `ToolExecutionStream`, attaching the resulting `modelContent` to the `tool-call` part on the assistant message.
+  - `@assistant-ui/core` re-exports `ToolModelContentPart` and adds an optional `modelContent?: readonly ToolModelContentPart[]` field on `ToolCallMessagePart`. existing tools and renderers are unchanged.
+  - `@assistant-ui/react-ai-sdk`'s `frontendTools(...)` helper now also registers a `toModelOutput` on each forwarded tool. it transparently unwraps an envelope that `useAISDKRuntime` writes when a frontend-executed tool produced `modelContent`, turning it into AI SDK's `{ type: "content", value: [...] }` output. plain (non-envelope) outputs fall back to the existing `{ type: "text" | "json", value }` shape, so behavior for tools without `toModelOutput` is unchanged.
+
+  route handlers that adopt `toModelOutput` also need to pass `tools` to `convertToModelMessages` (this is the [AI SDK's documented pattern](https://ai-sdk.dev/docs/reference/ai-sdk-ui/convert-to-model-messages#multi-modal-tool-responses)):
+
+  ```ts
+  const aiSDKTools = { ...frontendTools(tools ?? {}) };
+  streamText({
+    messages: await convertToModelMessages(messages, { tools: aiSDKTools }),
+    tools: aiSDKTools,
+  });
+  ```
+
+  templates and existing examples are unchanged. they keep the simpler `convertToModelMessages(messages)` form because none of the tools they ship with use `toModelOutput`. the new tools guide page documents how to opt in.
+
+  **reserved key.** when a frontend tool defines `toModelOutput`, its result is persisted in the AI SDK chat as `{ __aui_modelContent: ToolModelContentPart[], value: <your result> }`. tools must not return objects whose top-level key is literally `__aui_modelContent`, or `convertMessage` will misread the result. the prefix is namespaced for this reason.
+
+  **read/write compatibility for persisted threads.** the envelope is recognized by `@assistant-ui/react-ai-sdk` from this version onward. if you persist UI messages and read them from multiple environments, upgrade every reader before any writer starts producing `toModelOutput`; otherwise older readers will treat the envelope object as the `result` and break the affected tool `render` functions.
+
+- [#4004](https://github.com/assistant-ui/assistant-ui/pull/4004) [`d3cf8cd`](https://github.com/assistant-ui/assistant-ui/commit/d3cf8cda6246a09cc4284dc2a333094faef120f6) - fix(react-ai-sdk): preserve tool args when AI SDK briefly emits null input ([@okisdev](https://github.com/okisdev))
+
+  the AI SDK occasionally emits snapshots of an in-flight tool call where
+  `input` is null/undefined, which previously collapsed `argsText` to `"{}"`
+  mid-stream and tripped the runtime's append-only invariant (warning + tool
+  args stream restart, losing accumulated state). `convertMessage` now caches
+  the last good input per `(message.id, toolCallId)` via a new
+  `toolLastInputCache` on `AISDKMessageConverterMetadata` and falls back to it
+  when a later snapshot drops `input`.
+
+- [#3634](https://github.com/assistant-ui/assistant-ui/pull/3634) [`9c3d24d`](https://github.com/assistant-ui/assistant-ui/commit/9c3d24d8a358bcf5f683f85473b82524ea018930) - Support AI SDK `source-document` parts by preserving them as assistant-ui ([@sicko7947](https://github.com/sicko7947))
+  document source message parts across conversion and cloud serialization,
+  including the legacy React cloud encoder.
+- Updated dependencies [[`35d0146`](https://github.com/assistant-ui/assistant-ui/commit/35d014628a69b0003799666895c2552b46ac7198), [`fa4510a`](https://github.com/assistant-ui/assistant-ui/commit/fa4510a3f3a23e0458ce8f3a397c352e3b0cde07), [`c9dd16c`](https://github.com/assistant-ui/assistant-ui/commit/c9dd16c4b1edc52f6a2529a9a07ebb7964aee9a1), [`dea8bc7`](https://github.com/assistant-ui/assistant-ui/commit/dea8bc7e122ad6ff53e48e6b0ffc6fcc2abaadd3), [`9c3d24d`](https://github.com/assistant-ui/assistant-ui/commit/9c3d24d8a358bcf5f683f85473b82524ea018930)]:
+  - @assistant-ui/core@0.2.1
+
+## 1.3.23
+
+### Patch Changes
+
+- Updated dependencies [[`040d469`](https://github.com/assistant-ui/assistant-ui/commit/040d469acfcf782de6fc188c646dfd8732d27088)]:
+  - @assistant-ui/core@0.2.0
+
+## 1.3.22
+
+### Patch Changes
+
+- [#3942](https://github.com/assistant-ui/assistant-ui/pull/3942) [`fbd7ce3`](https://github.com/assistant-ui/assistant-ui/commit/fbd7ce38d5a8d3992ad44acf7c6f29e115a43681) - fix: `aui.thread().append({ startRun: false })` no longer triggers a run on AI SDK runtime ([@Yonom](https://github.com/Yonom))
+
+  `useAISDKRuntime`'s `onNew` and `onEdit` always called `chatHelpers.sendMessage`, ignoring `message.startRun`. The hook now appends the message via `chatHelpers.setMessages` (with a generated id when needed) and returns early when `startRun: false`, so the message lands in the chat without kicking off a model call.
+
+- [#3962](https://github.com/assistant-ui/assistant-ui/pull/3962) [`b090acb`](https://github.com/assistant-ui/assistant-ui/commit/b090acb98f6bf3579aab4efedddaff83a0b54c94) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- Updated dependencies [[`7098bab`](https://github.com/assistant-ui/assistant-ui/commit/7098bab4c67fbd507c3fad746ef130daa01b3fd6), [`b090acb`](https://github.com/assistant-ui/assistant-ui/commit/b090acb98f6bf3579aab4efedddaff83a0b54c94), [`5fdf17e`](https://github.com/assistant-ui/assistant-ui/commit/5fdf17e019c91b000c6f4cf9e3e56c89d764a435)]:
+  - @assistant-ui/core@0.1.18
+  - @assistant-ui/store@0.2.10
+
+## 1.3.21
+
+### Patch Changes
+
+- [#3909](https://github.com/assistant-ui/assistant-ui/pull/3909) [`005f83f`](https://github.com/assistant-ui/assistant-ui/commit/005f83f3ebfb94b3a9d7c34bc7d2a71bbaf63a9e) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- Updated dependencies [[`549037a`](https://github.com/assistant-ui/assistant-ui/commit/549037ac77aed8736823cfb82baf9645e3364adf), [`005f83f`](https://github.com/assistant-ui/assistant-ui/commit/005f83f3ebfb94b3a9d7c34bc7d2a71bbaf63a9e), [`976aec5`](https://github.com/assistant-ui/assistant-ui/commit/976aec566330bee3c607cfb356f3358eefe28ac1), [`25b97d5`](https://github.com/assistant-ui/assistant-ui/commit/25b97d5c62fb038471b06eaa784ad4b7e23ef533), [`2008fc9`](https://github.com/assistant-ui/assistant-ui/commit/2008fc9af3d6fe05604d6b08275c2e9cec099bd9), [`88fcd35`](https://github.com/assistant-ui/assistant-ui/commit/88fcd352ecffd12f124abe988cc5499f784f81d6)]:
+  - @assistant-ui/core@0.1.16
+  - @assistant-ui/store@0.2.9
+
+## 1.3.20
+
+### Patch Changes
+
+- [#3876](https://github.com/assistant-ui/assistant-ui/pull/3876) [`ce865bc`](https://github.com/assistant-ui/assistant-ui/commit/ce865bc46af996d53f89e18068139d4d38546ca6) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- [#3841](https://github.com/assistant-ui/assistant-ui/pull/3841) [`435cfa0`](https://github.com/assistant-ui/assistant-ui/commit/435cfa0318d10478e56a1d1f82bee7dd4e359364) - fix: request body `id` in `useChatRuntime` is now the real thread id instead of the literal `"DEFAULT_THREAD_ID"`. `AssistantChatTransport` was resolving `remoteId` from the inner `ExternalStoreThreadListRuntimeCore` (which only echoes its default id); it now uses the outer `RemoteThreadListRuntimeCore` that actually calls the adapter. ([@okisdev](https://github.com/okisdev))
+
+- [#3858](https://github.com/assistant-ui/assistant-ui/pull/3858) [`da0f598`](https://github.com/assistant-ui/assistant-ui/commit/da0f59818085c7b97d157da1260c5e20873c32c1) - fix: `useAISDKRuntime` now throws when the supplied `ThreadHistoryAdapter` omits `withFormat`, instead of silently dropping all history load/append/update calls. The optional-call chain `historyAdapter.withFormat?.(…).load()` previously short-circuited to `undefined`. The `withFormat`-wrapped adapter is now memoized, and the persist effect short-circuits when no adapter is supplied (avoiding a redundant thread subscription). `ThreadHistoryAdapter.withFormat` gains a JSDoc note clarifying that it is required on the AI SDK path. ([@okisdev](https://github.com/okisdev))
+
+- Updated dependencies [[`c7a274e`](https://github.com/assistant-ui/assistant-ui/commit/c7a274e968f8e081ded4c29cc37986392f04130e), [`ce865bc`](https://github.com/assistant-ui/assistant-ui/commit/ce865bc46af996d53f89e18068139d4d38546ca6), [`ca8f526`](https://github.com/assistant-ui/assistant-ui/commit/ca8f526944968036d47849a7659353765072a836), [`c56f98f`](https://github.com/assistant-ui/assistant-ui/commit/c56f98f5759e710281fc57b343b41af102914f1a), [`974d15e`](https://github.com/assistant-ui/assistant-ui/commit/974d15e34675cc5a611f0297904f5cb2c1b3da8c), [`4b19d42`](https://github.com/assistant-ui/assistant-ui/commit/4b19d42970cb98cee6ea69e2c26dc22763091568), [`da0f598`](https://github.com/assistant-ui/assistant-ui/commit/da0f59818085c7b97d157da1260c5e20873c32c1), [`d53ff4f`](https://github.com/assistant-ui/assistant-ui/commit/d53ff4f3f8b7d7220c1cb274c4fda335598fb063), [`20f8404`](https://github.com/assistant-ui/assistant-ui/commit/20f8404b70098e4b7cbc8df5bbb47985ac81b52c), [`17958c9`](https://github.com/assistant-ui/assistant-ui/commit/17958c9234ccc42394260125df54d897c06a47fd)]:
+  - @assistant-ui/core@0.1.15
+  - assistant-cloud@0.1.27
+  - @assistant-ui/store@0.2.8
+
+## 1.3.19
+
+### Patch Changes
+
+- c988db8: chore: update dependencies
+- a5bce86: fix: preserve latest thread token usage during pending turns
+- Updated dependencies [f20b9ca]
+- Updated dependencies [c988db8]
+  - @assistant-ui/core@0.1.14
+  - assistant-cloud@0.1.26
+  - @assistant-ui/store@0.2.7
+
+## 1.3.18
+
+### Patch Changes
+
+- 376bb00: chore: update dependencies
+- Updated dependencies [42bc640]
+- Updated dependencies [376bb00]
+- Updated dependencies [87e7761]
+  - @assistant-ui/core@0.1.13
+  - assistant-cloud@0.1.25
+
+## 1.3.17
+
+### Patch Changes
+
+- bdce66f: chore: update dependencies
+- 209ae81: chore: remove aui-source export condition from package.json exports
+- Updated dependencies [6554892]
+- Updated dependencies [9103282]
+- Updated dependencies [876f75d]
+- Updated dependencies [bdce66f]
+- Updated dependencies [4abb898]
+- Updated dependencies [209ae81]
+- Updated dependencies [2dd0c9f]
+- Updated dependencies [af70d7f]
+  - @assistant-ui/core@0.1.10
+  - assistant-cloud@0.1.24
+  - @assistant-ui/store@0.2.6
+
+## 1.3.16
+
+### Patch Changes
+
+- 781f28d: feat: accept all file types and validate against adapter's accept constraint
+- 0924711: fix(react-ai-sdk): convert assistant file parts to FileMessagePart instead of dropping them
+- 52403c3: chore: update dependencies
+- Updated dependencies [781f28d]
+- Updated dependencies [3227e71]
+- Updated dependencies [0f55ce8]
+- Updated dependencies [83a15f7]
+- Updated dependencies [52403c3]
+- Updated dependencies [ffa3a0f]
+  - @assistant-ui/core@0.1.9
+  - assistant-cloud@0.1.23
+  - @assistant-ui/store@0.2.5
+
+## 1.3.15
+
+### Patch Changes
+
+- 01a59da: fix(react-ai-sdk): preserve runConfig.custom metadata after tool call resume in human-in-the-loop tools
+- 736344c: chore: update dependencies
+- c71cb58: chore: update dependencies
+- Updated dependencies [1406aed]
+- Updated dependencies [9480f30]
+- Updated dependencies [28a987a]
+- Updated dependencies [736344c]
+- Updated dependencies [ff3be2a]
+- Updated dependencies [70b19f3]
+- Updated dependencies [c71cb58]
+  - @assistant-ui/core@0.1.8
+  - @assistant-ui/store@0.2.4
+
+## 1.3.14
+
+### Patch Changes
+
+- 349f3c7: chore: update deps
+- 642bcda: Add `quote.tsx` registry components and `injectQuoteContext` helper
+- Updated dependencies [1ed9867]
+- Updated dependencies [427ffaa]
+- Updated dependencies [349f3c7]
+- Updated dependencies [02614aa]
+- Updated dependencies [6cc4122]
+- Updated dependencies [642bcda]
+  - @assistant-ui/core@0.1.6
+  - assistant-cloud@0.1.22
+  - @assistant-ui/store@0.2.3
+
+## 1.3.13
+
+### Patch Changes
+
+- 8ed9d6f: Refactor React Native component API: move shared runtime logic (remote thread list, external store, cloud adapters, message converter, tool invocations) into @assistant-ui/core for reuse across React and React Native
+- Updated dependencies [5ae74fe]
+- Updated dependencies [8ed9d6f]
+- Updated dependencies [01bee2b]
+  - @assistant-ui/core@0.1.3
+
+## 1.3.12
+
+### Patch Changes
+
+- 57e26d2: chore: update dependencies
+
+## 1.3.11
+
+### Patch Changes
+
+- a845911: chore: update dependencies
+- Updated dependencies [07dcce0]
+- Updated dependencies [a845911]
+- Updated dependencies [bc40eaf]
+- Updated dependencies [be23d74]
+- Updated dependencies [1eb059c]
+  - @assistant-ui/react@0.12.15
+  - assistant-cloud@0.1.21
+
+## 1.3.10
+
+### Patch Changes
+
+- 51de636: feat(react-ai-sdk): add thread token-usage extraction helpers and hook
+- 7ad20d1: fix(react-ai-sdk): stabilize tool args key order to prevent duplicate toolCallId crash in tapResources
+- Updated dependencies [17cf9a8]
+  - assistant-cloud@0.1.20
+  - @assistant-ui/react@0.12.13
+
+## 1.3.9
+
+### Patch Changes
+
+- 36ef3a2: chore: update dependencies
+- Updated dependencies [36ef3a2]
+- Updated dependencies [6692226]
+- Updated dependencies [c31c0fa]
+- Updated dependencies [1672be8]
+- Updated dependencies [28f39fe]
+- Updated dependencies [3a1cb66]
+- Updated dependencies [14769af]
+- Updated dependencies [7c360ce]
+- Updated dependencies [a638f05]
+- Updated dependencies [8a78cd2]
+  - assistant-cloud@0.1.19
+  - @assistant-ui/react@0.12.12
+
+## 1.3.8
+
+### Patch Changes
+
+- aeec3b9: fix: handle AI SDK v6 approval tool states (approval-requested, approval-responded, output-denied)
+- 7836760: fix(assistant-cloud): expand joined messages for AI SDK v6 history export and telemetry reporting
+- 61b54e9: Add message timing metadata: `AssistantMessageTiming` type, automatic timing tracking in `AssistantMessageAccumulator`, `MessageTiming` type, `useMessageTiming()` hook, and client-side streaming timing for AI SDK runtime.
+- a247fc9: feat(assistant-cloud): allow save complete multi-step message
+- 93910bd: Rename .tsx files to .ts where no JSX syntax is used
+- Updated dependencies [d08a488]
+- Updated dependencies [5bbe8a9]
+- Updated dependencies [5e304ea]
+- Updated dependencies [546c053]
+- Updated dependencies [a7039e3]
+- Updated dependencies [16c10fd]
+- Updated dependencies [98c3d54]
+- Updated dependencies [b181803]
+- Updated dependencies [7836760]
+- Updated dependencies [9276547]
+- Updated dependencies [b65428e]
+- Updated dependencies [af5b085]
+- Updated dependencies [61b54e9]
+- Updated dependencies [a094c45]
+- Updated dependencies [4d7f712]
+- Updated dependencies [ecc29ec]
+- Updated dependencies [6e97999]
+- Updated dependencies [a247fc9]
+- Updated dependencies [f414af9]
+- Updated dependencies [b48912c]
+- Updated dependencies [93910bd]
+- Updated dependencies [58a8472]
+  - assistant-cloud@0.1.18
+  - @assistant-ui/react@0.12.11
+
+## 1.3.7
+
+### Patch Changes
+
+- afaaf3b: fix: duplicate key toolCallId error in HITL tools (#3197)
+- Updated dependencies [afaaf3b]
+- Updated dependencies [afaaf3b]
+- Updated dependencies [afaaf3b]
+- Updated dependencies [afaaf3b]
+- Updated dependencies [51d24be]
+- Updated dependencies [afaaf3b]
+  - @assistant-ui/react@0.12.10
+
+## 1.3.6
+
+### Patch Changes
+
+- a088518: chore: update dependencies
+- Updated dependencies [a088518]
+- Updated dependencies [d8122cc]
+  - assistant-cloud@0.1.17
+  - @assistant-ui/react@0.12.9
+
+## 1.3.5
+
+### Patch Changes
+
+- 39fefec: feat: importExternalState API
+- Updated dependencies [39fefec]
+  - @assistant-ui/react@0.12.6
+
+## 1.3.4
+
+### Patch Changes
+
+- d45b893: chore: update dependencies
+- Updated dependencies [d45b893]
+- Updated dependencies [fe71bfc]
+  - assistant-cloud@0.1.16
+  - @assistant-ui/react@0.12.5
+
+## 1.3.3
+
+### Patch Changes
+
+- acbaf07: feat: add framework-agnostic `toToolsJSONSchema` and `toGenericMessages` utilities to `assistant-stream`
+- Updated dependencies [07d1c65]
+- Updated dependencies [b591d72]
+- Updated dependencies [59a338a]
+- Updated dependencies [acbaf07]
+- Updated dependencies [c665612]
+- Updated dependencies [0371d72]
+- Updated dependencies [e8b3f34]
+  - @assistant-ui/react@0.12.3
+  - assistant-cloud@0.1.15
+
+## 1.3.2
+
+### Patch Changes
+
+- 605d825: chore: update dependencies
+- Updated dependencies [1ea3e28]
+- Updated dependencies [8cbf686]
+- Updated dependencies [a8be364]
+- Updated dependencies [605d825]
+  - @assistant-ui/react@0.12.2
+  - assistant-cloud@0.1.14
+
+## 1.3.1
+
+### Patch Changes
+
+- 5876c0f: feat(react-ai-sdk): propagate ModelContext config (modelName) through AssistantChatTransport
+- Updated dependencies [8672695]
+  - @assistant-ui/react@0.12.1
+
+## 1.2.1
+
+### Patch Changes
+
+- 083ed83: fix(cloud): serialize image and file parts across all formats
+- Updated dependencies [6eab31e]
+- Updated dependencies [9314b36]
+- Updated dependencies [083ed83]
+- Updated dependencies [6511990]
+- Updated dependencies [a526e63]
+  - @assistant-ui/react@0.11.60
+
+## 1.2.0
+
+### Minor Changes
+
+- 6fd744a: Upgrade to Vercel AI SDK v6
+  - Updated peer dependencies: `ai@^6.0.0`, `@ai-sdk/react@^3.0.0`
+  - Renamed format adapter from `aiSDKV5FormatAdapter` to `aiSDKV6FormatAdapter`
+  - Updated `@ai-sdk/provider` to use LanguageModelV2 types
+
+### Patch Changes
+
+- 3719567: chore: update deps
+- Updated dependencies [3719567]
+  - assistant-cloud@0.1.13
+  - @assistant-ui/react@0.11.58
+
+## 1.1.21
+
+### Patch Changes
+
+- 5ce45bd: fix(react-ai-sdk): preserve metadata in message conversion
+- Updated dependencies [3a0b9c8]
+- Updated dependencies [b8f62e1]
+- Updated dependencies [8d5c20c]
+  - @assistant-ui/react@0.11.56
+
+## 1.1.20
+
+### Patch Changes
+
+- 57bd207: chore: update dependencies
+- cce009d: chore: use tsc for building packages
+- Updated dependencies [57bd207]
+- Updated dependencies [cce009d]
+  - assistant-cloud@0.1.12
+  - @assistant-ui/react@0.11.53
+
+## 1.1.19
+
+### Patch Changes
+
+- e8ea57b: chore: update deps
+- Updated dependencies [bae3aa2]
+- Updated dependencies [e8ea57b]
+  - @assistant-ui/react@0.11.50
+  - assistant-stream@0.2.45
+  - assistant-cloud@0.1.11
+
+## 1.1.18
+
+### Patch Changes
+
+- 89aec17: feat: AI SDK frontend tool execution cancellation support
+  fix: AI SDK isRunning status when running frontend tools
+- Updated dependencies [89aec17]
+- Updated dependencies [ee7040f]
+- Updated dependencies [bd27465]
+- Updated dependencies [a3e9549]
+- Updated dependencies [206616b]
+- Updated dependencies [7aa77b5]
+  - assistant-stream@0.2.44
+  - @assistant-ui/react@0.11.49
+
+## 1.1.17
+
+### Patch Changes
+
+- 01c31fe: chore: update dependencies
+- Updated dependencies [ba26b22]
+- Updated dependencies [d169e4f]
+- Updated dependencies [da9f8a6]
+- Updated dependencies [01c31fe]
+  - @assistant-ui/react@0.11.48
+  - assistant-stream@0.2.43
+  - assistant-cloud@0.1.10
+
+## 1.1.16
+
+### Patch Changes
+
+- c4142ac: fix(react-ai-sdk): pass runConfig metadata to backend API request
+
+## 1.1.15
+
+### Patch Changes
+
+- ab8953b: feat(react): add `allowNesting` option to allow wrapping runtimes with custom thread list adapters
+- Updated dependencies [ab8953b]
+  - @assistant-ui/react@0.11.46
+
+## 1.1.14
+
+### Patch Changes
+
+- ec662cd: chore: update dependencies
+- cdb5ea5: mark tool call as complete once user sends new message when tool calling
+- 5dd925e: feat(ai-sdk): allow updates to headers/body
+- Updated dependencies [ec662cd]
+  - assistant-stream@0.2.42
+  - assistant-cloud@0.1.9
+  - @assistant-ui/react@0.11.45
+
+## 1.1.13
+
+### Patch Changes
+
+- 4f6afef: feat: unified json schema
+- Updated dependencies [4f6afef]
+  - @assistant-ui/react@0.11.44
+
+## 1.1.12
+
+### Patch Changes
+
+- faed815: feat: AI SDK error toolOutput support
+- 2c33091: chore: update deps
+- Updated dependencies [2c33091]
+  - assistant-stream@0.2.41
+  - assistant-cloud@0.1.8
+  - @assistant-ui/react@0.11.40
+
+## 1.1.11
+
+### Patch Changes
+
+- 0bcbb58: feat: custom `toCreateMessage` callback
+  fix: use AI SDK's idGenerator function for new messages
+- b408005: feat(react-ai-sdk): Integrate AI SDK v5 data parts in message content
+- Updated dependencies [b408005]
+- Updated dependencies [7a6d9ca]
+- Updated dependencies [70d5966]
+- Updated dependencies [3754bdd]
+- Updated dependencies [0a4bdc1]
+  - @assistant-ui/react@0.11.39
+
+## 1.1.10
+
+### Patch Changes
+
+- 34d1c78: fix(react-ai-sdk): correctly initialize history loading state
+- Updated dependencies [66a13a0]
+- Updated dependencies [4e3877e]
+- Updated dependencies [eef682b]
+  - @assistant-ui/react@0.11.38
+  - assistant-cloud@0.1.7
+
+## 1.1.9
+
+### Patch Changes
+
+- 81b581f: feat: display AI SDK errors
+- 6d2c134: feat: useChatRuntime should use the assistant ui thread id remote id as the threadid by default
+- 2fc7e99: chore: update deps
+- Updated dependencies [3ab9484]
+- Updated dependencies [7a88ead]
+- Updated dependencies [81b581f]
+- Updated dependencies [2fc7e99]
+  - @assistant-ui/react@0.11.36
+  - assistant-stream@0.2.39
+  - assistant-cloud@0.1.6
+
+## 1.1.8
+
+### Patch Changes
+
+- 953db24: chore: update deps
+- Updated dependencies [953db24]
+- Updated dependencies
+  - assistant-stream@0.2.37
+  - assistant-cloud@0.1.5
+  - @assistant-ui/react@0.11.34
+
+## 1.1.7
+
+### Patch Changes
+
+- chore: update deps
+- Updated dependencies
+  - assistant-stream@0.2.36
+  - assistant-cloud@0.1.4
+  - @assistant-ui/react@0.11.31
+
+## 1.1.6
+
+### Patch Changes
+
+- a5f9dd5: Export missing types for custom runtime integration
+- Updated dependencies [92dfb0f]
+  - @assistant-ui/react@0.11.29
+
+## 1.1.5
+
+### Patch Changes
+
+- e6a46e4: chore: update deps
+- Updated dependencies [e6a46e4]
+  - assistant-stream@0.2.34
+  - assistant-cloud@0.1.3
+  - @assistant-ui/react@0.11.27
+
+## 1.1.4
+
+### Patch Changes
+
+- e81784b: feat: Tool Call interrupt() resume() API
+- Updated dependencies [e8d6d7b]
+- Updated dependencies [e81784b]
+  - @assistant-ui/react@0.11.22
+  - assistant-stream@0.2.32
+
+## 1.1.3
+
+### Patch Changes
+
+- e46e4d3: fix: guard threadItem access for useAISDKRuntime
+- Updated dependencies [c0f5003]
+  - assistant-stream@0.2.31
+
+## 1.1.2
+
+### Patch Changes
+
+- 8812f86: chore: update deps
+- Updated dependencies [8812f86]
+  - assistant-stream@0.2.30
+  - assistant-cloud@0.1.2
+
+## 1.1.1
+
+### Patch Changes
+
+- 68ef242: feat(ui): load external history only when thread has remote id
+- Updated dependencies [2c6198a]
+  - @assistant-ui/react@0.11.19
+
+## 1.1.0
+
+### Patch Changes
+
+- 39ac2f3: feat: AI SDK v5 import support
+- Updated dependencies [39ac2f3]
+- Updated dependencies [5437dbe]
+  - @assistant-ui/react@0.11.0
+
+## 1.0.7
+
+### Patch Changes
+
+- d7d9058: fix: cloud chat history not loading in some configurations
+
+## 1.0.6
+
+### Patch Changes
+
+- 860bf42: feat: useAISDKRuntime cloud history support (without useChatRuntime)
+- Updated dependencies [3498c99]
+  - @assistant-ui/react@0.10.50
+
+## 1.0.5
+
+### Patch Changes
+
+- 90fc83b: fixes attachment naming
+- e64b20c: fix: persistence only saving the first two messages
+
+## 1.0.4
+
+### Patch Changes
+
+- 9235fe1: update dep array in external history adapter
+
+## 1.0.3
+
+### Patch Changes
+
+- ceedf45: feat: pass run-config to ai-sdk metadata to let user decide what to do after
+- 5504836: pass callsettings in extra body object to AI chat transport
+- Updated dependencies [a80dcff]
+  - @assistant-ui/react@0.10.43
+
+## 1.0.2
+
+### Patch Changes
+
+- 672db5a: feat: frontend function calling support
+- 12e0a77: chore: update deps
+- Updated dependencies [12e0a77]
+  - assistant-stream@0.2.23
+  - assistant-cloud@0.1.1
+  - @assistant-ui/react@0.10.42
+
+## 1.0.1
+
+### Patch Changes
+
+- eda5558: feat: AI SDK custom UIMessage type support
+- Updated dependencies [eda5558]
+  - @assistant-ui/react@0.10.41
+
+## 1.0.0
+
+### Patch Changes
+
+- de215fd: fix: history loading
+- Updated dependencies [179f8b7]
+  - assistant-cloud@0.1.0
+  - @assistant-ui/react@0.10.40
+
+## 0.11.5
+
+### Patch Changes
+
+- a4389da: feat: AI SDK v5 assistant-cloud thread history support
+- Updated dependencies [a4389da]
+  - @assistant-ui/react@0.10.39
+
+## 0.11.4
+
+### Patch Changes
+
+- 979ee67: feat: forward system and tools to the backend for useChatRuntime
+- 979ee67: feat: assistant cloud support for AI SDK v5
+- 979ee67: feat: add AssistantChatTransport
+- Updated dependencies [979ee67]
+  - @assistant-ui/react@0.10.38
+
+## 0.11.3
+
+### Patch Changes
+
+- 2ef6cae: feat: Add useChatRuntime as new recommended entry point for AI-SDK V5
+- Updated dependencies [f32b6a4]
+  - @assistant-ui/react@0.10.37
+
+## 0.11.1
+
+### Patch Changes
+
+- 20ffa06: fix: Don't omit attachments from `AISDKRuntimeAdapter` type
+- Updated dependencies [ed78407]
+- Updated dependencies [77ce337]
+- Updated dependencies [f59959e]
+  - @assistant-ui/react@0.10.36
+
+## 0.11.0
+
+### Patch Changes
+
+- 0f063e0: chore: update dependencies
+- Updated dependencies [0f063e0]
+- Updated dependencies [5d8b074]
+  - assistant-stream@0.2.22
+  - @assistant-ui/react@0.10.34

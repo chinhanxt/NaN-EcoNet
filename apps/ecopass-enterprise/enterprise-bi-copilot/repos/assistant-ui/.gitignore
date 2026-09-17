@@ -1,0 +1,103 @@
+# dependencies
+node_modules
+/.pnp
+.pnp.*
+.pnpm-store/
+
+# misc
+.DS_Store
+*.pem
+/.worktrees/
+
+# debug
+.pnpm-debug.log*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# env files
+.env*.local
+.env
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# vercel
+.vercel
+
+# testing
+coverage
+.stryker-tmp/
+reports/mutation/
+
+# next.js
+.next/
+out/
+.workflow-data
+.eve
+
+# agent rules `next dev` generates in each app it runs from
+/apps/*/AGENTS.md
+/apps/*/CLAUDE.md
+/examples/**/AGENTS.md
+/examples/**/CLAUDE.md
+/templates/*/AGENTS.md
+/templates/*/CLAUDE.md
+
+# nitro
+.output/
+
+# nuxt
+.nuxt/
+
+# build
+build/
+
+# fumadocs
+.source
+
+# production
+dist
+apps/docs/generated
+packages/*/generated
+
+# compiled by packages/react-devtools build:css, regenerated on install/build
+packages/react-devtools/src/styles/panel.generated.ts
+
+# turbo
+.turbo
+.api-surface-tmp/
+.strict-libcheck-*/
+
+# python
+__pycache__/
+.venv/
+venv/
+.eggs/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+htmlcov/
+.coverage
+
+.langgraph_api
+
+# Cursor
+.cursor
+
+# Husky
+.husky/_
+
+# Claude
+**/.claude/scheduled_tasks.lock
+apps/docs/app/api/xulux/README.md
+apps/docs/app/api/xulux/CLAUDE.md
+
+# GitHub Spec Kit - https://github.com/github/spec-kit
+.specify/
+specs/*
+.test-output/

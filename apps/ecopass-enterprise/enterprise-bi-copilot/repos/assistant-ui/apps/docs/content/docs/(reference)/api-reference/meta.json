@@ -1,0 +1,19 @@
+{
+  "title": "API Reference",
+  "pages": [
+    "overview",
+    "tools",
+    "model-context",
+    "transport",
+    "external-store",
+    "voice",
+    "generative-ui",
+    "primitives",
+    "hooks",
+    "adapters",
+    "runtimes",
+    "context-providers",
+    "integrations",
+    "utilities"
+  ]
+}

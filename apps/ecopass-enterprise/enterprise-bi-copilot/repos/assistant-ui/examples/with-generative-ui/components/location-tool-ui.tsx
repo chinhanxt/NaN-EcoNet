@@ -1,0 +1,55 @@
+"use client";
+
+import type { ToolCallMessagePartComponent } from "@assistant-ui/react";
+import { MapPinIcon, Loader2Icon } from "lucide-react";
+
+type LocationArgs = {
+  name: string;
+  address?: string;
+  lat: number;
+  lng: number;
+};
+
+type LocationResult = {
+  success: boolean;
+};
+
+export const LocationToolUI: ToolCallMessagePartComponent<
+  LocationArgs,
+  LocationResult
+> = function LocationUI({ args, status }) {
+  if (status.type === "running" && (args.lat == null || args.lng == null)) {
+    return (
+      <div className="flex items-center gap-2 rounded-lg border p-4">
+        <Loader2Icon className="text-muted-foreground size-4 animate-spin" />
+        <span className="text-muted-foreground text-sm">
+          Loading location...
+        </span>
+      </div>
+    );
+  }
+
+  const { name, address, lat, lng } = args;
+  if (lat == null || lng == null) return null;
+
+  const mapSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.01},${lat - 0.01},${lng + 0.01},${lat + 0.01}&layer=mapnik&marker=${lat},${lng}`;
+
+  return (
+    <div className="my-2 overflow-hidden rounded-lg border">
+      <div className="flex items-center gap-2 border-b px-3 py-2">
+        <MapPinIcon className="text-muted-foreground size-4" />
+        <div>
+          <p className="text-sm font-medium">{name}</p>
+          {address && (
+            <p className="text-muted-foreground text-xs">{address}</p>
+          )}
+        </div>
+      </div>
+      <iframe
+        title={`Map of ${name}`}
+        src={mapSrc}
+        className="h-[200px] w-full border-0"
+      />
+    </div>
+  );
+};

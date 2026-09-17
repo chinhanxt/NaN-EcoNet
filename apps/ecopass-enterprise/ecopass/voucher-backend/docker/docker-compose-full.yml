@@ -1,0 +1,102 @@
+services:
+
+  app:
+    image: l4rm4nd/vouchervault:1.30.x
+    container_name: vouchervault
+    restart: unless-stopped
+    environment:
+      # set to true to enable debug mode
+      - DEBUG=${DEBUG:-False}
+      # your FQDN or IP; multiple ones supported by comma separation
+      - DOMAIN=${DOMAIN:-vouchervault.example.com}
+      # set to True if you use a reverse proxy with tls; enables secure cookie flag and hsts
+      - SECURE_COOKIES=${SECURE_COOKIES:-False}
+      # define the maximum session age in minutes
+      - SESSION_COOKIE_AGE=${SESSION_COOKIE_AGE:-30}
+      # decide whether session cookie is invalidated on browser close
+      - SESSION_EXPIRE_AT_BROWSER_CLOSE=${SESSION_EXPIRE_AT_BROWSER_CLOSE:-True}
+      # send expiry notification xx days prior expiry
+      - EXPIRY_THRESHOLD_DAYS=${EXPIRY_THRESHOLD_DAYS:-90}
+      # send a final expiry notification xx days prior expiry
+      - EXPIRY_LAST_NOTIFICATION_DAYS=${EXPIRY_LAST_NOTIFICATION_DAYS:-7}
+      # define the timezone
+      - TZ=${TZ:-Europe/Berlin}
+      # define custom frame-ancestor csp directive
+      #- CSP_FRAME_ANCESTORS=${CSP_FRAME_ANCESTORS:?Set CSP_FRAME_ANCESTORS in .env}
+      #- SECRET_KEY=${SECRET_KEY:?Set SECRET_KEY in .env}
+      #- PORT=${PORT:-8000}
+      #- REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      # ------- OPTIONAL OIDC AUTH --------
+      # Set to 'True' to enable OIDC authentication
+      #- OIDC_ENABLED=${OIDC_ENABLED:-False}
+      # Decide whether login area triggers automatic OIDC login flow
+      #- OIDC_AUTOLOGIN=${OIDC_AUTOLOGIN:-False}
+      # Set to 'True' to allow the creation of new users through OIDC
+      #- OIDC_CREATE_USER=${OIDC_CREATE_USER:-False}
+      # The signing algorithm used by the OIDC provider (e.g., RS256, HS256)
+      #- OIDC_RP_SIGN_ALGO=${OIDC_RP_SIGN_ALGO:-RS256}
+      # URL of the JWKS endpoint for the OIDC provider
+      #- OIDC_OP_JWKS_ENDPOINT=${OIDC_OP_JWKS_ENDPOINT:?Set OIDC_OP_JWKS_ENDPOINT in .env}
+      # Client ID for your OIDC RP
+      #- OIDC_RP_CLIENT_ID=${OIDC_RP_CLIENT_ID:-vouchervault}
+      # Client secret for your OIDC RP
+      #- OIDC_RP_CLIENT_SECRET=${OIDC_RP_CLIENT_SECRET:?Set OIDC_RP_CLIENT_SECRET in .env}
+      # Authorization endpoint URL of the OIDC provider
+      #- OIDC_OP_AUTHORIZATION_ENDPOINT=${OIDC_OP_AUTHORIZATION_ENDPOINT:?Set OIDC_OP_AUTHORIZATION_ENDPOINT in .env}
+      # Token endpoint URL of the OIDC provider
+      #- OIDC_OP_TOKEN_ENDPOINT=${OIDC_OP_TOKEN_ENDPOINT:?Set OIDC_OP_TOKEN_ENDPOINT in .env}
+      # User info endpoint URL of the OIDC provider
+      #- OIDC_OP_USER_ENDPOINT=${OIDC_OP_USER_ENDPOINT:?Set OIDC_OP_USER_ENDPOINT in .env}
+      # ------- OPTIONAL PSQL DB --------
+      #- DB_ENGINE=${DB_ENGINE:-postgres}
+      #- POSTGRES_USER=${POSTGRES_USER:-vouchervault}
+      #- POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      #- POSTGRES_DB=${POSTGRES_DB:-vouchervault}
+      #- POSTGRES_HOST=${POSTGRES_HOST:-db}
+      #- POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      # ------- CELERY ENVS --------
+      #- CELERY_WORKER_CONCURRENCY=${CELERY_WORKER_CONCURRENCY:-4}
+      #- CELERY_WORKER_PREFETCH_MULTIPLIER=${CELERY_WORKER_PREFETCH_MULTIPLIER:-2}
+    expose:
+      - 8000
+    ports:
+      - 8000:8000
+    volumes:
+      - ./volume-data/database:/opt/app/database
+    #networks:
+    #  - proxy
+    #labels:
+    #  - traefik.enable=true
+    #  - traefik.docker.network=proxy
+    #  - traefik.http.routers.vouchervault.rule=Host(`vouchervault.example.com`)
+    #  - traefik.http.services.vouchervault.loadbalancer.server.port=8000
+    #  # Optional part for traefik middlewares
+    #  - traefik.http.routers.vouchervault.middlewares=local-ipwhitelist@file
+
+  redis:
+    container_name: vouchervault-redis
+    image: redis:7-alpine
+    restart: unless-stopped
+    expose:
+      - 6379
+    #networks:
+    #  - proxy
+
+#  db:
+#    container_name: vouchervault-psql
+#    image: postgres:16-alpine
+#    restart: unless-stopped
+#    expose:
+#      - 5432
+#    volumes:
+#      - ./volume-data/database/psql:/var/lib/postgresql/data/
+#    environment:
+#      - POSTGRES_USER=vouchervault
+#      - POSTGRES_PASSWORD=vouchervault
+#      - POSTGRES_DB=vouchervault    
+#    #networks:
+#    #  - proxy
+    
+#networks:
+#  proxy:
+#    external: true

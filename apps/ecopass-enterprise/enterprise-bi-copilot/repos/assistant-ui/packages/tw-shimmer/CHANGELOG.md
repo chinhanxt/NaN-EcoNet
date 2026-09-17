@@ -1,0 +1,136 @@
+# tw-shimmer
+
+## 0.4.13
+
+### Patch Changes
+
+- [#6830](https://github.com/assistant-ui/assistant-ui/pull/6830) [`f8c4334`](https://github.com/assistant-ui/assistant-ui/commit/f8c43340fb97892240e755fa5d76947e9149fd38) - perf: run the text shimmer on the compositor without duplicate markup ([@rupic-app](https://github.com/apps/rupic-app))
+  
+  where `-webkit-mask-clip: text` is supported the host is masked and an additive band moves on `translate`, so a shimmering label no longer repaints its glyphs every frame; other browsers keep the gradient fallback. the band travels the same distance as the fallback, so `shimmer-speed`, `shimmer-duration`, `shimmer-repeat-delay`, `shimmer-angle`, and `shimmer-container` produce the same sweep on both paths. it defaults to white and takes `--shimmer-color`, `shimmer-color-*`, and `shimmer-invert`, which matches the fallback on white and dark surfaces and can differ on tinted ones. the host mask clips every descendant, so a text shimmer host must contain text only. text shimmer now holds still under `prefers-reduced-motion: reduce` on both paths; `shimmer-bg` is unchanged.
+
+- [#7083](https://github.com/assistant-ui/assistant-ui/pull/7083) [`4e5d2b3`](https://github.com/assistant-ui/assistant-ui/commit/4e5d2b394872968b6a47b58273a66d33214731e4) - docs: align the documented utilities and defaults with the shipped CSS ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#6829](https://github.com/assistant-ui/assistant-ui/pull/6829) [`5d6638f`](https://github.com/assistant-ui/assistant-ui/commit/5d6638f61b904a63ad2a6c7f9cffffb4dd82246f) - fix: gate the text clip behind the same capability check as the gradient, so shimmer text stays readable below the browser support floor ([@MFA-G](https://github.com/MFA-G))
+
+## 0.4.12
+
+### Patch Changes
+
+- [#4746](https://github.com/assistant-ui/assistant-ui/pull/4746) [`0686f4e`](https://github.com/assistant-ui/assistant-ui/commit/0686f4e6b8ee5f6e17c968997ef11622ef8f9c98) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- [#4966](https://github.com/assistant-ui/assistant-ui/pull/4966) [`0fb38cb`](https://github.com/assistant-ui/assistant-ui/commit/0fb38cb9002b531f5c3902be0d59cc4ccd7099c7) - fix background shimmer animation speed in Firefox ([@Kinfe123](https://github.com/Kinfe123))
+
+## 0.4.11
+
+### Patch Changes
+
+- 1083599: fix: add "style" export condition for CSS entries so Tailwind CSS v4 `@import` can resolve packages
+
+## 0.4.10
+
+### Patch Changes
+
+- 094fa56: fix: register shimmer-bg as standalone @utility for Tailwind v4 tooling recognition
+
+## 0.4.9
+
+### Patch Changes
+
+- 349f3c7: chore: update deps
+
+## 0.4.8
+
+### Patch Changes
+
+- a845911: chore: update dependencies
+
+## 0.4.7
+
+### Patch Changes
+
+- 36ef3a2: chore: update dependencies
+
+## 0.4.6
+
+### Patch Changes
+
+- a088518: chore: update dependencies
+
+## 0.4.5
+
+### Patch Changes
+
+- d45b893: chore: update dependencies
+
+## 0.4.4
+
+### Patch Changes
+
+- 605d825: chore: update dependencies
+
+## 0.4.3
+
+### Patch Changes
+
+- 3719567: chore: update deps
+
+## 0.4.2
+
+### Patch Changes
+
+- 57bd207: chore: update dependencies
+- cce009d: chore: use tsc for building packages
+
+## 0.4.1
+
+### Patch Changes
+
+- e8ea57b: chore: update deps
+
+## 0.4.0
+
+### Minor Changes
+
+- 308d3da: ### New Features
+  - Add `shimmer-bg` utility for skeleton loaders and background shimmer effects
+  - Add sine-eased gradients (17 stops) for smooth, banding-free shimmer highlights
+  - Add position sync utilities (`shimmer-x-*`, `shimmer-y-*`) for aligning angled shimmers across multiple elements
+  - Add `shimmer-angle-*` utility for diagonal shimmer sweeps
+  - Add `shimmer-container` with auto-width, auto-speed, and auto-spread heuristics:
+    - Width-dependent pass duration (~1.1s at 320px → ~1.6s at 960px+)
+    - Highlight spread scales with container width (clamped 200–300px)
+  - Introduce internal `--tw-shimmer-*-auto` variables so container-derived values act as fallbacks and any explicit `--shimmer-width`, `--shimmer-speed`, or `--shimmer-bg-spread` always override them
+
+  ### Defaults
+  - Background shimmer: 800px width, 1000px/s speed
+  - Text shimmer: 200px width, 150px/s speed
+
+### Patch Changes
+
+- 01c31fe: chore: update dependencies
+
+## 0.3.0
+
+### Minor Changes
+
+- Add `shimmer-bg` utility for skeleton loaders and background shimmer effects
+- Add sine-eased gradients for smooth, banding-free shimmer highlights
+- Add position sync utilities (`shimmer-x-*`, `shimmer-y-*`) for aligning angled shimmers across multiple elements
+- Add `shimmer-angle-*` utility for diagonal shimmer sweeps
+- Add internal variable system (`--tw-shimmer-*`) derived from public `--shimmer-*` variables with sensible defaults
+- Add `shimmer-container` auto-speed and auto-spread heuristics for `shimmer-bg` so that shimmer passes use a width-dependent pass time (~1.1–1.6s) and highlight spread scales with container width (clamped between ~200px and 300px, or the track width if smaller)
+- Introduce internal `--tw-shimmer-*-auto` variables for width and speed so that container-derived values act as fallbacks and any explicit `--shimmer-width`, `--shimmer-speed`, or `--shimmer-bg-spread` (from utilities or inline styles) always override them, even inside `shimmer-container`
+- Background shimmer defaults: 800px width, 1000px/s speed
+- Text shimmer defaults: 200px width, 150px/s speed
+
+## 0.2.1
+
+### Patch Changes
+
+- 2c33091: chore: update deps
+
+## 0.2.0
+
+### Minor Changes
+
+- fa5c757: Fix Firefox support - convert shimmer-width-x to unitless

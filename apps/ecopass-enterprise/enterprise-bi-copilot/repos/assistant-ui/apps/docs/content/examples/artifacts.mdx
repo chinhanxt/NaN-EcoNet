@@ -1,0 +1,38 @@
+---
+title: Claude Artifacts Example
+description: Open-source Claude Artifacts implementation in React — generate websites and components in a side panel from chat messages, built on assistant-ui.
+---
+
+## Overview
+
+An open-source implementation of Claude Artifacts that allows users to generate interactive content like websites, documents, and applications directly within the chat interface. The AI generates HTML, CSS, and JavaScript code that renders in a live preview panel alongside the conversation.
+
+## Features
+
+- **Real-time Preview**: Generated artifacts render instantly in an isolated sandboxed iframe
+- **Code Generation**: Creates complete HTML, CSS, and JavaScript applications
+- **Interactive Elements**: Artifacts can include buttons, forms, and animations
+- **Iteration Support**: Ask the AI to modify and improve generated artifacts
+- **Safe Execution**: Code runs in a sandboxed iframe with scripts enabled but no access to the parent documentation page
+- **Export Options**: Download generated artifacts as standalone files
+
+## How It Works
+
+1. **Request**: Ask the AI to create something (e.g., "Create a calculator app")
+2. **Generation**: The AI generates the necessary HTML, CSS, and JavaScript
+3. **Rendering**: Code is safely rendered in an isolated preview panel
+4. **Iteration**: Request changes and see updates in real-time
+
+## Use Cases
+
+- **Prototyping**: Quickly create UI mockups and interactive demos
+- **Learning**: Generate code examples to understand concepts
+- **Visualization**: Create charts, diagrams, and data visualizations
+- **Games**: Build simple browser games and interactive experiences
+- **Tools**: Generate calculators, converters, and utility applications
+
+## Source
+
+The implementation for this example is available in the docs:
+
+<SourceLink href="https://github.com/assistant-ui/assistant-ui/tree/main/examples/with-artifacts" />

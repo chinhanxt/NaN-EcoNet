@@ -1,0 +1,75 @@
+// CopilotKit runtime for the MCP Apps cell.
+//
+// The runtime's `mcpApps` config auto-applies the MCP Apps middleware to
+// the agent: when the agent calls a tool backed by an MCP UI resource, the
+// middleware fetches the resource and emits the activity event that the
+// built-in `MCPAppsActivityRenderer` renders in the chat as a sandboxed
+// iframe.
+//
+// The LlamaIndex port points at the same Excalidraw MCP server; the agent
+// at `/mcp-apps/run` has no bespoke tools — MCP tools are injected by the
+// runtime middleware at request time.
+
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import {
+  CopilotRuntime,
+  createCopilotRuntimeHandler,
+} from "@copilotkit/runtime/v2";
+import type { AbstractAgent } from "@ag-ui/client";
+import { HttpAgent } from "@ag-ui/client";
+
+const AGENT_URL = process.env.AGENT_URL || "http://localhost:8000";
+
+const mcpAppsAgent = new HttpAgent({ url: `${AGENT_URL}/mcp-apps/run` });
+
+// headless-complete shares this runtime but has its own backend tool catalog
+// and history handling for its weather, stock, highlight, and chart cards.
+const headlessCompleteAgent = new HttpAgent({
+  url: `${AGENT_URL}/headless-complete/run`,
+});
+
+// @region[runtime-mcpapps-config]
+// The `mcpApps.servers` config is all you need server-side. The runtime
+// auto-applies the MCP Apps middleware: on each MCP tool call the
+// middleware fetches the associated UI resource and emits an `activity`
+// event the built-in `MCPAppsActivityRenderer` renders inline in the
+// chat. No app-side renderer registration required.
+const runtime = new CopilotRuntime({
+  // @ts-ignore -- see main route.ts; published CopilotRuntime's `agents`
+  // type wraps Record in MaybePromise<NonEmptyRecord<...>> which rejects
+  // plain Records. Fixed in source, pending release.
+  agents: {
+    "headless-complete": headlessCompleteAgent as AbstractAgent,
+    "mcp-apps": mcpAppsAgent as AbstractAgent,
+  },
+  mcpApps: {
+    servers: [
+      {
+        type: "http",
+        url: process.env.MCP_SERVER_URL || "https://mcp.excalidraw.com",
+        // Always pin a stable `serverId` so URL changes don't silently
+        // break restoration of persisted MCP Apps in prior threads.
+        serverId: "excalidraw",
+      },
+    ],
+  },
+});
+// @endregion[runtime-mcpapps-config]
+
+export const POST = async (req: NextRequest) => {
+  try {
+    const copilotHandler = createCopilotRuntimeHandler({
+      runtime,
+      basePath: "/api/copilotkit-mcp-apps",
+      mode: "single-route",
+    });
+    return await copilotHandler(req);
+  } catch (error: unknown) {
+    const e = error as { message?: string; stack?: string };
+    return NextResponse.json(
+      { error: e.message, stack: e.stack },
+      { status: 500 },
+    );
+  }
+};

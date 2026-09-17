@@ -1,0 +1,60 @@
+"use client";
+
+import {
+  type ComponentPropsWithoutRef,
+  type ComponentRef,
+  forwardRef,
+} from "react";
+import { Popover as PopoverPrimitive } from "radix-ui";
+import { composeEventHandlers } from "radix-ui/internal";
+import type { WithRenderPropProps } from "../../utils/Primitive";
+import { PopoverRenderContent } from "./popoverRenderPrimitives";
+import { type ScopedProps, usePopoverScope } from "./scope";
+
+export namespace AssistantModalPrimitiveContent {
+  export type Element = ComponentRef<typeof PopoverPrimitive.Content>;
+  export type Props = WithRenderPropProps<typeof PopoverPrimitive.Content> & {
+    portalProps?:
+      | ComponentPropsWithoutRef<typeof PopoverPrimitive.Portal>
+      | undefined;
+    dissmissOnInteractOutside?: boolean | undefined;
+  };
+}
+
+export const AssistantModalPrimitiveContent = forwardRef<
+  AssistantModalPrimitiveContent.Element,
+  AssistantModalPrimitiveContent.Props
+>(
+  (
+    {
+      __scopeAssistantModal,
+      side,
+      align,
+      onInteractOutside,
+      dissmissOnInteractOutside = false,
+      portalProps,
+      ...props
+    }: ScopedProps<AssistantModalPrimitiveContent.Props>,
+    forwardedRef,
+  ) => {
+    const scope = usePopoverScope(__scopeAssistantModal);
+
+    return (
+      <PopoverPrimitive.Portal {...scope} {...portalProps}>
+        <PopoverRenderContent
+          {...scope}
+          {...props}
+          ref={forwardedRef}
+          side={side ?? "top"}
+          align={align ?? "end"}
+          onInteractOutside={composeEventHandlers(
+            onInteractOutside,
+            dissmissOnInteractOutside ? undefined : (e) => e.preventDefault(),
+          )}
+        />
+      </PopoverPrimitive.Portal>
+    );
+  },
+);
+
+AssistantModalPrimitiveContent.displayName = "AssistantModalPrimitive.Content";

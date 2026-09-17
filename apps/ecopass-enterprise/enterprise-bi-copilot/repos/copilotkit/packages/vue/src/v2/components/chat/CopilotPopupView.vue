@@ -1,0 +1,158 @@
+<script setup lang="ts">
+import { computed, useAttrs } from "vue";
+import CopilotChatConfigurationProvider from "../../providers/CopilotChatConfigurationProvider.vue";
+import CopilotPopupViewInternal from "./CopilotPopupViewInternal.vue";
+import type {
+  CopilotChatFeatherSlotProps,
+  CopilotChatMessageViewSlotProps,
+  CopilotChatScrollToBottomButtonSlotProps,
+  CopilotChatScrollViewSlotProps,
+  CopilotChatWelcomeScreenSlotProps,
+  CopilotPopupViewHeaderSlotProps,
+  CopilotPopupViewProps,
+  CopilotPopupViewToggleButtonSlotProps,
+  CopilotSidebarWelcomeScreenInputSlotProps,
+  CopilotSidebarWelcomeScreenSuggestionViewSlotProps,
+} from "./types";
+
+defineOptions({ inheritAttrs: false });
+
+const props = withDefaults(defineProps<CopilotPopupViewProps>(), {
+  messages: () => [],
+  autoScroll: true,
+  isRunning: false,
+  suggestions: () => [],
+  suggestionLoadingIndexes: () => [],
+  welcomeScreen: true,
+  inputValue: undefined,
+  inputMode: "input",
+  inputToolsMenu: () => [],
+  width: undefined,
+  height: undefined,
+  clickOutsideToClose: false,
+  defaultOpen: true,
+  onFinishTranscribeWithAudio: undefined,
+});
+
+defineSlots<{
+  header?: (props: CopilotPopupViewHeaderSlotProps) => unknown;
+  "toggle-button"?: (props: CopilotPopupViewToggleButtonSlotProps) => unknown;
+  "message-view"?: (props: CopilotChatMessageViewSlotProps) => unknown;
+  "scroll-view"?: (props: CopilotChatScrollViewSlotProps) => unknown;
+  feather?: (props: CopilotChatFeatherSlotProps) => unknown;
+  "scroll-to-bottom-button"?: (
+    props: CopilotChatScrollToBottomButtonSlotProps,
+  ) => unknown;
+  input?: (props: CopilotSidebarWelcomeScreenInputSlotProps) => unknown;
+  "suggestion-view"?: (
+    props: CopilotSidebarWelcomeScreenSuggestionViewSlotProps,
+  ) => unknown;
+  "welcome-screen"?: (props: CopilotChatWelcomeScreenSlotProps) => unknown;
+  "welcome-message"?: () => unknown;
+}>();
+
+const emit = defineEmits<{
+  "submit-message": [value: string];
+  stop: [];
+  "input-change": [value: string];
+  "select-suggestion": [
+    suggestion: (typeof props.suggestions)[number],
+    index: number,
+  ];
+  "add-file": [];
+  "start-transcribe": [];
+  "cancel-transcribe": [];
+  "finish-transcribe": [];
+}>();
+
+const attrs = useAttrs();
+
+const internalProps = computed(() => {
+  const { defaultOpen: _defaultOpen, ...rest } = props;
+  return rest;
+});
+
+const forwardedEventListeners = computed(() => {
+  const listeners: Record<string, unknown> = {
+    onSubmitMessage: (value: string) => emit("submit-message", value),
+    onInputChange: (value: string) => emit("input-change", value),
+    onSelectSuggestion: (
+      suggestion: (typeof props.suggestions)[number],
+      index: number,
+    ) => emit("select-suggestion", suggestion, index),
+  };
+
+  if (props.onStop) {
+    listeners.onStop = () => emit("stop");
+  }
+  if (props.onAddFile) {
+    listeners.onAddFile = () => emit("add-file");
+  }
+  if (props.onStartTranscribe) {
+    listeners.onStartTranscribe = () => emit("start-transcribe");
+  }
+  if (props.onCancelTranscribe) {
+    listeners.onCancelTranscribe = () => emit("cancel-transcribe");
+  }
+  if (props.onFinishTranscribe) {
+    listeners.onFinishTranscribe = () => emit("finish-transcribe");
+  }
+
+  return listeners;
+});
+
+const internalBindings = computed(() => ({
+  ...attrs,
+  ...internalProps.value,
+  ...forwardedEventListeners.value,
+}));
+</script>
+
+<template>
+  <CopilotChatConfigurationProvider :is-modal-default-open="defaultOpen">
+    <CopilotPopupViewInternal v-bind="internalBindings">
+      <template v-if="$slots.header" #header="slotProps">
+        <slot name="header" v-bind="slotProps" />
+      </template>
+
+      <template v-if="$slots['toggle-button']" #toggle-button="slotProps">
+        <slot name="toggle-button" v-bind="slotProps" />
+      </template>
+
+      <template v-if="$slots['message-view']" #message-view="slotProps">
+        <slot name="message-view" v-bind="slotProps" />
+      </template>
+
+      <template v-if="$slots['scroll-view']" #scroll-view="slotProps">
+        <slot name="scroll-view" v-bind="slotProps" />
+      </template>
+
+      <template v-if="$slots.feather" #feather="slotProps">
+        <slot name="feather" v-bind="slotProps" />
+      </template>
+
+      <template
+        v-if="$slots['scroll-to-bottom-button']"
+        #scroll-to-bottom-button="slotProps"
+      >
+        <slot name="scroll-to-bottom-button" v-bind="slotProps" />
+      </template>
+
+      <template v-if="$slots.input" #input="slotProps">
+        <slot name="input" v-bind="slotProps" />
+      </template>
+
+      <template v-if="$slots['suggestion-view']" #suggestion-view="slotProps">
+        <slot name="suggestion-view" v-bind="slotProps" />
+      </template>
+
+      <template v-if="$slots['welcome-screen']" #welcome-screen="slotProps">
+        <slot name="welcome-screen" v-bind="slotProps" />
+      </template>
+
+      <template v-if="$slots['welcome-message']" #welcome-message>
+        <slot name="welcome-message" />
+      </template>
+    </CopilotPopupViewInternal>
+  </CopilotChatConfigurationProvider>
+</template>

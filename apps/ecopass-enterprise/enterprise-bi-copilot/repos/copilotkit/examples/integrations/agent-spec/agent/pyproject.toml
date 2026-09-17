@@ -1,0 +1,11 @@
+[project]
+name = "agent"
+version = "0.1.0"
+description = "Agent Spec FastAPI backend for CopilotKit template"
+readme = "README.md"
+requires-python = ">=3.10,<4.0"
+dependencies = [
+  "uvicorn",
+  "python-dotenv",
+  "ag-ui-agent-spec[langgraph, wayflow]>=0.1.1,<0.2.0",
+]

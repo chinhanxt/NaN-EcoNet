@@ -1,0 +1,160 @@
+import debug from "debug";
+import path from "node:path";
+import type { TransformOptions } from "./transform-options";
+import { fileURLToPath } from "node:url";
+import * as fs from "node:fs";
+import { sync as globSync } from "glob";
+import { runSpawnCapture, SpawnExitError, SpawnSignalError } from "./run-spawn";
+
+const log = debug("codemod:transform");
+const error = debug("codemod:transform:error");
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+/**
+ * Gets the list of files that need to be processed in the codebase
+ * Only includes files that contain "assistant-ui" to optimize performance
+ */
+export function getRelevantFiles(cwd: string): string[] {
+  const pattern = "**/*.{js,jsx,ts,tsx}";
+  const files = globSync(pattern, {
+    cwd,
+    ignore: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/build/**",
+      "**/*.min.js",
+      "**/*.bundle.js",
+    ],
+  });
+
+  // Filter files to only include those containing "assistant-ui"
+  const relevantFiles = files.filter((file) => {
+    try {
+      const content = fs.readFileSync(path.join(cwd, file), "utf8");
+      return content.includes("assistant-ui");
+    } catch {
+      return false;
+    }
+  });
+
+  return relevantFiles.map((file) => path.join(cwd, file));
+}
+
+/**
+ * Counts the number of files that need to be processed
+ */
+export function countFilesToProcess(cwd: string): number {
+  return getRelevantFiles(cwd).length;
+}
+
+function buildCommand(
+  codemodPath: string,
+  targetFiles: string[],
+  options: TransformOptions,
+): string[] {
+  const command = [
+    "npx",
+    "jscodeshift",
+    "-t",
+    codemodPath,
+    ...targetFiles,
+    "--parser",
+    "tsx",
+  ];
+
+  if (options.dry) {
+    command.push("--dry");
+  }
+
+  if (options.print) {
+    command.push("--print");
+  }
+
+  if (options.verbose) {
+    command.push("--verbose");
+  }
+
+  if (options.jscodeshift) {
+    command.push(options.jscodeshift);
+  }
+
+  return command;
+}
+
+export type TransformErrors = {
+  transform: string;
+  filename: string;
+  summary: string;
+}[];
+
+function parseErrors(transform: string, output: string): TransformErrors {
+  const errors: TransformErrors = [];
+  const errorRegex = /ERR (.+) Transformation error/g;
+  const syntaxErrorRegex = /SyntaxError: .+/g;
+
+  for (const match of output.matchAll(errorRegex)) {
+    const filename = match[1]!;
+    const syntaxErrorMatch = syntaxErrorRegex.exec(output);
+    if (syntaxErrorMatch) {
+      const summary = syntaxErrorMatch[0];
+      errors.push({ transform, filename, summary });
+    }
+  }
+
+  return errors;
+}
+
+export async function transform(
+  codemod: string,
+  source: string,
+  transformOptions: TransformOptions,
+  options: {
+    logStatus: boolean;
+    onProgress?: (processedFiles: number) => void;
+    relevantFiles?: string[];
+  } = { logStatus: true },
+): Promise<TransformErrors> {
+  if (options.logStatus) {
+    log(`Applying codemod '${codemod}': ${source}`);
+  }
+  const codemodPath = path.resolve(__dirname, `../codemods/${codemod}.js`);
+
+  // Use pre-computed relevant files if provided, otherwise get them
+  const targetFiles = options.relevantFiles || getRelevantFiles(source);
+
+  if (targetFiles.length === 0) {
+    log(`No relevant files found for codemod '${codemod}'`);
+    return [];
+  }
+
+  log(`Found ${targetFiles.length} relevant files for codemod '${codemod}'`);
+
+  const command = buildCommand(codemodPath, targetFiles, transformOptions);
+
+  const result = await runSpawnCapture(command[0]!, command.slice(1));
+  if (result.signal !== null) {
+    throw new SpawnSignalError(result.signal, false);
+  }
+  if (result.code !== 0) {
+    throw new SpawnExitError(result.code || 1, result.stderr);
+  }
+
+  const { stdout } = result;
+
+  if (options.onProgress) {
+    const processedFiles = (stdout.match(/Processing file/g) || []).length;
+    options.onProgress(processedFiles);
+  }
+
+  const errors = parseErrors(codemod, stdout);
+  if (options.logStatus && errors.length > 0) {
+    errors.forEach(({ transform, filename, summary }) => {
+      error(
+        `Error applying codemod [codemod=${transform}, path=${filename}, summary=${summary}]`,
+      );
+    });
+  }
+  return errors;
+}

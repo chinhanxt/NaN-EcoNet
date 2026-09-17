@@ -1,0 +1,152 @@
+# @assistant-ui/vite
+
+## 0.0.18
+
+### Patch Changes
+
+- [#7370](https://github.com/assistant-ui/assistant-ui/pull/7370) [`b7f9a96`](https://github.com/assistant-ui/assistant-ui/commit/b7f9a960dda7c7548ac1ebdf3bae368fe28bcbfc) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+- Updated dependencies [[`b7f9a96`](https://github.com/assistant-ui/assistant-ui/commit/b7f9a960dda7c7548ac1ebdf3bae368fe28bcbfc)]:
+  - @assistant-ui/x-generative-compiler@0.0.18
+
+## 0.0.17
+
+### Patch Changes
+
+- [#6993](https://github.com/assistant-ui/assistant-ui/pull/6993) [`91689ab`](https://github.com/assistant-ui/assistant-ui/commit/91689ab92fa8ccaecff463c6fdc3e6a666bf93e5) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+- Updated dependencies [[`91689ab`](https://github.com/assistant-ui/assistant-ui/commit/91689ab92fa8ccaecff463c6fdc3e6a666bf93e5), [`da3ac39`](https://github.com/assistant-ui/assistant-ui/commit/da3ac399c040771415eb17c58dcac0eada7f9b02)]:
+  - @assistant-ui/x-generative-compiler@0.0.17
+
+## 0.0.16
+
+### Patch Changes
+
+- [#6528](https://github.com/assistant-ui/assistant-ui/pull/6528) [`152a35d`](https://github.com/assistant-ui/assistant-ui/commit/152a35daae0e80b5307865e59af683c4ae720794) - chore: update dependencies ([@okisdev](https://github.com/okisdev))
+- Updated dependencies [[`152a35d`](https://github.com/assistant-ui/assistant-ui/commit/152a35daae0e80b5307865e59af683c4ae720794)]:
+  - @assistant-ui/x-generative-compiler@0.0.16
+
+## 0.0.15
+
+### Patch Changes
+
+- [#6305](https://github.com/assistant-ui/assistant-ui/pull/6305) [`e96d3de`](https://github.com/assistant-ui/assistant-ui/commit/e96d3dea9370159e04f82bf4eb39d6b1b1c4d21d) - chore: update dependencies ([@okisdev](https://github.com/okisdev))
+
+- [#6424](https://github.com/assistant-ui/assistant-ui/pull/6424) [`bb1e79a`](https://github.com/assistant-ui/assistant-ui/commit/bb1e79aef77b9c3519663e9dd5ffec6d60b5deb9) - refactor: share the generative source predicate across bundler integrations ([@okisdev](https://github.com/okisdev))
+- Updated dependencies [[`e96d3de`](https://github.com/assistant-ui/assistant-ui/commit/e96d3dea9370159e04f82bf4eb39d6b1b1c4d21d), [`bb1e79a`](https://github.com/assistant-ui/assistant-ui/commit/bb1e79aef77b9c3519663e9dd5ffec6d60b5deb9)]:
+  - @assistant-ui/x-generative-compiler@0.0.15
+
+## 0.0.14
+
+### Patch Changes
+
+- [#6079](https://github.com/assistant-ui/assistant-ui/pull/6079) [`ce68614`](https://github.com/assistant-ui/assistant-ui/commit/ce68614d62215757ef485705353d0ddfe9b715e7) - feat: add a `backendless` compile option for apps without their own backend (e.g. cloud-hosted runs), keeping `"use generative"` frontend/human tool schemas and `JSONGenerativeUI` component-library schemas uploadable from the client instead of assuming the backend already knows them ([@Yonom](https://github.com/Yonom))
+- Updated dependencies [[`ce68614`](https://github.com/assistant-ui/assistant-ui/commit/ce68614d62215757ef485705353d0ddfe9b715e7)]:
+  - @assistant-ui/x-generative-compiler@0.0.14
+
+## 0.0.13
+
+### Patch Changes
+
+- [#5774](https://github.com/assistant-ui/assistant-ui/pull/5774) [`61d29f4`](https://github.com/assistant-ui/assistant-ui/commit/61d29f4157b525d3e36ac721d1fcef7d1baf987e) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+- Updated dependencies [[`61d29f4`](https://github.com/assistant-ui/assistant-ui/commit/61d29f4157b525d3e36ac721d1fcef7d1baf987e)]:
+  - @assistant-ui/x-generative-compiler@0.0.13
+
+## 0.0.12
+
+### Patch Changes
+
+- [#5723](https://github.com/assistant-ui/assistant-ui/pull/5723) [`94dc3e5`](https://github.com/assistant-ui/assistant-ui/commit/94dc3e509fa2b4fae1a14c88ec34b910c8d95af8) - chore: update dependencies ([@okisdev](https://github.com/okisdev))
+
+- Updated dependencies [[`94dc3e5`](https://github.com/assistant-ui/assistant-ui/commit/94dc3e509fa2b4fae1a14c88ec34b910c8d95af8)]:
+  - @assistant-ui/x-generative-compiler@0.0.12
+
+## 0.0.11
+
+### Patch Changes
+
+- Updated dependencies [[`45fe20d`](https://github.com/assistant-ui/assistant-ui/commit/45fe20d5cabec0ce934963cdafc1dec8efca4527)]:
+  - @assistant-ui/x-generative-compiler@0.0.11
+
+## 0.0.10
+
+### Patch Changes
+
+- [#5079](https://github.com/assistant-ui/assistant-ui/pull/5079) [`390e417`](https://github.com/assistant-ui/assistant-ui/commit/390e4177ca47f7ece839613ad0f076add9313328) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- Updated dependencies [[`32f4ba0`](https://github.com/assistant-ui/assistant-ui/commit/32f4ba09b218177f6c93d0ee0fcfb1e5f0475ef3)]:
+  - @assistant-ui/x-generative-compiler@0.0.10
+
+## 0.0.9
+
+### Patch Changes
+
+- [#4746](https://github.com/assistant-ui/assistant-ui/pull/4746) [`0686f4e`](https://github.com/assistant-ui/assistant-ui/commit/0686f4e6b8ee5f6e17c968997ef11622ef8f9c98) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- [#4815](https://github.com/assistant-ui/assistant-ui/pull/4815) [`5325f09`](https://github.com/assistant-ui/assistant-ui/commit/5325f0985768b750b050cf07f592fdfed34eccac) - chore: update dependencies ([@okisdev](https://github.com/okisdev))
+
+- Updated dependencies [[`a196108`](https://github.com/assistant-ui/assistant-ui/commit/a196108ee7771ce25eba3095f21f4868f5d4caab), [`0686f4e`](https://github.com/assistant-ui/assistant-ui/commit/0686f4e6b8ee5f6e17c968997ef11622ef8f9c98), [`d03e5cf`](https://github.com/assistant-ui/assistant-ui/commit/d03e5cf0e6efada832503fedc565a1fb8f14676a), [`5325f09`](https://github.com/assistant-ui/assistant-ui/commit/5325f0985768b750b050cf07f592fdfed34eccac)]:
+  - @assistant-ui/x-generative-compiler@0.0.9
+
+## 0.0.8
+
+### Patch Changes
+
+- Updated dependencies [[`9caecdd`](https://github.com/assistant-ui/assistant-ui/commit/9caecddfc70e3c351ae6e9cc069be37b9f9f386b), [`ab217e4`](https://github.com/assistant-ui/assistant-ui/commit/ab217e49494d74e570d18ec73c21b7700f53df5a), [`fa083a4`](https://github.com/assistant-ui/assistant-ui/commit/fa083a47d4c4f37553a09b9f577793d363290146)]:
+  - @assistant-ui/x-generative-compiler@0.0.8
+
+## 0.0.7
+
+### Patch Changes
+
+- [#4608](https://github.com/assistant-ui/assistant-ui/pull/4608) [`a7b06f7`](https://github.com/assistant-ui/assistant-ui/commit/a7b06f76876078fc2fcbb92a86fa0e1530fde782) - chore: update dependencies ([@okisdev](https://github.com/okisdev))
+
+- Updated dependencies [[`d162f44`](https://github.com/assistant-ui/assistant-ui/commit/d162f440502c29e4293e33c0c081e87c36d67bba)]:
+  - @assistant-ui/x-generative-compiler@0.0.7
+
+## 0.0.6
+
+### Patch Changes
+
+- [#4517](https://github.com/assistant-ui/assistant-ui/pull/4517) [`cefcf27`](https://github.com/assistant-ui/assistant-ui/commit/cefcf27b4b53ceafef18e469644d51797c11c8ff) - chore: update dependencies ([@okisdev](https://github.com/okisdev))
+
+- Updated dependencies [[`cefcf27`](https://github.com/assistant-ui/assistant-ui/commit/cefcf27b4b53ceafef18e469644d51797c11c8ff), [`32f1b05`](https://github.com/assistant-ui/assistant-ui/commit/32f1b0528a080bc247655aac8bae19d8bcfc4cfa), [`0c51b90`](https://github.com/assistant-ui/assistant-ui/commit/0c51b905d22418b93532636b1028c080ecc819e0), [`048e20c`](https://github.com/assistant-ui/assistant-ui/commit/048e20ce1b69142f843952b8ce7fb6f6d330fd6a), [`056eea8`](https://github.com/assistant-ui/assistant-ui/commit/056eea856f99172cc222e83c1a4f839fef20bfe8)]:
+  - @assistant-ui/x-generative-compiler@0.0.6
+
+## 0.0.5
+
+### Patch Changes
+
+- [#4393](https://github.com/assistant-ui/assistant-ui/pull/4393) [`434bba5`](https://github.com/assistant-ui/assistant-ui/commit/434bba5f7c59ab7cf6f1c78a8898fd4d3addb12d) - fix: resolve typecheck regressions ([@Yonom](https://github.com/Yonom))
+
+- [#4390](https://github.com/assistant-ui/assistant-ui/pull/4390) [`bb38d08`](https://github.com/assistant-ui/assistant-ui/commit/bb38d085b04b59f68c8cf16b23c2211454384668) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- Updated dependencies [[`bb38d08`](https://github.com/assistant-ui/assistant-ui/commit/bb38d085b04b59f68c8cf16b23c2211454384668)]:
+  - @assistant-ui/x-generative-compiler@0.0.5
+
+## 0.0.4
+
+### Patch Changes
+
+- [#4306](https://github.com/assistant-ui/assistant-ui/pull/4306) [`15878d8`](https://github.com/assistant-ui/assistant-ui/commit/15878d8114edbbb82c2a467cf811478e5f4e08bc) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- [#4256](https://github.com/assistant-ui/assistant-ui/pull/4256) [`44ff4bf`](https://github.com/assistant-ui/assistant-ui/commit/44ff4bf5765ec2675454362a00214cd9de5cfb60) - feat: rename hitlTool to humanTool while keeping deprecated compatibility aliases ([@Yonom](https://github.com/Yonom))
+
+- Updated dependencies [[`a0a0769`](https://github.com/assistant-ui/assistant-ui/commit/a0a076915dafdb7152c9fde75b40cfddebcb2676), [`ca191dc`](https://github.com/assistant-ui/assistant-ui/commit/ca191dc63f4a63c7d3f98566e9febd7d7f857aec), [`40813e6`](https://github.com/assistant-ui/assistant-ui/commit/40813e6402a5c97ccbc743924dffc65a89c99ec6), [`7d2b2b7`](https://github.com/assistant-ui/assistant-ui/commit/7d2b2b7f61311df0d975e19378671ffd683c9e1c), [`15878d8`](https://github.com/assistant-ui/assistant-ui/commit/15878d8114edbbb82c2a467cf811478e5f4e08bc), [`44ff4bf`](https://github.com/assistant-ui/assistant-ui/commit/44ff4bf5765ec2675454362a00214cd9de5cfb60), [`451c191`](https://github.com/assistant-ui/assistant-ui/commit/451c19112325dc3a03d42feafdcad889db77ce66)]:
+  - @assistant-ui/x-generative-compiler@0.0.4
+
+## 0.0.3
+
+### Patch Changes
+
+- [#4199](https://github.com/assistant-ui/assistant-ui/pull/4199) [`d9b3119`](https://github.com/assistant-ui/assistant-ui/commit/d9b311977759818fcdcea6037c938e7070276f47) - feat: the `"use generative"` compiler now understands generative-UI libraries. It splits every `defineGenerativeComponents({ ... })` call (dropping each component's `render` and its client-only imports from the server build, keeping `properties` on both), unwraps the marker like `defineToolkit`, and processes multiple `defineToolkit`/`defineGenerativeComponents` calls anywhere in the module. A toolkit entry that is a method call on a `new JSONGenerativeUI(...)` instance (e.g. `generative.present()`) now passes through untouched — the library routes its halves via export conditions — while any other non-inline tool is still rejected. ([@Yonom](https://github.com/Yonom))
+
+- Updated dependencies [[`d9b3119`](https://github.com/assistant-ui/assistant-ui/commit/d9b311977759818fcdcea6037c938e7070276f47), [`58f80e0`](https://github.com/assistant-ui/assistant-ui/commit/58f80e09b51a9d025403f8692c3f41adc6d403e0), [`78ff336`](https://github.com/assistant-ui/assistant-ui/commit/78ff336028ce125608a4b716a93a2519ad6d9eab), [`5fe118d`](https://github.com/assistant-ui/assistant-ui/commit/5fe118d6e61fd661859ee0d6b5ef10a370992a84), [`dcd5897`](https://github.com/assistant-ui/assistant-ui/commit/dcd5897f6dd6ca6bfe6978c3c03371e070965eab), [`69540af`](https://github.com/assistant-ui/assistant-ui/commit/69540af906f4301af0fd453b0ab425fd62703a46), [`ae54c55`](https://github.com/assistant-ui/assistant-ui/commit/ae54c55c8c8b0f9e9ef455ced1498f37d998c6cb)]:
+  - @assistant-ui/x-generative-compiler@0.0.3
+
+## 0.0.2
+
+### Patch Changes
+
+- [#4176](https://github.com/assistant-ui/assistant-ui/pull/4176) [`27ae936`](https://github.com/assistant-ui/assistant-ui/commit/27ae936dec6dc5d05d21fd892af0a8e1db61928e) - feat: add @assistant-ui/vite — a Vite plugin (`aui()`) that compiles the `"use generative"` directive for Vite apps and TanStack Start. It transforms each toolkit per Vite environment (`client` keeps `render`, server environments keep `execute`), so no facade/redirect is needed; it also skips the Next-only `server-only` import, which has no `react-server` layer under Vite. ([@Yonom](https://github.com/Yonom))
+
+- Updated dependencies [[`27ae936`](https://github.com/assistant-ui/assistant-ui/commit/27ae936dec6dc5d05d21fd892af0a8e1db61928e)]:
+  - @assistant-ui/x-generative-compiler@0.0.2

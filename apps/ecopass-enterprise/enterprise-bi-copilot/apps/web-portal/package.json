@@ -1,0 +1,44 @@
+{
+  "name": "@enterprise/web-portal",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@assistant-ui/react": "^0.15.21",
+    "@assistant-ui/react-markdown": "^0.14.16",
+    "@assistant-ui/react-ui": "^0.2.1",
+    "@copilotkit/react-core": "^1.73.0",
+    "@copilotkit/react-ui": "^1.73.0",
+    "@enterprise/agent-server": "workspace:*",
+    "@enterprise/security-core": "workspace:*",
+    "@enterprise/shared-types": "workspace:*",
+    "@tanstack/react-table": "^9.2.4",
+    "clsx": "^2.1.1",
+    "echarts": "^5.5.0",
+    "echarts-for-react": "^3.0.2",
+    "lucide-react": "^0.441.0",
+    "pg": "^8.11.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "recharts": "^2.12.7",
+    "tailwind-merge": "^2.5.2",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "@types/pg": "^8.11.5",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.4",
+    "typescript": "^5.4.5",
+    "vite": "^5.3.1"
+  }
+}

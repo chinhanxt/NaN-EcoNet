@@ -1,0 +1,3132 @@
+"use client";
+
+import { describe, it, expect, expectTypeOf } from "vitest";
+import { z } from "zod";
+import type { Tool } from "assistant-stream";
+import { MessageSchema, UserMessageSchema, type Message } from "@ag-ui/client";
+import {
+  ExportedMessageRepository,
+  type AppendMessage,
+} from "@assistant-ui/core";
+import {
+  fromAgUiMessages as publicFromAgUiMessages,
+  toAgUiMessages as publicToAgUiMessages,
+  type AgUiMessage,
+} from "../src";
+import {
+  fromAgUiMessages,
+  toAgUiMessages,
+  toAgUiTools,
+} from "../src/runtime/adapter/conversions";
+
+type JsonSchema = Exclude<
+  NonNullable<Tool["parameters"]>,
+  { "~standard": unknown }
+>;
+
+describe("adapter conversions", () => {
+  it("emits tool records for resolved tool calls nested in subagent messages", () => {
+    const result = toAgUiMessages([
+      {
+        id: "a1",
+        role: "assistant",
+        content: [
+          {
+            type: "tool-call",
+            toolCallId: "t-spawn",
+            toolName: "task",
+            args: {},
+            result: "spawned",
+            messages: [
+              {
+                id: "sub-1",
+                role: "assistant",
+                content: [
+                  {
+                    type: "tool-call",
+                    toolCallId: "nested-1",
+                    toolName: "search",
+                    args: { q: "x" },
+                    result: { found: true },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ] as any);
+
+    const toolRecords = result.filter((m) => m.role === "tool");
+    expect(toolRecords.map((m: any) => m.toolCallId).sort()).toEqual([
+      "nested-1",
+      "t-spawn",
+    ]);
+    const nested = toolRecords.find((m: any) => m.toolCallId === "nested-1");
+    expect(nested?.content).toContain("found");
+
+    // Every tool record has its antecedent: nested calls flatten onto the
+    // spawning assistant record's toolCalls, the pre-subagent wire shape.
+    const assistantCallIds = new Set(
+      result
+        .filter((m) => m.role === "assistant")
+        .flatMap((m: any) => (m.toolCalls ?? []).map((c: any) => c.id)),
+    );
+    expect(assistantCallIds.has("t-spawn")).toBe(true);
+    expect(assistantCallIds.has("nested-1")).toBe(true);
+    for (const record of toolRecords) {
+      expect(assistantCallIds.has((record as any).toolCallId)).toBe(true);
+    }
+  });
+
+  it("does not export a nested result whose approval gate is still open", () => {
+    const result = toAgUiMessages([
+      {
+        id: "a1",
+        role: "assistant",
+        content: [
+          {
+            type: "tool-call",
+            toolCallId: "t-spawn",
+            toolName: "task",
+            args: {},
+            result: "spawned",
+            messages: [
+              {
+                id: "sub-1",
+                role: "assistant",
+                content: [
+                  {
+                    type: "tool-call",
+                    toolCallId: "nested-gated",
+                    toolName: "delete_file",
+                    args: { path: "/tmp/a" },
+                    result: { done: true },
+                    approval: { id: "gate-1" },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ] as any);
+
+    const toolRecords = result.filter((m) => m.role === "tool");
+    expect(toolRecords.some((m: any) => m.toolCallId === "nested-gated")).toBe(
+      false,
+    );
+    const assistant = result.find((m) => m.role === "assistant") as any;
+    expect(assistant.toolCalls.some((c: any) => c.id === "nested-gated")).toBe(
+      true,
+    );
+  });
+
+  it("converts thread messages to AG-UI format", () => {
+    const result = toAgUiMessages([
+      {
+        id: "1",
+        role: "user",
+        content: [{ type: "text", text: "Hello" }],
+      },
+      {
+        id: "2",
+        role: "assistant",
+        content: [
+          { type: "text", text: "Hi" },
+          {
+            type: "tool-call",
+            toolCallId: "call-1",
+            toolName: "search",
+            argsText: '{"query":"x"}',
+          },
+        ],
+      },
+    ] as any);
+
+    expect(result).toHaveLength(2);
+    expect(result[0]).toMatchObject({ role: "user", content: "Hello" });
+    const toolCall = (result[1] as any).toolCalls?.[0];
+    expect(toolCall).toMatchObject({
+      id: "call-1",
+      function: { name: "search", arguments: '{"query":"x"}' },
+    });
+  });
+
+  it("round-trips a developer message through import and export", () => {
+    const imported = fromAgUiMessages([
+      { id: "d-1", role: "developer", content: "Hidden instruction" },
+      { id: "u-1", role: "user", content: "Hello" },
+    ] as Message[]);
+
+    const developer = imported.find((message) => message.id === "d-1");
+    expect(developer).toMatchObject({ role: "system" });
+
+    const replayed = toAgUiMessages(imported);
+    expect(replayed[0]).toMatchObject({
+      id: "d-1",
+      role: "developer",
+      content: "Hidden instruction",
+    });
+  });
+
+  it("keeps system, developer, and reasoning roles and drops unknown ones", () => {
+    const result = toAgUiMessages([
+      { id: "s-1", role: "system", content: "Be brief" },
+      { id: "d-1", role: "developer", content: "Hidden" },
+      { id: "r-1", role: "reasoning", content: "hmm" },
+      { id: "x-1", role: "narrator", content: "Aside" },
+    ]);
+
+    expect(result).toEqual([
+      { id: "s-1", role: "system", content: "Be brief" },
+      { id: "d-1", role: "developer", content: "Hidden" },
+      { id: "r-1", role: "reasoning", content: "hmm" },
+    ]);
+    expect(result.map((message) => MessageSchema.parse(message))).toEqual(
+      result,
+    );
+  });
+
+  it("marks errored tool call results with error content", () => {
+    const result = toAgUiMessages([
+      {
+        id: "assistant-1",
+        role: "assistant",
+        content: [
+          {
+            type: "tool-call",
+            toolCallId: "call-99",
+            toolName: "do-it",
+            argsText: "{}",
+            result: { error: "nope" },
+            isError: true,
+          },
+        ],
+      },
+    ] as any);
+
+    expect(result).toHaveLength(2);
+    expect(result[1]).toMatchObject({
+      role: "tool",
+      toolCallId: "call-99",
+      content: '{"error":"nope"}',
+      error: '{"error":"nope"}',
+    });
+  });
+
+  it("includes tool messages for completed tool calls", () => {
+    const result = toAgUiMessages([
+      {
+        id: "assistant-1",
+        role: "assistant",
+        content: [
+          { type: "text", text: "Working..." },
+          {
+            type: "tool-call",
+            toolCallId: "call-42",
+            toolName: "search",
+            argsText: '{"query":"x"}',
+            result: { ok: true },
+          },
+        ],
+      },
+    ] as any);
+
+    expect(result).toHaveLength(2);
+    expect(result[0]).toMatchObject({
+      role: "assistant",
+      content: "Working...",
+      toolCalls: [
+        {
+          id: "call-42",
+          function: { name: "search", arguments: '{"query":"x"}' },
+        },
+      ],
+    });
+    expect(result[1]).toMatchObject({
+      role: "tool",
+      toolCallId: "call-42",
+      content: '{"ok":true}',
+    });
+  });
+
+  it("excludes synthesized a2ui tool calls and results from outbound messages", () => {
+    const result = toAgUiMessages([
+      {
+        id: "assistant-1",
+        role: "assistant",
+        content: [
+          {
+            type: "tool-call",
+            toolCallId: "call-42",
+            toolName: "search",
+            argsText: '{"query":"x"}',
+            result: { ok: true },
+          },
+          {
+            type: "tool-call",
+            toolCallId: "a2ui:surface-1",
+            toolName: "present",
+            argsText: '{"$type":"Markdown","value":"Welcome"}',
+            result: {},
+          },
+        ],
+      },
+    ] as any);
+
+    expect(result).toHaveLength(2);
+    const assistantMessage = result[0] as any;
+    expect(assistantMessage.role).toBe("assistant");
+    expect(assistantMessage.toolCalls).toHaveLength(1);
+    expect(assistantMessage.toolCalls[0]).toMatchObject({
+      id: "call-42",
+      function: { name: "search", arguments: '{"query":"x"}' },
+    });
+    const toolMessages = result.filter((message) => message.role === "tool");
+    expect(toolMessages).toHaveLength(1);
+    expect(toolMessages[0]).toMatchObject({
+      role: "tool",
+      toolCallId: "call-42",
+      content: '{"ok":true}',
+    });
+  });
+
+  it("drops an assistant message with only a synthesized a2ui tool call", () => {
+    const withoutText = toAgUiMessages([
+      {
+        id: "assistant-1",
+        role: "assistant",
+        content: [
+          {
+            type: "tool-call",
+            toolCallId: "a2ui:surface-1",
+            toolName: "present",
+            argsText: "{}",
+            result: {},
+          },
+        ],
+      },
+    ] as any);
+    const withText = toAgUiMessages([
+      {
+        id: "assistant-2",
+        role: "assistant",
+        content: [
+          { type: "text", text: "Here is the surface" },
+          {
+            type: "tool-call",
+            toolCallId: "a2ui:surface-1",
+            toolName: "present",
+            argsText: "{}",
+            result: {},
+          },
+        ],
+      },
+    ] as any);
+
+    expect(withoutText).toEqual([]);
+    expect(withText).toEqual([
+      {
+        id: "assistant-2",
+        role: "assistant",
+        content: "Here is the surface",
+      },
+    ]);
+  });
+
+  it("does not serialize Host-only data when modelContent is empty", () => {
+    const result = toAgUiMessages([
+      {
+        id: "assistant-1",
+        role: "assistant",
+        content: [
+          {
+            type: "tool-call",
+            toolCallId: "call-42",
+            toolName: "show_map",
+            argsText: '{"city":"sf"}',
+            result: {
+              content: [
+                { type: "text", text: "joined text" },
+                { type: "image", data: "aGk=", mimeType: "image/png" },
+              ],
+              structuredContent: { ok: true },
+              isError: false,
+            },
+            modelContent: [],
+          },
+        ],
+      },
+    ] as any);
+
+    expect(result[1]).toMatchObject({
+      role: "tool",
+      toolCallId: "call-42",
+      content: "",
+    });
+  });
+
+  it("merges tool role snapshot messages back into assistant tool-call parts", () => {
+    const result = fromAgUiMessages([
+      {
+        id: "msg-1",
+        role: "user",
+        content: "What's the weather?",
+      },
+      {
+        id: "msg-2",
+        role: "assistant",
+        content: "",
+        tool_calls: [
+          {
+            id: "call-1",
+            type: "function",
+            function: {
+              name: "get_weather",
+              arguments: '{"city":"Paris"}',
+            },
+          },
+        ],
+      },
+      {
+        id: "msg-3",
+        role: "tool",
+        tool_call_id: "call-1",
+        content: [{ type: "text", text: "Map ready" }],
+        structuredContent: { temperature: "22C" },
+        _meta: { audience: "widget" },
+        isError: true,
+      },
+    ] as any);
+
+    expect(result).toHaveLength(2);
+    const assistantMessage = result[1] as any;
+    expect(assistantMessage.role).toBe("assistant");
+    const toolPart = assistantMessage.content.find(
+      (part: { type: string }) => part.type === "tool-call",
+    );
+    expect(toolPart).toMatchObject({
+      toolCallId: "call-1",
+      toolName: "get_weather",
+      argsText: '{"city":"Paris"}',
+      result: {
+        content: [{ type: "text", text: "Map ready" }],
+        structuredContent: { temperature: "22C" },
+        _meta: { audience: "widget" },
+        isError: true,
+      },
+      modelContent: [{ type: "text", text: "Map ready" }],
+      isError: true,
+    });
+  });
+
+  it("restores requires-action status for an assistant message with an unresolved tool call", () => {
+    const result = fromAgUiMessages([
+      {
+        id: "msg-1",
+        role: "assistant",
+        content: "",
+        tool_calls: [
+          {
+            id: "call-1",
+            type: "function",
+            function: { name: "ask_user", arguments: "{}" },
+          },
+        ],
+      },
+    ] as any);
+
+    expect(result).toHaveLength(1);
+    expect((result[0] as any).status).toMatchObject({
+      type: "requires-action",
+      reason: "tool-calls",
+    });
+  });
+
+  it("leaves a resolved tool call without a requires-action status", () => {
+    const result = fromAgUiMessages([
+      {
+        id: "msg-1",
+        role: "assistant",
+        content: "",
+        tool_calls: [
+          {
+            id: "call-1",
+            type: "function",
+            function: { name: "get_weather", arguments: "{}" },
+          },
+        ],
+      },
+      {
+        id: "msg-2",
+        role: "tool",
+        tool_call_id: "call-1",
+        content: '{"temperature":"22C"}',
+      },
+    ] as any);
+
+    expect(result).toHaveLength(1);
+    expect((result[0] as any).status).toBeUndefined();
+  });
+
+  it("does not add status to an assistant message without tool calls", () => {
+    const result = fromAgUiMessages([
+      { id: "msg-1", role: "assistant", content: "done" },
+    ] as any);
+
+    expect(result).toHaveLength(1);
+    expect((result[0] as any).status).toBeUndefined();
+  });
+
+  it("restores interrupt status and metadata from a persisted interrupts blob", () => {
+    const interrupts = [
+      { id: "int-1", reason: "confirmation", message: "Proceed?" },
+    ];
+    const result = fromAgUiMessages([
+      {
+        id: "msg-1",
+        role: "assistant",
+        content: "waiting",
+        metadata: { custom: { agui: { interrupts } } },
+      },
+    ] as any);
+
+    expect(result).toHaveLength(1);
+    expect((result[0] as any).status).toMatchObject({
+      type: "requires-action",
+      reason: "interrupt",
+    });
+    expect((result[0] as any).metadata.custom.agui.interrupts).toEqual(
+      interrupts,
+    );
+  });
+
+  it("prefers interrupt status over tool-calls when both are present", () => {
+    const result = fromAgUiMessages([
+      {
+        id: "msg-1",
+        role: "assistant",
+        content: "",
+        tool_calls: [
+          {
+            id: "call-1",
+            type: "function",
+            function: { name: "ask_user", arguments: "{}" },
+          },
+        ],
+        metadata: {
+          custom: {
+            agui: { interrupts: [{ id: "int-1", reason: "tool_call" }] },
+          },
+        },
+      },
+    ] as any);
+
+    expect(result).toHaveLength(1);
+    expect((result[0] as any).status).toMatchObject({
+      type: "requires-action",
+      reason: "interrupt",
+    });
+  });
+
+  it("ignores a malformed interrupts blob without throwing", () => {
+    const result = fromAgUiMessages([
+      {
+        id: "msg-1",
+        role: "assistant",
+        content: "done",
+        metadata: {
+          custom: {
+            agui: {
+              interrupts: [{ reason: "no-id" }, { id: "no-reason" }, 42],
+            },
+          },
+        },
+      },
+    ] as any);
+
+    expect(result).toHaveLength(1);
+    expect((result[0] as any).status).toBeUndefined();
+    expect(
+      (result[0] as any).metadata?.custom?.agui?.interrupts,
+    ).toBeUndefined();
+  });
+
+  it("creates a synthetic assistant tool-call when snapshot has an orphan tool message", () => {
+    const result = fromAgUiMessages([
+      {
+        id: "tool-only",
+        role: "tool",
+        tool_call_id: "call-9",
+        name: "lookup",
+        content: '{"ok":true}',
+      },
+    ] as any);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      role: "assistant",
+      id: "tool-only:assistant",
+    });
+    const toolPart = (result[0] as any).content[0];
+    expect(toolPart).toMatchObject({
+      type: "tool-call",
+      toolCallId: "call-9",
+      toolName: "lookup",
+      result: { ok: true },
+    });
+  });
+
+  it("imports a reasoning snapshot message as a reasoning assistant part", () => {
+    const result = fromAgUiMessages([
+      {
+        id: "reason-1",
+        role: "reasoning",
+        content: "Let me think about this step by step.",
+      },
+    ] as any);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      id: "reason-1",
+      role: "assistant",
+      content: [
+        { type: "reasoning", text: "Let me think about this step by step." },
+      ],
+    });
+  });
+
+  it("folds a reasoning message into the assistant record that follows it", () => {
+    const result = fromAgUiMessages([
+      { id: "u-1", role: "user", content: "hi" },
+      { id: "r-1", role: "reasoning", content: "thinking" },
+      { id: "a-1", role: "assistant", content: "done" },
+    ] as any);
+
+    expect(result.map((m) => m.role)).toEqual(["user", "assistant"]);
+    expect(result[1]).toMatchObject({ id: "a-1" });
+    expect((result[1] as any).content).toEqual([
+      {
+        type: "reasoning",
+        text: "thinking",
+        providerMetadata: { agui: { reasoningId: "r-1" } },
+      },
+      { type: "text", text: "done" },
+    ]);
+  });
+
+  it("releases a reasoning message no assistant record follows", () => {
+    const result = fromAgUiMessages([
+      { id: "u-1", role: "user", content: "hi" },
+      { id: "r-1", role: "reasoning", content: "thinking" },
+      { id: "u-2", role: "user", content: "still there?" },
+    ] as any);
+
+    expect(result.map((m) => m.role)).toEqual(["user", "assistant", "user"]);
+    expect(result[1]).toMatchObject({ id: "r-1" });
+  });
+
+  it("folds several reasoning messages onto one assistant record in order", () => {
+    const result = fromAgUiMessages([
+      { id: "r-1", role: "reasoning", content: "first" },
+      { id: "r-2", role: "reasoning", content: "second" },
+      { id: "a-1", role: "assistant", content: "done" },
+    ] as any);
+
+    expect(result).toHaveLength(1);
+    expect((result[0] as any).content.map((p: any) => p.text)).toEqual([
+      "first",
+      "second",
+      "done",
+    ]);
+    expect(toAgUiMessages(result).map((m: any) => m.id)).toEqual([
+      "r-1",
+      "r-2",
+      "a-1",
+    ]);
+  });
+
+  it("keeps a folded turn stable across a snapshot round trip", () => {
+    const snapshot = [
+      { id: "u-1", role: "user", content: "weather?" },
+      { id: "r-1", role: "reasoning", content: "check the tool" },
+      {
+        id: "a-1",
+        role: "assistant",
+        content: "",
+        toolCalls: [
+          {
+            id: "c-1",
+            type: "function",
+            function: { name: "lookup", arguments: "{}" },
+          },
+        ],
+      },
+      { id: "t-1", role: "tool", content: "ok", toolCallId: "c-1" },
+    ];
+
+    const imported = fromAgUiMessages(snapshot as any);
+
+    expect(imported.map((m) => m.role)).toEqual(["user", "assistant"]);
+    expect((imported[1] as any).content.map((p: any) => p.type)).toEqual([
+      "reasoning",
+      "tool-call",
+    ]);
+    expect(toAgUiMessages(imported)).toEqual(snapshot);
+  });
+
+  it("folds the answer onto the tool call container the run opened for it", () => {
+    const result = fromAgUiMessages([
+      { id: "u-1", role: "user", content: "weather?" },
+      { id: "r-1", role: "reasoning", content: "check the tool" },
+      {
+        id: "c-1",
+        role: "assistant",
+        content: "",
+        toolCalls: [
+          {
+            id: "c-1",
+            type: "function",
+            function: { name: "lookup", arguments: "{}" },
+          },
+        ],
+      },
+      { id: "t-1", role: "tool", content: "sunny", toolCallId: "c-1" },
+      { id: "m-2", role: "assistant", content: "it is sunny" },
+    ] as any);
+
+    expect(result.map((m) => m.role)).toEqual(["user", "assistant"]);
+    expect(result[1]).toMatchObject({ id: "m-2" });
+    expect((result[1] as any).content.map((p: any) => p.type)).toEqual([
+      "reasoning",
+      "tool-call",
+      "text",
+    ]);
+  });
+
+  it("folds every container of a turn whose parallel calls arrive interleaved with their results", () => {
+    const result = fromAgUiMessages([
+      { id: "u-1", role: "user", content: "weather?" },
+      {
+        id: "c-1",
+        role: "assistant",
+        toolCalls: [
+          {
+            id: "c-1",
+            type: "function",
+            function: { name: "weather", arguments: "{}" },
+          },
+        ],
+      },
+      { id: "t-1", role: "tool", content: "sunny", toolCallId: "c-1" },
+      {
+        id: "c-2",
+        role: "assistant",
+        toolCalls: [
+          {
+            id: "c-2",
+            type: "function",
+            function: { name: "clock", arguments: "{}" },
+          },
+        ],
+      },
+      { id: "t-2", role: "tool", content: "noon", toolCallId: "c-2" },
+      { id: "m-9", role: "assistant", content: "sunny at noon" },
+    ] as any);
+
+    expect(result.map((m) => m.role)).toEqual(["user", "assistant"]);
+    expect(result[1]).toMatchObject({ id: "m-9" });
+    expect(
+      (result[1] as any).content.map((p: any) => p.toolCallId ?? p.type),
+    ).toEqual(["c-1", "c-2", "text"]);
+  });
+
+  it("keeps two messages when the agent addressed the record its call sits on", () => {
+    const result = fromAgUiMessages([
+      { id: "u-1", role: "user", content: "weather?" },
+      {
+        id: "a-1",
+        role: "assistant",
+        content: "",
+        toolCalls: [
+          {
+            id: "c-1",
+            type: "function",
+            function: { name: "lookup", arguments: "{}" },
+          },
+        ],
+      },
+      { id: "t-1", role: "tool", content: "sunny", toolCallId: "c-1" },
+      { id: "m-2", role: "assistant", content: "it is sunny" },
+    ] as any);
+
+    expect(result.map((m) => m.id)).toEqual(["u-1", "a-1", "m-2"]);
+  });
+
+  it("keeps a container no record follows on its own, still actionable", () => {
+    const result = fromAgUiMessages([
+      { id: "u-1", role: "user", content: "delete it" },
+      {
+        id: "c-1",
+        role: "assistant",
+        toolCalls: [
+          {
+            id: "c-1",
+            type: "function",
+            function: { name: "remove", arguments: "{}" },
+          },
+        ],
+      },
+    ] as any);
+
+    expect(result.map((m) => m.id)).toEqual(["u-1", "c-1"]);
+    expect(result[1]).toMatchObject({ status: { type: "requires-action" } });
+  });
+
+  it("keeps the container id when the turn answered with reasoning alone", () => {
+    const result = fromAgUiMessages([
+      {
+        id: "c-1",
+        role: "assistant",
+        toolCalls: [
+          {
+            id: "c-1",
+            type: "function",
+            function: { name: "lookup", arguments: "{}" },
+          },
+        ],
+      },
+      { id: "t-1", role: "tool", content: "sunny", toolCallId: "c-1" },
+      { id: "r-2", role: "reasoning", content: "that settles it" },
+      { id: "u-2", role: "user", content: "thanks" },
+    ] as any);
+
+    expect(result.map((m) => m.id)).toEqual(["c-1", "u-2"]);
+    expect((result[0] as any).content.map((p: any) => p.type)).toEqual([
+      "tool-call",
+      "reasoning",
+    ]);
+  });
+
+  it("carries a persisted interrupt across the fold", () => {
+    const result = fromAgUiMessages([
+      {
+        id: "c-1",
+        role: "assistant",
+        toolCalls: [
+          {
+            id: "c-1",
+            type: "function",
+            function: { name: "remove", arguments: "{}" },
+          },
+        ],
+        metadata: {
+          custom: {
+            agui: {
+              interrupts: [
+                { id: "int-1", reason: "tool_call", toolCallId: "c-1" },
+              ],
+            },
+          },
+        },
+      },
+      { id: "t-1", role: "tool", content: "done", toolCallId: "c-1" },
+      { id: "m-2", role: "assistant", content: "removed" },
+    ] as any);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      id: "m-2",
+      status: { type: "requires-action", reason: "interrupt" },
+    });
+    expect((result[0] as any).metadata.custom.agui.interrupts).toEqual([
+      { id: "int-1", reason: "tool_call", toolCallId: "c-1" },
+    ]);
+  });
+
+  it("folds a turn whose parallel containers arrive before their results", () => {
+    const result = fromAgUiMessages([
+      { id: "u-1", role: "user", content: "weather?" },
+      {
+        id: "c-1",
+        role: "assistant",
+        toolCalls: [
+          {
+            id: "c-1",
+            type: "function",
+            function: { name: "weather", arguments: "{}" },
+          },
+        ],
+      },
+      {
+        id: "c-2",
+        role: "assistant",
+        toolCalls: [
+          {
+            id: "c-2",
+            type: "function",
+            function: { name: "clock", arguments: "{}" },
+          },
+        ],
+      },
+      { id: "t-1", role: "tool", content: "sunny", toolCallId: "c-1" },
+      { id: "t-2", role: "tool", content: "noon", toolCallId: "c-2" },
+      { id: "m-9", role: "assistant", content: "sunny at noon" },
+    ] as any);
+
+    expect(result.map((m) => m.id)).toEqual(["u-1", "m-9"]);
+    expect(
+      (result[1] as any).content.map((p: any) => p.toolCallId ?? p.type),
+    ).toEqual(["c-1", "c-2", "text"]);
+  });
+
+  it("replays an encrypted-only record the fold swallowed after the tool result", () => {
+    const imported = fromAgUiMessages([
+      {
+        id: "c-1",
+        role: "assistant",
+        toolCalls: [
+          {
+            id: "c-1",
+            type: "function",
+            function: { name: "lookup", arguments: "{}" },
+          },
+        ],
+      },
+      { id: "e-1", role: "reasoning", content: "", encryptedValue: "sig" },
+      { id: "t-1", role: "tool", content: "sunny", toolCallId: "c-1" },
+      { id: "m-2", role: "assistant", content: "it is sunny" },
+    ] as any);
+
+    expect(imported.map((m) => m.id)).toEqual(["m-2"]);
+    expect(toAgUiMessages(imported)).toEqual([
+      {
+        id: "m-2",
+        role: "assistant",
+        content: "it is sunny",
+        toolCalls: [
+          {
+            id: "c-1",
+            type: "function",
+            function: { name: "lookup", arguments: "{}" },
+          },
+        ],
+      },
+      { id: "t-1", role: "tool", content: "sunny", toolCallId: "c-1" },
+      { id: "e-1", role: "reasoning", content: "", encryptedValue: "sig" },
+    ]);
+  });
+
+  it("keeps the turn one message across a snapshot round trip", () => {
+    const imported = fromAgUiMessages([
+      { id: "u-1", role: "user", content: "weather?" },
+      { id: "r-1", role: "reasoning", content: "check the tool" },
+      {
+        id: "c-1",
+        role: "assistant",
+        content: "",
+        toolCalls: [
+          {
+            id: "c-1",
+            type: "function",
+            function: { name: "lookup", arguments: "{}" },
+          },
+        ],
+      },
+      { id: "t-1", role: "tool", content: "sunny", toolCallId: "c-1" },
+      { id: "m-2", role: "assistant", content: "it is sunny" },
+    ] as any);
+
+    const exported = toAgUiMessages(imported);
+
+    expect(exported).toEqual([
+      { id: "u-1", role: "user", content: "weather?" },
+      { id: "r-1", role: "reasoning", content: "check the tool" },
+      {
+        id: "m-2",
+        role: "assistant",
+        content: "it is sunny",
+        toolCalls: [
+          {
+            id: "c-1",
+            type: "function",
+            function: { name: "lookup", arguments: "{}" },
+          },
+        ],
+      },
+      { id: "t-1", role: "tool", content: "sunny", toolCallId: "c-1" },
+    ]);
+    expect(fromAgUiMessages(exported as any).map((m) => m.id)).toEqual([
+      "u-1",
+      "m-2",
+    ]);
+  });
+
+  it("folds past a record that rehydrates nothing", () => {
+    const result = fromAgUiMessages([
+      { id: "r-1", role: "reasoning", content: "thinking" },
+      {
+        id: "act-1",
+        role: "activity",
+        activityType: "custom.progress",
+        content: { step: 1 },
+      },
+      { id: "a-1", role: "assistant", content: "done" },
+    ] as any);
+
+    expect(result.map((m) => m.id)).toEqual(["a-1"]);
+    expect((result[0] as any).content.map((p: any) => p.type)).toEqual([
+      "reasoning",
+      "text",
+    ]);
+  });
+
+  it("keeps an opaque record in its own slot while reasoning folds past it", () => {
+    const snapshot = [
+      { id: "r-1", role: "reasoning", content: "readable" },
+      { id: "o-1", role: "reasoning", content: "", encryptedValue: "enc" },
+      { id: "a-1", role: "assistant", content: "done" },
+    ];
+
+    const imported = fromAgUiMessages(snapshot as any);
+
+    expect(imported.map((m) => m.id)).toEqual(["r-1", "a-1"]);
+    expect(toAgUiMessages(imported)).toEqual(snapshot);
+  });
+
+  it("generates an id for a released reasoning record whose own id is blank", () => {
+    const result = fromAgUiMessages([
+      { id: "   ", role: "reasoning", content: "thinking" },
+      { id: "u-1", role: "user", content: "hi" },
+    ] as any);
+
+    expect(result[0]!.id?.trim()).toBeTruthy();
+    expect((result[0] as any).content[0]).not.toHaveProperty(
+      "providerMetadata",
+    );
+    expect(toAgUiMessages(result)[0]!.id.trim()).toBeTruthy();
+  });
+
+  it("restores reasoning ahead of prose it followed in the run", () => {
+    // A run can emit prose and then reason about it, and the export hoists
+    // every reasoning part ahead of its assistant record, so that order is
+    // already gone on the wire and no import rule can recover it.
+    const live = [
+      {
+        id: "m-1",
+        role: "assistant",
+        content: [
+          { type: "text", text: "prose first" },
+          { type: "reasoning", text: "afterthought" },
+        ],
+      },
+    ];
+
+    const exported = toAgUiMessages(live as any);
+    expect(exported).toEqual([
+      { id: "m-1:reasoning-0", role: "reasoning", content: "afterthought" },
+      { id: "m-1", role: "assistant", content: "prose first" },
+    ]);
+
+    const imported = fromAgUiMessages(exported as any);
+    expect(imported).toHaveLength(1);
+    expect((imported[0] as any).content.map((p: any) => p.type)).toEqual([
+      "reasoning",
+      "text",
+    ]);
+  });
+
+  it("skips empty reasoning messages", () => {
+    const result = fromAgUiMessages([
+      { id: "r-1", role: "reasoning", content: "" },
+    ] as any);
+
+    expect(result).toHaveLength(0);
+  });
+
+  it("drops reasoning messages when showThinking is false", () => {
+    const result = fromAgUiMessages(
+      [
+        { id: "u-1", role: "user", content: "hi" },
+        { id: "r-1", role: "reasoning", content: "thinking" },
+        { id: "a-1", role: "assistant", content: "done" },
+      ] as any,
+      { showThinking: false },
+    );
+
+    expect(result.map((m) => m.role)).toEqual(["user", "assistant"]);
+    expect((result[1] as any).content).toEqual([
+      { type: "text", text: "done" },
+    ]);
+  });
+
+  it("drops activity messages (no assistant-part equivalent)", () => {
+    const result = fromAgUiMessages([
+      { id: "u-1", role: "user", content: "hi" },
+      {
+        id: "act-1",
+        role: "activity",
+        activityType: "search",
+        content: { query: "weather" },
+      },
+    ] as any);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ role: "user" });
+  });
+
+  it("skips whitespace-only reasoning messages", () => {
+    const result = fromAgUiMessages([
+      { id: "r-1", role: "reasoning", content: "   " },
+    ] as any);
+
+    expect(result).toHaveLength(0);
+  });
+
+  it("re-emits an imported reasoning message as a reasoning record, not an empty assistant message", () => {
+    const imported = fromAgUiMessages([
+      { id: "u-1", role: "user", content: "hi" },
+      { id: "r-1", role: "reasoning", content: "thinking" },
+      { id: "a-1", role: "assistant", content: "done" },
+    ] as any);
+
+    const roundTripped = toAgUiMessages(imported);
+
+    expect(roundTripped.map((m) => m.role)).toEqual([
+      "user",
+      "reasoning",
+      "assistant",
+    ]);
+    expect(
+      roundTripped.filter((m) => m.role === "assistant" && m.content === ""),
+    ).toHaveLength(0);
+    expect(roundTripped[1]).toMatchObject({
+      id: "r-1",
+      role: "reasoning",
+      content: "thinking",
+    });
+    expect(roundTripped[2]).toMatchObject({
+      role: "assistant",
+      content: "done",
+    });
+  });
+
+  it("preserves encryptedValue across a reasoning round trip", () => {
+    const source = [
+      { id: "u-1", role: "user", content: "hi" },
+      {
+        id: "r-1",
+        role: "reasoning",
+        content: "thinking",
+        encryptedValue: "signed-blob",
+      },
+      { id: "a-1", role: "assistant", content: "done" },
+    ];
+
+    const imported = fromAgUiMessages(source as any);
+
+    expect((imported[1] as any).content[0]).toMatchObject({
+      type: "reasoning",
+      text: "thinking",
+      providerMetadata: { agui: { encryptedValue: "signed-blob" } },
+    });
+    expect(toAgUiMessages(imported)[1]).toMatchObject({
+      id: "r-1",
+      role: "reasoning",
+      content: "thinking",
+      encryptedValue: "signed-blob",
+    });
+  });
+
+  it("omits encryptedValue when the source reasoning message carried none", () => {
+    const imported = fromAgUiMessages([
+      { id: "r-1", role: "reasoning", content: "thinking" },
+    ] as any);
+
+    expect(
+      (imported[0] as any).content[0].providerMetadata.agui,
+    ).not.toHaveProperty("encryptedValue");
+    expect(toAgUiMessages(imported)[0]).not.toHaveProperty("encryptedValue");
+  });
+
+  it("emits reasoning ahead of the assistant record for a live-shaped message", () => {
+    const converted = toAgUiMessages([
+      {
+        id: "a-1",
+        role: "assistant",
+        content: [
+          { type: "reasoning", text: "thinking" },
+          { type: "text", text: "done" },
+        ],
+      },
+    ] as any);
+
+    expect(converted).toEqual([
+      { id: "a-1:reasoning-0", role: "reasoning", content: "thinking" },
+      { id: "a-1", role: "assistant", content: "done" },
+    ]);
+  });
+
+  it("gives each reasoning part a distinct id when a dropped shell holds several", () => {
+    const converted = toAgUiMessages([
+      {
+        id: "a-1",
+        role: "assistant",
+        content: [
+          { type: "reasoning", text: "first" },
+          { type: "reasoning", text: "second" },
+        ],
+      },
+    ] as any);
+
+    expect(converted).toEqual([
+      { id: "a-1", role: "reasoning", content: "first" },
+      { id: "a-1:reasoning-1", role: "reasoning", content: "second" },
+    ]);
+    expect(new Set(converted.map((m) => m.id)).size).toBe(converted.length);
+  });
+
+  it("preserves an encrypted-only reasoning record across the round trip", () => {
+    const source = [
+      { id: "u-1", role: "user", content: "hi" },
+      { id: "r-1", role: "reasoning", content: "", encryptedValue: "opaque" },
+      { id: "a-1", role: "assistant", content: "done" },
+    ];
+
+    const imported = fromAgUiMessages(source as any);
+
+    // it is not renderable content, so it must not become a message or a part
+    expect(imported.map((m) => m.role)).toEqual(["user", "assistant"]);
+    expect((imported[1] as any).content).toEqual([
+      { type: "text", text: "done" },
+    ]);
+
+    expect(toAgUiMessages(imported as any)).toEqual([
+      { id: "u-1", role: "user", content: "hi" },
+      { id: "r-1", role: "reasoning", content: "", encryptedValue: "opaque" },
+      { id: "a-1", role: "assistant", content: "done" },
+    ]);
+  });
+
+  it("replays an encrypted-only record that trailed the last message", () => {
+    const imported = fromAgUiMessages([
+      { id: "a-1", role: "assistant", content: "done" },
+      { id: "r-1", role: "reasoning", content: "", encryptedValue: "opaque" },
+    ] as any);
+
+    expect(imported.map((m) => m.role)).toEqual(["assistant"]);
+    expect(toAgUiMessages(imported as any)).toEqual([
+      { id: "a-1", role: "assistant", content: "done" },
+      { id: "r-1", role: "reasoning", content: "", encryptedValue: "opaque" },
+    ]);
+  });
+
+  it("keeps several encrypted-only records in wire order", () => {
+    const imported = fromAgUiMessages([
+      { id: "r-1", role: "reasoning", content: "", encryptedValue: "one" },
+      { id: "r-2", role: "reasoning", content: "", encryptedValue: "two" },
+      { id: "a-1", role: "assistant", content: "done" },
+    ] as any);
+
+    expect(toAgUiMessages(imported as any).map((m: any) => m.id)).toEqual([
+      "r-1",
+      "r-2",
+      "a-1",
+    ]);
+  });
+
+  it("does not disturb interrupts already on the message metadata", () => {
+    const imported = fromAgUiMessages([
+      { id: "r-1", role: "reasoning", content: "", encryptedValue: "opaque" },
+      {
+        id: "a-1",
+        role: "assistant",
+        content: "done",
+        metadata: {
+          custom: {
+            agui: { interrupts: [{ id: "i-1", reason: "approval" }] },
+          },
+        },
+      },
+    ] as any);
+
+    const custom = (imported[0] as any).metadata.custom.agui;
+    expect(custom.interrupts).toHaveLength(1);
+    expect(custom.opaqueReasoning).toEqual([
+      { id: "r-1", encryptedValue: "opaque" },
+    ]);
+  });
+
+  it("keeps an encrypted-only record when showThinking is false", () => {
+    // showThinking hides reasoning from the UI; the opaque payload is transport
+    // state the provider needs and is never rendered either way.
+    const imported = fromAgUiMessages(
+      [
+        { id: "r-1", role: "reasoning", content: "", encryptedValue: "opaque" },
+        {
+          id: "r-2",
+          role: "reasoning",
+          content: "visible",
+          encryptedValue: "x",
+        },
+        { id: "r-3", role: "reasoning", content: "unsigned" },
+        { id: "a-1", role: "assistant", content: "done" },
+      ] as any,
+      { showThinking: false },
+    );
+
+    // r-2 loses the text the option hides but keeps its signature; r-3 has no
+    // payload to keep and goes away with its text.
+    expect(toAgUiMessages(imported as any)).toEqual([
+      { id: "r-1", role: "reasoning", content: "", encryptedValue: "opaque" },
+      { id: "r-2", role: "reasoning", content: "", encryptedValue: "x" },
+      { id: "a-1", role: "assistant", content: "done" },
+    ]);
+  });
+
+  it("ignores an encrypted-only record with a blank id or blank payload", () => {
+    const imported = fromAgUiMessages([
+      { id: "   ", role: "reasoning", content: "", encryptedValue: "opaque" },
+      { id: "r-2", role: "reasoning", content: "", encryptedValue: "   " },
+      { id: "a-1", role: "assistant", content: "done" },
+    ] as any);
+
+    expect(toAgUiMessages(imported as any).map((m) => m.role)).toEqual([
+      "assistant",
+    ]);
+  });
+
+  it("places an encrypted-only record after a folded tool result", () => {
+    // Import folds a matched tool result into the assistant message, so the
+    // boundary it sat on is gone by export; it follows the whole expansion.
+    const imported = fromAgUiMessages([
+      {
+        id: "a-1",
+        role: "assistant",
+        content: "",
+        toolCalls: [
+          {
+            id: "call-1",
+            type: "function",
+            function: { name: "lookup", arguments: "{}" },
+          },
+        ],
+      },
+      { id: "r-1", role: "reasoning", content: "", encryptedValue: "opaque" },
+      { id: "t-1", role: "tool", content: "ok", toolCallId: "call-1" },
+    ] as any);
+
+    expect(toAgUiMessages(imported as any).map((m: any) => m.role)).toEqual([
+      "assistant",
+      "tool",
+      "reasoning",
+    ]);
+  });
+
+  it("drops an encrypted-only record that has no message to anchor to", () => {
+    // The record rides on a neighbouring message, so a snapshot that is only
+    // reasoning has no carrier; the run input it would ride in is empty too.
+    const imported = fromAgUiMessages([
+      { id: "r-1", role: "reasoning", content: "", encryptedValue: "opaque" },
+    ] as any);
+
+    expect(imported).toEqual([]);
+    expect(toAgUiMessages(imported as any)).toEqual([]);
+  });
+
+  it("keeps ids stable across repeated snapshot round trips", () => {
+    const first = toAgUiMessages(
+      fromAgUiMessages([
+        { id: "r-1", role: "reasoning", content: "thinking" },
+        { id: "a-1", role: "assistant", content: "done" },
+      ] as any),
+    );
+    const second = toAgUiMessages(fromAgUiMessages(first as any));
+
+    expect(second).toEqual(first);
+  });
+
+  it("drops reasoning on export when showThinking dropped it on import", () => {
+    const imported = fromAgUiMessages(
+      [
+        { id: "r-1", role: "reasoning", content: "thinking" },
+        { id: "a-1", role: "assistant", content: "done" },
+      ] as any,
+      { showThinking: false },
+    );
+
+    expect(toAgUiMessages(imported).map((m) => m.role)).toEqual(["assistant"]);
+  });
+
+  it("filters disabled/back-end tools", () => {
+    const tools = toAgUiTools({
+      search: { description: "Search", parameters: { type: "object" } },
+      disabled: {
+        disabled: true,
+        parameters: { type: "object" },
+      },
+      backend: { type: "backend" },
+    });
+
+    expect(tools).toHaveLength(1);
+    expect(tools[0]).toMatchObject({ name: "search" });
+  });
+
+  it("prefers available schema conversion helpers for tools", () => {
+    const jsonToolSchema: JsonSchema & {
+      toJSON: () => JsonSchema;
+    } = {
+      toJSON: () => ({ type: "object" }),
+    };
+    const schemaToolSchema: JsonSchema & {
+      toJSONSchema: () => JsonSchema;
+    } = {
+      toJSONSchema: () => ({ type: "string" }),
+    };
+    const tools = toAgUiTools({
+      jsonTool: { parameters: jsonToolSchema },
+      schemaTool: { parameters: schemaToolSchema },
+      plain: { parameters: { type: "boolean" } },
+    });
+
+    expect(tools).toHaveLength(3);
+    expect(tools).toEqual(
+      expect.arrayContaining([
+        {
+          name: "jsonTool",
+          description: "",
+          parameters: { type: "object" },
+        },
+        {
+          name: "schemaTool",
+          description: "",
+          parameters: { type: "string" },
+        },
+        {
+          name: "plain",
+          description: "",
+          parameters: { type: "boolean" },
+        },
+      ]),
+    );
+  });
+
+  it("preserves tool message ID through round-trip conversion", () => {
+    const agUiMessages = [
+      {
+        id: "msg-1",
+        role: "user",
+        content: "What's the weather?",
+      },
+      {
+        id: "msg-2",
+        role: "assistant",
+        content: "",
+        tool_calls: [
+          {
+            id: "call-1",
+            type: "function",
+            function: {
+              name: "get_weather",
+              arguments: '{"city":"Paris"}',
+            },
+          },
+        ],
+      },
+      {
+        id: "tool-msg-original-id",
+        role: "tool",
+        tool_call_id: "call-1",
+        content: '{"temperature":"22C"}',
+      },
+    ] as any;
+
+    const threadMessages = fromAgUiMessages(agUiMessages);
+    const roundTripped = toAgUiMessages(threadMessages);
+
+    const toolMessage = roundTripped.find((m) => m.role === "tool");
+    expect(toolMessage).toBeDefined();
+    expect(toolMessage!.id).toBe("tool-msg-original-id");
+  });
+
+  it("converts Zod schemas to JSON Schema format", () => {
+    const zodSchema = z.object({
+      message: z.string().describe("Text to log to the console."),
+    });
+
+    const tools = toAgUiTools({
+      console_log: {
+        description: "Log a message to the console.",
+        parameters: zodSchema,
+      },
+    });
+
+    expect(tools).toHaveLength(1);
+    expect(tools[0]).toMatchObject({
+      name: "console_log",
+      description: "Log a message to the console.",
+    });
+    // Verify parameters is a plain JSON Schema object, not a Zod instance
+    expect(tools[0]!.parameters).toMatchObject({
+      type: "object",
+      properties: {
+        message: {
+          type: "string",
+          description: "Text to log to the console.",
+        },
+      },
+      required: ["message"],
+    });
+    // Ensure it's not a Zod instance (no Zod methods)
+    expect(tools[0]!.parameters).not.toHaveProperty("parse");
+    expect(tools[0]!.parameters).not.toHaveProperty("_def");
+  });
+
+  it("returns plain string content when user message has no attachments", () => {
+    const result = toAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [{ type: "text", text: "Hello" }],
+      },
+    ] as any);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ role: "user", content: "Hello" });
+    expect(() => UserMessageSchema.parse(result[0])).not.toThrow();
+  });
+
+  it("converts a file part placed directly in message content", () => {
+    const result = toAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [
+          { type: "text", text: "review this" },
+          {
+            type: "file",
+            data: "data:application/pdf;base64,JVBERi0xLjQ=",
+            mimeType: "application/pdf",
+            filename: "a.pdf",
+          },
+        ],
+      },
+    ] as any);
+
+    expect(result[0]).toMatchObject({
+      role: "user",
+      content: [
+        { type: "text", text: "review this" },
+        {
+          type: "document",
+          source: {
+            type: "data",
+            value: "JVBERi0xLjQ=",
+            mimeType: "application/pdf",
+          },
+          metadata: { filename: "a.pdf" },
+        },
+      ],
+    });
+    expect(() => UserMessageSchema.parse(result[0])).not.toThrow();
+  });
+
+  it("emits content and attachment file parts once each", () => {
+    const result = toAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [
+          {
+            type: "file",
+            data: "data:application/pdf;base64,QUFB",
+            mimeType: "application/pdf",
+            filename: "from-content.pdf",
+          },
+        ],
+        attachments: [
+          {
+            id: "a-1",
+            type: "document",
+            name: "from-attachment.pdf",
+            content: [
+              {
+                type: "file",
+                data: "data:application/pdf;base64,QkJC",
+                mimeType: "application/pdf",
+                filename: "from-attachment.pdf",
+              },
+            ],
+          },
+        ],
+      },
+    ] as any);
+
+    const documents = (result[0] as any).content.filter(
+      (part: any) => part.type === "document",
+    );
+    expect(documents).toHaveLength(2);
+    expect(documents.map((part: any) => part.source.value)).toEqual([
+      "QUFB",
+      "QkJC",
+    ]);
+    expect(() => UserMessageSchema.parse(result[0])).not.toThrow();
+  });
+
+  it("converts image attachment with data URL to AG-UI image source", () => {
+    const result = toAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [{ type: "text", text: "What is this?" }],
+        attachments: [
+          {
+            id: "a-1",
+            type: "image",
+            name: "photo.png",
+            content: [
+              {
+                type: "image",
+                image: "data:image/png;base64,iVBORw0KGgoAAAA=",
+              },
+            ],
+          },
+        ],
+      },
+    ] as any);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      role: "user",
+      content: [
+        { type: "text", text: "What is this?" },
+        {
+          type: "image",
+          source: {
+            type: "data",
+            value: "iVBORw0KGgoAAAA=",
+            mimeType: "image/png",
+          },
+        },
+      ],
+    });
+    expect(() => UserMessageSchema.parse(result[0])).not.toThrow();
+  });
+
+  it("converts image attachment with http URL to AG-UI image url source", () => {
+    const result = toAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [{ type: "text", text: "hi" }],
+        attachments: [
+          {
+            id: "a-1",
+            type: "image",
+            name: "remote.jpg",
+            contentType: "image/jpeg",
+            content: [
+              { type: "image", image: "https://example.com/remote.jpg" },
+            ],
+          },
+        ],
+      },
+    ] as any);
+
+    expect(result[0]).toMatchObject({
+      role: "user",
+      content: [
+        { type: "text", text: "hi" },
+        {
+          type: "image",
+          source: {
+            type: "url",
+            value: "https://example.com/remote.jpg",
+            mimeType: "image/jpeg",
+          },
+        },
+      ],
+    });
+    expect(() => UserMessageSchema.parse(result[0])).not.toThrow();
+  });
+
+  it("converts a file attachment to an AG-UI document part with filename in metadata", () => {
+    const result = toAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [{ type: "text", text: "review this" }],
+        attachments: [
+          {
+            id: "a-1",
+            type: "document",
+            name: "spec.pdf",
+            contentType: "application/pdf",
+            content: [
+              {
+                type: "file",
+                data: "JVBERi0xLjQK",
+                mimeType: "application/pdf",
+                filename: "spec.pdf",
+              },
+            ],
+          },
+        ],
+      },
+    ] as any);
+
+    expect(result[0]).toMatchObject({
+      role: "user",
+      content: [
+        { type: "text", text: "review this" },
+        {
+          type: "document",
+          source: {
+            type: "data",
+            value: "JVBERi0xLjQK",
+            mimeType: "application/pdf",
+          },
+          metadata: { filename: "spec.pdf" },
+        },
+      ],
+    });
+    expect((result[0] as any).content[1]).not.toHaveProperty("filename");
+    expect(() => UserMessageSchema.parse(result[0])).not.toThrow();
+  });
+
+  it("classifies audio/video files into their own multimodal parts", () => {
+    const result = toAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [],
+        attachments: [
+          {
+            id: "a-1",
+            type: "file",
+            name: "clip.mp3",
+            content: [
+              {
+                type: "file",
+                data: "data:audio/mpeg;base64,QUJD",
+                mimeType: "audio/mpeg",
+              },
+            ],
+          },
+          {
+            id: "a-2",
+            type: "file",
+            name: "clip.mp4",
+            content: [
+              {
+                type: "file",
+                data: "ZmFrZQ==",
+                mimeType: "video/mp4",
+              },
+            ],
+          },
+        ],
+      },
+    ] as any);
+
+    expect(result[0]).toMatchObject({
+      role: "user",
+      content: [
+        {
+          type: "audio",
+          source: { type: "data", value: "QUJD", mimeType: "audio/mpeg" },
+        },
+        {
+          type: "video",
+          source: { type: "data", value: "ZmFrZQ==", mimeType: "video/mp4" },
+        },
+      ],
+    });
+    expect(() => UserMessageSchema.parse(result[0])).not.toThrow();
+  });
+
+  it("converts an http(s) file attachment to a url source document part", () => {
+    const result = toAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [],
+        attachments: [
+          {
+            id: "a-1",
+            type: "document",
+            name: "spec.pdf",
+            contentType: "application/pdf",
+            content: [
+              {
+                type: "file",
+                data: "https://example.com/spec.pdf",
+                mimeType: "application/pdf",
+                filename: "spec.pdf",
+              },
+            ],
+          },
+        ],
+      },
+    ] as any);
+
+    expect(result[0]).toMatchObject({
+      role: "user",
+      content: [
+        {
+          type: "document",
+          source: {
+            type: "url",
+            value: "https://example.com/spec.pdf",
+            mimeType: "application/pdf",
+          },
+          metadata: { filename: "spec.pdf" },
+        },
+      ],
+    });
+    expect(() => UserMessageSchema.parse(result[0])).not.toThrow();
+  });
+
+  it("handles user message with only attachment and empty text", () => {
+    const result = toAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [],
+        attachments: [
+          {
+            id: "a-1",
+            type: "image",
+            name: "pic.png",
+            content: [
+              {
+                type: "image",
+                image: "data:image/png;base64,AAAA",
+              },
+            ],
+          },
+        ],
+      },
+    ] as any);
+
+    expect(result[0]).toMatchObject({
+      role: "user",
+      content: [
+        {
+          type: "image",
+          source: {
+            type: "data",
+            value: "AAAA",
+            mimeType: "image/png",
+          },
+        },
+      ],
+    });
+    expect(() => UserMessageSchema.parse(result[0])).not.toThrow();
+  });
+
+  it("preserves string-form content when non-text attachments are present", () => {
+    const result = toAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: "What is in this image?",
+        attachments: [
+          {
+            id: "a-1",
+            type: "image",
+            name: "photo.png",
+            content: [
+              {
+                type: "image",
+                image: "data:image/png;base64,AAAA",
+              },
+            ],
+          },
+        ],
+      },
+    ] as any);
+
+    expect(result[0]).toMatchObject({
+      role: "user",
+      content: [
+        { type: "text", text: "What is in this image?" },
+        {
+          type: "image",
+          source: {
+            type: "data",
+            value: "AAAA",
+            mimeType: "image/png",
+          },
+        },
+      ],
+    });
+    expect(() => UserMessageSchema.parse(result[0])).not.toThrow();
+  });
+
+  it("preserves text parts from attachments in the string fallback", () => {
+    const result = toAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [{ type: "text", text: "hi" }],
+        attachments: [
+          {
+            id: "a-1",
+            type: "document",
+            name: "notes.txt",
+            content: [
+              {
+                type: "text",
+                text: "<attachment name=notes.txt>extracted content</attachment>",
+              },
+            ],
+          },
+        ],
+      },
+    ] as any);
+
+    expect(result[0]!.content).toBe(
+      "hi\n<attachment name=notes.txt>extracted content</attachment>",
+    );
+    expect(() => UserMessageSchema.parse(result[0])).not.toThrow();
+  });
+
+  it("parses data URL with charset parameter (e.g. SVG)", () => {
+    const result = toAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [],
+        attachments: [
+          {
+            id: "a-1",
+            type: "image",
+            name: "icon.svg",
+            content: [
+              {
+                type: "image",
+                image:
+                  "data:image/svg+xml;charset=utf-8;base64,PHN2ZyB4bWxucz0=",
+              },
+            ],
+          },
+        ],
+      },
+    ] as any);
+
+    expect(result[0]).toMatchObject({
+      role: "user",
+      content: [
+        {
+          type: "image",
+          source: {
+            type: "data",
+            value: "PHN2ZyB4bWxucz0=",
+            mimeType: "image/svg+xml",
+          },
+        },
+      ],
+    });
+    expect(() => UserMessageSchema.parse(result[0])).not.toThrow();
+  });
+
+  it("routes http file data to a url source, not an inline data source", () => {
+    const result = toAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [],
+        attachments: [
+          {
+            id: "a-1",
+            type: "file",
+            name: "report.pdf",
+            content: [
+              {
+                type: "file",
+                data: "https://cdn.example.com/report.pdf",
+                mimeType: "application/pdf",
+                filename: "report.pdf",
+              },
+            ],
+          },
+        ],
+      },
+    ] as any);
+
+    expect(result[0]).toMatchObject({
+      role: "user",
+      content: [
+        {
+          type: "document",
+          source: {
+            type: "url",
+            value: "https://cdn.example.com/report.pdf",
+            mimeType: "application/pdf",
+          },
+          metadata: { filename: "report.pdf" },
+        },
+      ],
+    });
+    expect((result[0] as any).content[0].source).not.toHaveProperty("data");
+    expect(() => UserMessageSchema.parse(result[0])).not.toThrow();
+  });
+
+  it("honors sourceType url for non-http file references", () => {
+    const result = toAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [],
+        attachments: [
+          {
+            id: "a-1",
+            type: "file",
+            name: "report.pdf",
+            content: [
+              {
+                type: "file",
+                data: "s3://bucket/report.pdf",
+                mimeType: "application/pdf",
+                filename: "report.pdf",
+                sourceType: "url",
+              },
+            ],
+          },
+        ],
+      },
+    ] as any);
+
+    expect(result[0]).toMatchObject({
+      role: "user",
+      content: [
+        {
+          type: "document",
+          source: {
+            type: "url",
+            value: "s3://bucket/report.pdf",
+            mimeType: "application/pdf",
+          },
+          metadata: { filename: "report.pdf" },
+        },
+      ],
+    });
+    expect((result[0] as any).content[0].source).not.toHaveProperty("data");
+    expect(() => UserMessageSchema.parse(result[0])).not.toThrow();
+  });
+
+  it("routes non-http file references to a data source without sourceType", () => {
+    const result = toAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [],
+        attachments: [
+          {
+            id: "a-1",
+            type: "file",
+            name: "report.pdf",
+            content: [
+              {
+                type: "file",
+                data: "s3://bucket/report.pdf",
+                mimeType: "application/pdf",
+              },
+            ],
+          },
+        ],
+      },
+    ] as any);
+
+    expect((result[0] as any).content[0].source).toMatchObject({
+      type: "data",
+      value: "s3://bucket/report.pdf",
+    });
+  });
+
+  it("stamps sourceType url on restored url file parts so they round-trip", () => {
+    const restored = fromAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [
+          {
+            type: "document",
+            source: {
+              type: "url",
+              value: "s3://bucket/spec.pdf",
+              mimeType: "application/pdf",
+            },
+            metadata: { filename: "spec.pdf" },
+          },
+        ],
+      },
+    ]);
+
+    expect(restored[0]).toMatchObject({
+      role: "user",
+      attachments: [
+        {
+          type: "document",
+          content: [
+            {
+              type: "file",
+              data: "s3://bucket/spec.pdf",
+              mimeType: "application/pdf",
+              sourceType: "url",
+            },
+          ],
+        },
+      ],
+    });
+
+    const resent = toAgUiMessages([restored[0]] as any);
+    expect((resent[0] as any).content[0].source).toMatchObject({
+      type: "url",
+      value: "s3://bucket/spec.pdf",
+    });
+  });
+
+  it("restores a document input part as a user attachment", () => {
+    const result = fromAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [
+          { type: "text", text: "review this" },
+          {
+            type: "document",
+            source: {
+              type: "url",
+              value: "https://example.com/spec.pdf",
+              mimeType: "application/pdf",
+            },
+            metadata: { filename: "spec.pdf" },
+          },
+        ],
+      },
+    ]);
+
+    expect(result[0]).toMatchObject({
+      role: "user",
+      content: "review this",
+      attachments: [
+        {
+          type: "document",
+          name: "spec.pdf",
+          contentType: "application/pdf",
+          status: { type: "complete" },
+          content: [
+            {
+              type: "file",
+              data: "https://example.com/spec.pdf",
+              mimeType: "application/pdf",
+              filename: "spec.pdf",
+            },
+          ],
+        },
+      ],
+    });
+  });
+
+  it("restores an image input part with a data source as an image attachment", () => {
+    const result = fromAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [
+          {
+            type: "image",
+            source: {
+              type: "data",
+              value: "iVBORw0KGgo=",
+              mimeType: "image/png",
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(result[0]).toMatchObject({
+      role: "user",
+      content: "",
+      attachments: [
+        {
+          type: "image",
+          name: "image",
+          contentType: "image/png",
+          status: { type: "complete" },
+          content: [
+            { type: "image", image: "data:image/png;base64,iVBORw0KGgo=" },
+          ],
+        },
+      ],
+    });
+  });
+
+  it("restores audio and video input parts as file attachments", () => {
+    const result = fromAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [
+          {
+            type: "audio",
+            source: { type: "data", value: "QUJD", mimeType: "audio/mpeg" },
+            metadata: { filename: "memo.mp3" },
+          },
+          {
+            type: "video",
+            source: {
+              type: "url",
+              value: "https://example.com/clip.mp4",
+              mimeType: "video/mp4",
+            },
+          },
+        ],
+      },
+    ]);
+
+    expect(result[0]!.attachments).toMatchObject([
+      {
+        type: "file",
+        name: "memo.mp3",
+        contentType: "audio/mpeg",
+        content: [
+          {
+            type: "file",
+            data: "data:audio/mpeg;base64,QUJD",
+            mimeType: "audio/mpeg",
+            filename: "memo.mp3",
+          },
+        ],
+      },
+      {
+        type: "file",
+        name: "file",
+        contentType: "video/mp4",
+        content: [
+          {
+            type: "file",
+            data: "https://example.com/clip.mp4",
+            mimeType: "video/mp4",
+          },
+        ],
+      },
+    ]);
+  });
+
+  it("does not add attachments to text-only user messages", () => {
+    const result = fromAgUiMessages([
+      { id: "u-1", role: "user", content: "Hi" },
+      {
+        id: "u-2",
+        role: "user",
+        content: [{ type: "text", text: "Hello" }],
+      },
+    ]);
+
+    expect(result[0]).not.toHaveProperty("attachments");
+    expect(result[1]).not.toHaveProperty("attachments");
+  });
+
+  it("round-trips multimodal user input through fromAgUiMessages and back", () => {
+    const original = {
+      id: "u-1",
+      role: "user",
+      content: [
+        { type: "text", text: "see attached" },
+        {
+          type: "document",
+          source: {
+            type: "data",
+            value: "JVBERi0xLjQK",
+            mimeType: "application/pdf",
+          },
+          metadata: { filename: "spec.pdf" },
+        },
+      ],
+    };
+
+    const restored = fromAgUiMessages([original]);
+    const roundTripped = toAgUiMessages(restored);
+
+    expect(roundTripped[0]).toMatchObject({
+      role: "user",
+      content: [
+        { type: "text", text: "see attached" },
+        {
+          type: "document",
+          source: {
+            type: "data",
+            value: "JVBERi0xLjQK",
+            mimeType: "application/pdf",
+          },
+          metadata: { filename: "spec.pdf" },
+        },
+      ],
+    });
+    expect(() => UserMessageSchema.parse(roundTripped[0])).not.toThrow();
+  });
+
+  it("converts a native audio content part to an AG-UI audio source", () => {
+    const result = toAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [
+          { type: "text", text: "listen to this" },
+          { type: "audio", audio: { data: "QUJD", format: "mp3" } },
+        ],
+      },
+    ] as any);
+
+    expect(result[0]).toMatchObject({
+      role: "user",
+      content: [
+        { type: "text", text: "listen to this" },
+        {
+          type: "audio",
+          source: { type: "data", value: "QUJD", mimeType: "audio/mp3" },
+        },
+      ],
+    });
+    expect(() => UserMessageSchema.parse(result[0])).not.toThrow();
+  });
+
+  it("derives the audio mime type from the wav format", () => {
+    const result = toAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [{ type: "audio", audio: { data: "QUJD", format: "wav" } }],
+      },
+    ] as any);
+
+    expect(result[0]!.content).toMatchObject([
+      {
+        type: "audio",
+        source: { type: "data", value: "QUJD", mimeType: "audio/wav" },
+      },
+    ]);
+  });
+
+  it("strips a data URL envelope from audio data and keeps the format-derived mime type", () => {
+    const result = toAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [
+          {
+            type: "audio",
+            audio: { data: "data:audio/mpeg;base64,QUJD", format: "mp3" },
+          },
+        ],
+      },
+    ] as any);
+
+    expect(result[0]!.content).toMatchObject([
+      {
+        type: "audio",
+        source: { type: "data", value: "QUJD", mimeType: "audio/mp3" },
+      },
+    ]);
+  });
+
+  it("drops an audio part with a malformed payload without failing the send", () => {
+    const result = toAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [
+          { type: "text", text: "hi" },
+          { type: "audio", audio: { format: "mp3" } },
+        ],
+      },
+    ] as any);
+
+    expect(result[0]).toMatchObject({ role: "user", content: "hi" });
+    expect(() => UserMessageSchema.parse(result[0])).not.toThrow();
+  });
+
+  it("drops data parts while keeping surrounding text", () => {
+    const result = toAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [
+          { type: "text", text: "hi" },
+          { type: "data", name: "chart", data: { x: 1 } },
+        ],
+      },
+    ] as any);
+
+    expect(result[0]).toMatchObject({ role: "user", content: "hi" });
+    expect(() => UserMessageSchema.parse(result[0])).not.toThrow();
+  });
+
+  it("omits assistant data parts from subsequent AG-UI input", () => {
+    const result = toAgUiMessages([
+      {
+        id: "a-1",
+        role: "assistant",
+        content: [
+          { type: "text", text: "hi" },
+          { type: "data", name: "sources", data: { id: "s-1" } },
+        ],
+      },
+    ] as any);
+
+    expect(result).toEqual([{ id: "a-1", role: "assistant", content: "hi" }]);
+  });
+
+  it("round-trips a native audio part through the attachment channel back to a wire audio block", () => {
+    const sent = toAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [{ type: "audio", audio: { data: "QUJD", format: "mp3" } }],
+      },
+    ] as any);
+
+    const restored = fromAgUiMessages(sent);
+    const resent = toAgUiMessages(restored);
+
+    expect(resent[0]!.content).toMatchObject([
+      {
+        type: "audio",
+        source: { type: "data", value: "QUJD", mimeType: "audio/mp3" },
+      },
+    ]);
+    expect(() => UserMessageSchema.parse(resent[0])).not.toThrow();
+  });
+
+  it("restores a legacy binary input part and re-sends it as a modern part", () => {
+    const restored = fromAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [
+          { type: "text", text: "old history" },
+          {
+            type: "binary",
+            mimeType: "application/pdf",
+            data: "JVBERi0xLjQK",
+            filename: "legacy.pdf",
+          },
+        ],
+      },
+    ]);
+
+    expect(restored[0]).toMatchObject({
+      role: "user",
+      content: "old history",
+      attachments: [
+        {
+          type: "document",
+          name: "legacy.pdf",
+          contentType: "application/pdf",
+          status: { type: "complete" },
+          content: [
+            {
+              type: "file",
+              data: "data:application/pdf;base64,JVBERi0xLjQK",
+              mimeType: "application/pdf",
+              filename: "legacy.pdf",
+            },
+          ],
+        },
+      ],
+    });
+
+    const roundTripped = toAgUiMessages(restored);
+    expect(roundTripped[0]).toMatchObject({
+      role: "user",
+      content: [
+        { type: "text", text: "old history" },
+        {
+          type: "document",
+          source: {
+            type: "data",
+            value: "JVBERi0xLjQK",
+            mimeType: "application/pdf",
+          },
+          metadata: { filename: "legacy.pdf" },
+        },
+      ],
+    });
+    expect(() => UserMessageSchema.parse(roundTripped[0])).not.toThrow();
+  });
+
+  it("restores a legacy binary image part with a url as an image attachment", () => {
+    const result = fromAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [
+          {
+            type: "binary",
+            mimeType: "image/png",
+            url: "https://example.com/cat.png",
+          },
+        ],
+      },
+    ]);
+
+    expect(result[0]).toMatchObject({
+      role: "user",
+      content: "",
+      attachments: [
+        {
+          type: "image",
+          name: "image",
+          contentType: "image/png",
+          status: { type: "complete" },
+          content: [{ type: "image", image: "https://example.com/cat.png" }],
+        },
+      ],
+    });
+  });
+
+  it("prefers data over url in legacy binary parts and routes them by mime type", () => {
+    const result = fromAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [
+          {
+            type: "binary",
+            mimeType: "audio/mpeg",
+            data: "QUJD",
+            url: "https://example.com/memo.mp3",
+          },
+          {
+            type: "binary",
+            mimeType: "video/mp4",
+            data: "",
+            url: "https://example.com/clip.mp4",
+          },
+        ],
+      },
+    ]);
+
+    expect(result[0]!.attachments).toMatchObject([
+      {
+        type: "file",
+        contentType: "audio/mpeg",
+        content: [
+          {
+            type: "file",
+            data: "data:audio/mpeg;base64,QUJD",
+            mimeType: "audio/mpeg",
+          },
+        ],
+      },
+      {
+        type: "file",
+        contentType: "video/mp4",
+        content: [
+          {
+            type: "file",
+            data: "https://example.com/clip.mp4",
+            mimeType: "video/mp4",
+          },
+        ],
+      },
+    ]);
+  });
+
+  it("skips legacy binary parts that only carry a file id", () => {
+    const result = fromAgUiMessages([
+      {
+        id: "u-1",
+        role: "user",
+        content: [
+          { type: "text", text: "see file" },
+          { type: "binary", mimeType: "application/pdf", id: "file-1" },
+        ],
+      },
+    ]);
+
+    expect(result[0]).toMatchObject({ role: "user", content: "see file" });
+    expect(result[0]).not.toHaveProperty("attachments");
+  });
+});
+
+describe("mcp app rehydration from restored tool messages", () => {
+  it("rehydrates mcp.app from the _meta ui/resourceUri carrier", () => {
+    const result = fromAgUiMessages([
+      {
+        id: "a-1",
+        role: "assistant",
+        content: "",
+        tool_calls: [
+          {
+            id: "call-1",
+            type: "function",
+            function: { name: "search", arguments: "{}" },
+          },
+        ],
+      },
+      {
+        id: "t-1",
+        role: "tool",
+        tool_call_id: "call-1",
+        content: "ok",
+        _meta: { "ui/resourceUri": "ui://example/search" },
+      },
+    ] as any);
+
+    const part = (result[0] as any).content.find(
+      (p: { type: string }) => p.type === "tool-call",
+    );
+    expect(part.mcp).toEqual({ app: { resourceUri: "ui://example/search" } });
+  });
+
+  it("rehydrates mcp.app from the nested _meta ui.resourceUri carrier", () => {
+    const result = fromAgUiMessages([
+      {
+        id: "a-1",
+        role: "assistant",
+        content: "",
+        tool_calls: [
+          {
+            id: "call-1",
+            type: "function",
+            function: { name: "search", arguments: "{}" },
+          },
+        ],
+      },
+      {
+        id: "t-1",
+        role: "tool",
+        tool_call_id: "call-1",
+        content: "ok",
+        _meta: { ui: { resourceUri: "ui://example/search" } },
+      },
+    ] as any);
+
+    const part = (result[0] as any).content.find(
+      (p: { type: string }) => p.type === "tool-call",
+    );
+    expect(part.mcp).toEqual({ app: { resourceUri: "ui://example/search" } });
+  });
+
+  it("prefers the nested _meta ui.resourceUri carrier over the flat carrier", () => {
+    const result = fromAgUiMessages([
+      {
+        id: "a-1",
+        role: "assistant",
+        content: "",
+        tool_calls: [
+          {
+            id: "call-1",
+            type: "function",
+            function: { name: "search", arguments: "{}" },
+          },
+        ],
+      },
+      {
+        id: "t-1",
+        role: "tool",
+        tool_call_id: "call-1",
+        content: "ok",
+        _meta: {
+          ui: { resourceUri: "ui://example/nested" },
+          "ui/resourceUri": "ui://example/flat",
+        },
+      },
+    ] as any);
+
+    const part = (result[0] as any).content.find(
+      (p: { type: string }) => p.type === "tool-call",
+    );
+    expect(part.mcp).toEqual({ app: { resourceUri: "ui://example/nested" } });
+  });
+
+  it("falls back to the flat carrier when the nested resourceUri is not a ui:// app uri", () => {
+    const result = fromAgUiMessages([
+      {
+        id: "a-1",
+        role: "assistant",
+        content: "",
+        tool_calls: [
+          {
+            id: "call-1",
+            type: "function",
+            function: { name: "search", arguments: "{}" },
+          },
+        ],
+      },
+      {
+        id: "t-1",
+        role: "tool",
+        tool_call_id: "call-1",
+        content: "ok",
+        _meta: {
+          ui: { resourceUri: "https://example.com/not-an-app" },
+          "ui/resourceUri": "ui://example/flat",
+        },
+      },
+    ] as any);
+
+    const part = (result[0] as any).content.find(
+      (p: { type: string }) => p.type === "tool-call",
+    );
+    expect(part.mcp).toEqual({ app: { resourceUri: "ui://example/flat" } });
+  });
+
+  it("rehydrates mcp.app on a synthetic assistant tool-call for an orphan tool message", () => {
+    const result = fromAgUiMessages([
+      {
+        id: "t-1",
+        role: "tool",
+        tool_call_id: "call-9",
+        name: "lookup",
+        content: '{"ok":true}',
+        _meta: { "ui/resourceUri": "ui://example/lookup" },
+      },
+    ] as any);
+
+    expect((result[0] as any).content[0].mcp).toEqual({
+      app: { resourceUri: "ui://example/lookup" },
+    });
+  });
+
+  it("does not set mcp.app when the carrier resourceUri is not a ui:// app uri", () => {
+    const result = fromAgUiMessages([
+      {
+        id: "a-1",
+        role: "assistant",
+        content: "",
+        tool_calls: [
+          {
+            id: "call-1",
+            type: "function",
+            function: { name: "search", arguments: "{}" },
+          },
+        ],
+      },
+      {
+        id: "t-1",
+        role: "tool",
+        tool_call_id: "call-1",
+        content: "ok",
+        _meta: { "ui/resourceUri": "https://example.com/not-an-app" },
+      },
+    ] as any);
+
+    const part = (result[0] as any).content.find(
+      (p: { type: string }) => p.type === "tool-call",
+    );
+    expect(part.mcp).toBeUndefined();
+  });
+
+  it("leaves mcp unset on a restored part without a carrier", () => {
+    const result = fromAgUiMessages([
+      {
+        id: "a-2",
+        role: "assistant",
+        content: "",
+        tool_calls: [
+          {
+            id: "call-2",
+            type: "function",
+            function: { name: "search", arguments: "{}" },
+          },
+        ],
+      },
+      { id: "t-2", role: "tool", tool_call_id: "call-2", content: "ok" },
+    ] as any);
+
+    const part = (result[0] as any).content.find(
+      (p: { type: string }) => p.type === "tool-call",
+    );
+    expect(part.mcp).toBeUndefined();
+  });
+});
+
+describe("a2ui surface rehydration from restored activity messages", () => {
+  const a2uiSurfaceOperations = (surfaceId: string, title: string) => [
+    { version: "v0.9", createSurface: { surfaceId } },
+    {
+      version: "v0.9",
+      updateComponents: {
+        surfaceId,
+        components: [
+          { id: "root", component: "Column", children: ["heading", "body"] },
+          {
+            id: "heading",
+            component: "Text",
+            variant: "h1",
+            text: { path: "/title" },
+          },
+          { id: "body", component: "Text", text: { path: "/body" } },
+        ],
+      },
+    },
+    {
+      version: "v0.9",
+      updateDataModel: { surfaceId, data: { title, body: `${title} body` } },
+    },
+  ];
+
+  const findA2uiPart = (message: any) =>
+    message.content.find(
+      (p: { type: string; toolCallId?: string }) =>
+        p.type === "tool-call" && p.toolCallId?.startsWith("a2ui:"),
+    );
+
+  const expectSurfacePart = (part: any, surfaceId: string, title: string) => {
+    expect(part).toMatchObject({
+      type: "tool-call",
+      toolCallId: `a2ui:${surfaceId}`,
+      toolName: "present",
+      args: {
+        $type: "Col",
+        children: [
+          { $type: "Header", text: title },
+          { $type: "Markdown", value: `${title} body` },
+        ],
+      },
+    });
+    expect(part.result).toEqual({});
+    expect(part.argsText).toBe(JSON.stringify(part.args));
+  };
+
+  it("rehydrates an a2ui surface onto the preceding assistant message", () => {
+    const result = fromAgUiMessages([
+      { id: "u-1", role: "user", content: "show me a dashboard" },
+      { id: "a-1", role: "assistant", content: "Here is the dashboard" },
+      {
+        id: "act-1",
+        role: "activity",
+        activityType: "a2ui-surface",
+        content: {
+          a2ui_operations: a2uiSurfaceOperations("surface-1", "Welcome"),
+        },
+      },
+    ] as any);
+
+    expect(result.map((m) => m.role)).toEqual(["user", "assistant"]);
+    const assistant = result[1] as any;
+    expectSurfacePart(findA2uiPart(assistant), "surface-1", "Welcome");
+    expect(
+      assistant.content.find((p: { type: string }) => p.type === "text").text,
+    ).toBe("Here is the dashboard");
+  });
+
+  it("keeps an a2ui surface whose only antecedent is held reasoning", () => {
+    const result = fromAgUiMessages([
+      { id: "u-1", role: "user", content: "show me" },
+      { id: "r-1", role: "reasoning", content: "render a surface" },
+      {
+        id: "act-1",
+        role: "activity",
+        activityType: "a2ui-surface",
+        content: {
+          a2ui_operations: a2uiSurfaceOperations("surface-1", "Welcome"),
+        },
+      },
+      { id: "a-1", role: "assistant", content: "here it is" },
+    ] as any);
+
+    expect(result.map((m) => m.id)).toEqual(["u-1", "r-1", "a-1"]);
+    expectSurfacePart(findA2uiPart(result[1] as any), "surface-1", "Welcome");
+  });
+
+  it("keeps an a2ui surface in the turn that painted it", () => {
+    const result = fromAgUiMessages([
+      { id: "a-1", role: "assistant", content: "Here is the dashboard" },
+      { id: "u-2", role: "user", content: "show me another" },
+      { id: "r-1", role: "reasoning", content: "render a surface" },
+      {
+        id: "act-1",
+        role: "activity",
+        activityType: "a2ui-surface",
+        content: {
+          a2ui_operations: a2uiSurfaceOperations("surface-1", "Welcome"),
+        },
+      },
+      { id: "a-2", role: "assistant", content: "and here it is" },
+    ] as any);
+
+    expect(result.map((m) => m.id)).toEqual(["a-1", "u-2", "r-1", "a-2"]);
+    expect(findA2uiPart(result[0] as any)).toBeUndefined();
+    expectSurfacePart(findA2uiPart(result[2] as any), "surface-1", "Welcome");
+  });
+
+  it("preserves existing tool calls and text alongside the rehydrated a2ui part", () => {
+    const result = fromAgUiMessages([
+      {
+        id: "a-1",
+        role: "assistant",
+        content: "",
+        tool_calls: [
+          {
+            id: "call-1",
+            type: "function",
+            function: { name: "search", arguments: "{}" },
+          },
+        ],
+      },
+      {
+        id: "act-1",
+        role: "activity",
+        activityType: "a2ui-surface",
+        content: {
+          a2ui_operations: a2uiSurfaceOperations("surface-1", "Welcome"),
+        },
+      },
+    ] as any);
+
+    const assistant = result[0] as any;
+    const toolCallIds = assistant.content
+      .filter((p: { type: string }) => p.type === "tool-call")
+      .map((p: { toolCallId: string }) => p.toolCallId);
+    expect(toolCallIds).toEqual(["call-1", "a2ui:surface-1"]);
+  });
+
+  it("rehydrates multiple surfaces from one snapshot", () => {
+    const result = fromAgUiMessages([
+      { id: "a-1", role: "assistant", content: "ok" },
+      {
+        id: "act-1",
+        role: "activity",
+        activityType: "a2ui-surface",
+        content: {
+          a2ui_operations: [
+            ...a2uiSurfaceOperations("s-1", "First"),
+            ...a2uiSurfaceOperations("s-2", "Second"),
+          ],
+        },
+      },
+    ] as any);
+
+    const assistant = result[0] as any;
+    const a2uiIds = assistant.content
+      .filter((p: { type: string; toolCallId?: string }) =>
+        p.toolCallId?.startsWith("a2ui:"),
+      )
+      .map((p: { toolCallId: string }) => p.toolCallId);
+    expect(a2uiIds).toEqual(["a2ui:s-1", "a2ui:s-2"]);
+  });
+
+  it("replaces the rehydrated surface when a later snapshot targets the same owner", () => {
+    const result = fromAgUiMessages([
+      { id: "a-1", role: "assistant", content: "ok" },
+      {
+        id: "act-1",
+        role: "activity",
+        activityType: "a2ui-surface",
+        content: {
+          a2ui_operations: a2uiSurfaceOperations("surface-1", "Original"),
+        },
+      },
+      {
+        id: "act-2",
+        role: "activity",
+        activityType: "a2ui-surface",
+        content: {
+          replace: true,
+          a2ui_operations: [
+            { version: "v0.9", createSurface: { surfaceId: "surface-1" } },
+            {
+              version: "v0.9",
+              updateComponents: {
+                surfaceId: "surface-1",
+                components: [
+                  { id: "root", component: "Text", text: "Replacement" },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    ] as any);
+
+    const assistant = result[0] as any;
+    const a2uiParts = assistant.content.filter((p: any) =>
+      p.toolCallId?.startsWith("a2ui:"),
+    );
+    expect(a2uiParts).toHaveLength(1);
+    expect(a2uiParts[0].args).toEqual({
+      $type: "Markdown",
+      value: "Replacement",
+    });
+  });
+
+  it("keeps every surface when each arrives as its own activity message", () => {
+    const result = fromAgUiMessages([
+      { id: "a-1", role: "assistant", content: "ok" },
+      {
+        id: "a2ui-surface-s-1-call_9",
+        role: "activity",
+        activityType: "a2ui-surface",
+        content: {
+          a2ui_operations: a2uiSurfaceOperations("s-1", "First"),
+        },
+      },
+      {
+        id: "a2ui-surface-s-2-call_9",
+        role: "activity",
+        activityType: "a2ui-surface",
+        content: {
+          a2ui_operations: a2uiSurfaceOperations("s-2", "Second"),
+        },
+      },
+    ] as any);
+
+    const a2uiParts = (result[0] as any).content.filter((part: any) =>
+      part.toolCallId?.startsWith("a2ui:"),
+    );
+    expect(a2uiParts.map((part: any) => part.toolCallId)).toEqual([
+      "a2ui:s-1",
+      "a2ui:s-2",
+    ]);
+    expectSurfacePart(a2uiParts[0], "s-1", "First");
+    expectSurfacePart(a2uiParts[1], "s-2", "Second");
+  });
+
+  it("overwrites a surface when a later activity message reuses the same id", () => {
+    const result = fromAgUiMessages([
+      { id: "a-1", role: "assistant", content: "ok" },
+      {
+        id: "a2ui-surface-s-1-call_9",
+        role: "activity",
+        activityType: "a2ui-surface",
+        content: {
+          a2ui_operations: a2uiSurfaceOperations("s-1", "First"),
+        },
+      },
+      {
+        id: "a2ui-surface-s-1-call_9",
+        role: "activity",
+        activityType: "a2ui-surface",
+        content: {
+          a2ui_operations: a2uiSurfaceOperations("s-1", "Second"),
+        },
+      },
+    ] as any);
+
+    const a2uiParts = (result[0] as any).content.filter((part: any) =>
+      part.toolCallId?.startsWith("a2ui:"),
+    );
+    expect(a2uiParts).toHaveLength(1);
+    expectSurfacePart(a2uiParts[0], "s-1", "Second");
+  });
+
+  it("removes a surface when the same activity id is re-materialized without it", () => {
+    const result = fromAgUiMessages([
+      { id: "a-1", role: "assistant", content: "ok" },
+      {
+        id: "a2ui-surface-s-1-call_9",
+        role: "activity",
+        activityType: "a2ui-surface",
+        content: {
+          a2ui_operations: [
+            ...a2uiSurfaceOperations("s-1", "First"),
+            ...a2uiSurfaceOperations("s-2", "Second"),
+          ],
+        },
+      },
+      {
+        id: "a2ui-surface-s-1-call_9",
+        role: "activity",
+        activityType: "a2ui-surface",
+        content: {
+          a2ui_operations: a2uiSurfaceOperations("s-2", "Second"),
+        },
+      },
+    ] as any);
+
+    const a2uiParts = (result[0] as any).content.filter((part: any) =>
+      part.toolCallId?.startsWith("a2ui:"),
+    );
+    expect(a2uiParts).toHaveLength(1);
+    expectSurfacePart(a2uiParts[0], "s-2", "Second");
+  });
+
+  it("drops an a2ui activity with no owning assistant message", () => {
+    const result = fromAgUiMessages([
+      { id: "u-1", role: "user", content: "hi" },
+      {
+        id: "act-1",
+        role: "activity",
+        activityType: "a2ui-surface",
+        content: {
+          a2ui_operations: a2uiSurfaceOperations("surface-1", "Welcome"),
+        },
+      },
+    ] as any);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({ role: "user" });
+  });
+
+  it("drops a non-a2ui activity type", () => {
+    const result = fromAgUiMessages([
+      { id: "a-1", role: "assistant", content: "ok" },
+      {
+        id: "act-1",
+        role: "activity",
+        activityType: "search",
+        content: { query: "weather" },
+      },
+    ] as any);
+
+    expect((result[0] as any).content).toEqual([{ type: "text", text: "ok" }]);
+  });
+
+  it("ignores an a2ui activity whose content has no a2ui_operations", () => {
+    const result = fromAgUiMessages([
+      { id: "a-1", role: "assistant", content: "ok" },
+      {
+        id: "act-1",
+        role: "activity",
+        activityType: "a2ui-surface",
+        content: { status: "building" },
+      },
+    ] as any);
+
+    expect((result[0] as any).content).toEqual([{ type: "text", text: "ok" }]);
+  });
+});
+
+describe("package exports", () => {
+  it("exposes fromAgUiMessages from the package root", () => {
+    expect(publicFromAgUiMessages).toBe(fromAgUiMessages);
+  });
+
+  it("exposes toAgUiMessages from the package root", () => {
+    expect(publicToAgUiMessages).toBe(toAgUiMessages);
+  });
+
+  it("accepts an AppendMessage at the package root", () => {
+    expectTypeOf<AppendMessage>().toExtend<
+      Parameters<typeof publicToAgUiMessages>[0][number]
+    >();
+  });
+
+  it("emits AgUiMessage values assignable to AG-UI Message", () => {
+    expectTypeOf<AgUiMessage>().toExtend<Message>();
+  });
+
+  it("composes with ExportedMessageRepository.fromArray for history loading", () => {
+    const repo = ExportedMessageRepository.fromArray(
+      publicFromAgUiMessages([
+        { id: "u-1", role: "user", content: "Hi" },
+        { id: "a-1", role: "assistant", content: "Hello!" },
+      ]),
+    );
+
+    expect(repo.messages).toHaveLength(2);
+    expect(repo.messages[0]).toMatchObject({
+      parentId: null,
+      message: { role: "user" },
+    });
+    expect(repo.messages[1]!.parentId).toBe(repo.messages[0]!.message.id);
+  });
+});

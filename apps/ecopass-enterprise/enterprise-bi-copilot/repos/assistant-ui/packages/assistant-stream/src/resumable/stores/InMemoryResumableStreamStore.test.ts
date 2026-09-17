@@ -1,0 +1,453 @@
+import { describe, expect, it, vi } from "vitest";
+import { createInMemoryResumableStreamStore } from "./InMemoryResumableStreamStore";
+import type { ResumableStreamEntry } from "../types";
+
+const bytes = (s: string): Uint8Array => new TextEncoder().encode(s);
+
+const decode = (chunk: Uint8Array): string => new TextDecoder().decode(chunk);
+
+async function drain(
+  iter: AsyncIterable<ResumableStreamEntry>,
+): Promise<string[]> {
+  const out: string[] = [];
+  for await (const entry of iter) out.push(decode(entry.chunk));
+  return out;
+}
+
+describe("InMemoryResumableStreamStore", () => {
+  it.each([10, 1000])(
+    "does not sweep %i retained streams before an expiry is due",
+    async (count) => {
+      let time = 1000;
+      const store = createInMemoryResumableStreamStore({
+        now: () => time,
+        defaultTtlMs: 100,
+      });
+      for (let i = 0; i < count; i++) await store.acquire(`stream-${i}`);
+      let scannedEntries = 0;
+      const iterate = Map.prototype[Symbol.iterator];
+      const spy = vi
+        .spyOn(Map.prototype, Symbol.iterator)
+        .mockImplementation(function* (this: Map<unknown, unknown>) {
+          for (const entry of iterate.call(this)) {
+            if (this.has("stream-0")) scannedEntries += 1;
+            yield entry;
+          }
+          return undefined;
+        });
+      try {
+        time = 1050;
+        await store.append("stream-0", bytes("one"));
+        expect(await store.status("stream-0")).toBe("streaming");
+        expect(scannedEntries).toBe(0);
+        time = 1100;
+        expect(await store.status("stream-1")).toBe("missing");
+        expect(scannedEntries).toBe(count);
+        scannedEntries = 0;
+        await store.append("stream-0", bytes("two"));
+        expect(scannedEntries).toBe(0);
+      } finally {
+        spy.mockRestore();
+        store.dispose();
+      }
+    },
+  );
+
+  it("honors a shorter per-stream TTL and reclaims capacity at the deadline", async () => {
+    let time = 1000;
+    const store = createInMemoryResumableStreamStore({
+      now: () => time,
+      defaultTtlMs: 1000,
+      maxStreams: 2,
+    });
+    await store.acquire("long");
+    await store.acquire("short", { ttlMs: 10 });
+    time = 1010;
+    expect(await store.acquire("replacement")).toBe("producer");
+    expect(await store.status("short")).toBe("missing");
+    expect(await store.status("long")).toBe("streaming");
+  });
+
+  it("keeps refreshed and finalized streams until their new deadlines", async () => {
+    let time = 1000;
+    const store = createInMemoryResumableStreamStore({
+      now: () => time,
+      defaultTtlMs: 100,
+    });
+    await store.acquire("active");
+    await store.acquire("finished");
+    time = 1080;
+    await store.append("active", bytes("x"));
+    await store.finalize("finished", "done");
+    time = 1100;
+    expect(await store.status("active")).toBe("streaming");
+    expect(await store.status("finished")).toBe("done");
+    time = 1180;
+    expect(await store.status("active")).toBe("missing");
+    expect(await store.status("finished")).toBe("missing");
+  });
+
+  it("wakes a waiting reader when its stream expires", async () => {
+    vi.useFakeTimers();
+    const store = createInMemoryResumableStreamStore({ defaultTtlMs: 100 });
+    try {
+      await store.acquire("waiting");
+      const iterator = store
+        .read("waiting", "", new AbortController().signal)
+        [Symbol.asyncIterator]();
+      const pending = expect(iterator.next()).rejects.toThrow("Stream expired");
+      await vi.advanceTimersByTimeAsync(100);
+      await pending;
+    } finally {
+      store.dispose();
+      vi.useRealTimers();
+    }
+  });
+
+  it("keeps replay bytes independent of producer and consumer buffers", async () => {
+    const store = createInMemoryResumableStreamStore();
+    const chunk = Buffer.from("a");
+    await store.acquire("a");
+    await store.append("a", chunk);
+    await store.finalize("a", "done");
+    chunk[0] = 98;
+
+    const signal = new AbortController().signal;
+    const seen: string[] = [];
+    for await (const entry of store.read("a", "", signal)) {
+      seen.push(decode(entry.chunk));
+      entry.chunk[0] = 99;
+    }
+
+    expect(seen).toEqual(["a"]);
+    expect(await drain(store.read("a", "", signal))).toEqual(["a"]);
+  });
+
+  it("elects exactly one producer per stream id", async () => {
+    const store = createInMemoryResumableStreamStore();
+    const first = await store.acquire("a");
+    const second = await store.acquire("a");
+    const third = await store.acquire("a");
+    expect(first).toBe("producer");
+    expect(second).toBe("consumer");
+    expect(third).toBe("consumer");
+  });
+
+  it("isolates streams by id", async () => {
+    const store = createInMemoryResumableStreamStore();
+    expect(await store.acquire("a")).toBe("producer");
+    expect(await store.acquire("b")).toBe("producer");
+  });
+
+  it("replays buffered entries and tails new ones until finalize", async () => {
+    const store = createInMemoryResumableStreamStore();
+    await store.acquire("a");
+    await store.append("a", bytes("hello "));
+    await store.append("a", bytes("world"));
+
+    const ac = new AbortController();
+    const collected: string[] = [];
+    const reading = (async () => {
+      for await (const entry of store.read("a", "", ac.signal)) {
+        collected.push(decode(entry.chunk));
+        if (collected.length === 3) {
+          await store.finalize("a", "done");
+        }
+      }
+    })();
+
+    await store.append("a", bytes("!"));
+    await reading;
+    expect(collected).toEqual(["hello ", "world", "!"]);
+  });
+
+  it("status transitions: missing → streaming → done", async () => {
+    const store = createInMemoryResumableStreamStore();
+    expect(await store.status("a")).toBe("missing");
+    await store.acquire("a");
+    expect(await store.status("a")).toBe("streaming");
+    await store.finalize("a", "done");
+    expect(await store.status("a")).toBe("done");
+  });
+
+  it("status reports error after error finalize", async () => {
+    const store = createInMemoryResumableStreamStore();
+    await store.acquire("a");
+    await store.finalize("a", "error", "boom");
+    expect(await store.status("a")).toBe("error");
+  });
+
+  it("read throws on the next iteration after error finalize", async () => {
+    const store = createInMemoryResumableStreamStore();
+    await store.acquire("a");
+    await store.append("a", bytes("partial"));
+    await store.finalize("a", "error", "boom");
+
+    const ac = new AbortController();
+    const seen: string[] = [];
+    await expect(async () => {
+      for await (const entry of store.read("a", "", ac.signal)) {
+        seen.push(decode(entry.chunk));
+      }
+    }).rejects.toThrow("boom");
+    expect(seen).toEqual(["partial"]);
+  });
+
+  it("a consumer joining after done replays everything", async () => {
+    const store = createInMemoryResumableStreamStore();
+    await store.acquire("a");
+    await store.append("a", bytes("a"));
+    await store.append("a", bytes("b"));
+    await store.append("a", bytes("c"));
+    await store.finalize("a", "done");
+
+    const ac = new AbortController();
+    expect(await drain(store.read("a", "", ac.signal))).toEqual([
+      "a",
+      "b",
+      "c",
+    ]);
+  });
+
+  it("cursor advances and skips already-seen entries", async () => {
+    const store = createInMemoryResumableStreamStore();
+    await store.acquire("a");
+    await store.append("a", bytes("1"));
+    await store.append("a", bytes("2"));
+    await store.append("a", bytes("3"));
+    await store.finalize("a", "done");
+
+    const ac = new AbortController();
+    const seen: { cursor: string; text: string }[] = [];
+    for await (const entry of store.read("a", "", ac.signal)) {
+      seen.push({ cursor: entry.cursor, text: decode(entry.chunk) });
+    }
+    expect(seen.map((s) => s.text)).toEqual(["1", "2", "3"]);
+
+    const afterFirst = seen[0]!.cursor;
+    expect(await drain(store.read("a", afterFirst, ac.signal))).toEqual([
+      "2",
+      "3",
+    ]);
+  });
+
+  it("aborting the read signal terminates without throwing", async () => {
+    const store = createInMemoryResumableStreamStore();
+    await store.acquire("a");
+    const ac = new AbortController();
+    const collected: string[] = [];
+    const reading = (async () => {
+      for await (const entry of store.read("a", "", ac.signal)) {
+        collected.push(decode(entry.chunk));
+      }
+    })();
+    await store.append("a", bytes("x"));
+    await new Promise((r) => setTimeout(r, 5));
+    ac.abort();
+    await reading;
+    expect(collected).toEqual(["x"]);
+  });
+
+  it("honors abort after the last buffered chunk before a stored error", async () => {
+    const store = createInMemoryResumableStreamStore();
+    await store.acquire("a");
+    await store.append("a", bytes("partial"));
+    await store.finalize("a", "error", "boom");
+    const ac = new AbortController();
+    const seen: string[] = [];
+
+    for await (const entry of store.read("a", "", ac.signal)) {
+      seen.push(decode(entry.chunk));
+      ac.abort();
+    }
+
+    expect(seen).toEqual(["partial"]);
+  });
+
+  it("multiple consumers can read concurrently", async () => {
+    const store = createInMemoryResumableStreamStore();
+    await store.acquire("a");
+    const ac = new AbortController();
+    const a = drain(store.read("a", "", ac.signal));
+    const b = drain(store.read("a", "", ac.signal));
+    await store.append("a", bytes("x"));
+    await store.append("a", bytes("y"));
+    await store.finalize("a", "done");
+    expect(await a).toEqual(["x", "y"]);
+    expect(await b).toEqual(["x", "y"]);
+  });
+
+  it("delete prevents further reads and ends in-flight reads", async () => {
+    const store = createInMemoryResumableStreamStore();
+    await store.acquire("a");
+    const ac = new AbortController();
+    const reading = drain(store.read("a", "", ac.signal));
+    await store.append("a", bytes("x"));
+    await new Promise((r) => setTimeout(r, 0));
+    await store.delete("a");
+    expect(await reading).toEqual(["x"]);
+    expect(await store.status("a")).toBe("missing");
+  });
+
+  it("expired streams are evicted on next access", async () => {
+    let now = 1_000;
+    const store = createInMemoryResumableStreamStore({
+      defaultTtlMs: 100,
+      now: () => now,
+    });
+    await store.acquire("a");
+    await store.append("a", bytes("hi"));
+    expect(await store.status("a")).toBe("streaming");
+    now += 200;
+    expect(await store.status("a")).toBe("missing");
+  });
+
+  it("appending refreshes TTL", async () => {
+    let now = 1_000;
+    const store = createInMemoryResumableStreamStore({
+      defaultTtlMs: 100,
+      now: () => now,
+    });
+    await store.acquire("a");
+    now += 80;
+    await store.append("a", bytes("x"));
+    now += 80;
+    expect(await store.status("a")).toBe("streaming");
+  });
+
+  it("rejects append on finalized stream", async () => {
+    const store = createInMemoryResumableStreamStore();
+    await store.acquire("a");
+    await store.finalize("a", "done");
+    await expect(store.append("a", bytes("late"))).rejects.toThrow(
+      /already finalized/,
+    );
+  });
+
+  it("rejects append on missing stream", async () => {
+    const store = createInMemoryResumableStreamStore();
+    await expect(store.append("a", bytes("x"))).rejects.toThrow(
+      /Stream not found/,
+    );
+  });
+
+  it("finalize is idempotent", async () => {
+    const store = createInMemoryResumableStreamStore();
+    await store.acquire("a");
+    await store.finalize("a", "done");
+    await store.finalize("a", "done");
+    expect(await store.status("a")).toBe("done");
+  });
+
+  it("rejects append when chunk exceeds maxChunkBytes", async () => {
+    const store = createInMemoryResumableStreamStore({ maxChunkBytes: 4 });
+    await store.acquire("a");
+    await expect(store.append("a", bytes("hello"))).rejects.toThrow(
+      /Chunk exceeds maxChunkBytes: 5/,
+    );
+    await store.append("a", bytes("ok"));
+    expect(await store.status("a")).toBe("streaming");
+  });
+
+  it("rejects append when stream reaches maxEntriesPerStream", async () => {
+    const store = createInMemoryResumableStreamStore({
+      maxEntriesPerStream: 2,
+    });
+    await store.acquire("a");
+    await store.append("a", bytes("1"));
+    await store.append("a", bytes("2"));
+    await expect(store.append("a", bytes("3"))).rejects.toThrow(
+      /Stream exceeded maxEntriesPerStream: a/,
+    );
+  });
+
+  it("rejects acquire when active stream count exceeds maxStreams", async () => {
+    const store = createInMemoryResumableStreamStore({ maxStreams: 2 });
+    await store.acquire("a");
+    await store.acquire("b");
+    await expect(store.acquire("c")).rejects.toThrow(/maxStreams exceeded/);
+    expect(await store.acquire("a")).toBe("consumer");
+  });
+
+  it("gc sweeper evicts expired streams without explicit access", async () => {
+    vi.useFakeTimers();
+    try {
+      let now = 1_000;
+      const store = createInMemoryResumableStreamStore({
+        defaultTtlMs: 100,
+        gcIntervalMs: 50,
+        now: () => now,
+      });
+      await store.acquire("a");
+      await store.append("a", bytes("hi"));
+      now += 200;
+      vi.advanceTimersByTime(50);
+      expect(await store.status("a")).toBe("missing");
+      store.dispose();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("dispose clears the gc interval", async () => {
+    vi.useFakeTimers();
+    try {
+      const clearSpy = vi.spyOn(globalThis, "clearInterval");
+      const store = createInMemoryResumableStreamStore({ gcIntervalMs: 50 });
+      store.dispose();
+      expect(clearSpy).toHaveBeenCalledTimes(1);
+      clearSpy.mockRestore();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("dispose is a no-op when gcIntervalMs is undefined", () => {
+    const store = createInMemoryResumableStreamStore();
+    expect(() => store.dispose()).not.toThrow();
+  });
+  it("keeps a superseded producer out of a stream reacquired on the same instance", async () => {
+    let now = 0;
+    const store = createInMemoryResumableStreamStore({
+      now: () => now,
+      defaultTtlMs: 10,
+    });
+    const a = await store.acquireLease!("s");
+    if (a.role !== "producer") throw new Error("Expected producer");
+    await store.append("s", bytes("before"), a.lease);
+    now = 11;
+    const b = await store.acquireLease!("s");
+    if (b.role !== "producer") throw new Error("Expected producer");
+    await expect(store.acquireLease!("s")).resolves.toEqual({
+      role: "consumer",
+    });
+    await store.append("s", bytes("fresh"), b.lease);
+    await expect(
+      store.append("s", bytes("stale"), a.lease),
+    ).rejects.toMatchObject({
+      code: "missing",
+      message: "Stream superseded by a new acquisition: s",
+    });
+    await expect(
+      store.finalize("s", "done", undefined, a.lease),
+    ).resolves.toBeUndefined();
+    await expect(store.status("s")).resolves.toBe("streaming");
+    await store.finalize("s", "done", undefined, b.lease);
+    await expect(
+      store.append("s", bytes("late"), a.lease),
+    ).rejects.toMatchObject({
+      code: "missing",
+    });
+    const chunks: string[] = [];
+    for await (const entry of store.read(
+      "s",
+      "",
+      new AbortController().signal,
+    )) {
+      chunks.push(decode(entry.chunk));
+    }
+    expect(chunks).toEqual(["fresh"]);
+    await store.delete("s");
+    await expect(store.finalize("s", "done")).rejects.toThrow(/not found/);
+  });
+});

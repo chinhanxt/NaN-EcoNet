@@ -1,0 +1,56 @@
+{
+  "_meta": {
+    "description": "D6 fixtures for pydantic-ai / shared-state-read",
+    "sourceFile": "d5-all.json",
+    "copiedFrom": "langgraph-python",
+    "created": "2026-05-21"
+  },
+  "fixtures": [
+    {
+      "_comment": "Recipe-reader default state, turn 1. Exact actual serialized recipe gates the grounded response; no reply for a different recipe.",
+      "match": {
+        "userMessage": "Italian pasta recipe",
+        "turnIndex": 0,
+        "context": "pydantic-ai",
+        "systemMessage": "Current UI recipe JSON:\n{\"title\":\"Make Your Recipe\",\"skill_level\":\"Intermediate\",\"cooking_time\":\"45 min\",\"special_preferences\":[],\"ingredients\":[{\"icon\":\"🥕\",\"name\":\"Carrots\",\"amount\":\"3 large, grated\"},{\"icon\":\"🌾\",\"name\":\"All-Purpose Flour\",\"amount\":\"2 cups\"}],\"instructions\":[\"Preheat oven to 350°F (175°C)\"]}"
+      },
+      "response": {
+        "content": "For \"Make Your Recipe\", use the 2 cups of All-Purpose Flour to make Italian pasta, and fold in the 3 large, grated Carrots. Your 45 min setting allows time for shaping and a quick vegetable sauce. This is a suggestion; your recipe form is unchanged."
+      }
+    },
+    {
+      "_comment": "Recipe-reader default state, turn 2. Exact actual serialized recipe gates the grounded response; no reply for a different recipe.",
+      "match": {
+        "userMessage": "healthier with more vegetables",
+        "context": "pydantic-ai",
+        "systemMessage": "Current UI recipe JSON:\n{\"title\":\"Make Your Recipe\",\"skill_level\":\"Intermediate\",\"cooking_time\":\"45 min\",\"special_preferences\":[],\"ingredients\":[{\"icon\":\"🥕\",\"name\":\"Carrots\",\"amount\":\"3 large, grated\"},{\"icon\":\"🌾\",\"name\":\"All-Purpose Flour\",\"amount\":\"2 cups\"}],\"instructions\":[\"Preheat oven to 350°F (175°C)\"]}"
+      },
+      "response": {
+        "content": "To make \"Make Your Recipe\" healthier, keep the 3 large, grated Carrots and add spinach or zucchini to the pasta sauce. Use part whole-grain flour in place of the 2 cups of All-Purpose Flour if desired. Keep the 45 min plan and adjust the written recipe yourself; I have not changed its ingredients."
+      }
+    },
+    {
+      "_comment": "Recipe-reader edited state, turn 1. Exact actual serialized recipe gates the grounded response; no reply for a different recipe.",
+      "match": {
+        "userMessage": "Italian pasta recipe",
+        "turnIndex": 0,
+        "context": "pydantic-ai",
+        "systemMessage": "Current UI recipe JSON:\n{\"title\":\"S09 asparagus oat bowl\",\"skill_level\":\"Intermediate\",\"cooking_time\":\"30 min\",\"special_preferences\":[\"Vegan\"],\"ingredients\":[{\"icon\":\"🥕\",\"name\":\"Asparagus\",\"amount\":\"250 g\"},{\"icon\":\"🌾\",\"name\":\"Oats\",\"amount\":\"1 cup\"}],\"instructions\":[\"Preheat oven to 350°F (175°C)\"]}"
+      },
+      "response": {
+        "content": "For your \"S09 asparagus oat bowl\", make a Vegan Italian-inspired dish with the 250 g Asparagus and 1 cup Oats already listed. Toast the oats and cook the asparagus with garlic, basil and tomatoes within your 30 min setting. Pasta would be an optional addition, not an ingredient currently in your recipe."
+      }
+    },
+    {
+      "_comment": "Recipe-reader edited state, turn 2. Exact actual serialized recipe gates the grounded response; no reply for a different recipe.",
+      "match": {
+        "userMessage": "healthier with more vegetables",
+        "context": "pydantic-ai",
+        "systemMessage": "Current UI recipe JSON:\n{\"title\":\"S09 asparagus oat bowl\",\"skill_level\":\"Intermediate\",\"cooking_time\":\"30 min\",\"special_preferences\":[\"Vegan\"],\"ingredients\":[{\"icon\":\"🥕\",\"name\":\"Asparagus\",\"amount\":\"250 g\"},{\"icon\":\"🌾\",\"name\":\"Oats\",\"amount\":\"1 cup\"}],\"instructions\":[\"Preheat oven to 350°F (175°C)\"]}"
+      },
+      "response": {
+        "content": "For a healthier \"S09 asparagus oat bowl\", keep the 250 g Asparagus and 1 cup Oats, then add spinach and tomatoes. This stays Vegan and fits your 30 min setting. These are suggestions for the existing recipe; your ingredient list and instructions remain unchanged."
+      }
+    }
+  ]
+}

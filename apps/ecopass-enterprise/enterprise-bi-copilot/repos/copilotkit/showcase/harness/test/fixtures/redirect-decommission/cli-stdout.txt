@@ -1,0 +1,158 @@
+:bar_chart: *SEO Redirect Decommission Report* (last 30 days)
+Total redirects defined: 395
+Total hits: 12,537
+
+:warning: *382 redirect(s) with zero hits — decommission candidates:*
+  • B1
+  • B2
+  • B3
+  • D10
+  • D11
+  • D12
+  • D13
+  • D14
+  • D15
+  • D16
+  • D17
+  • D18
+  • D19
+  • D20
+  • D21
+  • D22
+  • D23
+  • D24
+  • D3
+  • D4
+  • D5
+  • D6
+  • D7
+  • D8
+  • D9
+  • DI-index
+  • DI-index-wild
+  • DI-root: 13 entries (DI-root×a2a, DI-root×adk, DI-root×ag2, ...)
+  • DI-wild: 13 entries (DI-wild×a2a, DI-wild×adk, DI-wild×ag2, ...)
+  • DOCS-root
+  • DOCS-wild
+  • F1
+  • F10
+  • F11
+  • F12
+  • F13
+  • F14
+  • F15
+  • F16
+  • F17
+  • F18
+  • F19
+  • F2
+  • F20
+  • F3
+  • F4
+  • F5
+  • F6
+  • F7
+  • F8
+  • F9
+  • FI-concepts
+  • FI-migrate
+  • FI-premium
+  • FI-reference
+  • FI-troubleshooting
+  • INTEL-d2l-guides-headless-ui
+  • INTEL-d2l-guides-inspector
+  • INTEL-d2l-guides-observability
+  • INTEL-d2l-guides-overview
+  • INTEL-inspector-root
+  • INTEL-observability-root
+  • L10
+  • L11
+  • L12
+  • L13
+  • L14
+  • L3
+  • L4
+  • L5
+  • L6
+  • L7
+  • L8
+  • L9
+  • M2
+  • M3
+  • M4
+  • M5
+  • M6
+  • M7
+  • M8
+  • MG1
+  • MG2
+  • MG3
+  • MG4
+  • P10
+  • P11
+  • P12
+  • P1: 9 entries (P1×a2a, P1×ag2, P1×agent-spec, ...)
+  • P2: 13 entries (P2×a2a, P2×adk, P2×ag2, ...)
+  • P3
+  • P4
+  • P5
+  • P6
+  • P7
+  • P7-intelligence
+  • P8
+  • P9
+  • R10
+  • R11
+  • R12
+  • R13
+  • R14
+  • R16
+  • R18
+  • R19
+  • R20
+  • R21
+  • R22
+  • R23
+  • R24
+  • R25
+  • R26
+  • R27
+  • R3
+  • R4
+  • R5
+  • R6
+  • R7
+  • R8
+  • R9
+  • S10: 13 entries (S10×a2a, S10×adk, S10×ag2, ...)
+  • S11: 13 entries (S11×a2a, S11×adk, S11×ag2, ...)
+  • S12: 13 entries (S12×a2a, S12×adk, S12×ag2, ...)
+  • S13e: 13 entries (S13e×a2a, S13e×adk, S13e×ag2, ...)
+  • S13w: 13 entries (S13w×a2a, S13w×adk, S13w×ag2, ...)
+  • S14: 13 entries (S14×a2a, S14×adk, S14×ag2, ...)
+  • S15: 13 entries (S15×a2a, S15×adk, S15×ag2, ...)
+  • S1: 10 entries (S1×a2a, S1×ag2, S1×agent-spec, ...)
+  • S2: 13 entries (S2×a2a, S2×adk, S2×ag2, ...)
+  • S3: 13 entries (S3×a2a, S3×adk, S3×ag2, ...)
+  • S4: 13 entries (S4×a2a, S4×adk, S4×ag2, ...)
+  • S5: 13 entries (S5×a2a, S5×adk, S5×ag2, ...)
+  • S6: 13 entries (S6×a2a, S6×adk, S6×ag2, ...)
+  • S7: 13 entries (S7×a2a, S7×adk, S7×ag2, ...)
+  • S8: 13 entries (S8×a2a, S8×adk, S8×ag2, ...)
+  • S9: 13 entries (S9×a2a, S9×adk, S9×ag2, ...)
+  • SR-root: 6 entries (SR-root×adk, SR-root×aws-strands, SR-root×crewai-flows, ...)
+  • SR-wild: 6 entries (SR-wild×adk, SR-wild×aws-strands, SR-wild×crewai-flows, ...)
+
+Cross-reference: <https://www.notion.so/33c3aa38185281d7b243c5cf0a7c14cb|SEO Redirect Inventory>
+
+*Top 10 most-hit redirects:*
+  D1: 5,432 hits
+  D2: 2,891 hits
+  L1: 1,502 hits
+  L2: 844 hits
+  S1×langgraph: 612 hits
+  S1×adk: 407 hits
+  S1×agno: 311 hits
+  P1×langgraph: 220 hits
+  P1×adk: 157 hits
+  P1×agno: 99 hits

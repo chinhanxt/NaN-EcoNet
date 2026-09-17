@@ -1,0 +1,365 @@
+import type {
+  Tool,
+  ToolCallReader,
+  ToolExecuteFunction,
+  ToolExecutionContext,
+} from "./tool-types";
+import type { StandardSchemaV1 } from "@standard-schema/spec";
+import { ToolResponse } from "./ToolResponse";
+import { ToolExecutionStream } from "./ToolExecutionStream";
+import type { AssistantMessage, ToolCallPart } from "../utils/types";
+import type { ReadonlyJSONObject, ReadonlyJSONValue } from "../../utils";
+
+const TOOL_EXECUTION_ID = Symbol.for("assistant-stream.tool-execution-id");
+const TOOL_ABORTED = Symbol("assistant-stream.tool-aborted");
+
+type InternalHumanCallback = (
+  toolCallId: string,
+  payload: unknown,
+  executionId: symbol,
+) => Promise<unknown>;
+
+type InternalToolResultStreamOptions = Omit<
+  ToolResultStreamOptions,
+  "onExecutionStart" | "onExecutionEnd"
+> & {
+  onExecutionStart?:
+    | ((toolCallId: string, toolName: string, executionId: symbol) => void)
+    | undefined;
+  onExecutionEnd?:
+    | ((toolCallId: string, toolName: string, executionId: symbol) => void)
+    | undefined;
+};
+
+type InternalToolExecutionOptions = {
+  execute: (toolCall: {
+    toolCallId: string;
+    toolName: string;
+    args: ReadonlyJSONObject;
+    executionId: symbol;
+  }) => ReturnType<typeof getToolResponse>;
+  streamCall: (toolCall: {
+    reader: ToolCallReader<any, ReadonlyJSONValue>;
+    toolCallId: string;
+    toolName: string;
+    executionId: symbol;
+  }) => void;
+  onExecutionStart?:
+    | ((toolCallId: string, toolName: string, executionId: symbol) => void)
+    | undefined;
+  onExecutionEnd?:
+    | ((toolCallId: string, toolName: string, executionId: symbol) => void)
+    | undefined;
+};
+
+const isStandardSchemaV1 = (
+  schema: Tool["parameters"],
+): schema is StandardSchemaV1<Record<string, unknown>> => {
+  return (
+    typeof schema === "object" &&
+    schema !== null &&
+    "~standard" in schema &&
+    (schema as StandardSchemaV1<unknown>)["~standard"].version === 1
+  );
+};
+
+const isThenable = <T>(value: T | PromiseLike<T>): value is PromiseLike<T> =>
+  typeof (value as PromiseLike<T> | null | undefined)?.then === "function";
+
+const raceWithAbort = async <T>(
+  value: PromiseLike<T>,
+  abortSignal: AbortSignal,
+  // Tool execution gets two microtasks to settle after handling an abort.
+  delayAbort = false,
+): Promise<T | typeof TOOL_ABORTED> => {
+  let onAbort!: () => void;
+  const abortPromise = new Promise<typeof TOOL_ABORTED>((resolve) => {
+    onAbort = () => {
+      if (delayAbort) {
+        queueMicrotask(() => queueMicrotask(() => resolve(TOOL_ABORTED)));
+      } else {
+        resolve(TOOL_ABORTED);
+      }
+    };
+    if (abortSignal.aborted) {
+      onAbort();
+    } else {
+      abortSignal.addEventListener("abort", onAbort, { once: true });
+    }
+  });
+
+  try {
+    return await Promise.race([value, abortPromise]);
+  } finally {
+    abortSignal.removeEventListener("abort", onAbort);
+  }
+};
+
+const cancelledToolResponse = (): ToolResponse<ReadonlyJSONValue> =>
+  new ToolResponse({
+    result: "Tool execution was cancelled.",
+    isError: true,
+  });
+
+function getToolResponse(
+  tools: Record<string, Tool> | undefined,
+  abortSignal: AbortSignal,
+  toolCall: {
+    toolCallId: string;
+    toolName: string;
+    args: ReadonlyJSONObject;
+    executionId: symbol;
+  },
+  human: InternalHumanCallback,
+) {
+  const tool = tools?.[toolCall.toolName];
+  if (!tool?.execute) return undefined;
+
+  const getResult = async (
+    toolExecute: ToolExecuteFunction<Record<string, unknown>, unknown>,
+  ): Promise<ToolResponse<ReadonlyJSONValue>> => {
+    if (abortSignal.aborted) {
+      return cancelledToolResponse();
+    }
+
+    let executeFn = toolExecute;
+    let args: Record<string, unknown> = toolCall.args;
+
+    if (isStandardSchemaV1(tool.parameters)) {
+      const result = tool.parameters["~standard"].validate(toolCall.args);
+      const validationResult = isThenable(result)
+        ? await raceWithAbort(result, abortSignal)
+        : result;
+
+      if (validationResult === TOOL_ABORTED) {
+        return cancelledToolResponse();
+      }
+
+      if (validationResult.issues) {
+        executeFn =
+          tool.experimental_onSchemaValidationError ??
+          (() => {
+            throw new Error(
+              `Function parameter validation failed. ${JSON.stringify(validationResult.issues)}`,
+            );
+          });
+      } else {
+        args = validationResult.value;
+      }
+    }
+
+    if (abortSignal.aborted) {
+      return cancelledToolResponse();
+    }
+
+    const executePromise = (async () => {
+      const executionContext = {
+        toolCallId: toolCall.toolCallId,
+        abortSignal,
+        human: (payload: unknown) =>
+          human(toolCall.toolCallId, payload, toolCall.executionId),
+        [TOOL_EXECUTION_ID]: toolCall.executionId,
+      } as ToolExecutionContext;
+      const result = (await executeFn(
+        args,
+        executionContext,
+      )) as unknown as ReadonlyJSONValue;
+      const response = ToolResponse.toResponse(result);
+      if (
+        tool.toModelOutput &&
+        !response.isError &&
+        response.modelContent === undefined
+      ) {
+        try {
+          const modelContent = await tool.toModelOutput({
+            toolCallId: toolCall.toolCallId,
+            input: args,
+            output: response.result,
+          });
+          return new ToolResponse({
+            result: response.result,
+            artifact: response.artifact,
+            isError: response.isError,
+            messages: response.messages,
+            modelContent,
+          });
+        } catch (e) {
+          console.warn(
+            `[assistant-stream] tool "${toolCall.toolName}" toModelOutput threw; falling back to default projection.`,
+            e,
+          );
+        }
+      }
+      return response;
+    })();
+
+    const executionResult = await raceWithAbort(
+      executePromise,
+      abortSignal,
+      true,
+    );
+    return executionResult === TOOL_ABORTED
+      ? cancelledToolResponse()
+      : executionResult;
+  };
+
+  return getResult(tool.execute);
+}
+
+function getToolStreamResponse(
+  tools: Record<string, Tool> | undefined,
+  abortSignal: AbortSignal,
+  reader: ToolCallReader<any, ReadonlyJSONValue>,
+  context: {
+    toolCallId: string;
+    toolName: string;
+    executionId: symbol;
+  },
+  human: InternalHumanCallback,
+) {
+  const executionContext = {
+    toolCallId: context.toolCallId,
+    abortSignal,
+    human: (payload: unknown) =>
+      human(context.toolCallId, payload, context.executionId),
+    [TOOL_EXECUTION_ID]: context.executionId,
+  } as ToolExecutionContext;
+  tools?.[context.toolName]?.streamCall?.(reader, executionContext);
+}
+
+const isPendingToolCall = (
+  part: AssistantMessage["parts"][number],
+): part is ToolCallPart =>
+  part.type === "tool-call" &&
+  part.state !== "result" &&
+  part.result === undefined;
+
+export async function unstable_runPendingTools(
+  message: AssistantMessage,
+  tools: Record<string, Tool> | undefined,
+  abortSignal: AbortSignal,
+  human: (toolCallId: string, payload: unknown) => Promise<unknown>,
+) {
+  const toolCallPromises = message.parts
+    .filter(isPendingToolCall)
+    .map(async (part) => {
+      const promiseOrUndefined = getToolResponse(
+        tools,
+        abortSignal,
+        { ...part, executionId: Symbol() },
+        (human as InternalHumanCallback) ??
+          (async () => {
+            throw new Error(
+              "Tool human input is not supported in this context",
+            );
+          }),
+      );
+      if (promiseOrUndefined) {
+        const result = await promiseOrUndefined;
+        return {
+          toolCallId: part.toolCallId,
+          result,
+        };
+      }
+      return null;
+    });
+
+  const toolCallResults = (await Promise.all(toolCallPromises)).filter(
+    (result) => result !== null,
+  ) as { toolCallId: string; result: ToolResponse<ReadonlyJSONValue> }[];
+
+  if (toolCallResults.length === 0) {
+    return message;
+  }
+
+  const toolCallResultsById = new Map(
+    toolCallResults.map(({ toolCallId, result }) => [toolCallId, result]),
+  );
+
+  const updatedParts = message.parts.map((p) => {
+    if (isPendingToolCall(p)) {
+      const toolResponse = toolCallResultsById.get(p.toolCallId);
+      if (toolResponse) {
+        return {
+          ...p,
+          state: "result" as const,
+          ...(toolResponse.artifact !== undefined
+            ? { artifact: toolResponse.artifact }
+            : {}),
+          ...(toolResponse.modelContent !== undefined
+            ? { modelContent: toolResponse.modelContent }
+            : {}),
+          ...(toolResponse.messages !== undefined
+            ? { messages: toolResponse.messages }
+            : {}),
+          result: toolResponse.result as ReadonlyJSONValue,
+          isError: toolResponse.isError,
+        };
+      }
+    }
+    return p;
+  });
+
+  return {
+    ...message,
+    parts: updatedParts,
+    content: updatedParts,
+  };
+}
+
+export type ToolResultStreamOptions = {
+  /** Called after frontend tool execution starts. Callback failures are reported without interrupting the tool. */
+  onExecutionStart?: (toolCallId: string, toolName: string) => void;
+  /** Called after frontend tool execution finishes or fails. Callback failures are reported without changing the result. */
+  onExecutionEnd?: (toolCallId: string, toolName: string) => void;
+};
+
+/**
+ * Transform stream that executes frontend tools and appends tool results.
+ *
+ * The transform watches streamed tool-call arguments, runs the matching
+ * frontend tool once its arguments are complete, and emits a result chunk for
+ * the tool call. Backend and human tools pass through according to their tool
+ * definition.
+ *
+ * @param tools Tool registry or function returning the current registry.
+ * @param abortSignal Signal, or signal getter, used for the current run.
+ * @param human Callback used to resolve human-tool requests from UI input.
+ * @param options Optional execution lifecycle callbacks.
+ */
+export function toolResultStream(
+  tools:
+    | Record<string, Tool>
+    | (() => Record<string, Tool> | undefined)
+    | undefined,
+  abortSignal: AbortSignal | (() => AbortSignal),
+  human: (toolCallId: string, payload: unknown) => Promise<unknown>,
+  options?: ToolResultStreamOptions,
+) {
+  const toolsFn = typeof tools === "function" ? tools : () => tools;
+  const abortSignalFn =
+    typeof abortSignal === "function" ? abortSignal : () => abortSignal;
+  const internalOptions = options as
+    | InternalToolResultStreamOptions
+    | undefined;
+  const internalHuman = human as InternalHumanCallback;
+  const executionOptions: InternalToolExecutionOptions = {
+    execute: (toolCall) =>
+      getToolResponse(toolsFn(), abortSignalFn(), toolCall, internalHuman),
+    streamCall: ({ reader, ...context }) =>
+      getToolStreamResponse(
+        toolsFn(),
+        abortSignalFn(),
+        reader,
+        context,
+        internalHuman,
+      ),
+    onExecutionStart: internalOptions?.onExecutionStart,
+    onExecutionEnd: internalOptions?.onExecutionEnd,
+  };
+  return new ToolExecutionStream(
+    executionOptions as unknown as ConstructorParameters<
+      typeof ToolExecutionStream
+    >[0],
+  );
+}

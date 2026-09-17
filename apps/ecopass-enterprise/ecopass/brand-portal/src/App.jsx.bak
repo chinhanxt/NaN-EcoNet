@@ -1,0 +1,1371 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  ArrowUpRight, 
+  ArrowDownRight,
+  SlidersHorizontal, 
+  ChevronDown, 
+  ChevronLeft, 
+  ChevronRight, 
+  Search, 
+  Settings, 
+  Activity, 
+  QrCode, 
+  Download, 
+  X, 
+  CheckCircle2, 
+  RefreshCw,
+  Sparkles,
+  Store,
+  Ticket,
+  Printer,
+  ExternalLink,
+  ShieldCheck,
+  Zap,
+  AlertTriangle,
+  TrendingUp,
+  MapPin,
+  Filter,
+  Layers,
+  Flame,
+  Check,
+  LayoutDashboard,
+  Truck,
+  BarChart3,
+  HelpCircle,
+  Bell,
+  MessageSquare,
+  Plus,
+  RotateCw,
+  Crown,
+  Clock,
+  BatteryCharging,
+  Radio,
+  Navigation,
+  CheckCheck,
+  Menu,
+  Users,
+  Handshake,
+  ClipboardList,
+  Award,
+  FileText
+} from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+
+// Danh sách điểm đặt thùng rác mẫu tại HUTECH Campus
+const INITIAL_BINS = [
+  {
+    id: "bin-h6-01",
+    stationCode: "H6",
+    name: "Trạm H6: Căn Tin 1 (Box #08)",
+    location: "Khu vực Bàn nước Căn tin Tòa H6",
+    fillPercent: 82,
+    collectedCount: "2,410",
+    status: "Cần gom",
+    riskColor: "text-[#D94841]",
+    barColor: "bg-[#D94841]",
+    trend: "+14.2%",
+    isPositive: true,
+    qrValue: "ECOPASS-BIN-H6-01-HUTECH",
+    category: "Chai PET",
+    sparkWave: "M0,18 C15,4 30,14 45,6 C52,2 58,8 60,4",
+  },
+  {
+    id: "bin-h1-03",
+    stationCode: "H1",
+    name: "Trạm H1: Thí Nghiệm (Box #03)",
+    location: "Sảnh A2 Tòa H1, Khối Kỹ Thuật",
+    fillPercent: 34,
+    collectedCount: "1,150",
+    status: "Ổn định",
+    riskColor: "text-[#6BA101]",
+    barColor: "bg-[#6BA101]",
+    trend: "-0.2%",
+    isPositive: false,
+    qrValue: "ECOPASS-BIN-H1-03-HUTECH",
+    category: "Vỏ lon nhôm",
+    sparkWave: "M0,8 C15,16 30,8 45,16 C52,20 58,14 60,18",
+  },
+  {
+    id: "bin-lib-02",
+    stationCode: "LIB",
+    name: "Trạm Thư Viện (Box #02)",
+    location: "Sảnh chính Tầng trệt Thư viện",
+    fillPercent: 58,
+    collectedCount: "1,890",
+    status: "Gần đầy",
+    riskColor: "text-[#E68A00]",
+    barColor: "bg-[#E68A00]",
+    trend: "+6.78%",
+    isPositive: true,
+    qrValue: "ECOPASS-BIN-LIB-02-HUTECH",
+    category: "Chai PET",
+    sparkWave: "M0,15 C15,6 30,16 45,8 C52,4 58,10 60,6",
+  },
+  {
+    id: "bin-cafe-05",
+    stationCode: "HL",
+    name: "Trạm Highlands Căn Tin (Box #05)",
+    location: "Trước quầy Highlands Căn tin Khu E",
+    fillPercent: 88,
+    collectedCount: "3,120",
+    status: "Cần gom",
+    riskColor: "text-[#D94841]",
+    barColor: "bg-[#D94841]",
+    trend: "+22.4%",
+    isPositive: true,
+    qrValue: "ECOPASS-BIN-HL-05-HUTECH",
+    category: "Chai PET",
+    sparkWave: "M0,19 C15,6 30,12 45,4 C52,2 58,8 60,2",
+  },
+  {
+    id: "bin-sport-04",
+    stationCode: "SP",
+    name: "Trạm Sân Thể Thao (Box #04)",
+    location: "Cổng vào Sân bóng rổ ngoài trời",
+    fillPercent: 42,
+    collectedCount: "940",
+    status: "Ổn định",
+    riskColor: "text-[#6BA101]",
+    barColor: "bg-[#6BA101]",
+    trend: "+3.15%",
+    isPositive: true,
+    qrValue: "ECOPASS-BIN-SP-04-HUTECH",
+    category: "Vỏ lon nhôm",
+    sparkWave: "M0,14 C15,16 30,8 45,12 C52,14 58,8 60,6",
+  },
+  {
+    id: "bin-dorm-06",
+    stationCode: "KTX",
+    name: "Trạm Ký Túc Xá (Box #06)",
+    location: "Sảnh tầng 1 Ký túc xá Sinh viên",
+    fillPercent: 76,
+    collectedCount: "2,050",
+    status: "Gần đầy",
+    riskColor: "text-[#E68A00]",
+    barColor: "bg-[#E68A00]",
+    trend: "+9.8%",
+    isPositive: true,
+    qrValue: "ECOPASS-BIN-KTX-06-HUTECH",
+    category: "Chai PET",
+    sparkWave: "M0,16 C15,8 30,14 45,7 C52,4 58,10 60,5",
+  }
+];
+
+
+const HEATMAP_TIMES = ["06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00", "22:00"];
+
+const HEATMAP_DAYS = [
+  { day: "CN", full: "Chủ Nhật", vals: [1, 1, 2, 3, 2, 2, 3, 2, 1], counts: [45, 82, 190, 320, 210, 240, 310, 180, 43] },
+  { day: "T2", full: "Thứ Hai", vals: [1, 2, 3, 4, 3, 3, 3, 2, 1], counts: [68, 195, 410, 720, 380, 420, 490, 230, 62] },
+  { day: "T3", full: "Thứ Ba", vals: [1, 3, 4, 4, 4, 3, 4, 2, 1], counts: [75, 340, 620, 842, 590, 460, 680, 270, 71] },
+  { day: "T4", full: "Thứ Tư", vals: [1, 2, 3, 4, 3, 3, 3, 2, 1], counts: [62, 210, 450, 710, 410, 390, 470, 215, 58] },
+  { day: "T5", full: "Thứ Năm", vals: [1, 3, 4, 4, 3, 3, 4, 2, 1], counts: [80, 310, 580, 790, 480, 440, 620, 260, 65] },
+  { day: "T6", full: "Thứ Sáu", vals: [2, 3, 4, 4, 4, 4, 3, 2, 1], counts: [110, 360, 640, 815, 630, 520, 580, 290, 82] },
+  { day: "T7", full: "Thứ Bảy", vals: [1, 2, 2, 3, 3, 2, 2, 1, 1], counts: [50, 120, 230, 410, 350, 260, 280, 140, 48] },
+];
+
+const MONTH_POINTS = [
+  { m: "Th1", val: "+8.20%", count: "9,820", x: 25, y: 160 },
+  { m: "Th2", val: "+9.45%", count: "10,450", x: 75, y: 105 },
+  { m: "Th3", val: "+11.10%", count: "11,200", x: 130, y: 120 },
+  { m: "Th4", val: "+12.35%", count: "12,100", x: 185, y: 125 },
+  { m: "Th5", val: "+13.80%", count: "12,850", x: 240, y: 85 },
+  { m: "Th6", val: "+14.25%", count: "13,400", x: 295, y: 55 },
+  { m: "Th7", val: "+13.90%", count: "13,100", x: 350, y: 75 },
+  { m: "Th8", val: "+14.80%", count: "13,950", x: 405, y: 110 },
+  { m: "Th9", val: "+15.60%", count: "14,320", x: 460, y: 115 },
+  { m: "Th10", val: "+16.75%", count: "14,820", x: 520, y: 45 },
+  { m: "Th11", val: "+15.90%", count: "14,410", x: 570, y: 70 },
+  { m: "Th12", val: "+17.20%", count: "15,200", x: 618, y: 55 },
+];
+
+const WEEKLY_VOUCHER_DATA = [
+  { day: "CN", fullDay: "Chủ Nhật", count: 1420, topY: 105, x: 65 },
+  { day: "T2", fullDay: "Thứ Hai", count: 2150, topY: 65, x: 142 },
+  { day: "T3", fullDay: "Thứ Ba", count: 2587, topY: 42, x: 220 },
+  { day: "T4", fullDay: "Thứ Tư", count: 1980, topY: 75, x: 298 },
+  { day: "T5", fullDay: "Thứ Năm", count: 2420, topY: 52, x: 376 },
+  { day: "T6", fullDay: "Thứ Sáu", count: 2050, topY: 70, x: 454 },
+  { day: "T7", fullDay: "Thứ Bảy", count: 1560, topY: 98, x: 532 },
+];
+
+export default function App() {
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // 3 Trang trên Toolbar: 0: Giám Sát, 1: Tổng Quan (MẶC ĐỊNH LÀ TAB GIỮA), 2: Khảo Sát & Voucher
+  const [activeHeroTab, setActiveHeroTab] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash;
+      if (hash === '#tab0' || hash === '#stations') return 0;
+      if (hash === '#tab2' || hash === '#vouchers') return 2;
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('tab') === '0') return 0;
+      if (params.get('tab') === '2') return 2;
+    }
+    return 1; // MẶC ĐỊNH LÀ TRANG Ở GIỮA
+  }); 
+
+  // Tab 0: Ma trận Heatmap tương tác (Mặc định: T3 lúc 12:00, hỗ trợ URL param ?hday=2&htime=3)
+  const [selectedHeatmapCell, setSelectedHeatmapCell] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const d = params.get('hday');
+      const t = params.get('htime');
+      if (d !== null || t !== null) {
+        return {
+          dayIndex: d !== null && !isNaN(parseInt(d)) ? Math.max(0, Math.min(6, parseInt(d))) : 2,
+          timeIndex: t !== null && !isNaN(parseInt(t)) ? Math.max(0, Math.min(8, parseInt(t))) : 3
+        };
+      }
+    }
+    return { dayIndex: 2, timeIndex: 3 }; // T3 12:00
+  });
+
+  // Tab 1: Kéo thanh dọc trên sơ đồ miền 12 tháng (Mặc định: Th10 index 9, hỗ trợ URL param ?month=...)
+  const [selectedMonthIndex, setSelectedMonthIndex] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const m = new URLSearchParams(window.location.search).get('month');
+      if (m !== null && !isNaN(parseInt(m))) return Math.max(0, Math.min(11, parseInt(m)));
+    }
+    return 9; // Th10
+  });
+  const [isScrubbingWave, setIsScrubbingWave] = useState(false);
+  const waveSvgRef = useRef(null);
+
+  // Function xử lý kéo/click trên sơ đồ sóng miền Tab 1
+  const handleWavePointer = (clientX) => {
+    if (!waveSvgRef.current) return;
+    const rect = waveSvgRef.current.getBoundingClientRect();
+    const relativeX = (clientX - rect.left) / rect.width;
+    const svgX = relativeX * 640;
+    
+    let closestIdx = 0;
+    let minDiff = Infinity;
+    MONTH_POINTS.forEach((pt, idx) => {
+      const diff = Math.abs(pt.x - svgX);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestIdx = idx;
+      }
+    });
+    setSelectedMonthIndex(closestIdx);
+  };
+
+  // Lắng nghe sự kiện kéo chuột toàn cầu khi đang kéo thanh dọc trên Tab 1
+  useEffect(() => {
+    const handleGlobalMove = (e) => {
+      if (!isScrubbingWave) return;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      handleWavePointer(clientX);
+    };
+    const handleGlobalUp = () => {
+      if (isScrubbingWave) setIsScrubbingWave(false);
+    };
+    if (isScrubbingWave) {
+      window.addEventListener('mousemove', handleGlobalMove);
+      window.addEventListener('mouseup', handleGlobalUp);
+      window.addEventListener('touchmove', handleGlobalMove);
+      window.addEventListener('touchend', handleGlobalUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleGlobalMove);
+      window.removeEventListener('mouseup', handleGlobalUp);
+      window.removeEventListener('touchmove', handleGlobalMove);
+      window.removeEventListener('touchend', handleGlobalUp);
+    };
+  }, [isScrubbingWave]);
+
+  // Cột được chọn trong biểu đồ Tab 2 (Mặc định: Thứ 3 index 2, hỗ trợ URL param ?day=...)
+  const [selectedDayColIndex, setSelectedDayColIndex] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search).get('day');
+      if (p !== null && !isNaN(parseInt(p))) return Math.max(0, Math.min(6, parseInt(p)));
+    }
+    return 2;
+  });
+
+  const [selectedBin, setSelectedBin] = useState(null);
+  const [syncToast, setSyncToast] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 200);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = typeof window !== 'undefined' ? window.location.hash : '';
+      if (hash === '#tab0' || hash === '#stations') {
+        setActiveHeroTab(0);
+      } else if (hash === '#tab2' || hash === '#vouchers') {
+        setActiveHeroTab(2);
+      } else if (hash === '#tab1' || hash === '#overview') {
+        setActiveHeroTab(1);
+      }
+    };
+
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#0E1116] flex flex-col items-center justify-center p-6 text-center">
+        <div className="relative mb-6">
+          <div className="w-16 h-16 rounded-full bg-[#6BA101] flex items-center justify-center shadow-xl animate-pulse">
+            <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
+              <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
+            </svg>
+          </div>
+          <div className="absolute inset-0 rounded-full border-2 border-white/40 animate-ping" />
+        </div>
+        <h2 className="text-xl font-black text-white tracking-tight mb-1">
+          EcoPass Operations Hub
+        </h2>
+        <p className="text-xs font-bold text-neutral-400">
+          Khởi tạo trung tâm điều phối và tiếp nhận dữ liệu...
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative min-h-screen bg-[#0E1116] text-[#FAF8F2] py-4 sm:py-8 px-3 sm:px-6 selection:bg-[#34D399]/30 selection:text-emerald-300">
+      
+      {/* Ambient biophilic aura glow */}
+      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(52,211,153,0.06),transparent_70%)] z-0" />
+
+      {/* Background Topographic Contour Lines */}
+      <div className="fixed inset-0 pointer-events-none opacity-15 overflow-hidden z-0">
+        <svg className="w-full h-full" viewBox="0 0 1440 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M-100 200 C300 150, 600 450, 1100 250 C1300 170, 1500 300, 1600 350" stroke="rgba(255,255,255,0.4)" strokeWidth="1.6" strokeDasharray="4 6" />
+          <path d="M-50 450 C350 350, 750 650, 1250 420 C1450 320, 1550 500, 1650 550" stroke="rgba(255,255,255,0.4)" strokeWidth="1.6" />
+          <path d="M-80 750 C280 620, 800 880, 1300 680 C1480 600, 1580 780, 1680 820" stroke="rgba(255,255,255,0.4)" strokeWidth="1.6" strokeDasharray="6 8" />
+        </svg>
+      </div>
+
+      {/* Toast đồng bộ */}
+      {syncToast && (
+        <div className="fixed top-6 right-6 z-50 bg-[#1A1D1A] text-white px-5 py-3 rounded-full shadow-2xl border border-white/20 flex items-center gap-3 text-xs font-bold transition-all animate-bounce">
+          <CheckCircle2 size={16} className="text-[#6BA101]" />
+          <span>{syncToast}</span>
+        </div>
+      )}
+
+      <div className="relative z-10 max-w-[1360px] mx-auto">
+        
+        {/* =========================================================================
+            CARD 1 (TRÊN): HERO SECTION BIOPHILIC & 3 TRANG NỘI DUNG LINH HOẠT
+        ========================================================================= */}
+        {/* =========================================================================
+            CARD 1 (TRÊN): HERO SECTION BIOPHILIC & 3 TRANG NỘI DUNG LINH HOẠT
+            - Responsive: Chiếm trọn 1 màn hình đầu tiên (min-h-[calc(100vh-2rem)] sm:min-h-[calc(100vh-3rem)])
+            - Layout: flex flex-col justify-between tạo khoảng thở thoáng đãng, sang trọng
+        ========================================================================= */}
+        <div 
+          className="relative rounded-[32px] sm:rounded-[36px] overflow-hidden bg-cover bg-right sm:bg-center px-5 sm:px-8 pt-5 pb-5 sm:pt-6 sm:pb-6 shadow-[0_25px_65px_-12px_rgba(30,35,25,0.28)] border border-black/[0.05] min-h-[calc(100vh-2rem)] sm:min-h-[calc(100vh-3rem)] flex flex-col justify-between"
+          style={{
+            backgroundImage: `linear-gradient(to bottom, rgba(140,132,122,0.38), rgba(42,55,20,0.56)), url('/hero-bg.jpg')`
+          }}
+        >
+          {/* Studio Shadow Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-t from-stone-900/60 via-stone-900/15 to-transparent pointer-events-none" />
+
+          {/* 1. THANH ĐIỀU HƯỚNG DẠNG VIÊN THUỐC 3 TRANG (MẶC ĐỊNH LÀ TRANG Ở GIỮA) */}
+          <nav className="relative z-10 flex items-center justify-between gap-4 mb-4 sm:mb-6">
+            {/* Logo EcoPass */}
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-full bg-[#557A2B] shadow-md flex items-center justify-center text-white font-black">
+                <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
+                  <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
+                </svg>
+              </div>
+              <div className="hidden sm:block">
+                <span className="text-white font-black tracking-tight text-base block leading-none">
+                  EcoPass Hub
+                </span>
+                <span className="text-[10px] text-white/70 font-semibold tracking-wider uppercase mt-0.5 block">
+                  Operations Center
+                </span>
+              </div>
+            </div>
+
+            {/* Menu Capsule 3 Trang: Mặc định là Trang ở giữa (Index 1) */}
+            <div className="flex items-center gap-1 p-1 bg-white/18 backdrop-blur-xl border border-white/30 rounded-full shadow-lg">
+              <button 
+                onClick={() => {
+                  setActiveHeroTab(0);
+                  if (typeof window !== 'undefined') window.history.replaceState(null, '', '#tab0');
+                }}
+                className={`px-3.5 sm:px-5 py-2 rounded-full text-xs font-black transition-all ${
+                  activeHeroTab === 0
+                    ? 'bg-white text-[#1A1D1A] shadow-sm'
+                    : 'text-white/85 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                Giám Sát Trạm Rác
+              </button>
+              <button 
+                onClick={() => {
+                  setActiveHeroTab(1);
+                  if (typeof window !== 'undefined') window.history.replaceState(null, '', '#tab1');
+                }}
+                className={`px-3.5 sm:px-5 py-2 rounded-full text-xs font-black transition-all ${
+                  activeHeroTab === 1
+                    ? 'bg-white text-[#1A1D1A] shadow-sm'
+                    : 'text-white/85 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                Tổng Quan Điều Hành
+              </button>
+              <button 
+                onClick={() => {
+                  setActiveHeroTab(2);
+                  if (typeof window !== 'undefined') window.history.replaceState(null, '', '#tab2');
+                }}
+                className={`px-3.5 sm:px-5 py-2 rounded-full text-xs font-black transition-all ${
+                  activeHeroTab === 2
+                    ? 'bg-white text-[#1A1D1A] shadow-sm'
+                    : 'text-white/85 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                Khảo Sát & Voucher
+              </button>
+            </div>
+
+            {/* Quick Actions bên phải */}
+            <div className="flex items-center gap-2.5">
+              <button 
+                onClick={() => setIsSearchOpen(true)}
+                className="w-10 h-10 rounded-full bg-white/18 hover:bg-white/30 backdrop-blur-xl border border-white/30 text-white flex items-center justify-center transition shadow-sm"
+                title="Tìm kiếm"
+              >
+                <Search size={16} />
+              </button>
+              <button 
+                onClick={() => setIsSettingsOpen(true)}
+                className="w-10 h-10 rounded-full bg-white/18 hover:bg-white/30 backdrop-blur-xl border border-white/30 text-white flex items-center justify-center transition shadow-sm"
+                title="Cài đặt"
+              >
+                <Settings size={16} />
+              </button>
+              <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/70 shadow-sm bg-white flex items-center justify-center">
+                <svg className="w-6 h-6 text-[#1A1D1A]" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm0 14c-2.03 0-4.43-.82-6.14-2.88C7.55 15.8 9.68 15 12 15s4.45.8 6.14 2.12C16.43 19.18 14.03 20 12 20z" />
+                </svg>
+              </div>
+            </div>
+          </nav>
+
+          {/* 2. KHU VỰC CHÍNH (TIÊU ĐỀ & 3 CỤM NỘI DUNG SƠ ĐỒ ĐỈNH CAO) */}
+          <div className="relative z-10 flex-1 flex flex-col justify-center my-3 sm:my-5">
+            {/* Eyebrow Badge & H1 Tiêu đề */}
+            <div className="mb-3 sm:mb-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-white/20 backdrop-blur-xl border border-white/30 text-white shadow-sm mb-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#34D399] animate-pulse" />
+                <span>HUTECH Campus • 19/09/2026</span>
+              </div>
+              <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight">
+                EcoPass Hub
+              </h1>
+            </div>
+
+            {/* =====================================================================
+                TAB 1 (THỨ TỰ 2 - MẶC ĐỊNH Ở GIỮA): DẠNG MIỀN (SPLINE AREA CHART)
+            ===================================================================== */}
+            {activeHeroTab === 1 && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch animate-fade-in-up">
+                
+                {/* SƠ ĐỒ 2: BIỂU ĐỒ MIỀN SPLINE XANH LÁ (ECO RETURN TREND) */}
+                <div className="lg:col-span-7 bg-black/25 backdrop-blur-2xl border border-white/30 rounded-[28px] p-5 sm:p-6 shadow-glass-edge flex flex-col justify-between">
+                  <div>
+                    {/* Header thông số dạng miền */}
+                    <div className="flex items-center justify-between text-white mb-3">
+                      <div>
+                        <h3 className="text-xl sm:text-2xl font-black text-[#FAF8F2] tracking-tight">
+                          Xu Hướng Thu Hồi Sinh Thái
+                        </h3>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-3 py-1 rounded-full text-xs font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">
+                          {MONTH_POINTS[selectedMonthIndex]?.val || "+16.75%"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Biểu đồ miền vector thuần SVG - Hỗ trợ kéo lướt thanh dọc */}
+                    <div className="relative w-full aspect-[640/220] my-2 select-none">
+                      <svg 
+                        ref={waveSvgRef}
+                        viewBox="0 0 640 220" 
+                        className="w-full h-full overflow-visible cursor-ew-resize touch-none"
+                        onMouseDown={(e) => {
+                          setIsScrubbingWave(true);
+                          handleWavePointer(e.clientX);
+                        }}
+                        onMouseMove={(e) => {
+                          if (isScrubbingWave) handleWavePointer(e.clientX);
+                        }}
+                        onTouchStart={(e) => {
+                          setIsScrubbingWave(true);
+                          handleWavePointer(e.touches[0].clientX);
+                        }}
+                        onTouchMove={(e) => {
+                          if (isScrubbingWave) handleWavePointer(e.touches[0].clientX);
+                        }}
+                      >
+                        <defs>
+                          {/* Gradient miền xanh lá */}
+                          <linearGradient id="areaGreenGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#34D399" stopOpacity="0.45" />
+                            <stop offset="65%" stopColor="#10B981" stopOpacity="0.12" />
+                            <stop offset="100%" stopColor="#10B981" stopOpacity="0.0" />
+                          </linearGradient>
+
+                          {/* Glow filter */}
+                          <filter id="areaLineGlow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feGaussianBlur stdDeviation="2.5" result="blur" />
+                            <feMerge>
+                              <feMergeNode in="blur" />
+                              <feMergeNode in="SourceGraphic" />
+                            </feMerge>
+                          </filter>
+                        </defs>
+
+                        {/* Lưới ngang mờ */}
+                        <g stroke="#ffffff" strokeOpacity="0.08" strokeDasharray="3 5">
+                          <line x1="20" y1="40" x2="620" y2="40" />
+                          <line x1="20" y1="85" x2="620" y2="85" />
+                          <line x1="20" y1="130" x2="620" y2="130" />
+                          <line x1="20" y1="175" x2="620" y2="175" />
+                        </g>
+
+                        {/* Miền xanh lá lượn sóng (Area Fill) */}
+                        <path
+                          d="M 25,160 
+                             C 45,150 60,110 80,105 
+                             C 100,100 115,140 135,120 
+                             C 155,100 170,145 190,125 
+                             C 210,105 225,65 245,85 
+                             C 265,105 280,75 300,55 
+                             C 320,35 335,85 355,75 
+                             C 375,65 390,120 410,110 
+                             C 430,100 445,130 465,115 
+                             C 485,100 500,65 520,45 
+                             C 540,65 555,50 575,70 
+                             C 595,90 610,60 620,55 
+                             L 620,185 L 25,185 Z"
+                          fill="url(#areaGreenGrad)"
+                        />
+
+                        {/* Đường Stroke Xanh Lá Phát Quang (Spline Line) */}
+                        <path
+                          d="M 25,160 
+                             C 45,150 60,110 80,105 
+                             C 100,100 115,140 135,120 
+                             C 155,100 170,145 190,125 
+                             C 210,105 225,65 245,85 
+                             C 265,105 280,75 300,55 
+                             C 320,35 335,85 355,75 
+                             C 375,65 390,120 410,110 
+                             C 430,100 445,130 465,115 
+                             C 485,100 500,65 520,45 
+                             C 540,65 555,50 575,70 
+                             C 595,90 610,60 620,55"
+                          fill="none"
+                          stroke="#34D399"
+                          strokeWidth="3"
+                          filter="url(#areaLineGlow)"
+                        />
+
+                        {/* Cursor đường đứt nét có thể kéo theo 12 tháng */}
+                        <line 
+                          x1={MONTH_POINTS[selectedMonthIndex].x} 
+                          y1={MONTH_POINTS[selectedMonthIndex].y} 
+                          x2={MONTH_POINTS[selectedMonthIndex].x} 
+                          y2="185" 
+                          stroke="#34D399" 
+                          strokeWidth="2" 
+                          strokeDasharray="3 3"
+                          className="transition-all duration-75"
+                        />
+
+                        {/* Chấm tròn đỉnh tháng đang chọn */}
+                        <circle 
+                          cx={MONTH_POINTS[selectedMonthIndex].x} 
+                          cy={MONTH_POINTS[selectedMonthIndex].y} 
+                          r="6" 
+                          fill="#34D399" 
+                          stroke="#FFFFFF" 
+                          strokeWidth="2.5" 
+                          className="transition-all duration-75 filter drop-shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+                        />
+
+                        {/* Tooltip Card nổi với nền trong suốt thống nhất, di chuyển theo vị trí kéo */}
+                        <g 
+                          transform={`translate(${Math.max(76, Math.min(564, MONTH_POINTS[selectedMonthIndex].x))}, ${Math.max(16, MONTH_POINTS[selectedMonthIndex].y - 28)})`}
+                          className="transition-all duration-75 pointer-events-none"
+                        >
+                          <rect x="-68" y="-13" width="136" height="26" rx="13" fill="rgba(255,255,255,0.18)" stroke="#34D399" strokeWidth="1.5" />
+                          <circle cx="-50" cy="0" r="3" fill="#34D399" />
+                          <text x="-40" y="3.5" fill="#FAF8F2" fontSize="10.5" fontWeight="bold" fontFamily="monospace">
+                            {MONTH_POINTS[selectedMonthIndex].val} Thu hồi
+                          </text>
+                        </g>
+
+                        {/* Trục hoành 12 tháng (Việt hóa) - có thể bấm chọn trực tiếp */}
+                        <g fill="#FAF8F2" fillOpacity="0.75" fontSize="10" fontFamily="sans-serif">
+                          {MONTH_POINTS.map((pt, idx) => {
+                            const isMonthSelected = selectedMonthIndex === idx;
+                            return (
+                              <text
+                                key={idx}
+                                x={pt.x}
+                                y="202"
+                                textAnchor="middle"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedMonthIndex(idx);
+                                }}
+                                className="cursor-pointer hover:opacity-100 transition-colors"
+                                fill={isMonthSelected ? "#34D399" : "#FAF8F2"}
+                                fillOpacity={isMonthSelected ? 1 : 0.75}
+                                fontWeight={isMonthSelected ? "bold" : "normal"}
+                              >
+                                {pt.m}
+                              </text>
+                            );
+                          })}
+                        </g>
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* Chú thích phía dưới biểu đồ miền */}
+                  <div className="flex items-center justify-between pt-3 border-t border-white/15 text-[11px] font-bold text-white px-1 mt-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#34D399] shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
+                      <span className="text-[#FAF8F2]">
+                        Đang xem: {MONTH_POINTS[selectedMonthIndex].m} ({MONTH_POINTS[selectedMonthIndex].count} lượt)
+                      </span>
+                    </div>
+                    <span className="text-emerald-300 font-mono">Kéo thanh dọc để xem các tháng</span>
+                  </div>
+                </div>
+
+                {/* CỤM PHẢI TAB 1 */}
+                <div className="lg:col-span-5 flex flex-col gap-3.5">
+                  <div className="grid grid-cols-2 gap-3.5">
+                    
+                    {/* Thẻ 1: Lượt Quét */}
+                    <div className="bg-black/25 backdrop-blur-2xl border border-white/30 rounded-[22px] p-4 shadow-glass-edge">
+                      <div className="flex items-center justify-between text-white/80 text-xs font-bold">
+                        <span>Lượt Quét</span>
+                        <ArrowUpRight size={14} className="text-[#34D399]" />
+                      </div>
+                      <div className="text-3xl sm:text-4xl font-black text-white tracking-tight my-1 tabular-nums">
+                        14,820
+                      </div>
+                      <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-black border border-emerald-500/30">
+                        <span>+12.4% tuần này</span>
+                      </div>
+                    </div>
+
+                    {/* Thẻ 2: Tỷ Lệ Đổi */}
+                    <div className="bg-black/25 backdrop-blur-2xl border border-white/30 rounded-[22px] p-4 shadow-glass-edge">
+                      <div className="flex items-center justify-between text-white/80 text-xs font-bold">
+                        <span>Đổi Voucher</span>
+                        <Sparkles size={14} className="text-[#34D399]" />
+                      </div>
+                      <div className="text-3xl sm:text-4xl font-black text-white tracking-tight my-1 tabular-nums">
+                        68.4%
+                      </div>
+                      <div className="text-xs font-black text-[#34D399]">
+                        Hiệu Quả Cao
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Thẻ 3: Top Đối Tác */}
+                  <div className="bg-black/25 backdrop-blur-2xl border border-white/30 rounded-[22px] p-4 shadow-glass-edge flex-1 flex flex-col justify-between">
+                    <div className="flex items-center justify-between text-white text-xs font-black mb-2.5">
+                      <span className="tracking-wide">Top Đối Tác</span>
+                      <ArrowUpRight size={14} className="text-white/60" />
+                    </div>
+                    <div className="space-y-2.5">
+                      {[
+                        { name: 'Highlands Coffee', tag: 'Căn Tin Khu E (Món Phindi)', val: '5,240 lượt', bg: 'bg-[#6BA101]' },
+                        { name: 'TCP Group (Warrior)', tag: 'Tài Trợ Voucher Lon Tím', val: '4,180 lượt', bg: 'bg-[#3A5A42]' },
+                        { name: 'Suntory PepsiCo', tag: 'Chiến dịch Chai Tea+ Oolong', val: '3,210 lượt', bg: 'bg-[#1A1D1A]' },
+                      ].map((partner, idx) => (
+                        <div key={idx} className="flex items-center justify-between text-xs text-white font-medium p-1.5 rounded-xl bg-white/[0.05] border border-white/[0.06]">
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-7 h-7 rounded-full ${partner.bg} flex items-center justify-center text-[11px] font-black text-white shadow-sm border border-white/20`}>
+                              {partner.name[0]}
+                            </div>
+                            <div>
+                              <div className="font-bold leading-tight text-[#FAF8F2]">{partner.name}</div>
+                              <div className="text-[10px] text-white/70">{partner.tag}</div>
+                            </div>
+                          </div>
+                          <div className="font-black tabular-nums text-emerald-300 font-mono">{partner.val}</div>
+                        </div>
+                      ))}
+                      </div>
+                    </div>
+
+                </div>
+              </div>
+            )}
+
+            {/* =====================================================================
+                TAB 0 (THỨ TỰ 1): DẠNG GITHUB (HEATMAP MA TRẬN HOẠT ĐỘNG 7 NGÀY & KHUNG GIỜ)
+            ===================================================================== */}
+            {activeHeroTab === 0 && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch animate-fade-in-up">
+                
+                {/* SƠ ĐỒ 1: MA TRẬN GITHUB HEATMAP GRID THEO MẪU ẢNH 2 */}
+                <div className="lg:col-span-7 bg-black/25 backdrop-blur-2xl border border-white/30 rounded-[28px] p-5 sm:p-6 shadow-glass-edge flex flex-col justify-between">
+                  <div>
+                    {/* Header Ma trận GitHub */}
+                    <div className="flex items-center justify-between text-white mb-3">
+                      <div>
+                        <h3 className="text-xl sm:text-2xl font-black text-[#FAF8F2] tracking-tight">
+                          Mật Độ Quét Theo Giờ
+                        </h3>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-3 py-1 rounded-full text-xs font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">
+                          14,820 lượt/tuần
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* SVG Ma trận Heatmap phong cách GitHub - Tương tác bấm từng ô, từng cột */}
+                    <div className="relative w-full aspect-[640/220] my-2">
+                      <svg viewBox="0 0 640 256" className="w-full h-full overflow-visible">
+                        <defs>
+                          <filter id="tileGlow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feGaussianBlur stdDeviation="2" result="blur" />
+                            <feMerge>
+                              <feMergeNode in="blur" />
+                              <feMergeNode in="SourceGraphic" />
+                            </feMerge>
+                          </filter>
+                        </defs>
+
+                        {/* Floating Tooltip tại ô / cột đang chọn (nền trong suốt thống nhất, rộng thoáng, không che nhãn giờ) */}
+                        <g 
+                          transform={`translate(${Math.max(76, Math.min(564, 84 + selectedHeatmapCell.timeIndex * 60))}, 2)`}
+                          className="transition-all duration-200 pointer-events-none"
+                        >
+                          <rect x="-72" y="-12" width="144" height="24" rx="12" fill="rgba(255,255,255,0.18)" stroke="#34D399" strokeWidth="1.5" />
+                          <circle cx="-54" cy="0" r="3" fill="#34D399" />
+                          <text x="-44" y="3.5" fill="#FAF8F2" fontSize="10.5" fontWeight="700" fontFamily="sans-serif">
+                            {HEATMAP_DAYS[selectedHeatmapCell.dayIndex]?.day || "T3"} {HEATMAP_TIMES[selectedHeatmapCell.timeIndex] || "12:00"} • {HEATMAP_DAYS[selectedHeatmapCell.dayIndex]?.counts[selectedHeatmapCell.timeIndex] || 842} lượt
+                          </text>
+                        </g>
+
+                        {/* Nhãn khung giờ căn giữa từng cột (Columns: 06:00 -> 22:00) - Bấm để chọn cột */}
+                        <g fontSize="10" fontFamily="sans-serif" textAnchor="middle">
+                          {HEATMAP_TIMES.map((time, cIdx) => {
+                            const isColSelected = selectedHeatmapCell.timeIndex === cIdx;
+                            return (
+                              <text
+                                key={cIdx}
+                                x={84 + cIdx * 60}
+                                y="28"
+                                onClick={() => setSelectedHeatmapCell(prev => ({ ...prev, timeIndex: cIdx }))}
+                                className="cursor-pointer hover:opacity-100 transition-colors font-mono"
+                                fill={isColSelected ? "#34D399" : "#FAF8F2"}
+                                fillOpacity={isColSelected ? 1 : 0.75}
+                                fontWeight={isColSelected ? "bold" : "normal"}
+                              >
+                                {time}
+                              </text>
+                            );
+                          })}
+                        </g>
+
+                        {/* Vạch kẻ chỉ báo cột được chọn - Di chuyển mượt mà */}
+                        <rect 
+                          x={60 + selectedHeatmapCell.timeIndex * 60} 
+                          y="36" 
+                          width="48" 
+                          height="154" 
+                          rx="6" 
+                          fill="rgba(52,211,153,0.08)" 
+                          stroke="rgba(52,211,153,0.3)" 
+                          strokeDasharray="3 3" 
+                          className="transition-all duration-200 pointer-events-none"
+                        />
+
+                        {/* Ma trận 7 hàng (CN -> T7) x 9 cột - Bấm vào từng ô hoặc hàng */}
+                        {HEATMAP_DAYS.map((row, rIdx) => {
+                          const y = 40 + rIdx * 21;
+                          const fillMap = {
+                            1: "rgba(255,255,255,0.08)",
+                            2: "rgba(16,185,129,0.30)",
+                            3: "rgba(16,185,129,0.65)",
+                            4: "#34D399",
+                          };
+                          const isRowSelected = selectedHeatmapCell.dayIndex === rIdx;
+                          return (
+                            <g key={rIdx}>
+                              {/* Tên thứ bên trái - Bấm chọn hàng */}
+                              <text 
+                                x="45" 
+                                y={y + 12} 
+                                textAnchor="end" 
+                                fill={isRowSelected ? "#34D399" : "#FAF8F2"} 
+                                fillOpacity={isRowSelected ? 1 : 0.8} 
+                                fontSize="10" 
+                                fontFamily="sans-serif" 
+                                fontWeight="bold"
+                                className="cursor-pointer select-none hover:opacity-100 transition-colors"
+                                onClick={() => setSelectedHeatmapCell(prev => ({ ...prev, dayIndex: rIdx }))}
+                              >
+                                {row.day}
+                              </text>
+                              
+                              {/* 9 Ô nhiệt độ trong hàng - Bấm chọn từng ô */}
+                              {row.vals.map((v, cIdx) => {
+                                const x = 60 + cIdx * 60;
+                                const isCurrentCell = selectedHeatmapCell.dayIndex === rIdx && selectedHeatmapCell.timeIndex === cIdx;
+                                return (
+                                  <rect
+                                    key={cIdx}
+                                    x={x}
+                                    y={y}
+                                    width="48"
+                                    height="16"
+                                    rx="4"
+                                    fill={fillMap[v]}
+                                    stroke={isCurrentCell ? "#FFFFFF" : "rgba(255,255,255,0.12)"}
+                                    strokeWidth={isCurrentCell ? "2" : "1"}
+                                    filter={isCurrentCell || v === 4 ? "url(#tileGlow)" : undefined}
+                                    className="cursor-pointer hover:opacity-80 transition-all"
+                                    onClick={() => setSelectedHeatmapCell({ dayIndex: rIdx, timeIndex: cIdx })}
+                                  />
+                                );
+                              })}
+                            </g>
+                          );
+                        })}
+
+                        {/* Scale chú thích ở đáy */}
+                        <g transform="translate(60, 206)">
+                          <text x="0" y="12" fill="#FAF8F2" fillOpacity="0.7" fontSize="10" fontFamily="sans-serif">Ít</text>
+                          <rect x="25" y="2" width="14" height="12" rx="3" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.1)" />
+                          <rect x="44" y="2" width="14" height="12" rx="3" fill="rgba(16,185,129,0.30)" />
+                          <rect x="63" y="2" width="14" height="12" rx="3" fill="rgba(16,185,129,0.65)" />
+                          <rect x="82" y="2" width="14" height="12" rx="3" fill="#34D399" />
+                          <text x="105" y="12" fill="#FAF8F2" fillOpacity="0.7" fontSize="10" fontFamily="sans-serif">Nhiều (50 - 850 lượt/h)</text>
+                        </g>
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* Chú thích đáy */}
+                  <div className="flex items-center justify-between pt-3 border-t border-white/15 text-[11px] font-bold text-white px-1 mt-2">
+                    <span className="text-[#34D399] font-mono">
+                      Đang chọn: {HEATMAP_DAYS[selectedHeatmapCell.dayIndex]?.full || "Thứ Ba"} {HEATMAP_TIMES[selectedHeatmapCell.timeIndex] || "12:00"} ({HEATMAP_DAYS[selectedHeatmapCell.dayIndex]?.counts[selectedHeatmapCell.timeIndex] || 842} lượt)
+                    </span>
+                    <span className="text-white/80">6/6 trạm ổn định</span>
+                  </div>
+                </div>
+
+                {/* CỤM PHẢI TAB 0 */}
+                <div className="lg:col-span-5 flex flex-col gap-3.5">
+                  <div className="grid grid-cols-2 gap-3.5">
+                    <div className="bg-black/25 backdrop-blur-2xl border border-white/30 rounded-[22px] p-4 shadow-glass-edge">
+                      <div className="flex items-center justify-between text-white/80 text-xs font-bold">
+                        <span>Giờ Cao Điểm</span>
+                        <Activity size={14} className="text-[#34D399]" />
+                      </div>
+                      <div className="text-2xl sm:text-3xl font-black text-white tracking-tight my-1 tabular-nums">
+                        11h - 13h
+                      </div>
+                      <div className="text-[11px] font-bold text-emerald-300">
+                        Căn tin H6 & Highlands
+                      </div>
+                    </div>
+
+                    <div className="bg-black/25 backdrop-blur-2xl border border-white/30 rounded-[22px] p-4 shadow-glass-edge">
+                      <div className="flex items-center justify-between text-white/80 text-xs font-bold">
+                        <span>Lưu Lượng TB</span>
+                        <Zap size={14} className="text-[#34D399]" />
+                      </div>
+                      <div className="text-2xl sm:text-3xl font-black text-white tracking-tight my-1 tabular-nums">
+                        310 lượt
+                      </div>
+                      <div className="text-xs font-bold text-[#EBF7DC]">
+                        Mỗi giờ cao điểm
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card Trạng Thái Cân Bằng Tải & AI (Bỏ chữ Điều Phối Thu Gom) */}
+                  <div className="bg-black/25 backdrop-blur-2xl border border-white/30 rounded-[22px] p-4 shadow-glass-edge flex-1 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between text-white text-xs font-black mb-2">
+                        <span className="tracking-wide">Phân Loại Đúng</span>
+                        <span className="font-mono text-emerald-300 font-bold">92.4%</span>
+                      </div>
+                      <div className="text-xs text-white/80 mt-1">
+                        Camera AI hướng dẫn phân loại tự động tại trạm
+                      </div>
+                    </div>
+                    <div className="pt-3 flex items-center justify-between border-t border-white/15 mt-3 text-xs text-white/80">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[#34D399] animate-pulse" />
+                        <span className="font-bold text-[#FAF8F2]">Tự động cân bằng tải</span>
+                      </div>
+                      <span className="font-mono text-emerald-300 text-[11px] font-bold">Hoạt động ổn định</span>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            )}
+
+            {/* =====================================================================
+                TAB 2 (THỨ TỰ 3): DẠNG CỘT PIN LOLLIPOP (TẦN SUẤT ĐỔI VOUCHER THEO NGÀY)
+            ===================================================================== */}
+            {activeHeroTab === 2 && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch animate-fade-in-up">
+                
+                {/* SƠ ĐỒ 3: BIỂU ĐỒ CỘT PIN LOLLIPOP 7 NGÀY - TƯƠNG TÁC BẤM CHỌN TỪNG CỘT */}
+                <div className="lg:col-span-7 bg-black/25 backdrop-blur-2xl border border-white/30 rounded-[28px] p-5 sm:p-6 shadow-glass-edge flex flex-col justify-between">
+                  <div>
+                    {/* Header thông số cột pin */}
+                    <div className="flex items-center justify-between text-white mb-3">
+                      <div>
+                        <h3 className="text-xl sm:text-2xl font-black text-[#FAF8F2] tracking-tight">
+                          Tần Suất Đổi Voucher
+                        </h3>
+                      </div>
+                      <span className="text-xs font-mono text-emerald-300 bg-emerald-500/20 px-3 py-1.5 rounded-full border border-emerald-500/30 font-bold">
+                        TB: 2.8s
+                      </span>
+                    </div>
+
+                    {/* Biểu đồ cột dạng Pin / Lollipop tương tác */}
+                    <div className="relative w-full aspect-[640/220] my-2">
+                      <svg viewBox="0 0 640 230" className="w-full h-full overflow-visible">
+                        {/* Lưới ngang mờ */}
+                        <g stroke="#ffffff" strokeOpacity="0.08" strokeDasharray="3 5">
+                          <line x1="30" y1="40" x2="610" y2="40" />
+                          <line x1="30" y1="85" x2="610" y2="85" />
+                          <line x1="30" y1="130" x2="610" y2="130" />
+                        </g>
+
+                        {/* Capsule động bao quanh cột đang được bấm chọn - Thay đổi chiều cao linh hoạt theo từng cột */}
+                        {(() => {
+                          const activeCol = WEEKLY_VOUCHER_DATA[selectedDayColIndex] || WEEKLY_VOUCHER_DATA[2];
+                          const capsuleY = activeCol.topY - 10;
+                          const capsuleHeight = 206 - capsuleY;
+                          return (
+                            <rect
+                              x={activeCol.x - 33}
+                              y={capsuleY}
+                              width="66"
+                              height={capsuleHeight}
+                              rx="28"
+                              fill="rgba(255,255,255,0.14)"
+                              stroke="rgba(255,255,255,0.32)"
+                              strokeWidth="1.5"
+                              className="transition-all duration-300 ease-out pointer-events-none"
+                            />
+                          );
+                        })()}
+
+                        {/* Tooltip Badge động nằm hoàn toàn TRÊN ĐỈNH capsule, không đè lên card */}
+                        {(() => {
+                          const activeCol = WEEKLY_VOUCHER_DATA[selectedDayColIndex] || WEEKLY_VOUCHER_DATA[2];
+                          const badgeY = activeCol.topY - 28;
+                          return (
+                            <g 
+                              transform={`translate(${activeCol.x}, ${badgeY})`}
+                              className="transition-all duration-300 ease-out pointer-events-none"
+                            >
+                              <rect x="-35" y="-11" width="70" height="22" rx="11" fill="rgba(255,255,255,0.22)" stroke="#34D399" strokeWidth="1.5" />
+                              <text x="0" y="3.5" fill="#34D399" fontSize="11" fontWeight="900" fontFamily="monospace" textAnchor="middle">
+                                {activeCol.count.toLocaleString()}
+                              </text>
+                            </g>
+                          );
+                        })()}
+
+                        {/* 7 Cột Lollipop có thể bấm chọn (CN, T2, T3, T4, T5, T6, T7) */}
+                        {WEEKLY_VOUCHER_DATA.map((col, idx) => {
+                          const isSelected = selectedDayColIndex === idx;
+                          return (
+                            <g 
+                              key={idx}
+                              onClick={() => setSelectedDayColIndex(idx)}
+                              className="cursor-pointer group select-none"
+                            >
+                              {/* Vùng bấm vô hình (Click Area) phủ rộng */}
+                              <rect x={col.x - 33} y="15" width="66" height="195" fill="transparent" />
+
+                              {/* Thân cọc mảnh (Stem Pin) */}
+                              <line
+                                x1={col.x}
+                                y1={col.topY}
+                                x2={col.x}
+                                y2="168"
+                                stroke={isSelected ? "#34D399" : "rgba(255,255,255,0.3)"}
+                                strokeWidth={isSelected ? "2.5" : "1.8"}
+                                className="transition-colors duration-200"
+                              />
+
+                              {/* Chấm tròn trên đỉnh (Head Dot) */}
+                              <circle
+                                cx={col.x}
+                                cy={col.topY}
+                                r={isSelected ? "6" : "4.5"}
+                                fill={isSelected ? "#34D399" : "#6EE7B7"}
+                                stroke={isSelected ? "#FFFFFF" : "rgba(255,255,255,0.7)"}
+                                strokeWidth={isSelected ? "2.5" : "1.5"}
+                                className="transition-all duration-200"
+                              />
+
+                              {/* Vòng tròn nhãn thứ ở chân cọc */}
+                              <circle
+                                cx={col.x}
+                                cy="185"
+                                r="15"
+                                fill={isSelected ? "#34D399" : "rgba(255,255,255,0.12)"}
+                                stroke={isSelected ? "#FFFFFF" : "rgba(255,255,255,0.2)"}
+                                strokeWidth="1"
+                                className="transition-all duration-200"
+                              />
+                              <text
+                                x={col.x}
+                                y="189"
+                                textAnchor="middle"
+                                fill={isSelected ? "#080C09" : "#FAF8F2"}
+                                fontSize="11"
+                                fontWeight="800"
+                                fontFamily="sans-serif"
+                              >
+                                {col.day}
+                              </text>
+                            </g>
+                          );
+                        })}
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* Chú thích phía dưới biểu đồ cột */}
+                  <div className="flex items-center justify-between pt-3 border-t border-white/15 text-[11px] font-bold text-white px-1 mt-2">
+                    <span className="text-[#34D399] font-mono">
+                      Đang xem: {WEEKLY_VOUCHER_DATA[selectedDayColIndex].fullDay} ({WEEKLY_VOUCHER_DATA[selectedDayColIndex].count.toLocaleString()} mã)
+                    </span>
+                    <span className="text-white/80">Tỷ lệ đổi thành công: 94.6%</span>
+                  </div>
+                </div>
+
+                {/* CỤM PHẢI TAB 2 */}
+                <div className="lg:col-span-5 flex flex-col gap-3.5">
+                  <div className="grid grid-cols-2 gap-3.5">
+                    <div className="bg-black/25 backdrop-blur-2xl border border-white/30 rounded-[22px] p-4 shadow-glass-edge">
+                      <div className="flex items-center justify-between text-white/80 text-xs font-bold">
+                        <span>Hoàn Thành 3s</span>
+                        <CheckCircle2 size={14} className="text-[#34D399]" />
+                      </div>
+                      <div className="text-3xl sm:text-4xl font-black text-white tracking-tight my-1 tabular-nums">
+                        94.6%
+                      </div>
+                      <div className="text-xs font-bold text-[#EBF7DC]">
+                        1,143 mẫu khảo sát
+                      </div>
+                    </div>
+
+                    <div className="bg-black/25 backdrop-blur-2xl border border-white/30 rounded-[22px] p-4 shadow-glass-edge">
+                      <div className="flex items-center justify-between text-white/80 text-xs font-bold">
+                        <span>Voucher Đã Đổi</span>
+                        <Ticket size={14} className="text-[#34D399]" />
+                      </div>
+                      <div className="text-3xl sm:text-4xl font-black text-white tracking-tight my-1 tabular-nums">
+                        1,097 mã
+                      </div>
+                      <div className="text-xs font-bold text-white/90">
+                        Tại POS :3009
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card Trạng Thái Chiến Dịch (Bỏ nút Đẩy vào App :3008) */}
+                  <div className="bg-black/25 backdrop-blur-2xl border border-white/30 rounded-[22px] p-4 shadow-glass-edge flex-1 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between text-white text-xs font-black mb-1">
+                        <span className="tracking-wide">Highlands Coffee (Căn Tin H6)</span>
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono text-[10px] font-bold">Hoạt động</span>
+                      </div>
+                      <div className="text-xs text-white/80 mt-1">
+                        Giảm 10k cho đơn từ 45k sau khảo sát 3s
+                      </div>
+                    </div>
+                    <div className="pt-3 flex items-center justify-between border-t border-white/15 mt-3 text-xs text-white/80">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[#34D399] animate-pulse" />
+                        <span className="font-bold text-[#FAF8F2]">Tự động phát hành voucher</span>
+                      </div>
+                      <span className="font-mono text-emerald-300 text-[11px] font-bold">Đồng bộ POS</span>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            )}
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* =========================================================================
+          MODAL XEM MÃ QR THÙNG RÁC (APPLE PASS STYLE)
+      ========================================================================= */}
+      {selectedBin && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-md bg-white rounded-[32px] p-6 sm:p-8 shadow-2xl border border-white/40 space-y-5 text-center">
+            <button 
+              onClick={() => setSelectedBin(null)}
+              className="absolute top-5 right-5 w-9 h-9 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-600 transition"
+              title="Đóng (Esc)"
+            >
+              <X size={16} />
+            </button>
+
+            <div>
+              <div className="w-12 h-12 rounded-[14px] bg-[#1A1D1A] text-white flex items-center justify-center font-black text-lg mx-auto mb-2 shadow-md">
+                {selectedBin.stationCode}
+              </div>
+              <h3 className="text-lg font-black text-[#1A1D1A]">
+                {selectedBin.name}
+              </h3>
+              <p className="text-xs font-semibold text-neutral-400 mt-0.5">
+                {selectedBin.location}
+              </p>
+            </div>
+
+            <div className="bg-[#F8FAF8] rounded-[24px] p-6 inline-block border border-neutral-200 shadow-inner">
+              <QRCodeSVG 
+                value={selectedBin.qrValue}
+                size={200}
+                level="H"
+                fgColor="#1A1D1A"
+                bgColor="transparent"
+              />
+              <div className="text-[11px] font-mono font-bold text-neutral-500 mt-3">
+                {selectedBin.qrValue}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 bg-[#F8FAF8] rounded-[18px] p-3 text-center border border-neutral-100">
+              <div>
+                <span className="block text-[9px] uppercase font-bold text-neutral-400">MỨC ĐẦY</span>
+                <span className={`text-sm font-black ${selectedBin.riskColor}`}>{selectedBin.fillPercent}%</span>
+              </div>
+              <div>
+                <span className="block text-[9px] uppercase font-bold text-neutral-400">ĐÃ GOM</span>
+                <span className="text-sm font-black text-[#1A1D1A]">{selectedBin.collectedCount}</span>
+              </div>
+              <div>
+                <span className="block text-[9px] uppercase font-bold text-neutral-400">TRẠNG THÁI</span>
+                <span className={`text-xs font-black ${selectedBin.riskColor}`}>{selectedBin.status}</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <button 
+                onClick={() => alert(`Đã tải file SVG mã QR cho ${selectedBin.name}`)}
+                className="py-2.5 px-4 rounded-full border border-neutral-200 bg-white hover:bg-neutral-50 text-xs font-black text-[#1A1D1A] flex items-center justify-center gap-1.5 transition active:scale-95"
+              >
+                <Download size={14} />
+                <span>Tải Mã In Ấn</span>
+              </button>
+              <button 
+                onClick={() => setSelectedBin(null)}
+                className="py-2.5 px-4 rounded-full bg-[#6BA101] hover:bg-[#5E8E00] text-white text-xs font-black transition active:scale-95 shadow-sm"
+              >
+                Hoàn Tất
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL BẢN ĐỒ CAMPUS BLUEPRINT (KẾ THỪA ẢNH 2 & ẢNH 3)
+      ========================================================================= */}
+      {isMapModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-2xl bg-white rounded-[32px] p-6 sm:p-8 shadow-2xl border border-white/40 space-y-4 text-center">
+            <button 
+              onClick={() => setIsMapModalOpen(false)}
+              className="absolute top-5 right-5 w-9 h-9 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-600 transition"
+              title="Đóng (Esc)"
+            >
+              <X size={16} />
+            </button>
+
+            <div>
+              <h3 className="text-lg font-black text-[#1A1D1A]">
+                Sơ Đồ Tọa Độ Campus HUTECH (Khu E)
+              </h3>
+              <p className="text-xs font-semibold text-neutral-400 mt-0.5">
+                Vị trí thời gian thực của 6 trạm thu gom rác thông minh
+              </p>
+            </div>
+
+            {/* Bản đồ SVG Blueprint trực quan */}
+            <div className="relative w-full h-64 bg-[#F2F4F0] rounded-[24px] border border-neutral-200 overflow-hidden flex items-center justify-center">
+              <svg className="w-full h-full p-4" viewBox="0 0 600 300" fill="none">
+                {/* Các khối tòa nhà */}
+                <rect x="40" y="40" width="160" height="100" rx="12" fill="#E2E6DF" stroke="#CCD2C7" strokeWidth="2" />
+                <text x="120" y="95" textAnchor="middle" fill="#6B7264" fontSize="13" fontWeight="bold">TÒA H6 (CĂN TIN)</text>
+
+                <rect x="360" y="40" width="180" height="90" rx="12" fill="#E2E6DF" stroke="#CCD2C7" strokeWidth="2" />
+                <text x="450" y="90" textAnchor="middle" fill="#6B7264" fontSize="13" fontWeight="bold">TÒA H1 (KỸ THUẬT)</text>
+
+                <rect x="80" y="180" width="140" height="80" rx="12" fill="#E2E6DF" stroke="#CCD2C7" strokeWidth="2" />
+                <text x="150" y="225" textAnchor="middle" fill="#6B7264" fontSize="12" fontWeight="bold">THƯ VIỆN</text>
+
+                <rect x="320" y="170" width="220" height="90" rx="12" fill="#E2E6DF" stroke="#CCD2C7" strokeWidth="2" />
+                <text x="430" y="220" textAnchor="middle" fill="#6B7264" fontSize="12" fontWeight="bold">KÝ TÚC XÁ SINH VIÊN</text>
+
+                {/* Các chấm pin định vị thùng rác */}
+                {/* Pin H6: 82% Cần dọn */}
+                <circle cx="160" cy="110" r="14" fill="#D94841" className="animate-pulse" />
+                <circle cx="160" cy="110" r="8" fill="#FFFFFF" />
+                <text x="160" y="135" textAnchor="middle" fill="#D94841" fontSize="10" fontWeight="black">H6 (82%)</text>
+
+                {/* Pin H1: 34% Ổn định */}
+                <circle cx="420" cy="85" r="12" fill="#6BA101" />
+                <circle cx="420" cy="85" r="6" fill="#FFFFFF" />
+                <text x="420" y="110" textAnchor="middle" fill="#3A5A42" fontSize="10" fontWeight="black">H1 (34%)</text>
+
+                {/* Pin Thư viện: 58% Gần đầy */}
+                <circle cx="150" cy="210" r="12" fill="#E68A00" />
+                <circle cx="150" cy="210" r="6" fill="#FFFFFF" />
+                <text x="150" y="235" textAnchor="middle" fill="#B45309" fontSize="10" fontWeight="black">LIB (58%)</text>
+
+                {/* Pin Highlands: 88% Cần dọn */}
+                <circle cx="90" cy="80" r="14" fill="#D94841" className="animate-pulse" />
+                <circle cx="90" cy="80" r="8" fill="#FFFFFF" />
+                <text x="90" y="105" textAnchor="middle" fill="#D94841" fontSize="10" fontWeight="black">HL (88%)</text>
+              </svg>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button 
+                onClick={() => setIsMapModalOpen(false)}
+                className="px-5 py-2.5 rounded-full bg-[#1A1D1A] text-white text-xs font-bold"
+              >
+                Đóng Bản Đồ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL TÌM KIẾM NHANH */}
+      {isSearchOpen && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-lg bg-white rounded-[28px] p-6 shadow-2xl border border-neutral-100 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-neutral-150">
+              <div className="flex items-center gap-2.5 text-[#1A1D1A]">
+                <Search size={18} className="text-neutral-400" />
+                <span className="font-black text-sm">Tìm kiếm trạm hoặc chiến dịch</span>
+              </div>
+              <button 
+                onClick={() => setIsSearchOpen(false)}
+                className="w-7 h-7 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-500"
+              >
+                <X size={14} />
+              </button>
+            </div>
+            <input 
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Nhập tên trạm, mã tòa nhà (H6, H1, KTX)..."
+              className="w-full px-4 py-3 rounded-xl bg-[#F8FAF8] border border-neutral-200 text-sm font-semibold outline-none focus:border-[#6BA101]"
+              autoFocus
+            />
+            <div className="flex justify-end gap-2 pt-2">
+              <button 
+                onClick={() => setIsSearchOpen(false)}
+                className="px-4 py-2 rounded-full bg-[#1A1D1A] text-white text-xs font-bold"
+              >
+                Xác nhận
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CÀI ĐẶT */}
+      {isSettingsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-md bg-white rounded-[28px] p-6 shadow-2xl border border-neutral-100 space-y-4 text-left">
+            <div className="flex items-center justify-between pb-3 border-b border-neutral-150">
+              <div className="flex items-center gap-2">
+                <Settings size={18} className="text-[#6BA101]" />
+                <span className="font-black text-sm text-[#1A1D1A]">Cấu hình EcoPass Hub</span>
+              </div>
+              <button 
+                onClick={() => setIsSettingsOpen(false)}
+                className="w-7 h-7 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-500"
+              >
+                <X size={14} />
+              </button>
+            </div>
+            
+            <div className="space-y-3 text-xs">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-[#F8FAF8]">
+                <div>
+                  <span className="font-black text-[#1A1D1A] block">Tự động đồng bộ với POS</span>
+                  <span className="text-neutral-400 text-[11px]">Đẩy mã voucher mới sang cổng :3009 mỗi 5 phút</span>
+                </div>
+                <input type="checkbox" defaultChecked className="accent-[#6BA101] w-4 h-4 rounded" />
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-xl bg-[#F8FAF8]">
+                <div>
+                  <span className="font-black text-[#1A1D1A] block">Cảnh báo thùng đầy qua Telegram</span>
+                  <span className="text-neutral-400 text-[11px]">Thông báo khi thùng vượt quá 85% dung lượng</span>
+                </div>
+                <input type="checkbox" defaultChecked className="accent-[#6BA101] w-4 h-4 rounded" />
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button 
+                onClick={() => setIsSettingsOpen(false)}
+                className="px-5 py-2 rounded-full bg-[#1A1D1A] text-white text-xs font-bold"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}

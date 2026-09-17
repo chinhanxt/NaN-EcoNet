@@ -1,0 +1,416 @@
+import { useCallback, useReducer } from "react";
+
+import stringWidth from "string-width";
+
+export type TextBufferState = {
+  text: string;
+  cursorOffset: number;
+  preferredColumn: number | undefined;
+};
+
+export type TextBufferAction =
+  | { type: "insert"; text: string }
+  | { type: "delete-backward" }
+  | { type: "delete-forward" }
+  | { type: "move-left" }
+  | { type: "move-right" }
+  | { type: "move-up" }
+  | { type: "move-down" }
+  | { type: "move-home"; multiLine: boolean }
+  | { type: "move-end"; multiLine: boolean }
+  | { type: "move-word-left" }
+  | { type: "move-word-right" }
+  | { type: "kill-word-backward" }
+  | { type: "kill-word-forward" }
+  | { type: "kill-start"; multiLine: boolean }
+  | { type: "kill-end"; multiLine: boolean }
+  | { type: "set-text"; text: string }
+  | { type: "set-cursor"; cursorOffset: number };
+
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(Math.max(value, min), max);
+
+const graphemeSegmenter = new Intl.Segmenter(undefined, {
+  granularity: "grapheme",
+});
+const wordSegmenter = new Intl.Segmenter(undefined, { granularity: "word" });
+
+const stepGraphemeLeft = (text: string, offset: number) => {
+  if (offset <= 0) return 0;
+  return (
+    graphemeSegmenter
+      .segment(text)
+      .containing(Math.ceil(Math.min(offset, text.length)) - 1)?.index ?? 0
+  );
+};
+
+const snapToGraphemeBoundary = (text: string, offset: number) => {
+  if (offset <= 0) return 0;
+  if (offset >= text.length) return text.length;
+  return graphemeSegmenter.segment(text).containing(offset)!.index;
+};
+
+const snapToNextGraphemeBoundary = (text: string, offset: number) => {
+  if (offset <= 0) return 0;
+  if (offset >= text.length) return text.length;
+  const entry = graphemeSegmenter.segment(text).containing(offset)!;
+  return entry.index === offset ? offset : entry.index + entry.segment.length;
+};
+
+const stepGraphemeRight = (text: string, offset: number) => {
+  if (offset >= text.length) return text.length;
+  const entry = graphemeSegmenter.segment(text).containing(Math.max(offset, 0));
+  return entry ? entry.index + entry.segment.length : text.length;
+};
+
+export const getGraphemeAt = (text: string, offset: number) => {
+  if (offset < 0 || offset >= text.length) return "";
+  const segment = graphemeSegmenter.segment(text).containing(offset);
+  return segment?.index === offset ? segment.segment : "";
+};
+
+const getLineStart = (text: string, cursorOffset: number) => {
+  if (cursorOffset === 0) return 0;
+  const lineBreakIndex = text.lastIndexOf("\n", cursorOffset - 1);
+  return lineBreakIndex === -1 ? 0 : lineBreakIndex + 1;
+};
+
+const getLineEnd = (text: string, cursorOffset: number) => {
+  const lineBreakIndex = text.indexOf("\n", cursorOffset);
+  if (lineBreakIndex === -1) return text.length;
+  return lineBreakIndex > cursorOffset && text[lineBreakIndex - 1] === "\r"
+    ? lineBreakIndex - 1
+    : lineBreakIndex;
+};
+
+const getLineBreakEnd = (text: string, lineEnd: number) => {
+  if (text.startsWith("\r\n", lineEnd)) return lineEnd + 2;
+  return lineEnd < text.length ? lineEnd + 1 : lineEnd;
+};
+
+const getLineBreakStart = (text: string, lineBreakIndex: number) =>
+  text[lineBreakIndex - 1] === "\r" ? lineBreakIndex - 1 : lineBreakIndex;
+
+const getLineRange = (text: string, cursorOffset: number) => {
+  const start = getLineStart(text, cursorOffset);
+  const end = getLineEnd(text, cursorOffset);
+  return { start, end };
+};
+
+const getDisplayColumn = (
+  text: string,
+  lineStart: number,
+  cursorOffset: number,
+) => {
+  let column = 0;
+  for (const { segment } of graphemeSegmenter.segment(
+    text.slice(lineStart, cursorOffset),
+  )) {
+    column += stringWidth(segment);
+  }
+  return column;
+};
+
+const getOffsetAtDisplayColumn = (
+  text: string,
+  lineStart: number,
+  lineEnd: number,
+  column: number,
+) => {
+  let offset = lineStart;
+  let currentColumn = 0;
+  for (const { segment } of graphemeSegmenter.segment(
+    text.slice(lineStart, lineEnd),
+  )) {
+    const width = stringWidth(segment);
+    if (currentColumn >= column || currentColumn + width > column) break;
+    offset += segment.length;
+    currentColumn += width;
+  }
+  return offset;
+};
+
+const getPreviousWordOffset = (text: string, cursorOffset: number) => {
+  const segments = wordSegmenter.segment(text);
+  let offset = Math.ceil(Math.min(cursorOffset, text.length)) - 1;
+  while (offset >= 0) {
+    const segment = segments.containing(offset)!;
+    if (segment.isWordLike) return segment.index;
+    offset = segment.index - 1;
+  }
+  return 0;
+};
+
+const getNextWordOffset = (text: string, cursorOffset: number) => {
+  const segments = wordSegmenter.segment(text);
+  let offset = Math.max(cursorOffset, 0);
+  while (offset < text.length) {
+    const segment = segments.containing(offset)!;
+    const end = segment.index + segment.segment.length;
+    if (segment.isWordLike) return end;
+    offset = end;
+  }
+  return text.length;
+};
+
+const moveVertical = (
+  text: string,
+  cursorOffset: number,
+  preferredColumn: number | undefined,
+  direction: -1 | 1,
+) => {
+  const { start, end } = getLineRange(text, cursorOffset);
+  const currentColumn =
+    preferredColumn ?? getDisplayColumn(text, start, cursorOffset);
+  const adjacentBreakIndex = direction === -1 ? start - 1 : end;
+
+  if (adjacentBreakIndex < 0 || adjacentBreakIndex >= text.length) {
+    return { cursorOffset, preferredColumn: currentColumn };
+  }
+
+  const adjacentCursorBase =
+    direction === -1
+      ? getLineBreakStart(text, adjacentBreakIndex)
+      : getLineBreakEnd(text, adjacentBreakIndex);
+  const adjacentRange = getLineRange(text, adjacentCursorBase);
+  const nextCursorOffset = getOffsetAtDisplayColumn(
+    text,
+    adjacentRange.start,
+    adjacentRange.end,
+    currentColumn,
+  );
+
+  return {
+    cursorOffset: nextCursorOffset,
+    preferredColumn: currentColumn,
+  };
+};
+
+const clearPreferredColumn = (
+  state: TextBufferState,
+  cursorOffset: number,
+) => ({
+  ...state,
+  cursorOffset,
+  preferredColumn: undefined,
+});
+
+const clearPreferredColumnAtGraphemeBoundary = (
+  state: TextBufferState,
+  cursorOffset: number,
+  direction: "backward" | "forward",
+) =>
+  clearPreferredColumn(
+    state,
+    direction === "backward"
+      ? snapToGraphemeBoundary(state.text, cursorOffset)
+      : snapToNextGraphemeBoundary(state.text, cursorOffset),
+  );
+
+export const textBufferReducer = (
+  state: TextBufferState,
+  action: TextBufferAction,
+): TextBufferState => {
+  switch (action.type) {
+    case "insert": {
+      if (!action.text) return state;
+
+      const nextText =
+        state.text.slice(0, state.cursorOffset) +
+        action.text +
+        state.text.slice(state.cursorOffset);
+      return clearPreferredColumnAtGraphemeBoundary(
+        { ...state, text: nextText },
+        state.cursorOffset + action.text.length,
+        "forward",
+      );
+    }
+
+    case "delete-backward": {
+      if (state.cursorOffset === 0) return state;
+
+      const previousOffset = stepGraphemeLeft(state.text, state.cursorOffset);
+      const nextText =
+        state.text.slice(0, previousOffset) +
+        state.text.slice(state.cursorOffset);
+      return clearPreferredColumnAtGraphemeBoundary(
+        { ...state, text: nextText },
+        previousOffset,
+        "backward",
+      );
+    }
+
+    case "delete-forward": {
+      if (state.cursorOffset >= state.text.length) return state;
+
+      const nextOffset = stepGraphemeRight(state.text, state.cursorOffset);
+      const nextText =
+        state.text.slice(0, state.cursorOffset) + state.text.slice(nextOffset);
+      return clearPreferredColumnAtGraphemeBoundary(
+        { ...state, text: nextText },
+        state.cursorOffset,
+        "forward",
+      );
+    }
+
+    case "move-left":
+      return clearPreferredColumn(
+        state,
+        stepGraphemeLeft(state.text, state.cursorOffset),
+      );
+
+    case "move-right":
+      return clearPreferredColumn(
+        state,
+        stepGraphemeRight(state.text, state.cursorOffset),
+      );
+
+    case "move-up": {
+      const next = moveVertical(
+        state.text,
+        state.cursorOffset,
+        state.preferredColumn,
+        -1,
+      );
+      return { ...state, ...next };
+    }
+
+    case "move-down": {
+      const next = moveVertical(
+        state.text,
+        state.cursorOffset,
+        state.preferredColumn,
+        1,
+      );
+      return { ...state, ...next };
+    }
+
+    case "move-home": {
+      const nextCursorOffset = action.multiLine
+        ? getLineStart(state.text, state.cursorOffset)
+        : 0;
+      return clearPreferredColumn(state, nextCursorOffset);
+    }
+
+    case "move-end": {
+      const nextCursorOffset = action.multiLine
+        ? getLineEnd(state.text, state.cursorOffset)
+        : state.text.length;
+      return clearPreferredColumn(state, nextCursorOffset);
+    }
+
+    case "move-word-left":
+      return clearPreferredColumn(
+        state,
+        getPreviousWordOffset(state.text, state.cursorOffset),
+      );
+
+    case "move-word-right":
+      return clearPreferredColumn(
+        state,
+        getNextWordOffset(state.text, state.cursorOffset),
+      );
+
+    case "kill-word-backward": {
+      const nextCursorOffset = getPreviousWordOffset(
+        state.text,
+        state.cursorOffset,
+      );
+      if (nextCursorOffset === state.cursorOffset) return state;
+
+      const nextText =
+        state.text.slice(0, nextCursorOffset) +
+        state.text.slice(state.cursorOffset);
+      return clearPreferredColumnAtGraphemeBoundary(
+        { ...state, text: nextText },
+        nextCursorOffset,
+        "backward",
+      );
+    }
+
+    case "kill-word-forward": {
+      const nextOffset = getNextWordOffset(state.text, state.cursorOffset);
+      if (nextOffset === state.cursorOffset) return state;
+
+      const nextText =
+        state.text.slice(0, state.cursorOffset) + state.text.slice(nextOffset);
+      return clearPreferredColumnAtGraphemeBoundary(
+        { ...state, text: nextText },
+        state.cursorOffset,
+        "forward",
+      );
+    }
+
+    case "kill-start": {
+      const rangeStart = action.multiLine
+        ? getLineStart(state.text, state.cursorOffset)
+        : 0;
+      if (rangeStart === state.cursorOffset) return state;
+
+      const nextText =
+        state.text.slice(0, rangeStart) + state.text.slice(state.cursorOffset);
+      return clearPreferredColumn({ ...state, text: nextText }, rangeStart);
+    }
+
+    case "kill-end": {
+      const lineEnd = action.multiLine
+        ? getLineEnd(state.text, state.cursorOffset)
+        : state.text.length;
+      // emacs convention: ctrl+k at EOL kills the trailing newline so the next line joins
+      const rangeEnd =
+        action.multiLine &&
+        lineEnd === state.cursorOffset &&
+        lineEnd < state.text.length
+          ? getLineBreakEnd(state.text, lineEnd)
+          : lineEnd;
+      if (rangeEnd === state.cursorOffset) return state;
+
+      const nextText =
+        state.text.slice(0, state.cursorOffset) + state.text.slice(rangeEnd);
+      return clearPreferredColumnAtGraphemeBoundary(
+        { ...state, text: nextText },
+        state.cursorOffset,
+        "forward",
+      );
+    }
+
+    case "set-text":
+      return {
+        text: action.text,
+        cursorOffset: action.text.length,
+        preferredColumn: undefined,
+      };
+
+    case "set-cursor":
+      return clearPreferredColumn(
+        state,
+        snapToGraphemeBoundary(
+          state.text,
+          clamp(action.cursorOffset, 0, state.text.length),
+        ),
+      );
+  }
+};
+
+export const createTextBufferState = (text = ""): TextBufferState => ({
+  text,
+  cursorOffset: text.length,
+  preferredColumn: undefined,
+});
+
+export const useTextBuffer = (text = "") => {
+  const [state, dispatch] = useReducer(
+    textBufferReducer,
+    createTextBufferState(text),
+  );
+  const setText = useCallback(
+    (nextText: string) => dispatch({ type: "set-text", text: nextText }),
+    [],
+  );
+
+  return {
+    ...state,
+    dispatchAction: dispatch,
+    setText,
+  };
+};

@@ -1,0 +1,131 @@
+---
+title: Generative UI Example
+description: Live demo of the present tool, where the model composes a dashboard from a component vocabulary at runtime, alongside the Tool UI and legacy primitive routes.
+---
+
+## Overview
+
+The main route of `examples/with-generative-ui` demonstrates **generative UI**: the model composes an interface at runtime by calling the `present` tool, choosing components from a vocabulary the app ships. Nothing in the app binds a component to a specific tool call.
+
+- **Default vocabulary** — cards, facts, rows, tables, and charts come from `defaultGenerativeUILibrary`, so the app registers one tool and writes no renderers
+- **A custom component** — `DashboardHeader` is added through `defineGenerativeComponents`, showing how to extend the vocabulary with your own React component, and `Markdown` is swapped for the registry item's real renderer
+- **Styled output** — the vocabulary stylesheet is mounted from `@assistant-ui/ui` through the monorepo's tsconfig alias, the way every in-repo example consumes that package; in your own app the same CSS arrives through `shadcn add generative-ui`
+- **Dashboard prompts** — the suggestions describe data, not layout, and let the model decide the composition
+
+### Routes in the same example app
+
+| Route | What it demonstrates |
+|-------|---------------------|
+| `/` | The `present` tool (`JSONGenerativeUI`) — the model composes UI from a vocabulary |
+| `/tool-ui` | Tool UI (`Tools({ toolkit })`) — a renderer bound to each known tool |
+| `/primitive` | Static `GenerativeUIRender` with a hand-written spec (legacy) |
+| `/gui-chat` | Chat with a `render_gui` tool bridged to `MessagePrimitive.GenerativeUI` (legacy) |
+
+See the [Generative UI guide](/docs/tools/generative-ui) for the full setup, and [Tool UI](/docs/tools/tool-ui) for the per-tool alternative.
+
+## Patterns Demonstrated
+
+### The present tool
+
+One toolkit entry exposes the whole vocabulary. `display: "standalone"` renders the result on its own surface rather than inside the chain-of-thought trace:
+
+```tsx title="app/present-toolkit.tsx"
+"use generative";
+
+const markdown = defaultGenerativeUILibrary.Markdown!;
+
+const generative = new JSONGenerativeUI({
+  library: {
+    ...defaultGenerativeUILibrary,
+    ...defineGenerativeComponents({
+      Markdown: {
+        properties: markdown.properties,
+        streamProperties: markdown.streamProperties,
+        description:
+          "A markdown string, rendered with GitHub-flavored markdown.",
+        render: styledGenerativeUILibrary.Markdown!.render,
+      },
+      DashboardHeader: {
+        description:
+          "A heading for a dashboard, with an optional description and reporting period.",
+        properties: z.object({
+          title: z.string().describe("The dashboard title."),
+          description: z.string().optional(),
+          period: z.string().optional(),
+        }),
+        render: (props) => <DashboardHeader {...props} />,
+      },
+    }),
+  },
+});
+
+export default defineToolkit({
+  present: generative.present({ display: "standalone" }),
+});
+```
+
+The two demos keep separate toolkits and separate routes. If `/` also carried the Tool UI entries, `generate_chart` would compete with `present` for every prompt that mentions a chart, and the demo would render a Recharts widget instead of a composed dashboard.
+
+Because `present` resolves in the browser, the provider passes `sendAutomaticallyWhen` so the run continues once the UI has rendered. The transport points this route at its own endpoint, which is what keeps the two demos' tool sets apart:
+
+```tsx title="app/page.tsx"
+const runtime = useChatRuntime({
+  transport: new AssistantChatTransport({ api: "/api/present" }),
+  sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
+});
+```
+
+### Backend-Rendered Tools (Chart, Location)
+
+On `/tool-ui`, these tools have backend `execute` functions and frontend toolkit renderers. The AI generates the data, the backend confirms, and the frontend renders rich UI from `args`:
+
+```tsx
+const toolkit = defineToolkit({
+  generate_chart: {
+    type: "backend",
+    render: ({ args, status }) => {
+    const { title, type, data, xKey, dataKeys } = args;
+    // Render a Recharts BarChart/LineChart/PieChart based on args
+    return <ChartContainer config={buildChartConfig(dataKeys)}>...</ChartContainer>;
+  },
+  },
+});
+```
+
+### Frontend-Only Tools (Date Picker, Contact Form)
+
+These tools have no backend `execute` — the AI triggers the tool call, and the user completes it through interactive UI. The `addResult` callback sends the user's input back to the AI:
+
+```tsx
+const toolkit = defineToolkit({
+  select_date: {
+    type: "human",
+    render: ({ args, result, addResult }) => {
+    if (result) return <div>Selected: {result.date}</div>;
+
+    return (
+      <div>
+        <p>{args.prompt}</p>
+        <input type="date" onChange={(e) => setValue(e.target.value)} />
+        <button onClick={() => addResult({ date: value })}>Confirm</button>
+      </div>
+    );
+  },
+  },
+});
+```
+
+## Key Concepts
+
+| Concept | Used In | Description |
+|---------|---------|-------------|
+| `JSONGenerativeUI` | `/` | Turn a component library into the model-facing schema for `present` |
+| `defineGenerativeComponents` | `/` | Add your own component to the vocabulary |
+| `sendAutomaticallyWhen` | `/` | Continue the run once the frontend tool has resolved |
+| `Tools({ toolkit })` | `/tool-ui` | Register a React renderer for a specific tool call |
+| `addResult` | Date Picker, Contact Form | Send user input back to the AI as the tool result |
+| `status.type` | Chart, Location | Show loading states while the AI streams tool arguments |
+
+## Source
+
+<SourceLink href="https://github.com/assistant-ui/assistant-ui/tree/main/examples/with-generative-ui" />

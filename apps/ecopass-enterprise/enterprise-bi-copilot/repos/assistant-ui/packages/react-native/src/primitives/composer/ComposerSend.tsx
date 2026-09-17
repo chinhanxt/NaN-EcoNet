@@ -1,0 +1,25 @@
+import { Pressable, type PressableProps } from "react-native";
+import { useComposerSend } from "@assistant-ui/core/react";
+
+export type ComposerSendProps = Omit<PressableProps, "onPress" | "children"> & {
+  children: PressableProps["children"];
+};
+
+export const ComposerSend = ({
+  children,
+  disabled,
+  ...pressableProps
+}: ComposerSendProps) => {
+  const { send, disabled: hookDisabled } = useComposerSend();
+
+  return (
+    <Pressable
+      onPress={() => send()}
+      disabled={disabled ?? hookDisabled}
+      accessibilityRole="button"
+      {...pressableProps}
+    >
+      {children}
+    </Pressable>
+  );
+};

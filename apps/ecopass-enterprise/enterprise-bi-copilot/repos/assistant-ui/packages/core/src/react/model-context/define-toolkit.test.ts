@@ -1,0 +1,215 @@
+import { describe, it, expect, expectTypeOf } from "vitest";
+import type { AsyncIterableStream } from "assistant-stream/utils";
+import { defineMcpToolkit } from "./define-mcp-toolkit";
+import { defineToolkit } from "./define-toolkit";
+import { hitl, hitlTool, humanTool } from "./human-tool";
+import { providerTool } from "./provider-tool";
+import { stubTool } from "./stub-tool";
+import { externalTool } from "./external-tool";
+import type { ToolkitDefinition } from "./toolbox";
+
+type TestStandardSchema<T> = {
+  readonly "~standard": {
+    readonly version: 1;
+    readonly vendor: "test";
+    readonly types?: {
+      readonly input: T;
+      readonly output: T;
+    };
+    readonly validate: (value: unknown) => { readonly value: T };
+  };
+};
+
+const checkDefineToolkitTypes = () => {
+  defineToolkit({
+    search: {
+      parameters: {} as TestStandardSchema<{
+        query: string;
+        limit?: number;
+        tags: string[];
+      }>,
+      execute: async ({
+        query,
+        limit,
+      }: {
+        query: string;
+        limit?: number;
+        tags: string[];
+      }) => ({
+        ids: [query],
+        count: limit ?? 0,
+      }),
+      streamCall: async (reader) => {
+        const query = await reader.args.get("query");
+        expectTypeOf(query).toEqualTypeOf<string>();
+
+        expectTypeOf(reader.args.streamValues("query")).toEqualTypeOf<
+          AsyncIterableStream<string>
+        >();
+        expectTypeOf(reader.args.streamText("query")).toEqualTypeOf<
+          AsyncIterableStream<unknown>
+        >();
+        expectTypeOf(reader.args.forEach("tags")).toEqualTypeOf<
+          AsyncIterableStream<string>
+        >();
+
+        const response = await reader.response.get();
+        expectTypeOf(response.result).toEqualTypeOf<unknown>();
+
+        // @ts-expect-error unknown argument paths should not be accepted
+        reader.args.get("missing");
+      },
+    },
+  });
+};
+expectTypeOf(checkDefineToolkitTypes).toEqualTypeOf<() => void>();
+
+const checkToolkitDefinitionTypes = () => {
+  ({
+    invalidMcp: {
+      // @ts-expect-error MCP-shaped tools cannot also declare an execute callback
+      server: { type: "http", url: "https://example.com/mcp" },
+      execute: async () => "invalid",
+    },
+  }) satisfies ToolkitDefinition;
+};
+expectTypeOf(checkToolkitDefinitionTypes).toEqualTypeOf<() => void>();
+
+const checkDefineMcpToolkitTypes = () => {
+  defineMcpToolkit({
+    docs: {
+      type: "http",
+      url: "https://example.com/mcp",
+    },
+    prefixedDocs: {
+      server: {
+        type: "http",
+        url: "https://example.com/prefixed-mcp",
+      },
+      disabled: true,
+      prefix: "docs_",
+    },
+    gatedDocs: {
+      server: {
+        type: "http",
+        url: "https://example.com/gated-mcp",
+      },
+      disabled: true,
+      tools: {
+        privateSearch: {
+          disabled: true,
+        },
+      },
+    },
+  });
+};
+expectTypeOf(checkDefineMcpToolkitTypes).toEqualTypeOf<() => void>();
+
+describe("use-generative markers", () => {
+  it("defineToolkit returns the toolkit at runtime", () => {
+    const toolkit = {};
+    expect(defineToolkit(toolkit)).toBe(toolkit);
+  });
+
+  it("defineMcpToolkit supports prefixed and disabled MCP entries", () => {
+    expect(
+      defineMcpToolkit({
+        docs: {
+          server: { type: "http", url: "https://example.com/mcp" },
+          disabled: true,
+          prefix: "docs_",
+        },
+      }),
+    ).toEqual({
+      docs: {
+        type: "mcp",
+        server: { type: "http", url: "https://example.com/mcp" },
+        disabled: true,
+        prefix: "docs_",
+      },
+    });
+  });
+
+  it("defineMcpToolkit supports disabled server entries", () => {
+    expect(
+      defineMcpToolkit({
+        docs: {
+          type: "http",
+          url: "https://example.com/mcp",
+        },
+        gatedDocs: {
+          server: {
+            type: "http",
+            url: "https://example.com/gated-mcp",
+          },
+          disabled: true,
+          tools: {
+            privateSearch: {
+              disabled: true,
+            },
+          },
+        },
+      }),
+    ).toEqual({
+      docs: {
+        type: "mcp",
+        server: {
+          type: "http",
+          url: "https://example.com/mcp",
+        },
+      },
+      gatedDocs: {
+        type: "mcp",
+        server: {
+          type: "http",
+          url: "https://example.com/gated-mcp",
+        },
+        disabled: true,
+        tools: {
+          privateSearch: {
+            disabled: true,
+          },
+        },
+      },
+    });
+  });
+
+  it("defineMcpToolkit supports raw MCP server configs", () => {
+    expect(
+      defineMcpToolkit({
+        docs: { type: "http", url: "https://example.com/mcp" },
+      }),
+    ).toEqual({
+      docs: {
+        type: "mcp",
+        server: { type: "http", url: "https://example.com/mcp" },
+      },
+    });
+  });
+
+  it("humanTool throws at runtime — it must be stripped by the compiler, never called", () => {
+    expect(() => humanTool()).toThrow(/no runtime implementation/);
+  });
+
+  it("hitlTool and hitl remain compatibility aliases", () => {
+    expect(hitlTool).toBe(humanTool);
+    expect(hitl).toBe(humanTool);
+  });
+
+  it("providerTool throws at runtime — it must be stripped by the compiler, never called", () => {
+    expect(() =>
+      providerTool({
+        providerId: "openai.web_search_preview",
+        args: {},
+      }),
+    ).toThrow(/no runtime implementation/);
+  });
+
+  it("stubTool throws at runtime — it must be stripped by the compiler, never called", () => {
+    expect(() => stubTool()).toThrow(/no runtime implementation/);
+  });
+
+  it("externalTool throws at runtime — it must be stripped by the compiler, never called", () => {
+    expect(() => externalTool()).toThrow(/no runtime implementation/);
+  });
+});

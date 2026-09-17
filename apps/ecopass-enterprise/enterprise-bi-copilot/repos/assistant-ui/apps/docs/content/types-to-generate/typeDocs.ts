@@ -1,0 +1,46 @@
+import type {
+  AssistantRuntimeProvider as AssistantRuntimeProviderComponent,
+  MessagePartState,
+} from "@assistant-ui/react";
+import type { ComponentPropsWithRef } from "react";
+
+export type AssistantRuntimeProvider = ComponentPropsWithRef<
+  typeof AssistantRuntimeProviderComponent
+>;
+
+export type {
+  AssistantRuntime,
+  ThreadListRuntime,
+  ThreadListState,
+  ThreadListItemRuntime,
+  ThreadListItemState,
+  ThreadRuntime,
+  ThreadState,
+  MessageRuntime,
+  MessageState,
+  MessagePartRuntime,
+  ComposerRuntime,
+  ThreadComposerRuntime,
+  EditComposerRuntime,
+  ComposerState,
+  AttachmentRuntime,
+  AttachmentState,
+  ThreadComposerState,
+} from "@assistant-ui/react";
+
+export type TextMessagePartState = MessagePartState & { readonly type: "text" };
+export type AudioMessagePartState = MessagePartState & {
+  readonly type: "audio";
+};
+export type ImageMessagePartState = MessagePartState & {
+  readonly type: "image";
+};
+export type SourceMessagePartState = MessagePartState & {
+  readonly type: "source";
+};
+export type FileMessagePartState = MessagePartState & {
+  readonly type: "file";
+};
+export type ToolCallMessagePartState = MessagePartState & {
+  readonly type: "tool-call";
+};

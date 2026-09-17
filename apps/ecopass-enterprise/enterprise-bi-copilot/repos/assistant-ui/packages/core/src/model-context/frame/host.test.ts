@@ -1,0 +1,499 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { AssistantFrameHost } from "./host";
+import { type FrameMessage, FRAME_MESSAGE_CHANNEL } from "./types";
+
+const executionContext = {
+  toolCallId: "tool-call",
+  abortSignal: new AbortController().signal,
+  human: async () => undefined,
+};
+
+const DEFAULT_ORIGIN = "https://host.example";
+
+const createHost = (targetOrigin?: string) => {
+  let handleMessage: ((event: MessageEvent) => void) | undefined;
+  const addEventListener = vi.fn(
+    (_type: string, listener: EventListenerOrEventListenerObject) => {
+      handleMessage = listener as (event: MessageEvent) => void;
+    },
+  );
+  const removeEventListener = vi.fn();
+  vi.stubGlobal("window", {
+    addEventListener,
+    removeEventListener,
+    location: { origin: DEFAULT_ORIGIN },
+  });
+
+  const postMessage = vi.fn();
+  const iframeWindow = { postMessage } as unknown as Window;
+  const host = new AssistantFrameHost(iframeWindow, targetOrigin);
+
+  const dispatchMessage = (
+    message: unknown,
+    origin = targetOrigin ?? DEFAULT_ORIGIN,
+  ) =>
+    handleMessage?.({
+      source: iframeWindow,
+      origin,
+      data: {
+        channel: FRAME_MESSAGE_CHANNEL,
+        message,
+      },
+    } as unknown as MessageEvent);
+
+  dispatchMessage({
+    type: "model-context-update",
+    context: {
+      tools: {
+        search: {
+          type: "frontend",
+          parameters: { type: "object", properties: {} },
+        },
+      },
+    },
+  });
+
+  const execute = host.getModelContext().tools?.search?.execute;
+  if (!execute) throw new Error("Expected the search tool to be available");
+
+  const getToolCallId = () => {
+    const call = postMessage.mock.calls.find(
+      ([data]) => data.message.type === "tool-call",
+    );
+    if (!call) throw new Error("Expected a tool call to be posted");
+    return call[0].message.id as string;
+  };
+
+  return { dispatchMessage, execute, getToolCallId, host, postMessage };
+};
+
+beforeEach(() => {
+  vi.useFakeTimers();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
+
+describe("AssistantFrameHost", () => {
+  it("does not install its message listener when initialization fails", () => {
+    const addEventListener = vi.fn();
+    const removeEventListener = vi.fn();
+    vi.stubGlobal("window", {
+      addEventListener,
+      removeEventListener,
+      location: { origin: DEFAULT_ORIGIN },
+    });
+    const error = new Error("postMessage failed");
+    const iframeWindow = {
+      postMessage: vi.fn(() => {
+        throw error;
+      }),
+    } as unknown as Window;
+
+    expect(() => new AssistantFrameHost(iframeWindow)).toThrow(error);
+
+    expect(addEventListener).not.toHaveBeenCalled();
+    expect(removeEventListener).not.toHaveBeenCalled();
+  });
+
+  it("defaults to the current origin", () => {
+    const { host, postMessage } = createHost();
+
+    expect(postMessage).toHaveBeenCalledWith(expect.anything(), DEFAULT_ORIGIN);
+
+    host.dispose();
+  });
+
+  it("ignores context updates from another origin", () => {
+    const { dispatchMessage, host } = createHost();
+
+    dispatchMessage(
+      {
+        type: "model-context-update",
+        context: { system: "untrusted instructions" },
+      },
+      "https://untrusted.example",
+    );
+
+    expect(host.getModelContext().system).toBeUndefined();
+    host.dispose();
+  });
+
+  it.each([
+    null,
+    { type: "model-context-update" },
+    { type: "model-context-update", context: null },
+    {
+      type: "model-context-update",
+      context: { tools: { search: null } },
+    },
+    {
+      type: "model-context-update",
+      context: { tools: { search: {} } },
+    },
+  ])("ignores malformed frame messages", (message) => {
+    const { dispatchMessage, host } = createHost();
+    const context = host.getModelContext();
+
+    expect(() => dispatchMessage(message)).not.toThrow();
+
+    expect(host.getModelContext()).toBe(context);
+    host.dispose();
+  });
+
+  it("resolves tool results without a value", async () => {
+    const { dispatchMessage, execute, getToolCallId, host } = createHost();
+    const result = Promise.resolve(execute({}, executionContext));
+    const id = getToolCallId();
+
+    dispatchMessage({ type: "tool-result", id });
+
+    await expect(result).resolves.toBeUndefined();
+    host.dispose();
+  });
+
+  it("ignores tool results with an invalid error", async () => {
+    const { dispatchMessage, execute, getToolCallId, host } = createHost();
+    const result = Promise.resolve(execute({}, executionContext));
+    const settled = vi.fn();
+    void result.then(settled, settled);
+    const id = getToolCallId();
+
+    dispatchMessage({ type: "tool-result", id, error: 42 });
+    await Promise.resolve();
+
+    expect(settled).not.toHaveBeenCalled();
+
+    dispatchMessage({ type: "tool-result", id, result: "complete" });
+    await expect(result).resolves.toBe("complete");
+    host.dispose();
+  });
+
+  it("allows an explicit wildcard origin", () => {
+    const { dispatchMessage, host, postMessage } = createHost("*");
+
+    dispatchMessage(
+      {
+        type: "model-context-update",
+        context: { system: "cross-origin instructions" },
+      },
+      "https://iframe.example",
+    );
+
+    expect(postMessage).toHaveBeenCalledWith(expect.anything(), "*");
+    expect(host.getModelContext().system).toBe("cross-origin instructions");
+    host.dispose();
+  });
+
+  it("resolves tool calls from frame results", async () => {
+    const { dispatchMessage, execute, getToolCallId, host } = createHost();
+    const result = Promise.resolve(
+      execute({ query: "weather" }, executionContext),
+    );
+
+    dispatchMessage({
+      type: "tool-result",
+      id: getToolCallId(),
+      result: "sunny",
+    });
+
+    await expect(result).resolves.toBe("sunny");
+    expect(vi.getTimerCount()).toBe(0);
+    host.dispose();
+  });
+
+  it("cleans up tool calls when posting the request fails", async () => {
+    const { execute, host, postMessage } = createHost();
+    const error = new Error("postMessage failed");
+    const abortController = new AbortController();
+    const removeEventListener = vi.spyOn(
+      abortController.signal,
+      "removeEventListener",
+    );
+    postMessage.mockImplementation((data) => {
+      if (data.message.type === "tool-call") throw error;
+    });
+
+    await expect(
+      execute({}, { ...executionContext, abortSignal: abortController.signal }),
+    ).rejects.toBe(error);
+
+    expect(vi.getTimerCount()).toBe(0);
+    expect(removeEventListener).toHaveBeenCalledWith(
+      "abort",
+      expect.any(Function),
+    );
+    host.dispose();
+  });
+
+  it("rejects tool results that carry an empty error message", async () => {
+    const { dispatchMessage, execute, getToolCallId, host } = createHost();
+    const result = Promise.resolve(
+      execute({ query: "weather" }, executionContext),
+    );
+
+    dispatchMessage({
+      type: "tool-result",
+      id: getToolCallId(),
+      error: "",
+    });
+
+    await expect(result).rejects.toThrow();
+    expect(vi.getTimerCount()).toBe(0);
+    host.dispose();
+  });
+
+  it("resolves results from guests that serialize an absent error as null", async () => {
+    const { dispatchMessage, execute, getToolCallId, host } = createHost();
+    const result = Promise.resolve(
+      execute({ query: "weather" }, executionContext),
+    );
+
+    dispatchMessage({
+      type: "tool-result",
+      id: getToolCallId(),
+      result: "sunny",
+      error: null,
+    } as unknown as FrameMessage);
+
+    await expect(result).resolves.toBe("sunny");
+    expect(vi.getTimerCount()).toBe(0);
+    host.dispose();
+  });
+
+  it("rejects pending tool calls when disposed", async () => {
+    const { execute, getToolCallId, host, postMessage } = createHost();
+    const result = Promise.resolve(execute({}, executionContext));
+    const toolCallId = getToolCallId();
+
+    host.dispose();
+
+    await expect(result).rejects.toThrow(
+      "AssistantFrameHost has been disposed",
+    );
+    expect(postMessage).toHaveBeenLastCalledWith(
+      {
+        channel: FRAME_MESSAGE_CHANNEL,
+        message: { type: "tool-cancel", id: toolCallId },
+      },
+      DEFAULT_ORIGIN,
+    );
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("settles every pending tool call when cancellation posting fails", async () => {
+    const { execute, host, postMessage } = createHost();
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const firstAbortController = new AbortController();
+    const secondAbortController = new AbortController();
+    const firstRemoveEventListener = vi.spyOn(
+      firstAbortController.signal,
+      "removeEventListener",
+    );
+    const secondRemoveEventListener = vi.spyOn(
+      secondAbortController.signal,
+      "removeEventListener",
+    );
+    const firstRejected = vi.fn();
+    const secondRejected = vi.fn();
+
+    void execute(
+      {},
+      { ...executionContext, abortSignal: firstAbortController.signal },
+    ).catch(firstRejected);
+    void execute(
+      {},
+      { ...executionContext, abortSignal: secondAbortController.signal },
+    ).catch(secondRejected);
+
+    const firstTransportError = new Error("first tool cancellation failed");
+    const secondTransportError = new Error("second tool cancellation failed");
+    let cancellationCount = 0;
+    postMessage.mockImplementation((data) => {
+      if (data.message.type !== "tool-cancel") return;
+      cancellationCount += 1;
+      throw cancellationCount === 1
+        ? firstTransportError
+        : secondTransportError;
+    });
+
+    expect(() => host.dispose()).toThrow(firstTransportError);
+    await Promise.resolve();
+
+    expect(firstRejected).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "AssistantFrameHost has been disposed",
+      }),
+    );
+    expect(secondRejected).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "AssistantFrameHost has been disposed",
+      }),
+    );
+    expect(
+      postMessage.mock.calls.filter(
+        ([data]) => data.message.type === "tool-cancel",
+      ),
+    ).toHaveLength(2);
+    expect(firstRemoveEventListener).toHaveBeenCalledWith(
+      "abort",
+      expect.any(Function),
+    );
+    expect(secondRemoveEventListener).toHaveBeenCalledWith(
+      "abort",
+      expect.any(Function),
+    );
+    expect(vi.getTimerCount()).toBe(0);
+    expect(consoleError).toHaveBeenCalledWith(
+      "[assistant-ui] AssistantFrameHost tool cancellation could not be sent.",
+      secondTransportError,
+    );
+    expect(() => host.dispose()).not.toThrow();
+  });
+
+  it("rejects pending tool calls when execution is aborted", async () => {
+    const { execute, getToolCallId, host, postMessage } = createHost();
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const abortController = new AbortController();
+    const abortError = new Error("Run cancelled");
+    abortError.name = "AbortError";
+    const result = Promise.resolve(
+      execute(
+        {},
+        {
+          ...executionContext,
+          abortSignal: abortController.signal,
+        },
+      ),
+    );
+    const onRejected = vi.fn();
+    void result.catch(onRejected);
+    const toolCallId = getToolCallId();
+    postMessage.mockImplementation((data) => {
+      if (data.message.type === "tool-cancel") {
+        throw new Error("tool cancellation failed");
+      }
+    });
+
+    expect(() => abortController.abort(abortError)).not.toThrow();
+    await Promise.resolve();
+
+    expect(onRejected).toHaveBeenCalledWith(abortError);
+    expect(postMessage).toHaveBeenLastCalledWith(
+      {
+        channel: FRAME_MESSAGE_CHANNEL,
+        message: { type: "tool-cancel", id: toolCallId },
+      },
+      DEFAULT_ORIGIN,
+    );
+    expect(consoleError).toHaveBeenCalledOnce();
+    expect(vi.getTimerCount()).toBe(0);
+    host.dispose();
+  });
+
+  it("cancels tool calls when they time out", async () => {
+    const { execute, getToolCallId, host, postMessage } = createHost();
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const result = Promise.resolve(execute({}, executionContext));
+    const toolCallId = getToolCallId();
+    const rejection = expect(result).rejects.toThrow(
+      'Tool call "search" timed out',
+    );
+    postMessage.mockImplementation((data) => {
+      if (data.message.type === "tool-cancel") {
+        throw new Error("tool cancellation failed");
+      }
+    });
+
+    await vi.advanceTimersByTimeAsync(30000);
+
+    await rejection;
+    expect(postMessage).toHaveBeenLastCalledWith(
+      {
+        channel: FRAME_MESSAGE_CHANNEL,
+        message: { type: "tool-cancel", id: toolCallId },
+      },
+      DEFAULT_ORIGIN,
+    );
+    expect(consoleError).toHaveBeenCalledOnce();
+    expect(vi.getTimerCount()).toBe(0);
+    host.dispose();
+  });
+
+  it("uses unique tool IDs across host instances", () => {
+    const first = createHost();
+    const second = createHost();
+
+    void first.execute({}, executionContext).catch(() => undefined);
+    void second.execute({}, executionContext).catch(() => undefined);
+
+    expect(first.getToolCallId()).not.toBe(second.getToolCallId());
+
+    first.host.dispose();
+    second.host.dispose();
+  });
+
+  it("does not post tool calls when execution is already aborted", async () => {
+    const { execute, host, postMessage } = createHost();
+    const abortController = new AbortController();
+    const abortError = new Error("Run cancelled");
+    abortError.name = "AbortError";
+    abortController.abort(abortError);
+
+    await expect(
+      execute(
+        {},
+        {
+          ...executionContext,
+          abortSignal: abortController.signal,
+        },
+      ),
+    ).rejects.toBe(abortError);
+
+    expect(postMessage).toHaveBeenCalledOnce();
+    expect(vi.getTimerCount()).toBe(0);
+    host.dispose();
+  });
+
+  it("rejects tool calls made after disposal without posting a request", async () => {
+    const { execute, host, postMessage } = createHost();
+    host.dispose();
+
+    await expect(execute({}, executionContext)).rejects.toThrow(
+      "AssistantFrameHost has been disposed",
+    );
+    expect(postMessage).toHaveBeenCalledOnce();
+  });
+
+  it("isolates subscriber errors while applying context updates", () => {
+    const { dispatchMessage, host } = createHost();
+    const error = new Error("subscriber failed");
+    const laterSubscriber = vi.fn();
+
+    host.subscribe(() => {
+      throw error;
+    });
+    host.subscribe(laterSubscriber);
+
+    expect(() =>
+      dispatchMessage({
+        type: "model-context-update",
+        context: { system: "frame instructions" },
+      }),
+    ).toThrow(error);
+
+    expect(host.getModelContext().system).toBe("frame instructions");
+    expect(laterSubscriber).toHaveBeenCalledOnce();
+
+    host.dispose();
+  });
+});

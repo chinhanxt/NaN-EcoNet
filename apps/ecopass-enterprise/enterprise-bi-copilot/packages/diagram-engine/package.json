@@ -1,0 +1,16 @@
+{
+  "name": "@enterprise/diagram-engine",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Enterprise BI Diagram & Visual Infographic Engine powered by Antigravity CLI and Multi-Account Rotation",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/test/**/*.test.js"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "typescript": "^5.4.5"
+  }
+}

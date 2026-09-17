@@ -1,0 +1,83 @@
+import {
+  ArrayMinSize,
+  IsBoolean,
+  IsDefined,
+  IsIn,
+  IsString,
+  IsUrl,
+  Matches,
+  MinLength,
+  ValidateIf,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import { JSONSchema } from 'class-validator-jsonschema';
+
+export class RedditFlairDto {
+  @IsString()
+  @IsDefined()
+  id: string;
+
+  @IsString()
+  @IsDefined()
+  name: string;
+}
+
+export class RedditSettingsDtoInner {
+  @IsString()
+  @MinLength(2)
+  @IsDefined()
+  @JSONSchema({
+    description: 'Subreddit must start with /r',
+  })
+  subreddit: string;
+
+  @IsString()
+  @MinLength(2)
+  @IsDefined()
+  title: string;
+
+  @IsString()
+  @IsIn(['self', 'link', 'media'])
+  @IsDefined()
+  @JSONSchema({
+    description:
+      "Must be one of self (text post), link (requires url), media (uploads the post's first attached image or mp4 video)",
+  })
+  type: string;
+
+  @IsUrl()
+  @IsDefined()
+  @ValidateIf((o) => o.type === 'link' && o?.url?.indexOf('(post:') === -1)
+  @Matches(
+    /^(|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/,
+    {
+      message: 'Invalid URL',
+    }
+  )
+  url: string;
+
+  @IsBoolean()
+  @IsDefined()
+  is_flair_required: boolean;
+
+  @ValidateIf((e) => e.is_flair_required)
+  @IsDefined()
+  @ValidateNested()
+  @Type(() => RedditFlairDto)
+  flair: RedditFlairDto;
+}
+
+export class RedditSettingsValueDto {
+  @Type(() => RedditSettingsDtoInner)
+  @IsDefined()
+  @ValidateNested()
+  value: RedditSettingsDtoInner;
+}
+
+export class RedditSettingsDto {
+  @Type(() => RedditSettingsValueDto)
+  @ValidateNested({ each: true })
+  @ArrayMinSize(1)
+  subreddit: RedditSettingsValueDto[];
+}

@@ -1,0 +1,166 @@
+{
+  "404": {
+    "error404": "Chyba 404.",
+    "pagedoesnotexist": "Tato stránka neexistuje.",
+    "message": "Můžete navštívit naši {statuspage} nebo nás zkontrolovat na {mastodon} a zjistit, zda nejsou nějaké aktuální problémy.",
+    "statuspage": "stavová stránka"
+  },
+  "Nav": {
+    "title": "Je to veganské? – Veganify",
+    "description": "Nejste si jistí, zda je výrobek veganský, nebo ne? S Veganify můžete při nákupu naskenovat čárový kód zboží a zkontrolovat zda je veganské, nebo ne a to bez spousty dalších zbytečných informací! Vyzkoušejte to hned teď!",
+    "home": "Domů",
+    "ingredientcheck": "Kontrola složení",
+    "more": "Více",
+    "navigation": "Hlavní navigace"
+  },
+  "Footer": {
+    "credit": "Vytvořeno s <heart>♥</heart> od <philipLink>Philipa Brembecka</philipLink> a <jokeLink>FrontEndNet.work</jokeLink>",
+    "sponsor": "Sponzorováno UptimeRobot",
+    "opensource": "Open Source",
+    "carbonneutral": "Uhlikově neutrální"
+  },
+  "Check": {
+    "enterbarcode": "Vložte čárový kód",
+    "submit": "Odeslat",
+    "vegan": "Veganské",
+    "vegetarian": "Vegetariánské",
+    "palmoil": "Palmový olej",
+    "palmoil_desc": "Palmový olej má mimořádně škodlivý dopad na planetu. Je hlavní příčinou odlesňování některých biologicky nejrozmanitějších lesů a ničí přirozené prostředí již ohrožených živočichů. Z tohoto důvodu bychom doporučovali nekupovat žádné výrobky, které obsahují palmový olej. Bohužel je na trhu stále mnoho výrobků, které palmový olej obsahují.",
+    "crueltyfree": "Cruelty-Free",
+    "nutriscore_desc": "NutriScore ukazuje nutriční profil produktu formou semaforu. NutriScore se však nepovažuje za přesný a neměl by být používán jako reference. Více informací o NutriScore najdeš na <algorithmwatch>Algorithmwatch</algorithmwatch> (anglicky).",
+    "grades_desc": "Matou tě všechny veganské/eko/bio značky? Se snadno srozumitelnými známkami Veganify už ne! Veganify Grades je hodnotící systém pro veganské produkty, který přiděluje produktu jednu ze šesti známek (A+ – Nezpůsobilé). Pokud se o známkách Veganify chceš dozvědět více nebo si přát ohodnocení produktu, můžeš tak učinit na <grades>Veganify Grades</grades>.",
+    "source": "Zdroj dat",
+    "licenses": "Licence",
+    "licenses_desc": "Veganify používá ke shromažďování informací o výrobku různé databáze a rozhraní API. Informace jsou licencovány pod následujícími licencemi:",
+    "notindb": "Tento produkt zatím není v naší databázi.",
+    "notindb_add": "Chcete jej přidat?",
+    "add_food": "Přidat potraviny",
+    "or": "nebo",
+    "add_cosmetic": "přidat kosmetiku",
+    "wrongbarcode": "Tento čárový kód je neplatný.",
+    "timeout1": "Trvá to déle než obvykle",
+    "timeout2": "Žádost trvala příliš dlouho. Zkuste to prosím znovu.",
+    "unknown_error": "Došlo k neočekávané chybě. Zkuste to prosím znovu.",
+    "share": "Sdílet",
+    "sharemessage": "{name}, ověřeno pomocí Veganify",
+    "copy": "Kopírovat",
+    "on": "na",
+    "notvegan": "Není veganské",
+    "yes": "Ano",
+    "no": "Ne",
+    "unknown": "Neznámé",
+    "grades": "Známka Veganify",
+    "searching": "Vyhledávání…",
+    "barcodeexample": "např. 4000417025005",
+    "barcodehint": "Zadejte čárový kód nebo jej naskenujte kamerou.",
+    "clearbarcode": "Vymazat čárový kód",
+    "wrongbarcode_desc": "Čárové kódy mají 8–13 číslic. Zkontroluj čísla pod čárovým kódem a zkus to znovu.",
+    "checkconnection": "Zkontroluj připojení a zkus to znovu.",
+    "copied": "Zkopírováno!",
+    "viamessage": "zprávou",
+    "viaemail": "e-mailem",
+    "whatis": "Co je {title}?",
+    "isitvegan": "Je to veganské?",
+    "tryexample": "Vyzkoušet ukázkové skenování",
+    "recent": "Nedávno kontrolované",
+    "clearrecent": "Vymazat",
+    "tagline": "Naskenujte produkt a zjistěte, zda je veganský.",
+    "howitworks": "Jak to funguje",
+    "step1t": "Skenujte nebo zadejte",
+    "step1d": "Namiřte kamerou na čárový kód nebo zadejte číslice.",
+    "step2t": "Zobrazit verdikt",
+    "step2d": "Veganské, vegetariánské a palmový olej jedním pohledem.",
+    "step3t": "Zkontrolovat detaily",
+    "step3d": "Včetně NutriScore, stavu bez testů na zvířatech a známky Veganify."
+  },
+  "More": {
+    "buyusacoffee": "Kupte nám kafe",
+    "followus": "Sledujte nás",
+    "tos": "Podmínky služby",
+    "privacypolicy": "Zásady ochrany osobních údajů",
+    "apidocumentation": "API Dokumentace",
+    "imprint": "Údaje o provozovateli",
+    "onceviapaypal": "Jednou přes PayPal",
+    "onceviakofi": "Jednou přes Ko-Fi",
+    "monthlyviagithub": "Měsíčně přes GitHub",
+    "month": "měsíc",
+    "redirect": "Budete přesměrováni na",
+    "thissetsacookie": "Toto nastavuje cookie.",
+    "activatedarkmode": "Nejprve zaktivujte tmavý režim na vašem zařízení!",
+    "language": "Jazyk",
+    "english": "Angličtina",
+    "german": "Němčina",
+    "spanish": "Španělština",
+    "french": "Francouzština",
+    "polish": "Polština",
+    "cursed": "Prokletý",
+    "memeculture": "Oslava meme-kultury",
+    "czech": "Česky",
+    "portuguese-br": "Brazilská portugalština",
+    "currentlanguage": "(aktuální)"
+  },
+  "TOS": {
+    "englishgermanonly": "Tato stránka je k dispozici pouze v angličtině a němčině.",
+    "tos": "Podmínky služby",
+    "tos_content": "<p><b>Use of \"Veganify\"</b></p><p>The use of the site \"Veganify.app\" is free of charge. The distribution of the contents or our services against payment is strictly prohibited. Automated queries are also prohibited and may only be performed using the <a href=\"https://jokenetwork.de/veganify-api\">API</a>.<br> We reserve the right to change, reduce, expand or disable our services at any time.</p><p><b>Processing of entered texts and numbers</b></p><p>On our website, barcodes or ingredients of a product can be entered in text fields. This is necessary to provide our service in its entirety. The data entry is completely voluntary.<br>Only barcodes or ingredients may be entered in the named text fields; the entry or transmission of personal data of any kind is strictly prohibited.</p><p>Personal data is any information that relates to an identified or identifiable living individual. Different pieces of information, which collected together can lead to the identification of a particular person, also constitute personal data.<sup><a href=\"https://ec.europa.eu/info/law/law-topic/data-protection/reform/what-personal-data_en\">?</a></sup></p><p><b>Disclaimer</b></p><p>We assume no liability for the accuracy of the product information and ingredient lists offered and for the availability of our service.</p>"
+  },
+  "Privacy": {
+    "germanonly": "Tato stránka je k dispozici pouze v němčině."
+  },
+  "Fallback": {
+    "yourareoffline": "Jste offline.",
+    "needinternet": "K používání Veganify potřebujete aktivní připojení k internetu.",
+    "tryagain": "Zkuste to znovu"
+  },
+  "InstallPrompt": {
+    "subheading": "Je to veganské? - Veganify",
+    "install": "Nainstalovat Veganify",
+    "get": "Získat",
+    "howtoinstall": "Klepni na <share>Sdílet</share> a pak na „Přidat na domovskou obrazovku\".",
+    "dismiss": "Zavřít"
+  },
+  "ShortcutPrompt": {
+    "Shortcuts": "Zkratky",
+    "openinapp": "Otevřít v aplikaci Zkratky",
+    "open": "Otevřít"
+  },
+  "PromptStack": {
+    "show": "Zobrazit"
+  },
+  "Ingredients": {
+    "ingredientcheck": "Kontrola složení",
+    "ingredientcheck_desc": "Zkontrolujte, zda jsou složky výrobku veganské! - Zadejte složky oddělené čárkou",
+    "entercommaseperated": "Zadejte složky oddělené čárkou",
+    "submit": "Odeslat",
+    "vegan": "Veganské",
+    "source": "Zdroj dat",
+    "cannotbeempty": "Zadejte alespoň jednu ingredienci. Více ingrediencí oddělte čárkami.",
+    "unknown_error": "Došlo k neočekávané chybě. Zkuste to prosím znovu.",
+    "licenses": "Licence",
+    "licenses_desc": "Veganify používá ke shromažďování informací o výrobku různé databáze a rozhraní API. Informace jsou licencovány pod následujícími licencemi:",
+    "languagewarning": "Tyto výsledky mohou být nesprávné kvůli chybám překladu nebo chybějícím informacím. Výsledky byly přeloženy pomocí <deepl>DeepL</deepl>.",
+    "maybe_vegan": "Tato složka může obsahovat živočišné produkty.",
+    "unknown_vegan": "O této složce nemáme žádné informace.",
+    "searching": "Kontroluji…",
+    "ingredientsexample": "Cukr, kakaové máslo, sójový lecitin…",
+    "scanlabel": "Naskenovat nebo nahrát seznam ingrediencí",
+    "scanning": "Rozpoznávání textu…",
+    "ocrerror": "Obrázek se nepodařilo přečíst. Zadejte je prosím ručně.",
+    "yes": "Ano",
+    "no": "Ne"
+  },
+  "Layout": {
+    "skiptomain": "Přeskočit na hlavní obsah",
+    "back": "Zpět"
+  },
+  "Dialog": {
+    "close": "Zavřít"
+  },
+  "Scanner": {
+    "open": "Naskenovat čárový kód kamerou",
+    "close": "Zavřít skener",
+    "switchcamera": "Přepnout kameru",
+    "hint": "Zaměř čárový kód do rámečku",
+    "cameraerror": "Kamera není k dispozici. Zkontroluj oprávnění prohlížeče nebo zadej čárový kód ručně."
+  }
+}

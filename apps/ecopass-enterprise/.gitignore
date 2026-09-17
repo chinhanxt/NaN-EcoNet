@@ -1,0 +1,74 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+
+# Testing & Coverage
+coverage/
+.nyc_output/
+.pytest_cache/
+
+# Build & Output directories
+dist/
+build/
+.next/
+out/
+.turbo/
+.cache/
+.parcel-cache/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+*.egg-info/
+*.egg
+
+# Logs & Runtime states
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pids
+*.pid
+*.seed
+gateway.pid
+gateway.log
+
+# Environment & Secrets (DO NOT COMMIT)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+!*.env.example
+!*.env.local.example
+
+# OS & IDE
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+*.swo
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# Caches & Temp
+storage/cache/
+storage/temp/
+storage/sandbox/
+tmp/
+scratch/

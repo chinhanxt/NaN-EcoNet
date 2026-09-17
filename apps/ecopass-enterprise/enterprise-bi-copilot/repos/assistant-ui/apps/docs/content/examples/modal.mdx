@@ -1,0 +1,75 @@
+---
+title: Floating Modal Chat
+description: Embeddable AI assistant in a floating button modal — drop into any React app for in-product copilots or support chat, built on assistant-ui.
+---
+
+## Overview
+
+The Modal example demonstrates how to create a floating action button that opens an AI assistant chat interface in a modal dialog. This pattern is ideal for applications where you want to provide AI assistance without disrupting the main user interface.
+
+## Features
+
+- **Floating Action Button**: A clean, accessible button fixed to the corner of the screen
+- **Modal Dialog**: Full-featured chat interface with proper focus management
+- **Thread List**: A toggle in the header lists earlier conversations, and the plus button starts another one
+- **Resizable Window**: Drag the top corner or use the arrow keys; the size is remembered in the browser, and a double click restores the default
+- **Smooth Animations**: Enter/exit transitions with zoom and slide effects
+- **Responsive Design**: Works across desktop and mobile devices
+- **Keyboard Navigation**: Escape key to close, proper tab order
+
+## Quick Start
+
+```bash
+npx assistant-ui add assistant-modal
+```
+
+## Code
+
+The registry component builds on `AssistantModalPrimitive`. A minimal version, without the header, the thread list and resizing, looks like this:
+
+```tsx
+import { AssistantModalPrimitive } from "@assistant-ui/react";
+import { Thread } from "@/components/assistant-ui/elements/thread.aui";
+import { BotIcon } from "lucide-react";
+
+export const AssistantModal = () => {
+  return (
+    <AssistantModalPrimitive.Root>
+      <AssistantModalPrimitive.Anchor className="fixed right-4 bottom-4 size-11">
+        <AssistantModalPrimitive.Trigger asChild>
+          <button className="flex size-full items-center justify-center rounded-full border border-border/60 bg-background text-foreground transition-[border-color,scale] duration-150 ease-out hover:border-border active:scale-96 motion-reduce:transition-none">
+            <BotIcon className="size-5" />
+          </button>
+        </AssistantModalPrimitive.Trigger>
+      </AssistantModalPrimitive.Anchor>
+
+      <AssistantModalPrimitive.Content
+        sideOffset={16}
+        className="h-[500px] w-[400px] origin-(--radix-popover-content-transform-origin) overflow-clip rounded-xl bg-popover shadow-[0_16px_48px_-24px_rgb(0_0_0/0.25)] ring-1 ring-foreground/10 ease-[cubic-bezier(0.32,0.72,0,1)] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=open]:slide-in-from-bottom-2 data-[state=open]:duration-300 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=closed]:slide-out-to-bottom-2 data-[state=closed]:duration-200 motion-reduce:animate-none"
+      >
+        <Thread />
+      </AssistantModalPrimitive.Content>
+    </AssistantModalPrimitive.Root>
+  );
+};
+```
+
+### Key Components
+
+| Component | Purpose |
+|-----------|---------|
+| `AssistantModalPrimitive.Root` | Container that manages open/close state |
+| `AssistantModalPrimitive.Anchor` | Positions the trigger button |
+| `AssistantModalPrimitive.Trigger` | Button that opens the modal |
+| `AssistantModalPrimitive.Content` | The modal dialog containing the chat |
+
+### Customization Tips
+
+- Adjust `sideOffset` to control the gap between button and modal
+- Modify `h-[500px] w-[400px]` to change modal dimensions
+- Use `data-[state=open/closed]` for animation states
+- Position the anchor with `fixed right-4 bottom-4` or any corner
+
+## Source
+
+<SourceLink href="https://github.com/assistant-ui/assistant-ui/blob/main/apps/docs/components/pages/docs/samples/assistant-modal.tsx" />

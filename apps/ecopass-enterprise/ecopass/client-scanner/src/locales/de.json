@@ -1,0 +1,166 @@
+{
+  "404": {
+    "error404": "Fehler 404.",
+    "pagedoesnotexist": "Diese Seite existiert nicht.",
+    "message": "Gehe zu unserer {statuspage} oder folge uns auf {mastodon} um zu sehen, ob es gerade ein Problem gibt.",
+    "statuspage": "Statusseite"
+  },
+  "Nav": {
+    "title": "Ist es Vegan? – Veganify",
+    "description": "Du bist dir unsicher, ob ein Produkt vegan ist oder nicht? Mit Veganify kannst du direkt beim Einkaufen den Barcode von einem Artikel scannen und überprüfen, ob es vegan ist oder nicht und das ohne viele andere unnötige Informationen! Probiere es jetzt aus!",
+    "home": "Home",
+    "ingredientcheck": "Zutatencheck",
+    "more": "Mehr",
+    "navigation": "Hauptnavigation"
+  },
+  "Footer": {
+    "credit": "Gemacht mit <heart>♥</heart> von <philipLink>Philip Brembeck</philipLink> & <jokeLink>FrontEndNet.work</jokeLink>",
+    "sponsor": "Gesponsert von UptimeRobot",
+    "opensource": "Open Source",
+    "carbonneutral": "Klimaneutral"
+  },
+  "Check": {
+    "enterbarcode": "Barcode eingeben",
+    "submit": "Absenden",
+    "vegan": "Vegan",
+    "vegetarian": "Vegetarisch",
+    "palmoil": "Palmöl",
+    "palmoil_desc": "Palmöl hat extrem schädliche Auswirkungen auf den Planeten. Es ist die Hauptursache für die Abholzung einiger der artenreichsten Wälder und zerstört die natürlichen Lebensräume von bereits gefährdeten Tieren. Aus diesem Grund empfehlen wir, keine Produkte zu kaufen, die Palmöl enthalten. Leider gibt es immer noch viele Produkte, die Palmöl enthalten.",
+    "crueltyfree": "Tierversuchsfrei",
+    "nutriscore_desc": "Der NutriScore gibt das Nährwertprofil eines Produkts in Ampelform an. Der NutriScore gilt jedoch als nicht akkurat und sollte nicht als Referenz verwendet werden. Weitere Informationen zum NutriScore findest du auf <algorithmwatch>Algorithmwatch</algorithmwatch> (Englisch).",
+    "grades_desc": "Bist du verwirrt von all den Vegan-/Öko-/Bio-Siegeln? Mit den leicht verständlichen Veganify-Noten bist du es nicht mehr! Veganify-Noten ist ein Bewertungssystem für vegane Produkte, das einem Produkt eine von sechs Noten (A+ – Nicht qualifiziert) zuweist. Wenn du mehr über Veganify-Noten erfahren oder eine Bewertung anfordern möchtest, kannst du das auf <grades>Veganify-Noten</grades> tun!",
+    "source": "Datenquelle",
+    "licenses": "Lizenzen",
+    "licenses_desc": "Veganify benutzt verschiedene Datenquellen, um Informationen über ein Produkt zu sammeln. Diese Informationen stehen unter den nachfolgenden Lizenzen:",
+    "notindb": "Dieses Produkt haben wir noch nicht in unserer Datenbank.",
+    "notindb_add": "Willst du es hinzufügen?",
+    "add_food": "Lebensmittel hinzufügen",
+    "or": "oder",
+    "add_cosmetic": "Kosmetika hinzufügen",
+    "wrongbarcode": "Mit diesem Barcode stimmt etwas nicht.",
+    "timeout1": "Die Abfrage dauert länger als gewöhnlich",
+    "timeout2": "Die Abfrage hat zu lange gedauert. Bitte versuche es erneut.",
+    "unknown_error": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.",
+    "share": "Teilen",
+    "sharemessage": "{name}, mit Veganify geprüft",
+    "copy": "Kopieren",
+    "on": "auf",
+    "notvegan": "Nicht vegan",
+    "yes": "Ja",
+    "no": "Nein",
+    "unknown": "Unbekannt",
+    "grades": "Veganify-Note",
+    "searching": "Suche läuft…",
+    "barcodeexample": "z. B. 4000417025005",
+    "barcodehint": "Gib den Barcode ein oder scanne ihn mit der Kamera.",
+    "clearbarcode": "Barcode löschen",
+    "wrongbarcode_desc": "Barcodes bestehen aus 8–13 Ziffern. Prüfe die Ziffern unter dem Strichcode und versuche es erneut.",
+    "checkconnection": "Prüfe deine Verbindung und versuche es erneut.",
+    "copied": "Kopiert!",
+    "viamessage": "per Nachricht",
+    "viaemail": "per E-Mail",
+    "whatis": "Was ist {title}?",
+    "isitvegan": "Ist es vegan?",
+    "tryexample": "Beispiel-Scan ausprobieren",
+    "recent": "Zuletzt geprüft",
+    "clearrecent": "Leeren",
+    "tagline": "Scanne ein Produkt und prüfe, ob es vegan ist.",
+    "howitworks": "So funktioniert's",
+    "step1t": "Scannen oder eingeben",
+    "step1d": "Richte die Kamera auf den Barcode oder gib die Ziffern ein.",
+    "step2t": "Das Urteil sehen",
+    "step2d": "Vegan, vegetarisch und Palmöl auf einen Blick.",
+    "step3t": "Details prüfen",
+    "step3d": "Mit NutriScore, Tierversuchs-Status und Veganify-Note."
+  },
+  "More": {
+    "buyusacoffee": "Kauf uns einen Kaffee",
+    "followus": "Folge uns",
+    "tos": "Nutzungsbedingungen",
+    "privacypolicy": "Datenschutzerklärung",
+    "apidocumentation": "API Dokumentation",
+    "imprint": "Impressum",
+    "onceviapaypal": "Einmalig via PayPal",
+    "onceviakofi": "Einmal via Ko-Fi",
+    "monthlyviagithub": "Monatlich via GitHub",
+    "month": "Monat",
+    "redirect": "Du wirst weitergeleitet zu",
+    "thissetsacookie": "Dies setzt einen Cookie.",
+    "activatedarkmode": "Aktiviere zuerst den Dark-Mode auf deinem Gerät!",
+    "language": "Sprache",
+    "english": "Englisch",
+    "german": "Deutsch",
+    "spanish": "Spanisch",
+    "french": "Französisch",
+    "polish": "Polnisch",
+    "cursed": "Überraschung",
+    "memeculture": "Hoch lebe die Meme-Kultur!",
+    "czech": "Tschechisch",
+    "portuguese-br": "Brasilianisches Portugiesisch",
+    "currentlanguage": "(aktuell)"
+  },
+  "TOS": {
+    "englishgermanonly": "Die Nutzungsbedingungen sind nur in Englisch und Deutsch verfügbar.",
+    "tos": "Nutzungsbedingungen",
+    "tos_content": "<p><b>Nutzung der Seite \"Veganify.app\"</b></p><p>Die Nutzung der Seite \"Veganify.app\" erfolgt kostenlos. Die entgeltliche Weitergabe der Inhalte oder unserer Services ist untersagt. Automatisierte Abfragen sind ebenfalls untersagt und dürfen nur mittels der <a href=\"https://frontendnet.work/veganify-api\">API</a> erfolgen.<br> Wir behalten uns vor, unsere Services jederzeit zu ändern, zu reduzieren, zu erweitern oder zu deaktivieren.</p><p><b>Verarbeitung eingegebener Texte und Nummern</b></p><p>Auf unserer Website können in Textfeldern Barcodes oder Zutaten eines Produktes eingegeben werden. Dies ist notwendig, um unseren Dienst im vollen Umfang zur Verfügung zu stellen. Die Eingabe erfolgt freiwillig.<br>In die benannten Textfelder dürfen nur Barcodes oder Zutaten eingegeben werden, die Eingabe oder Übermittlung von personenbezogenen Daten jeglicher Art ist untersagt.</p><p>Personenbezogene Daten sind alle Informationen, die sich auf eine identifizierte oder identifizierbare lebende Person beziehen. Verschiedene Teilinformationen, die gemeinsam zur Identifizierung einer bestimmten Person führen können, stellen ebenfalls personenbezogene Daten dar.<sup><a href=\"https://ec.europa.eu/info/law/law-topic/data-protection/reform/what-personal-data_de\">?</a></sup></p><p><b>Haftungsausschluss</b></p><p>Wir übernehmen keine Haftung für die Richtigkeit der angebotenen Produktinformationen und Zutatenlisten und für die Verfügbarkeit unseres Dienstes.</p>"
+  },
+  "Privacy": {
+    "germanonly": "Diese Seite ist nur auf Deutsch verfügbar."
+  },
+  "Fallback": {
+    "yourareoffline": "Du bist offline.",
+    "needinternet": "Veganify funktioniert nur mit einer aktiven Internet-Verbindung.",
+    "tryagain": "Erneut versuchen"
+  },
+  "InstallPrompt": {
+    "subheading": "Ist es Vegan? - Veganify",
+    "install": "Veganify installieren",
+    "get": "Laden",
+    "howtoinstall": "Tippe auf <share>Teilen</share> und dann „Zum Home-Bildschirm hinzufügen\".",
+    "dismiss": "Schließen"
+  },
+  "ShortcutPrompt": {
+    "Shortcuts": "Kurzbefehle",
+    "openinapp": "In der Kurzbefehle App öffnen",
+    "open": "Öffnen"
+  },
+  "PromptStack": {
+    "show": "Anzeigen"
+  },
+  "Ingredients": {
+    "ingredientcheck": "Zutatencheck",
+    "ingredientcheck_desc": "Prüfe, ob die Inhaltsstoffe eines Produkts vegan sind! - Zutaten kommagetrennt eingeben!",
+    "entercommaseperated": "Zutaten kommagetrennt eingeben",
+    "submit": "Absenden",
+    "vegan": "Vegan",
+    "source": "Datenquelle",
+    "cannotbeempty": "Gib mindestens eine Zutat ein. Trenne mehrere Zutaten mit Kommas.",
+    "unknown_error": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.",
+    "licenses": "Lizenzen",
+    "licenses_desc": "Veganify benutzt verschiedene Datenquellen, um Informationen über ein Produkt zu sammeln. Diese Informationen stehen unter den nachfolgenden Lizenzen:",
+    "languagewarning": "Diese Ergebnisse können aufgrund von Übersetzungsfehlern oder fehlenden Informationen falsch sein. Die Ergebnisse wurden mit <deepl>DeepL</deepl> übersetzt.",
+    "maybe_vegan": "Diese Zutat könnte tierische Produkte enthalten.",
+    "unknown_vegan": "Wir haben keine Informationen über diese Zutat.",
+    "searching": "Prüfe…",
+    "ingredientsexample": "Zucker, Kakaobutter, Sojalecithin…",
+    "scanlabel": "Zutatenliste scannen oder hochladen",
+    "scanning": "Text wird erkannt…",
+    "ocrerror": "Das Bild konnte nicht gelesen werden. Gib die Zutaten stattdessen ein.",
+    "yes": "Ja",
+    "no": "Nein"
+  },
+  "Layout": {
+    "skiptomain": "Zum Hauptinhalt springen",
+    "back": "Zurück"
+  },
+  "Dialog": {
+    "close": "Schließen"
+  },
+  "Scanner": {
+    "open": "Barcode mit Kamera scannen",
+    "close": "Scanner schließen",
+    "switchcamera": "Kamera wechseln",
+    "hint": "Richte den Barcode am Rahmen aus",
+    "cameraerror": "Kamera nicht verfügbar. Prüfe die Browser-Berechtigungen oder gib den Barcode stattdessen ein."
+  }
+}

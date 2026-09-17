@@ -1,0 +1,75 @@
+{
+  "name": "@assistant-ui/react-opencode",
+  "version": "0.2.24",
+  "description": "OpenCode runtime adapter for assistant-ui",
+  "keywords": [
+    "opencode",
+    "assistant-ui",
+    "react",
+    "ai",
+    "chat",
+    "agents"
+  ],
+  "author": "AgentbaseAI Inc.",
+  "license": "MIT",
+  "homepage": "https://www.assistant-ui.com/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/assistant-ui/assistant-ui.git",
+    "directory": "packages/react-opencode"
+  },
+  "bugs": {
+    "url": "https://github.com/assistant-ui/assistant-ui/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "aui-build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@assistant-ui/core": "^0.3.20",
+    "@assistant-ui/store": "^0.3.14",
+    "@opencode-ai/sdk": "^1.18.31"
+  },
+  "peerDependencies": {
+    "@assistant-ui/react": "^0.15.0",
+    "@types/react": "*",
+    "react": "^18 || ^19"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@assistant-ui/react": "workspace:*",
+    "@assistant-ui/x-buildutils": "workspace:*",
+    "@types/node": "^26.5.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "jsdom": "^30.0.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "vitest": "^5.0.1"
+  }
+}

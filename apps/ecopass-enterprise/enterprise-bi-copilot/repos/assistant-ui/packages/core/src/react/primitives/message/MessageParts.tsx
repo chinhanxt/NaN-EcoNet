@@ -1,0 +1,957 @@
+import {
+  type ComponentType,
+  type FC,
+  type ReactNode,
+  memo,
+  type PropsWithChildren,
+  useMemo,
+} from "react";
+import {
+  RenderChildrenWithAccessor,
+  useAuiState,
+  useAui,
+} from "@assistant-ui/store";
+import type { PartState } from "../../../store/scopes/part";
+import { PartByIndexProvider } from "../../providers/PartByIndexProvider";
+import { TextMessagePartProvider } from "../../providers/TextMessagePartProvider";
+import { ChainOfThoughtByIndicesProvider } from "../../providers/ChainOfThoughtByIndicesProvider";
+import { getMessageQuote } from "../../utils/getMessageQuote";
+import type {
+  Unstable_AudioMessagePartComponent,
+  DataMessagePartComponent,
+  DataMessagePartProps,
+  EmptyMessagePartComponent,
+  TextMessagePartComponent,
+  ImageMessagePartComponent,
+  SourceMessagePartComponent,
+  ToolCallMessagePartComponent,
+  ToolCallMessagePartProps,
+  FileMessagePartComponent,
+  ReasoningMessagePartComponent,
+  ReasoningGroupComponent,
+  QuoteMessagePartComponent,
+  GenerativeUIComponentRegistry,
+} from "../../types/MessagePartComponentTypes";
+import { GenerativeUIRender } from "../generativeUI/GenerativeUI";
+import {
+  isMcpAppUri,
+  type MessagePartStatus,
+  type GenerativeUIMessagePart,
+} from "../../../types/message";
+import type { DataRenderersState } from "../../types/scopes/dataRenderers";
+import type { ToolsState } from "../../types/scopes/tools";
+import { useShallowSelector } from "@assistant-ui/store/internal";
+
+type MessagePartRange =
+  | { type: "single"; index: number }
+  | {
+      type: "toolGroup";
+      startIndex: number;
+      endIndex: number;
+      idKey?: string | undefined;
+    }
+  | {
+      type: "reasoningGroup";
+      startIndex: number;
+      endIndex: number;
+      idKey?: string | undefined;
+    }
+  | {
+      type: "chainOfThoughtGroup";
+      startIndex: number;
+      endIndex: number;
+      idKey?: string | undefined;
+    };
+
+/**
+ * Creates a group state manager for a specific part type.
+ * Returns functions to start, end, and finalize groups.
+ */
+const createGroupState = <
+  T extends "toolGroup" | "reasoningGroup" | "chainOfThoughtGroup",
+>(
+  groupType: T,
+) => {
+  let start = -1;
+
+  return {
+    startGroup: (index: number) => {
+      if (start === -1) {
+        start = index;
+      }
+    },
+    endGroup: (endIndex: number, ranges: MessagePartRange[]) => {
+      if (start !== -1) {
+        ranges.push({
+          type: groupType,
+          startIndex: start,
+          endIndex,
+        } as MessagePartRange);
+        start = -1;
+      }
+    },
+    finalize: (endIndex: number, ranges: MessagePartRange[]) => {
+      if (start !== -1) {
+        ranges.push({
+          type: groupType,
+          startIndex: start,
+          endIndex,
+        } as MessagePartRange);
+      }
+    },
+  };
+};
+
+/**
+ * Groups consecutive tool-call and reasoning message parts into ranges.
+ * Always groups tool calls and reasoning parts, even if there's only one.
+ * When useChainOfThought is true, groups tool-call and reasoning parts together.
+ * `partIds[i]` optionally carries a stable identity for part `i`; group
+ * ranges derive an `idKey` from their first part's id (first claim wins).
+ */
+export const groupMessageParts = (
+  messageTypes: readonly string[],
+  useChainOfThought: boolean,
+  partIds?: readonly (string | undefined)[],
+): MessagePartRange[] => {
+  const ranges: MessagePartRange[] = [];
+
+  if (useChainOfThought) {
+    const chainOfThoughtGroup = createGroupState("chainOfThoughtGroup");
+
+    for (let i = 0; i < messageTypes.length; i++) {
+      const type = messageTypes[i];
+
+      if (type === "tool-call" || type === "reasoning") {
+        chainOfThoughtGroup.startGroup(i);
+      } else {
+        chainOfThoughtGroup.endGroup(i - 1, ranges);
+        ranges.push({ type: "single", index: i });
+      }
+    }
+
+    chainOfThoughtGroup.finalize(messageTypes.length - 1, ranges);
+  } else {
+    const toolGroup = createGroupState("toolGroup");
+    const reasoningGroup = createGroupState("reasoningGroup");
+
+    for (let i = 0; i < messageTypes.length; i++) {
+      const type = messageTypes[i];
+
+      if (type === "tool-call") {
+        reasoningGroup.endGroup(i - 1, ranges);
+        toolGroup.startGroup(i);
+      } else if (type === "reasoning") {
+        toolGroup.endGroup(i - 1, ranges);
+        reasoningGroup.startGroup(i);
+      } else {
+        toolGroup.endGroup(i - 1, ranges);
+        reasoningGroup.endGroup(i - 1, ranges);
+        ranges.push({ type: "single", index: i });
+      }
+    }
+
+    toolGroup.finalize(messageTypes.length - 1, ranges);
+    reasoningGroup.finalize(messageTypes.length - 1, ranges);
+  }
+
+  if (partIds) {
+    const claimed = new Set<string>();
+    for (const range of ranges) {
+      if (range.type === "single") continue;
+      const id = partIds[range.startIndex];
+      if (id !== undefined && !claimed.has(id)) {
+        claimed.add(id);
+        range.idKey = `id:${id}`;
+      }
+    }
+  }
+
+  return ranges;
+};
+
+const useMessagePartsGroups = (
+  useChainOfThought: boolean,
+): { ranges: MessagePartRange[]; partIds: (string | undefined)[] } => {
+  const messageTypes = useAuiState(
+    useShallowSelector((s) => s.message.parts.map((c: any) => c.type)),
+  );
+  const partIds = useAuiState(
+    useShallowSelector((s) =>
+      s.message.parts.map((c: any) =>
+        c.type === "tool-call" ? c.toolCallId : undefined,
+      ),
+    ),
+  );
+
+  return useMemo(() => {
+    if (messageTypes.length === 0) {
+      return { ranges: [], partIds };
+    }
+    return {
+      ranges: groupMessageParts(messageTypes, useChainOfThought, partIds),
+      partIds,
+    };
+  }, [messageTypes, partIds, useChainOfThought]);
+};
+
+export namespace MessagePrimitiveParts {
+  type DataConfig = {
+    /** Map data event names to specific components */
+    by_name?: Record<string, DataMessagePartComponent | undefined> | undefined;
+    /** Fallback component for unmatched data events */
+    Fallback?: DataMessagePartComponent | undefined;
+  };
+
+  type BaseComponents = {
+    /** Component for rendering empty messages */
+    Empty?: EmptyMessagePartComponent | undefined;
+    /** Component for rendering text content */
+    Text?: TextMessagePartComponent | undefined;
+    /** Component for rendering source content */
+    Source?: SourceMessagePartComponent | undefined;
+    /** Component for rendering image content */
+    Image?: ImageMessagePartComponent | undefined;
+    /** Component for rendering file content */
+    File?: FileMessagePartComponent | undefined;
+    /**
+     * Component for rendering audio content.
+     *
+     * @deprecated Render audio through the `File` slot instead, branching on an
+     * `audio/*` mime type.
+     */
+    Unstable_Audio?: Unstable_AudioMessagePartComponent | undefined;
+    /** Configuration for data part rendering */
+    data?: DataConfig | undefined;
+    /** Component for rendering a quoted message reference (from metadata, not parts) */
+    Quote?: QuoteMessagePartComponent | undefined;
+    /**
+     * Configuration for generative-ui part rendering.
+     *
+     * `components` is the consumer-provided allowlist of React components
+     * the agent's JSON spec is permitted to render. Any name not present in
+     * the registry is rejected with a typed `GenerativeUIRenderError` —
+     * this is the security boundary in the same-realm rendering path.
+     */
+    generativeUI?:
+      | {
+          /** The component allowlist (the security boundary). */
+          components: GenerativeUIComponentRegistry;
+          /** Optional fallback for unknown component names. */
+          Fallback?:
+            | ComponentType<{ component: string; props?: unknown }>
+            | undefined;
+        }
+      | undefined;
+  };
+
+  type ToolsConfig =
+    | {
+        /** Map of tool names to their specific components */
+        by_name?:
+          | Record<string, ToolCallMessagePartComponent | undefined>
+          | undefined;
+        /** Fallback component for unregistered tools */
+        Fallback?: ComponentType<ToolCallMessagePartProps> | undefined;
+      }
+    | {
+        /** Override component that handles all tool calls */
+        Override: ComponentType<ToolCallMessagePartProps>;
+      };
+
+  /**
+   * Standard component configuration for rendering reasoning and tool-call parts
+   * individually (with optional grouping).
+   *
+   * Cannot be combined with `ChainOfThought`.
+   */
+  type StandardComponents = BaseComponents & {
+    /** Component for rendering reasoning content (typically hidden) */
+    Reasoning?: ReasoningMessagePartComponent | undefined;
+    /** Configuration for tool call rendering */
+    tools?: ToolsConfig | undefined;
+
+    /**
+     * Component for rendering grouped consecutive tool calls.
+     *
+     * @param startIndex - Index of the first tool call in the group
+     * @param endIndex - Index of the last tool call in the group
+     * @param children - Rendered tool call components to display within the group
+     *
+     * @deprecated Use `<MessagePrimitive.GroupedParts>` with a custom `groupBy` instead.
+     */
+    ToolGroup?: ComponentType<
+      PropsWithChildren<{ startIndex: number; endIndex: number }>
+    >;
+
+    /**
+     * Component for rendering grouped reasoning parts.
+     *
+     * @param startIndex - Index of the first reasoning part in the group
+     * @param endIndex - Index of the last reasoning part in the group
+     * @param children - Rendered reasoning part components
+     *
+     * @deprecated Use `<MessagePrimitive.GroupedParts>` with a custom `groupBy` instead.
+     */
+    ReasoningGroup?: ReasoningGroupComponent;
+
+    ChainOfThought?: never;
+  };
+
+  /**
+   * Chain of thought component configuration.
+   *
+   * When `ChainOfThought` is set, it takes control of rendering ALL reasoning and
+   * tool-call parts in the message. The `Reasoning`, `tools`, `ReasoningGroup`, and
+   * `ToolGroup` components cannot be used alongside it.
+   */
+  type ChainOfThoughtComponents = BaseComponents & {
+    /**
+     * @deprecated Use `<MessagePrimitive.GroupedParts>` with a `groupBy`
+     * that returns `["group-thought", ...]` for reasoning and tool-call
+     * parts. See `@assistant-ui/ui` for a worked example.
+     */
+    ChainOfThought: ComponentType;
+
+    Reasoning?: never;
+    tools?: never;
+    ToolGroup?: never;
+    ReasoningGroup?: never;
+  };
+
+  export type Props =
+    | {
+        /**
+         * Component configuration for rendering different types of message content.
+         *
+         * Use either `Reasoning`/`tools`/`ToolGroup`/`ReasoningGroup` for standard rendering,
+         * or `ChainOfThought` to group all reasoning and tool-call parts into a single
+         * collapsible component. These two modes are mutually exclusive.
+         */
+        components?: StandardComponents | ChainOfThoughtComponents | undefined;
+        /**
+         * When enabled, shows the Empty component if the last part in the message
+         * is anything other than Text or Reasoning.
+         *
+         * @experimental This API is experimental and may change in future versions.
+         * @default true
+         */
+        unstable_showEmptyOnNonTextEnd?: boolean | undefined;
+        children?: never;
+      }
+    | {
+        /** Render function called for each part. Receives the enriched part state. */
+        children: (value: { part: EnrichedPartState }) => ReactNode;
+        components?: never;
+        unstable_showEmptyOnNonTextEnd?: never;
+      };
+}
+
+const ToolUIDisplay = ({
+  Fallback,
+  ...props
+}: {
+  Fallback: ToolCallMessagePartComponent | undefined;
+} & ToolCallMessagePartProps) => {
+  const Render = useAuiState(
+    (s) => s.tools.toolUIs[props.toolName]?.[0]?.render ?? Fallback,
+  );
+  if (!Render) return null;
+  return <Render {...props} />;
+};
+
+const getDataRenderer = (
+  dataRenderers: DataRenderersState,
+  name: string,
+  inlineFallback: DataMessagePartComponent | undefined,
+): DataMessagePartComponent | undefined => {
+  const named = dataRenderers.renderers[name]?.[0];
+  if (named) return named;
+  return dataRenderers.fallbacks[0] ?? inlineFallback;
+};
+
+const DataUIDisplay = ({
+  Fallback,
+  ...props
+}: {
+  Fallback: DataMessagePartComponent | undefined;
+} & DataMessagePartProps) => {
+  const Render = useAuiState((s) =>
+    getDataRenderer(s.dataRenderers, props.name, Fallback),
+  );
+  if (!Render) return null;
+  return <Render {...props} />;
+};
+
+/**
+ * Platform-agnostic no-op default components.
+ * Each platform (web, RN) wraps MessagePrimitiveParts with its own defaults.
+ */
+export const defaultComponents = {
+  Text: () => null,
+  Reasoning: () => null,
+  Source: () => null,
+  Image: () => null,
+  File: () => null,
+  Unstable_Audio: () => null,
+  ToolGroup: ({ children }: PropsWithChildren) => children,
+  ReasoningGroup: ({ children }: PropsWithChildren) => children,
+} satisfies MessagePrimitiveParts.Props["components"];
+
+type MessagePartComponentProps = {
+  components: MessagePrimitiveParts.Props["components"];
+};
+
+export const MessagePartComponent: FC<MessagePartComponentProps> = ({
+  components: {
+    Text = defaultComponents.Text,
+    Reasoning = defaultComponents.Reasoning,
+    Image = defaultComponents.Image,
+    Source = defaultComponents.Source,
+    File = defaultComponents.File,
+    Unstable_Audio: Audio = defaultComponents.Unstable_Audio,
+    tools = {},
+    data,
+    generativeUI,
+  } = {},
+}) => {
+  const aui = useAui();
+  const part = useAuiState((s) => s.part);
+
+  const type = part.type;
+  if (type === "tool-call") {
+    const addResult = aui.part.addToolResult;
+    const resume = aui.part.resumeToolCall;
+    const respondToApproval = aui.part.respondToToolApproval;
+    if ("Override" in tools)
+      return (
+        <tools.Override
+          {...part}
+          addResult={addResult}
+          resume={resume}
+          respondToApproval={respondToApproval}
+        />
+      );
+    const Tool = tools.by_name?.[part.toolName] ?? tools.Fallback;
+    return (
+      <ToolUIDisplay
+        {...part}
+        Fallback={Tool}
+        addResult={addResult}
+        resume={resume}
+        respondToApproval={respondToApproval}
+      />
+    );
+  }
+
+  if (part.status?.type === "requires-action")
+    throw new Error("Encountered unexpected requires-action status");
+
+  switch (type) {
+    case "text":
+      return <Text {...part} />;
+
+    case "reasoning":
+      return <Reasoning {...part} />;
+
+    case "source":
+      return <Source {...part} />;
+
+    case "image":
+      return <Image {...part} />;
+
+    case "file":
+      return <File {...part} />;
+
+    case "audio":
+      return <Audio {...part} />;
+
+    case "data": {
+      const Data = data?.by_name?.[part.name] ?? data?.Fallback;
+      return <DataUIDisplay {...part} Fallback={Data} />;
+    }
+
+    case "generative-ui": {
+      if (!generativeUI?.components) {
+        if (
+          typeof process !== "undefined" &&
+          process.env?.NODE_ENV !== "production"
+        ) {
+          console.warn(
+            "MessagePrimitive.Parts received a generative-ui part but no " +
+              "`components.generativeUI.components` allowlist was provided. " +
+              "Pass an allowlist or render with <MessagePrimitive.GenerativeUI />.",
+          );
+        }
+        return null;
+      }
+      return (
+        <GenerativeUIRender
+          spec={(part as GenerativeUIMessagePart).spec}
+          components={generativeUI.components}
+          Fallback={generativeUI.Fallback}
+        />
+      );
+    }
+
+    default:
+      console.warn(`Unknown message part type: ${type}`);
+      return null;
+  }
+};
+
+export namespace MessagePrimitivePartByIndex {
+  export type Props = {
+    index: number;
+    components: MessagePrimitiveParts.Props["components"];
+  };
+}
+
+/**
+ * Renders a single message part at the specified index.
+ */
+export const MessagePrimitivePartByIndex: FC<MessagePrimitivePartByIndex.Props> =
+  memo(
+    ({ index, components }) => {
+      return (
+        <PartByIndexProvider index={index}>
+          <MessagePartComponent components={components} />
+        </PartByIndexProvider>
+      );
+    },
+    (prev, next) =>
+      prev.index === next.index &&
+      prev.components?.Text === next.components?.Text &&
+      prev.components?.Reasoning === next.components?.Reasoning &&
+      prev.components?.Source === next.components?.Source &&
+      prev.components?.Image === next.components?.Image &&
+      prev.components?.File === next.components?.File &&
+      prev.components?.Unstable_Audio === next.components?.Unstable_Audio &&
+      prev.components?.tools === next.components?.tools &&
+      prev.components?.data === next.components?.data &&
+      prev.components?.generativeUI === next.components?.generativeUI &&
+      prev.components?.ToolGroup === next.components?.ToolGroup &&
+      prev.components?.ReasoningGroup === next.components?.ReasoningGroup,
+  );
+
+MessagePrimitivePartByIndex.displayName = "MessagePrimitive.PartByIndex";
+
+const EmptyPartFallback: FC<{
+  status: MessagePartStatus;
+  component: TextMessagePartComponent;
+}> = ({ status, component: Component }) => {
+  return (
+    <TextMessagePartProvider text="" isRunning={status.type === "running"}>
+      <Component type="text" text="" status={status} />
+    </TextMessagePartProvider>
+  );
+};
+
+const COMPLETE_STATUS: MessagePartStatus = Object.freeze({
+  type: "complete",
+});
+
+const RUNNING_STATUS: MessagePartStatus = Object.freeze({
+  type: "running",
+});
+
+const EmptyPartsImpl: FC<MessagePartComponentProps> = ({ components }) => {
+  const status = useAuiState(
+    (s) => (s.message.status ?? COMPLETE_STATUS) as MessagePartStatus,
+  );
+
+  if (components?.Empty) return <components.Empty status={status} />;
+
+  if (status.type !== "running") return null;
+
+  return (
+    <EmptyPartFallback
+      status={status}
+      component={components?.Text ?? defaultComponents.Text}
+    />
+  );
+};
+
+const EmptyParts = memo(
+  EmptyPartsImpl,
+  (prev, next) =>
+    prev.components?.Empty === next.components?.Empty &&
+    prev.components?.Text === next.components?.Text,
+);
+
+const ConditionalEmptyImpl: FC<{
+  components: MessagePrimitiveParts.Props["components"];
+  enabled: boolean;
+}> = ({ components, enabled }) => {
+  const shouldShowEmpty = useAuiState((s) => {
+    if (!enabled) return false;
+    if (s.message.parts.length === 0) return false;
+
+    const lastPart = s.message.parts[s.message.parts.length - 1];
+    return lastPart?.type !== "text" && lastPart?.type !== "reasoning";
+  });
+
+  if (!shouldShowEmpty) return null;
+  return <EmptyParts components={components} />;
+};
+
+const ConditionalEmpty = memo(
+  ConditionalEmptyImpl,
+  (prev, next) =>
+    prev.enabled === next.enabled &&
+    prev.components?.Empty === next.components?.Empty &&
+    prev.components?.Text === next.components?.Text,
+);
+
+const QuoteRendererImpl: FC<{ Quote: QuoteMessagePartComponent }> = ({
+  Quote,
+}) => {
+  const quoteInfo = useAuiState(getMessageQuote);
+  if (!quoteInfo) return null;
+  return <Quote text={quoteInfo.text} messageId={quoteInfo.messageId} />;
+};
+
+const QuoteRenderer = memo(QuoteRendererImpl);
+
+function resolveToolRender(
+  toolsState: ToolsState,
+  part: Extract<PartState, { type: "tool-call" }>,
+): ToolCallMessagePartComponent | null {
+  const named = toolsState.toolUIs[part.toolName]?.[0]?.render ?? null;
+  if (named) return named;
+  if (isMcpAppUri(part.mcp?.app?.resourceUri) && toolsState.mcpApp) {
+    return toolsState.mcpApp.render;
+  }
+  return null;
+}
+
+/**
+ * Stable propless component that renders the registered tool UI for the
+ * current part context. Reads tool registry and part state from context.
+ */
+const RegisteredToolUI: FC = () => {
+  const aui = useAui();
+  const part = useAuiState((s) => s.part);
+  const Render = useAuiState((s) =>
+    s.part.type === "tool-call" ? resolveToolRender(s.tools, s.part) : null,
+  );
+
+  if (!Render || part.type !== "tool-call") return null;
+
+  return (
+    <Render
+      {...part}
+      addResult={aui.part.addToolResult}
+      resume={aui.part.resumeToolCall}
+      respondToApproval={aui.part.respondToToolApproval}
+    />
+  );
+};
+
+/**
+ * Stable propless component that renders the registered data renderer UI
+ * for the current part context.
+ */
+const RegisteredDataRendererUI: FC = () => {
+  const part = useAuiState((s) => s.part);
+  const Render = useAuiState((s) =>
+    s.part.type === "data"
+      ? (getDataRenderer(s.dataRenderers, s.part.name, undefined) ?? null)
+      : null,
+  );
+
+  if (!Render || part.type !== "data") return null;
+
+  return <Render {...(part as DataMessagePartProps)} />;
+};
+
+/**
+ * Fallback component rendered when the children render function returns null.
+ * Renders registered tool/data UIs via context.
+ * For all other part types, renders nothing.
+ *
+ * This allows users to write:
+ *   {({ part }) => {
+ *     if (part.type === "text") return <MyText />;
+ *     return null; // tool UIs and data UIs still render via registry
+ *   }}
+ *
+ * To explicitly render nothing (suppressing registered UIs), return <></>.
+ */
+const DefaultPartFallback: FC = () => {
+  const partType = useAuiState((s) => s.part.type);
+
+  if (partType === "tool-call") return <RegisteredToolUI />;
+  if (partType === "data") return <RegisteredDataRendererUI />;
+
+  return null;
+};
+
+export type { PartState };
+
+/**
+ * Enriched part state passed to children render functions.
+ *
+ * For tool-call parts, adds `toolUI`, `addResult`, and `resume`.
+ * For data parts, adds `dataRendererUI`.
+ *
+ * The render function is also invoked once with a synthetic empty text part
+ * (`{ type: "text", text: "", status: { type: "running" } }`) when the
+ * assistant message has no parts yet but is in the running state, so a
+ * loading indicator can render. Differentiate this from a real empty text
+ * via `part.status?.type === "running" && part.text === ""`.
+ */
+export type EnrichedPartState =
+  | (Extract<PartState, { type: "tool-call" }> & {
+      /** The registered tool UI element, or null if none registered. */
+      readonly toolUI: ReactNode;
+      /** Add a tool result to this tool call. */
+      addResult: ToolCallMessagePartProps["addResult"];
+      /** Resume a tool call waiting for human input. */
+      resume: ToolCallMessagePartProps["resume"];
+      /** Respond to a server-side tool approval gate. */
+      respondToApproval: ToolCallMessagePartProps["respondToApproval"];
+    })
+  | (Extract<PartState, { type: "data" }> & {
+      /** The registered data renderer UI element, or null if none registered. */
+      readonly dataRendererUI: ReactNode;
+    })
+  | Exclude<PartState, { type: "tool-call" } | { type: "data" }>;
+
+const EMPTY_RUNNING_TEXT_PART: Extract<EnrichedPartState, { type: "text" }> =
+  Object.freeze({
+    type: "text",
+    text: "",
+    status: RUNNING_STATUS,
+  });
+
+/**
+ * Renders a single part by index, calling `children` with the
+ * {@link EnrichedPartState} (tool/data UI enrichments + addResult/resume
+ * for tool calls). Shared between `<MessagePrimitive.Parts>` and
+ * `<MessagePrimitive.GroupedParts>`. Returns whatever `children`
+ * returns — callers decide how to handle a `null` return.
+ */
+type MessagePartChildrenProps = {
+  index: number;
+  children: (value: { part: EnrichedPartState }) => ReactNode;
+};
+
+const MessagePartChildrenInner: FC<
+  Pick<MessagePartChildrenProps, "children">
+> = ({ children }) => {
+  const aui = useAui();
+  // Subscribed (not snapshotted like `tools`) so fallbacks registered
+  // after the first render trigger a re-render and `hasUI` re-evaluates.
+  const dataRenderers = useAuiState((s) => s.dataRenderers);
+
+  return (
+    <RenderChildrenWithAccessor
+      getItemState={(client) => client.part.getState()}
+    >
+      {(getItem) =>
+        children({
+          get part() {
+            const state = getItem();
+            if (state.type === "tool-call") {
+              const toolsState = aui.tools.getState();
+              const hasUI = resolveToolRender(toolsState, state) !== null;
+              const partMethods = aui.part;
+              return {
+                ...state,
+                toolUI: hasUI ? <RegisteredToolUI /> : null,
+                addResult: partMethods.addToolResult,
+                resume: partMethods.resumeToolCall,
+                respondToApproval: partMethods.respondToToolApproval,
+              };
+            }
+            if (state.type === "data") {
+              const hasUI =
+                getDataRenderer(dataRenderers, state.name, undefined) !==
+                undefined;
+              return {
+                ...state,
+                dataRendererUI: hasUI ? <RegisteredDataRendererUI /> : null,
+              };
+            }
+            return state;
+          },
+        })
+      }
+    </RenderChildrenWithAccessor>
+  );
+};
+
+export const MessagePartChildren: FC<MessagePartChildrenProps> = ({
+  index,
+  children,
+}) => {
+  return (
+    <PartByIndexProvider index={index}>
+      <MessagePartChildrenInner>{children}</MessagePartChildrenInner>
+    </PartByIndexProvider>
+  );
+};
+
+const MessagePrimitivePartsInner: FC<{
+  children: (value: { part: EnrichedPartState }) => ReactNode;
+}> = ({ children }) => {
+  const contentLength = useAuiState((s) => s.message.parts.length);
+  const isRunning = useAuiState(
+    (s) => (s.message.status?.type ?? "complete") === "running",
+  );
+  const isEmptyRunning = contentLength === 0 && isRunning;
+
+  if (contentLength === 0) {
+    if (!isEmptyRunning) return null;
+    return (
+      <TextMessagePartProvider text="" isRunning>
+        {children({ part: EMPTY_RUNNING_TEXT_PART })}
+      </TextMessagePartProvider>
+    );
+  }
+
+  return (
+    <>
+      {Array.from({ length: contentLength }, (_, index) => (
+        <MessagePartChildren key={index} index={index}>
+          {(value) => children(value) ?? <DefaultPartFallback />}
+        </MessagePartChildren>
+      ))}
+    </>
+  );
+};
+
+/**
+ * Renders the parts of a message with support for multiple content types.
+ *
+ * This is the platform-agnostic base. Each platform wraps this with its own
+ * default components (web uses `<p>`, `<span>`; RN would use `<Text>`, etc.).
+ */
+export const MessagePrimitiveParts: FC<MessagePrimitiveParts.Props> = ({
+  components,
+  unstable_showEmptyOnNonTextEnd = true,
+  children,
+}) => {
+  if (children) {
+    return <MessagePrimitivePartsInner>{children}</MessagePrimitivePartsInner>;
+  }
+  return (
+    <MessagePrimitivePartsCompat
+      components={components}
+      unstable_showEmptyOnNonTextEnd={unstable_showEmptyOnNonTextEnd}
+    />
+  );
+};
+
+MessagePrimitiveParts.displayName = "MessagePrimitive.Parts";
+
+const MessagePrimitivePartsCompat: FC<{
+  components: MessagePrimitiveParts.Props["components"];
+  unstable_showEmptyOnNonTextEnd: boolean;
+}> = ({ components, unstable_showEmptyOnNonTextEnd }) => {
+  const contentLength = useAuiState((s) => s.message.parts.length);
+  const useChainOfThought = !!components?.ChainOfThought;
+  const { ranges: messageRanges, partIds } =
+    useMessagePartsGroups(useChainOfThought);
+
+  const partsElements = useMemo(() => {
+    if (contentLength === 0) {
+      return <EmptyParts components={components} />;
+    }
+
+    const claimed = new Set<string>();
+    const toolLeafKey = (partIndex: number) => {
+      const id = partIds[partIndex];
+      if (id !== undefined && !claimed.has(id)) {
+        claimed.add(id);
+        return `part-id:${id}`;
+      }
+      return `part-${partIndex}`;
+    };
+
+    return messageRanges.map((range) => {
+      if (range.type === "single") {
+        return (
+          <MessagePrimitivePartByIndex
+            key={range.index}
+            index={range.index}
+            components={components}
+          />
+        );
+      } else if (range.type === "chainOfThoughtGroup") {
+        const ChainOfThoughtComponent = components?.ChainOfThought;
+        if (!ChainOfThoughtComponent) return null;
+        return (
+          <ChainOfThoughtByIndicesProvider
+            key={`chainOfThought-${range.idKey ?? range.startIndex}`}
+            startIndex={range.startIndex}
+            endIndex={range.endIndex}
+          >
+            <ChainOfThoughtComponent />
+          </ChainOfThoughtByIndicesProvider>
+        );
+      } else if (range.type === "toolGroup") {
+        const ToolGroupComponent =
+          components?.ToolGroup ?? defaultComponents.ToolGroup;
+        return (
+          <ToolGroupComponent
+            key={`tool-${range.idKey ?? range.startIndex}`}
+            startIndex={range.startIndex}
+            endIndex={range.endIndex}
+          >
+            {Array.from(
+              { length: range.endIndex - range.startIndex + 1 },
+              (_, i) => {
+                const partIndex = range.startIndex + i;
+                return (
+                  <MessagePrimitivePartByIndex
+                    key={toolLeafKey(partIndex)}
+                    index={partIndex}
+                    components={components}
+                  />
+                );
+              },
+            )}
+          </ToolGroupComponent>
+        );
+      } else {
+        // reasoningGroup
+        const ReasoningGroupComponent =
+          components?.ReasoningGroup ?? defaultComponents.ReasoningGroup;
+        return (
+          <ReasoningGroupComponent
+            key={`reasoning-${range.startIndex}`}
+            startIndex={range.startIndex}
+            endIndex={range.endIndex}
+          >
+            {Array.from(
+              { length: range.endIndex - range.startIndex + 1 },
+              (_, i) => {
+                const partIndex = range.startIndex + i;
+                return (
+                  <MessagePrimitivePartByIndex
+                    key={`part-${partIndex}`}
+                    index={partIndex}
+                    components={components}
+                  />
+                );
+              },
+            )}
+          </ReasoningGroupComponent>
+        );
+      }
+    });
+  }, [messageRanges, partIds, components, contentLength]);
+
+  return (
+    <>
+      {components?.Quote && <QuoteRenderer Quote={components.Quote} />}
+      {partsElements}
+      <ConditionalEmpty
+        components={components}
+        enabled={unstable_showEmptyOnNonTextEnd}
+      />
+    </>
+  );
+};

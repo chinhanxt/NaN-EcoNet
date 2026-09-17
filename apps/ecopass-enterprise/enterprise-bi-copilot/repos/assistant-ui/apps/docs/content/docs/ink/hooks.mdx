@@ -1,0 +1,469 @@
+---
+title: Hooks
+description: Reactive hooks for accessing runtime state in React Ink.
+---
+
+## State Hooks
+
+### useAuiState
+
+The primary hook for accessing reactive state. It accepts a selector function for fine-grained re-renders — the component only re-renders when the selected value changes (shallow equality).
+
+```tsx
+import { useAuiState } from "@assistant-ui/react-ink";
+
+// Thread state
+const messages = useAuiState((s) => s.thread.messages);
+const isRunning = useAuiState((s) => s.thread.isRunning);
+const isEmpty = useAuiState((s) => s.thread.isEmpty);
+
+// Composer state
+const text = useAuiState((s) => s.composer.text);
+const composerIsEmpty = useAuiState((s) => s.composer.isEmpty);
+const attachments = useAuiState((s) => s.composer.attachments);
+
+// Message state (inside a message context)
+const role = useAuiState((s) => s.message.role);
+const isLast = useAuiState((s) => s.message.isLast);
+
+// Thread list item state
+const threadId = useAuiState((s) => s.threadListItem.id);
+const title = useAuiState((s) => s.threadListItem.title);
+```
+
+### useAui
+
+Access the store methods for imperative actions.
+
+```tsx
+import { useAui } from "@assistant-ui/react-ink";
+
+const aui = useAui();
+
+// Composer actions
+aui.composer.setText("Hello");
+aui.composer.send();
+
+// Thread actions
+aui.thread.cancelRun();
+```
+
+### useAuiEvent
+
+Subscribe to events without causing re-renders.
+
+```tsx
+import { useAuiEvent } from "@assistant-ui/react-ink";
+
+useAuiEvent("thread.runStart", (payload) => {
+  console.log("Run started:", payload);
+});
+```
+
+### useNotification
+
+Ring the terminal bell and emit an OSC desktop notification when the assistant finishes a run, stops with an error, or pauses for user input.
+
+```tsx
+import { useNotification } from "@assistant-ui/react-ink";
+
+useNotification();
+```
+
+Defaults:
+
+- `task-complete`: bell + OSC 9
+- `task-incomplete`: bell
+- `needs-input` (assistant message in `requires-action` with `reason: "interrupt"`): bell
+
+Pass `false` to suppress one trigger, or a `NotificationHandler` to override it:
+
+```tsx
+useNotification({
+  onTaskComplete: { osc: "osc99" },
+  onTaskIncomplete: false,
+  onNeedsInput: {
+    custom: (event) => myLogger.log(event),
+  },
+});
+```
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `enabled` | `boolean` | Master switch. Defaults to `true`. |
+| `onTaskComplete` | `NotificationHandler<"task-complete"> \| false` | Fired when the latest assistant message status flips to `complete` after a run was observed. |
+| `onTaskIncomplete` | `NotificationHandler<"task-incomplete"> \| false` | Fired when the latest assistant message status flips to `incomplete` after a run was observed. |
+| `onNeedsInput` | `NotificationHandler<"needs-input"> \| false` | Fired when the latest assistant message enters `requires-action` with `reason: "interrupt"`. Tool-call pauses are skipped. |
+
+`NotificationHandler<T>` fields (all optional, any combination):
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `bell` | `boolean` | Ring the terminal bell (`\x07`). |
+| `osc` | `boolean \| "osc9" \| "osc99" \| "osc777"` | Send an OSC notification. `true` is equivalent to `"osc9"`. |
+| `custom` | `(event: Extract<NotificationEvent, { type: T }>) => void` | User callback invoked with the event payload narrowed to this handler's type. |
+
+Notifications are deduplicated per `thread:message:status:reason` tuple, so passing an inline config object does not produce duplicate fires. `ringBell` and `sendOSCNotification(title, body?, variant?)` are also exported for imperative use. OSC support depends on the terminal emulator.
+
+## Runtime Hooks
+
+### useLocalRuntime
+
+Create an `AssistantRuntime` with a `ChatModelAdapter`.
+
+```tsx
+import { useLocalRuntime } from "@assistant-ui/react-ink";
+
+const runtime = useLocalRuntime(chatModel, {
+  initialMessages: [],
+});
+```
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `initialMessages` | `ThreadMessageLike[]` | Messages to pre-populate the thread with |
+| `maxSteps` | `number` | Maximum number of agentic steps before stopping |
+| `adapters.history` | `ThreadHistoryAdapter` | Adapter for persisting thread history |
+| `adapters.attachments` | `AttachmentAdapter` | Adapter for handling file attachments |
+| `adapters.speech` | `SpeechSynthesisAdapter` | Adapter for text-to-speech output |
+| `adapters.dictation` | `DictationAdapter` | Adapter for speech-to-text input |
+| `adapters.feedback` | `FeedbackAdapter` | Adapter for message feedback (thumbs up/down) |
+| `adapters.suggestion` | `SuggestionAdapter` | Adapter for suggested prompts |
+| `cloud` | `AssistantCloud` | Cloud instance for thread persistence via `assistant-cloud` |
+| `unstable_humanToolNames` | `string[]` | Tool names that pause the run until a result is added via `addResult` |
+
+### useRemoteThreadListRuntime
+
+Create an `AssistantRuntime` backed by a `RemoteThreadListAdapter` for multi-thread persistence. The `runtimeHook` is called for each thread to produce the per-thread runtime (typically `useLocalRuntime`).
+
+```tsx
+import { useRemoteThreadListRuntime, useLocalRuntime } from "@assistant-ui/react-ink";
+
+const runtime = useRemoteThreadListRuntime({
+  adapter: myRemoteAdapter,
+  runtimeHook: () => useLocalRuntime(chatModel),
+});
+```
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `runtimeHook` | `() => AssistantRuntime` | Hook called to produce the per-thread runtime |
+| `adapter` | `RemoteThreadListAdapter` | Adapter implementing thread list persistence |
+| `allowNesting` | `boolean` | When true, becomes a no-op if nested inside another `RemoteThreadListRuntime` |
+
+## Model Context Hooks
+
+### Tools
+
+Author tools with `defineToolkit`, the same API as on the web ([Defining Tools](/docs/tools/defining-tools)). The tool definition is forwarded to the model; when the model calls it, the `execute` function runs and the `render` component displays the result.
+
+<Callout type="info">
+  An Ink app runs in a single Node process, so there is no client/server
+  boundary to split and no build step. `defineToolkit` from
+  `@assistant-ui/react-ink` runs at runtime: import it as a value, with no
+  `"use generative"` directive and no `"use client"` inside `execute`.
+</Callout>
+
+```tsx title="weather-toolkit.tsx"
+import { defineToolkit } from "@assistant-ui/react-ink";
+import { Text } from "ink";
+import { z } from "zod";
+
+export default defineToolkit({
+  get_weather: {
+    description: "Get the current weather for a city",
+    parameters: z.object({ city: z.string() }),
+    execute: async ({ city }) => {
+      const res = await fetch(`https://api.weather.example/${city}`);
+      return res.json();
+    },
+    render: ({ args, result }) => (
+      <Text>
+        {args.city}: {result?.temperature}°F
+      </Text>
+    ),
+  },
+});
+```
+
+```tsx title="ToolProvider.tsx"
+import { AuiConfig, AuiProvider, Tools, useAui } from "@assistant-ui/react-ink";
+import toolkit from "./weather-toolkit";
+
+function ToolProvider({ children }: { children: React.ReactNode }) {
+  const aui = useAui();
+  const config = AuiConfig({ tools: Tools({ toolkit }) });
+  return (
+    <AuiProvider extends={aui} config={config}>
+      {children}
+    </AuiProvider>
+  );
+}
+```
+
+### useAssistantInstructions
+
+Register system instructions in the model context.
+
+```tsx
+import { useAssistantInstructions } from "@assistant-ui/react-ink";
+
+useAssistantInstructions("You are a helpful terminal assistant.");
+```
+
+### useAssistantDataUI
+
+Register a UI renderer for a named data part type. When a message contains a data part with the given `name`, the `render` component is used.
+
+```tsx
+import { useAssistantDataUI } from "@assistant-ui/react-ink";
+import { Text } from "ink";
+
+useAssistantDataUI({
+  name: "weather_card",
+  render: ({ data }) => (
+    <Text>{data.city}: {data.temperature}°F</Text>
+  ),
+});
+```
+### Dynamic Tool Renderers
+
+Use a toolkit with `useInlineRender` when the renderer closes over changing props.
+
+### makeAssistantDataUI
+
+Create a component that registers a data UI renderer when mounted.
+
+```tsx
+import { makeAssistantDataUI } from "@assistant-ui/react-ink";
+import { Text } from "ink";
+
+const WeatherCardUI = makeAssistantDataUI({
+  name: "weather_card",
+  render: ({ data }) => (
+    <Text>{data.city}: {data.temperature}°F</Text>
+  ),
+});
+
+// Mount inside AssistantRuntimeProvider to register
+<WeatherCardUI />
+```
+
+### useInlineRender
+
+Wrap a render function component so that it always uses the latest version without re-creating a stable reference. Useful when passing a render prop inline and the function closes over changing state.
+
+```tsx title="weather-toolkit.tsx"
+import { defineToolkit, useInlineRender } from "@assistant-ui/react-ink";
+import { Text } from "ink";
+import { useMemo } from "react";
+
+export function useWeatherToolkit() {
+  const render = useInlineRender(({ args, result }) => (
+    <Text>{args.city}: {result?.temperature}°F</Text>
+  ));
+
+  return useMemo(
+    () =>
+      defineToolkit({
+        get_weather: {
+          type: "backend",
+          render,
+        },
+      }),
+    [render],
+  );
+}
+```
+
+Import the toolkit hook and mount it with `<AuiProvider extends={aui} config={config}>` where `const aui = useAui()` and `const config = AuiConfig({ tools: Tools({ toolkit }) })`, as shown in the [Tools](#tools) section above.
+
+## Runtime Providers
+
+### AssistantRuntimeProvider
+
+Connects an `AssistantRuntime` to the React tree. All primitives and hooks must be used inside this provider.
+
+```tsx
+import { AssistantRuntimeProvider, useLocalRuntime } from "@assistant-ui/react-ink";
+
+const runtime = useLocalRuntime(chatModel);
+
+<AssistantRuntimeProvider runtime={runtime}>
+  {/* app content */}
+</AssistantRuntimeProvider>
+```
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `runtime` | `AssistantRuntime` | The runtime instance to provide |
+
+## Context Providers
+
+These low-level providers are used to set up scoped contexts for rendering primitives outside of the standard `ThreadPrimitive.Messages` / `MessagePrimitive.Parts` hierarchy.
+
+### MessageByIndexProvider
+
+Sets up the message context for a given message index in the thread. Used internally by `ThreadPrimitive.Messages`.
+
+```tsx
+import { MessageByIndexProvider } from "@assistant-ui/react-ink";
+
+<MessageByIndexProvider index={0}>
+  <MessagePrimitive.Root>...</MessagePrimitive.Root>
+</MessageByIndexProvider>
+```
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `index` | `number` | Zero-based index of the message in the thread |
+
+### PartByIndexProvider
+
+Sets up the part context for a given part index in the current message. Used internally by `MessagePrimitive.Parts`.
+
+```tsx
+import { PartByIndexProvider } from "@assistant-ui/react-ink";
+
+<PartByIndexProvider index={0}>
+  {/* part content */}
+</PartByIndexProvider>
+```
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `index` | `number` | Zero-based index of the part in the message |
+
+### TextMessagePartProvider
+
+Provides a synthetic text part context with a fixed text value. Useful for rendering text content outside of a real message part (e.g., in previews or testing).
+
+```tsx
+import { TextMessagePartProvider } from "@assistant-ui/react-ink";
+
+<TextMessagePartProvider text="Hello world" isRunning={false}>
+  {/* content rendered with a text part context */}
+</TextMessagePartProvider>
+```
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `text` | `string` | The text content for the synthetic part |
+| `isRunning` | `boolean` | Whether the part should appear as running (default: `false`) |
+
+### ChainOfThoughtByIndicesProvider
+
+Sets up a chain-of-thought context spanning a range of message parts by start and end index. Used to group consecutive reasoning parts.
+
+```tsx
+import { ChainOfThoughtByIndicesProvider } from "@assistant-ui/react-ink";
+
+<ChainOfThoughtByIndicesProvider startIndex={1} endIndex={3}>
+  <ChainOfThoughtPrimitive.Root>...</ChainOfThoughtPrimitive.Root>
+</ChainOfThoughtByIndicesProvider>
+```
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `startIndex` | `number` | Index of the first part in the chain-of-thought range |
+| `endIndex` | `number` | Index of the last part in the chain-of-thought range |
+
+### ChainOfThoughtPartByIndexProvider
+
+Sets up the part context for a specific part within the current chain-of-thought by index.
+
+```tsx
+import { ChainOfThoughtPartByIndexProvider } from "@assistant-ui/react-ink";
+
+<ChainOfThoughtPartByIndexProvider index={0}>
+  {/* chain-of-thought part content */}
+</ChainOfThoughtPartByIndexProvider>
+```
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `index` | `number` | Zero-based index of the part within the chain-of-thought |
+
+### SuggestionByIndexProvider
+
+Sets up the suggestion context for a given suggestion index. Used internally by `ThreadPrimitive.Suggestions`.
+
+```tsx
+import { SuggestionByIndexProvider } from "@assistant-ui/react-ink";
+
+<SuggestionByIndexProvider index={0}>
+  <SuggestionPrimitive.Title />
+</SuggestionByIndexProvider>
+```
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `index` | `number` | Zero-based index of the suggestion |
+
+### ThreadListItemByIndexProvider
+
+Sets up the thread list item context for a given index, differentiating between regular and archived threads.
+
+```tsx
+import { ThreadListItemByIndexProvider } from "@assistant-ui/react-ink";
+
+<ThreadListItemByIndexProvider index={0} archived={false}>
+  <ThreadListItemPrimitive.Root>...</ThreadListItemPrimitive.Root>
+</ThreadListItemByIndexProvider>
+```
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `index` | `number` | Zero-based index in the thread list |
+| `archived` | `boolean` | Whether to index into the archived thread list |
+
+### ThreadListItemRuntimeProvider
+
+Sets up the thread list item context from a `ThreadListItemRuntime` instance directly.
+
+```tsx
+import { ThreadListItemRuntimeProvider } from "@assistant-ui/react-ink";
+
+<ThreadListItemRuntimeProvider runtime={threadListItemRuntime}>
+  <ThreadListItemPrimitive.Root>...</ThreadListItemPrimitive.Root>
+</ThreadListItemRuntimeProvider>
+```
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `runtime` | `ThreadListItemRuntime` | The thread list item runtime instance |
+
+### MessageAttachmentByIndexProvider
+
+Sets up the attachment context for a specific message attachment by index.
+
+```tsx
+import { MessageAttachmentByIndexProvider } from "@assistant-ui/react-ink";
+
+<MessageAttachmentByIndexProvider index={0}>
+  <AttachmentPrimitive.Name />
+</MessageAttachmentByIndexProvider>
+```
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `index` | `number` | Zero-based index of the attachment in the message |
+
+### ComposerAttachmentByIndexProvider
+
+Sets up the attachment context for a specific composer attachment by index.
+
+```tsx
+import { ComposerAttachmentByIndexProvider } from "@assistant-ui/react-ink";
+
+<ComposerAttachmentByIndexProvider index={0}>
+  <AttachmentPrimitive.Name />
+  <AttachmentPrimitive.Remove>
+    <Text color="red">[x]</Text>
+  </AttachmentPrimitive.Remove>
+</ComposerAttachmentByIndexProvider>
+```
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `index` | `number` | Zero-based index of the attachment in the composer |

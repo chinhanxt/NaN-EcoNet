@@ -1,0 +1,59 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "globalPassThroughEnv": ["ENABLE_EXPERIMENTAL_COREPACK"],
+  "globalDependencies": [
+    "packages/x-buildutils/ts/*.json",
+    "packages/x-buildutils/types/**"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!**/*.test.{ts,tsx}",
+        "!**/*.spec.{ts,tsx}",
+        "!**/__tests__/**"
+      ],
+      "outputs": [
+        "dist/**",
+        ".next/**",
+        "!.next/cache/**",
+        "!.next/dev/**",
+        "generated/**",
+        ".output/**",
+        "build/**"
+      ],
+      "env": [
+        "OPENAI_*",
+        "ASSISTANT_*",
+        "JWT_*",
+        "ENTELLIGENCE_*",
+        "NEXT_PUBLIC_*",
+        "KV_*",
+        "SENTRY_*",
+        "REDIS_*",
+        "ASSISTANT_*",
+        "AUIX_*",
+        "WEBMCP_ORIGIN_TRIAL_TOKEN"
+      ]
+    },
+    "lint": {},
+    "test": {
+      "dependsOn": ["^build"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"]
+    },
+    "test:react-compiler": {
+      "dependsOn": ["build"]
+    },
+    "deploy": {
+      "dependsOn": ["build", "lint", "test"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}

@@ -1,0 +1,105 @@
+{
+  "name": "@assistant-ui/tap",
+  "version": "0.9.18",
+  "description": "Reactive state management inspired by React hooks",
+  "keywords": [
+    "state-management",
+    "reactive",
+    "hooks",
+    "signals",
+    "tap"
+  ],
+  "author": "AgentbaseAI Inc.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./react-shim": {
+      "types": null,
+      "default": "./dist/react-shim/index.js"
+    },
+    "./react-shim/compiler-runtime": {
+      "types": null,
+      "default": "./dist/react-shim/compiler-runtime.js"
+    },
+    "./standalone-shim": {
+      "types": null,
+      "default": "./dist/standalone-shim/index.js"
+    },
+    "./standalone-shim/compiler-runtime": {
+      "types": null,
+      "default": "./dist/standalone-shim/compiler-runtime.js"
+    },
+    "./standalone-shim/jsx-runtime": {
+      "types": null,
+      "default": "./dist/standalone-shim/jsx-runtime.js"
+    },
+    "./standalone-shim/jsx-dev-runtime": {
+      "types": null,
+      "default": "./dist/standalone-shim/jsx-dev-runtime.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "!dist/react-shim/**/*.d.ts",
+    "!dist/react-shim/**/*.d.ts.map",
+    "!dist/standalone-shim/**/*.d.ts",
+    "!dist/standalone-shim/**/*.d.ts.map",
+    "src",
+    "react-shim",
+    "standalone-shim",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "aui-build",
+    "prepublishOnly": "pnpm turbo build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "test:standalone": "vitest run --project standalone",
+    "test:watch": "vitest"
+  },
+  "peerDependencies": {
+    "@types/react": "*",
+    "react": "^18 || ^19"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@assistant-ui/x-buildutils": "workspace:*",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^26.5.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitest/ui": "^5.0.1",
+    "jsdom": "^30.0.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "vitest": "^5.0.1"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "homepage": "https://www.assistant-ui.com/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/assistant-ui/assistant-ui.git",
+    "directory": "packages/tap"
+  },
+  "bugs": {
+    "url": "https://github.com/assistant-ui/assistant-ui/issues"
+  }
+}

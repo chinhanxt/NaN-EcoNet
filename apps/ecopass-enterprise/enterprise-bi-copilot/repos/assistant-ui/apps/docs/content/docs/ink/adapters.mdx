@@ -1,0 +1,99 @@
+---
+title: Adapters
+description: Attachment, title generation, and storage adapters for React Ink.
+---
+
+Adapters customize runtime behavior. They can be passed as options to `useLocalRuntime` or `useRemoteThreadListRuntime`.
+
+## createFileStorageAdapter
+
+A `RemoteThreadListAdapter` that persists threads and messages to a local directory. See [Custom Backend → Option 2](/docs/ink/custom-backend#option-2-local-file-persistence) for usage.
+
+```ts
+import { createFileStorageAdapter } from "@assistant-ui/react-ink";
+
+const adapter = createFileStorageAdapter({
+  dir: "/path/to/threads",
+});
+```
+
+## Attachment adapters
+
+`SimpleTextAttachmentAdapter` and `SimpleImageAttachmentAdapter` work the same in the terminal as on web and React Native. Text contents are sent to the model wrapped in `<attachment name="...">` tags. Ampersands, double quotes, and angle brackets are escaped in the quoted filename; the attachment body remains raw text. Images are sent as base64 data URLs.
+
+```ts
+import {
+  CompositeAttachmentAdapter,
+  SimpleImageAttachmentAdapter,
+  SimpleTextAttachmentAdapter,
+  useLocalRuntime,
+} from "@assistant-ui/react-ink";
+
+const runtime = useLocalRuntime(chatModelAdapter, {
+  adapters: {
+    attachments: new CompositeAttachmentAdapter([
+      new SimpleTextAttachmentAdapter(),
+      new SimpleImageAttachmentAdapter(),
+    ]),
+  },
+});
+```
+
+## TitleGenerationAdapter
+
+Produces a thread title from a thread's messages. Pass one as the `titleGenerator` option to `createFileStorageAdapter`, or call it from a custom `RemoteThreadListAdapter`.
+
+```ts
+type TitleGenerationAdapter = {
+  generateTitle(messages: readonly ThreadMessage[]): Promise<string>;
+};
+```
+
+`createSimpleTitleAdapter` is the built-in implementation; it derives the title from the first user message, truncated to 50 characters.
+
+```ts
+import {
+  createFileStorageAdapter,
+  createSimpleTitleAdapter,
+} from "@assistant-ui/react-ink";
+
+const adapter = createFileStorageAdapter({
+  dir: "/path/to/threads",
+  titleGenerator: createSimpleTitleAdapter(),
+});
+```
+
+## RemoteThreadListAdapter
+
+Title generation is configured via the `generateTitle` method on `RemoteThreadListAdapter`. See the [Custom Backend](/docs/ink/custom-backend) page for a full example.
+
+```tsx
+import type { RemoteThreadListAdapter } from "@assistant-ui/react-ink";
+import { createAssistantStream } from "assistant-stream";
+
+const myAdapter: RemoteThreadListAdapter = {
+  // ... other methods ...
+
+  async generateTitle(remoteId, unstable_messages) {
+    return createAssistantStream(async (controller) => {
+      const res = await fetch(`/api/threads/${remoteId}/title`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: unstable_messages }),
+      });
+      const { title } = await res.json();
+      controller.appendText(title);
+    });
+  },
+};
+```
+
+## Which option to choose?
+
+| | ChatModelAdapter + `useLocalRuntime` | RemoteThreadListAdapter + `useRemoteThreadListRuntime` |
+|---|---|---|
+| **Thread storage** | In-memory | Your backend |
+| **Message storage** | In-memory | In-memory (can add history adapter for server-side) |
+| **Cross-session persistence** | No | Yes |
+| **Setup complexity** | Minimal | Moderate |
+| **Best for** | CLI tools, demos, prototypes | Production apps with persistence |

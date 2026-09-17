@@ -1,0 +1,1112 @@
+# assistant-stream
+
+## 0.3.44
+
+### Patch Changes
+
+- [#7368](https://github.com/assistant-ui/assistant-ui/pull/7368) [`562e495`](https://github.com/assistant-ui/assistant-ui/commit/562e495139605d5279e9bd39abc223ef52b79a94) - fix: cancel merged assistant streams when a transform is cancelled or errors, including child streams waiting for their next chunk. ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#7525](https://github.com/assistant-ui/assistant-ui/pull/7525) [`99c9988`](https://github.com/assistant-ui/assistant-ui/commit/99c9988951b5c469b2706bc3c85116a65660836a) - fix(assistant-stream): keep streaming tool-call arguments across a non-terminal error on the data stream ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#7101](https://github.com/assistant-ui/assistant-ui/pull/7101) [`37a5a95`](https://github.com/assistant-ui/assistant-ui/commit/37a5a955d4d51a1b7013232a358e5e7461879d28) - fix: normalize configurable JSON Schema converters to draft-07 ([@rupic-app](https://github.com/apps/rupic-app))
+  
+  `toJSONSchema` asked only one of its conversion paths for a dialect, so the same tool definition emitted draft-07 or draft-2020-12 depending on the schema library. object-level `toJSONSchema()` methods are now asked for draft-07 as well, and the Standard JSON Schema converter, which declares `StandardJSONSchemaV1.Options` as its input and so agreed to the term, is rejected instead of cast when it answers in another dialect. the `~standard.toJSONSchema` hook is gone: it is not part of the Standard Schema spec, no library implements it, and it preempted the spec's `~standard.jsonSchema` converter. an unconvertible schema now names its own library in the error instead of telling every user to upgrade Zod.
+  
+  nothing else is held to the target. duck-typed `toJSONSchema()` methods, `toJSON()` results and plain JSON Schema objects pass through in whatever dialect they carry, so forwarding a remote tool's `inputSchema` verbatim keeps working.
+
+- [#7370](https://github.com/assistant-ui/assistant-ui/pull/7370) [`b7f9a96`](https://github.com/assistant-ui/assistant-ui/commit/b7f9a960dda7c7548ac1ebdf3bae368fe28bcbfc) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- [#7591](https://github.com/assistant-ui/assistant-ui/pull/7591) [`408d5f4`](https://github.com/assistant-ui/assistant-ui/commit/408d5f43a69baa9df723b395eaafba7a501f8884) - fix: keep package imports external in `aui-build` output without resolving them, and fail the build when anything from `node_modules` would be bundled. `assistant-stream` and `@assistant-ui/react-generative-ui` now depend on `@types/json-schema` instead of shipping a copy of it under `dist/node_modules`. ([@okisdev](https://github.com/okisdev))
+
+- [#7546](https://github.com/assistant-ui/assistant-ui/pull/7546) [`70b633f`](https://github.com/assistant-ui/assistant-ui/commit/70b633f378deff6c693f2720ceb9cbb5b8677d8c) - fix: name the Zod helper when a Zod schema has no JSON Schema converter ([@okisdev](https://github.com/okisdev))
+  
+  a `zod/mini` schema carries no `~standard.jsonSchema` converter and no schema-level `toJSONSchema`, so it reaches the unconvertible-schema error. that error now names `z.toJSONSchema(schema)` instead of pointing at "that library's Standard JSON Schema helper", which a Zod user had to go and find.
+
+## 0.3.43
+
+### Patch Changes
+
+- [#7220](https://github.com/assistant-ui/assistant-ui/pull/7220) [`628df88`](https://github.com/assistant-ui/assistant-ui/commit/628df887b9cfc9e0381cf53139a32dd0e75bbc67) - fix: a producer whose stream expired no longer writes into or finalizes the stream a later `run` starts under the same id. `createResumableStreamContext` now passes a lease from the new optional `ResumableStreamStore.acquireLease` to `append` and `finalize`; the bundled in-memory and Redis stores implement it, and custom stores opt in by implementing it. ([@samdickson22](https://github.com/samdickson22))
+
+- [#7262](https://github.com/assistant-ui/assistant-ui/pull/7262) [`ed77e95`](https://github.com/assistant-ui/assistant-ui/commit/ed77e956811a161243e6c9faf13320846db30a8a) - fix: avoid repeatedly scanning unfinished SSE lines when events arrive in small chunks ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#7198](https://github.com/assistant-ui/assistant-ui/pull/7198) [`f6f52cd`](https://github.com/assistant-ui/assistant-ui/commit/f6f52cde1814bac7bca41c5da163bb50021921ff) - fix: a stale Redis append or delete no longer changes a stream that was reacquired between the store's metadata read and its write. the node-redis and ioredis adapters now run append, finalize, and delete as scripts through `EVALSHA`, so the Redis endpoint must allow `EVALSHA` as well as `EVAL`. a custom `RedisLikeClient` gets the same protection by implementing the optional `appendIfUnchanged` and `deleteIfUnchanged`. ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#7143](https://github.com/assistant-ui/assistant-ui/pull/7143) [`790217b`](https://github.com/assistant-ui/assistant-ui/commit/790217b85d9130116ac1a06c46a7902a2552ed07) - fix: batch raw AssistantStream enqueue calls ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#7344](https://github.com/assistant-ui/assistant-ui/pull/7344) [`dacfcec`](https://github.com/assistant-ui/assistant-ui/commit/dacfcecf633340250e38f6055eeea3c9e01a978d) - fix: skip in-memory resumable stream expiry sweeps until an expiry can be due, avoiding full-store scans on every chunk while preserving TTL and reader wakeups. ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#7241](https://github.com/assistant-ui/assistant-ui/pull/7241) [`c0d6150`](https://github.com/assistant-ui/assistant-ui/commit/c0d615046cbbbdfee1a183428f51e9c547564a8c) - fix: strict `TextStreamController.append()` drops deltas instead of throwing after the consumer cancels the stream ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#7242](https://github.com/assistant-ui/assistant-ui/pull/7242) [`275eeb9`](https://github.com/assistant-ui/assistant-ui/commit/275eeb91d0be1d43e98b7b48a53a9609e87419c4) - fix: the tool-call `argsText` controller honors the `strict` flag passed to `createAssistantStreamController` ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#7327](https://github.com/assistant-ui/assistant-ui/pull/7327) [`e57c33f`](https://github.com/assistant-ui/assistant-ui/commit/e57c33f956b28d1c504ea6a1eadbc9e3092e4931) - fix: avoid rescanning emitted tool argument array entries on each streaming update ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#7056](https://github.com/assistant-ui/assistant-ui/pull/7056) [`e533f6b`](https://github.com/assistant-ui/assistant-ui/commit/e533f6b2790d4f8ffcc75c256d3753c95f801a9e) - fix: mark tool arguments complete when their text stream ends ([@ephraimduncan](https://github.com/ephraimduncan))
+
+- [#7325](https://github.com/assistant-ui/assistant-ui/pull/7325) [`28691a5`](https://github.com/assistant-ui/assistant-ui/commit/28691a5ef6f7f0a333fa910220f29b0b2a0fae8c) - fix: return only own JSON properties when reading tool argument fields ([@Kinfe123](https://github.com/Kinfe123))
+
+## 0.3.42
+
+### Patch Changes
+
+- [#7058](https://github.com/assistant-ui/assistant-ui/pull/7058) [`3bcd6db`](https://github.com/assistant-ui/assistant-ui/commit/3bcd6dbacd4ac0d13c30cf82b974e98aaa514ad9) - fix: prevent tool execution after cancellation during asynchronous schema validation ([@ephraimduncan](https://github.com/ephraimduncan))
+
+- [#7061](https://github.com/assistant-ui/assistant-ui/pull/7061) [`a16b990`](https://github.com/assistant-ui/assistant-ui/commit/a16b9908d0a4ee74573ee94228b4d87aa4f977f8) - fix: use final message usage for token counts when the stream reports a positive output total ([@ephraimduncan](https://github.com/ephraimduncan))
+
+- [#7106](https://github.com/assistant-ui/assistant-ui/pull/7106) [`253c80d`](https://github.com/assistant-ui/assistant-ui/commit/253c80de81d07ee556978d99e342f8bc1b57cb0a) - fix(assistant-stream): settle cancellation during asynchronous tool validation ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#7107](https://github.com/assistant-ui/assistant-ui/pull/7107) [`e6158c8`](https://github.com/assistant-ui/assistant-ui/commit/e6158c8af3306f9af4af2fea8987ded698d6393e) - fix(assistant-stream): preserve prototype-named tool call IDs ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#7158](https://github.com/assistant-ui/assistant-ui/pull/7158) [`623d5ff`](https://github.com/assistant-ui/assistant-ui/commit/623d5ff90ef93a892152f8f1219b0560ea124d97) - fix: apply deeply nested GORP paths without overflowing the stack ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#7142](https://github.com/assistant-ui/assistant-ui/pull/7142) [`07eeb54`](https://github.com/assistant-ui/assistant-ui/commit/07eeb54de16fed4b7a1afc7de0b2aa264c51a299) - perf: skip partial tool argument parsing without active readers ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#7059](https://github.com/assistant-ui/assistant-ui/pull/7059) [`12c5447`](https://github.com/assistant-ui/assistant-ui/commit/12c54477a18b0ebd2b9cf397da1a1427704ea0c9) - fix: remove nested required constraints from partial schemas without properties ([@ephraimduncan](https://github.com/ephraimduncan))
+
+- [#7065](https://github.com/assistant-ui/assistant-ui/pull/7065) [`9b9d5e9`](https://github.com/assistant-ui/assistant-ui/commit/9b9d5e936395ce878464c9c50a75e8344aaeb067) - fix: keep provider messages in backend tool responses and completed pending tool calls ([@ephraimduncan](https://github.com/ephraimduncan))
+
+- [#6881](https://github.com/assistant-ui/assistant-ui/pull/6881) [`afac9e0`](https://github.com/assistant-ui/assistant-ui/commit/afac9e02911f05684309087b4e2d9e0ee9b2bc1f) - fix: complete aborted in-memory stream reads without throwing a stored error after the last buffered chunk. ([@ephraimduncan](https://github.com/ephraimduncan))
+
+- [#6877](https://github.com/assistant-ui/assistant-ui/pull/6877) [`4cdcabb`](https://github.com/assistant-ui/assistant-ui/commit/4cdcabb1a914b48af214da59896fe3c716465321) - fix: Keep stored replay bytes separate from producer and consumer buffers. ([@ephraimduncan](https://github.com/ephraimduncan))
+
+- [#6954](https://github.com/assistant-ui/assistant-ui/pull/6954) [`23d2865`](https://github.com/assistant-ui/assistant-ui/commit/23d286573f68875ade98b2fd01ed3e36c0d629f4) - fix: keep the first SSE event when a text stream starts with a byte-order mark ([@ephraimduncan](https://github.com/ephraimduncan))
+
+- [#7060](https://github.com/assistant-ui/assistant-ui/pull/7060) [`b505555`](https://github.com/assistant-ui/assistant-ui/commit/b505555a7a8c98e09bdcb718dd74aaa48eb57bee) - fix: supply the draft-07 target to Standard JSON Schema converters so tool parameter conversion does not throw on missing options ([@ephraimduncan](https://github.com/ephraimduncan))
+
+- [#6868](https://github.com/assistant-ui/assistant-ui/pull/6868) [`01fdd4b`](https://github.com/assistant-ui/assistant-ui/commit/01fdd4b204f4c3d2c151f7a0ac356706de5b923b) - fix: keep positive exponents incomplete until all argument digits arrive ([@ephraimduncan](https://github.com/ephraimduncan))
+
+- [#6952](https://github.com/assistant-ui/assistant-ui/pull/6952) [`59a8251`](https://github.com/assistant-ui/assistant-ui/commit/59a825190f80f6036984650bc36c5aa260e7e332) - fix: keep the JSON quotes on a successful tool input that is a plain string, so a tool with a string input schema executes instead of failing with a parameter parsing error ([@ephraimduncan](https://github.com/ephraimduncan))
+
+## 0.3.41
+
+### Patch Changes
+
+- [#6737](https://github.com/assistant-ui/assistant-ui/pull/6737) [`46fad14`](https://github.com/assistant-ui/assistant-ui/commit/46fad145974a890cd18f7fc2df54e9d0bf36b0fb) - fix: prevent stale Redis producers from finalizing replacement streams ([@Kinfe123](https://github.com/Kinfe123))
+  
+  `RedisLikeClient` now requires a `finalizeIfUnchanged` method; no public API accepts a `RedisLikeClient`, so this only affects code that typed a value against the interface directly.
+
+- [#6656](https://github.com/assistant-ui/assistant-ui/pull/6656) [`f0d0aa2`](https://github.com/assistant-ui/assistant-ui/commit/f0d0aa2f87b9d881f7003bf6132bbb519509b36b) - fix: await cross-realm and thenable tool validation results ([@rupic-app](https://github.com/apps/rupic-app))
+
+- [#6589](https://github.com/assistant-ui/assistant-ui/pull/6589) [`5bdd416`](https://github.com/assistant-ui/assistant-ui/commit/5bdd416af4379a2cc86c12292e06a6e3ce5fcdb9) - fix: preserve valid files with empty payload or MIME values ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#6794](https://github.com/assistant-ui/assistant-ui/pull/6794) [`e53299b`](https://github.com/assistant-ui/assistant-ui/commit/e53299be07fd69bd5d64a2f50bd3561d85dc47cc) - refactor: drop the redis client members the resumable store never calls ([@okisdev](https://github.com/okisdev))
+  
+  `RedisLikeClient` no longer declares `set`, `expire`, `exists` or `xAdd`, `PipelineCommand` no longer has a `"set"` variant, and `NodeRedisLike` no longer requires `expire`, `exists`, `xAdd` or the non-NX `set` overload; no public API accepts a `RedisLikeClient`, so this only affects code that typed a value against the interface directly.
+
+## 0.3.40
+
+### Patch Changes
+
+- [#6235](https://github.com/assistant-ui/assistant-ui/pull/6235) [`8626c1f`](https://github.com/assistant-ui/assistant-ui/commit/8626c1ffe1c6d56ec75073e795aa9fbf7493c3ed) - fix: encode file parts on the data stream ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#6249](https://github.com/assistant-ui/assistant-ui/pull/6249) [`531f61a`](https://github.com/assistant-ui/assistant-ui/commit/531f61a4d2f5fcee16821a6401d9d11394bf8339) - fix: reject non-canonical gorp array indices ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#6243](https://github.com/assistant-ui/assistant-ui/pull/6243) [`dfaa94f`](https://github.com/assistant-ui/assistant-ui/commit/dfaa94fca3ecdd8b0b0ab202f08dafd03c1e2ed5) - fix: make merge stream seal idempotent ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#6394](https://github.com/assistant-ui/assistant-ui/pull/6394) [`a4bc54a`](https://github.com/assistant-ui/assistant-ui/commit/a4bc54afa976423b6310a2d5be350df0f3b41e42) - refactor: build accumulated assistant messages through one part-append helper ([@samdickson22](https://github.com/samdickson22))
+
+- [#6355](https://github.com/assistant-ui/assistant-ui/pull/6355) [`fd471e9`](https://github.com/assistant-ui/assistant-ui/commit/fd471e94babf7b6580e06bbea2b7a8cdd4882869) - fix: keep partial tool args parseable while a `\uXXXX` escape is still streaming ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#6319](https://github.com/assistant-ui/assistant-ui/pull/6319) [`ac7ec15`](https://github.com/assistant-ui/assistant-ui/commit/ac7ec15e118a9279dd60521b839ecc38983675c5) - fix: unstable_runPendingTools no longer re-executes tool calls that already have a result ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#6305](https://github.com/assistant-ui/assistant-ui/pull/6305) [`e96d3de`](https://github.com/assistant-ui/assistant-ui/commit/e96d3dea9370159e04f82bf4eb39d6b1b1c4d21d) - chore: update dependencies ([@okisdev](https://github.com/okisdev))
+
+- [#6417](https://github.com/assistant-ui/assistant-ui/pull/6417) [`f96e22f`](https://github.com/assistant-ui/assistant-ui/commit/f96e22ffa8c85cbfc4a878db4f371c510070066d) - refactor: split the ui message stream chunk normalizer out of the decoder ([@okisdev](https://github.com/okisdev))
+
+- [#6414](https://github.com/assistant-ui/assistant-ui/pull/6414) [`bfc8bef`](https://github.com/assistant-ui/assistant-ui/commit/bfc8bef9f1ee6cb4cb25f83488a0e4ce1a393ff3) - refactor: share the sse pipeline, stream factory, and closed-stream drop scaffolding. ([@okisdev](https://github.com/okisdev))
+
+- [#6316](https://github.com/assistant-ui/assistant-ui/pull/6316) [`2cd5cbc`](https://github.com/assistant-ui/assistant-ui/commit/2cd5cbcf78c586b7557421b00e9c996c62bd7f43) - fix: TextStreamController.close() no longer throws after the consumer cancels ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#6242](https://github.com/assistant-ui/assistant-ui/pull/6242) [`105af3e`](https://github.com/assistant-ui/assistant-ui/commit/105af3eaea2093df271d9c44642e1c04d5f5cf7c) - fix: guard tool-call stream writes after consumer cancellation ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#6368](https://github.com/assistant-ui/assistant-ui/pull/6368) [`4c3194a`](https://github.com/assistant-ui/assistant-ui/commit/4c3194aca4470753a2a37e244cb5e3fb27cbc76b) - refactor: share the decoder tool-call controller registry between data-stream and ui-message-stream. ([@okisdev](https://github.com/okisdev))
+
+## 0.3.39
+
+### Patch Changes
+
+- [#6155](https://github.com/assistant-ui/assistant-ui/pull/6155) [`19e52c4`](https://github.com/assistant-ui/assistant-ui/commit/19e52c4012a6a8c32e514134af9ce4eee1146864) - fix: decode AI SDK v6 tool-input/tool-output chunks in UIMessageStreamDecoder ([@okisdev](https://github.com/okisdev))
+
+## 0.3.38
+
+### Patch Changes
+
+- [#5938](https://github.com/assistant-ui/assistant-ui/pull/5938) [`0e91e27`](https://github.com/assistant-ui/assistant-ui/commit/0e91e277ebe218e891d1c318a18eec230ee4f981) - fix: cancel invalid Gorp stream responses ([@rupic-app](https://github.com/apps/rupic-app))
+
+- [#5974](https://github.com/assistant-ui/assistant-ui/pull/5974) [`c5bc8ed`](https://github.com/assistant-ui/assistant-ui/commit/c5bc8ed0c78e8fb66a6c21c596765caeccef3aec) - fix: release merged stream child readers after completion and cancellation ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#5703](https://github.com/assistant-ui/assistant-ui/pull/5703) [`f0d1d48`](https://github.com/assistant-ui/assistant-ui/commit/f0d1d48842b61c8f781771375e3893d189321c2d) - fix: await merged stream cleanup during cancellation ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#5524](https://github.com/assistant-ui/assistant-ui/pull/5524) [`ab7f49f`](https://github.com/assistant-ui/assistant-ui/commit/ab7f49fcb91b8a9d96408426da3259c99f619649) - fix: keep partial tool-call args parseable when a negative number is cut before its digits ([@VihaanAgarwal](https://github.com/VihaanAgarwal))
+  
+  `fixJson` treated the `-` that opens an array element as a complete value, so a stream cut at `{"a":[-` repaired to `{"a":[-]}`. That is not valid JSON, `parsePartialJsonObject` fell into its catch and returned `undefined`, and callers that fall back to `{}` dropped every field streamed so far until the next delta landed.
+  
+  The `INSIDE_ARRAY_START` default branch advanced `lastValidIndex` before delegating to `processValueStart`, which deliberately leaves it alone for `-` because a lone minus carries no value yet. Every other value-start site already lets `processValueStart` own that index, which is why `{"a":-` and `{"a":[1,-` truncated correctly and only the first element of an array did not.
+
+- [#5774](https://github.com/assistant-ui/assistant-ui/pull/5774) [`61d29f4`](https://github.com/assistant-ui/assistant-ui/commit/61d29f4157b525d3e36ac721d1fcef7d1baf987e) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- [#5927](https://github.com/assistant-ui/assistant-ui/pull/5927) [`a2ab997`](https://github.com/assistant-ui/assistant-ui/commit/a2ab997dc645923fa8ebbca5e8e050d467a69cf4) - fix: isolate overlapping tool executions that reuse a toolCallId ([@rupic-app](https://github.com/apps/rupic-app))
+
+- [#5427](https://github.com/assistant-ui/assistant-ui/pull/5427) [`e8997d9`](https://github.com/assistant-ui/assistant-ui/commit/e8997d922d15d0de0d20558ce0735fa3e844f27f) - fix: cancel and release assistant message stream readers when iteration ends ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#5975](https://github.com/assistant-ui/assistant-ui/pull/5975) [`44e574f`](https://github.com/assistant-ui/assistant-ui/commit/44e574f8c17dd5603933ec74821eecd08e94e371) - fix: release resumable producer readers after stream failures ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#5515](https://github.com/assistant-ui/assistant-ui/pull/5515) [`14c3b5a`](https://github.com/assistant-ui/assistant-ui/commit/14c3b5a25afe2b2f37760dfe8003818b2e4f72d3) - fix: prevent stale data from leaking into reacquired Redis streams ([@Kinfe123](https://github.com/Kinfe123))
+
+## 0.3.37
+
+### Patch Changes
+
+- [#5729](https://github.com/assistant-ui/assistant-ui/pull/5729) [`0ae51a8`](https://github.com/assistant-ui/assistant-ui/commit/0ae51a8e8c4c49c4b8810b9c64845eeeded8b9bc) - feat: support ioredis 6 alongside 5 in the resumable stream store ([@okisdev](https://github.com/okisdev))
+
+- [#5734](https://github.com/assistant-ui/assistant-ui/pull/5734) [`e319574`](https://github.com/assistant-ui/assistant-ui/commit/e319574df10df2dbf2d57fc2bcf7cb92d3c6a2e6) - fix: isolate tool execution lifecycle callback errors from stream settlement ([@Kinfe123](https://github.com/Kinfe123))
+
+## 0.3.36
+
+### Patch Changes
+
+- [#5723](https://github.com/assistant-ui/assistant-ui/pull/5723) [`94dc3e5`](https://github.com/assistant-ui/assistant-ui/commit/94dc3e509fa2b4fae1a14c88ec34b910c8d95af8) - chore: update dependencies ([@okisdev](https://github.com/okisdev))
+
+## 0.3.35
+
+### Patch Changes
+
+- [#5534](https://github.com/assistant-ui/assistant-ui/pull/5534) [`456b056`](https://github.com/assistant-ui/assistant-ui/commit/456b056b2859994bf49ed5cc4cf031f0601e2174) - fix: preserve streamed tool arguments when other content is interleaved ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#5700](https://github.com/assistant-ui/assistant-ui/pull/5700) [`a88751d`](https://github.com/assistant-ui/assistant-ui/commit/a88751d71edfd2516f266ce8889081749fba4e5a) - fix: carry a reasoning summary on the data stream. a reasoning part opened with `unstable_summary` previously lost it on that wire, and a summary-only part produced no frames at all, so it never reached the client. the encoder now emits a reasoning part-start frame when there is a summary to carry; a stream that does not use the field is unchanged, and one that does requires a decoder that understands the frame. ([@okisdev](https://github.com/okisdev))
+
+- [#5639](https://github.com/assistant-ui/assistant-ui/pull/5639) [`79253f2`](https://github.com/assistant-ui/assistant-ui/commit/79253f2a5e0a637c8907ba30859f308ff6dcd1c4) - feat: preserve app-authored reasoning summaries on message parts ([@rupic-app](https://github.com/apps/rupic-app))
+
+## 0.3.34
+
+### Patch Changes
+
+- [#5609](https://github.com/assistant-ui/assistant-ui/pull/5609) [`d52928d`](https://github.com/assistant-ui/assistant-ui/commit/d52928db2c83a3ba6f25bf8c6b21934571dd4622) - fix: await resumable reader cleanup during cancellation ([@Kinfe123](https://github.com/Kinfe123))
+
+## 0.3.33
+
+### Patch Changes
+
+- [#5565](https://github.com/assistant-ui/assistant-ui/pull/5565) [`78943a3`](https://github.com/assistant-ui/assistant-ui/commit/78943a37b1006bfbee42596f838850cd96ab4566) - feat: add opt-in `strict: false` mode that reconciles malformed stream input instead of throwing (decoders, state accumulator); assistant-transport resume runs always decode leniently ([@Yonom](https://github.com/Yonom))
+
+## 0.3.32
+
+### Patch Changes
+
+- [#5521](https://github.com/assistant-ui/assistant-ui/pull/5521) [`01140bd`](https://github.com/assistant-ui/assistant-ui/commit/01140bde14fbfa89af9bdd080bbf79b3a509b524) - fix: prevent pending frontend tool output from enqueuing after stream cancellation ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#5463](https://github.com/assistant-ui/assistant-ui/pull/5463) [`4c313cf`](https://github.com/assistant-ui/assistant-ui/commit/4c313cfabe9802a7e59362c323ec926a24d089d4) - fix: carry a file part's filename through to the model message ([@okisdev](https://github.com/okisdev))
+
+  `GenericFilePart` had no `filename` field, so a `FileMessagePart` or `ImageMessagePart` carrying one arrived at the provider anonymous even though `LanguageModelV2FilePart` accepts a filename. The field is now declared and forwarded by both `toGenericMessages` and the react-data-stream converter, and omitted entirely when the source part has none.
+
+- [#5537](https://github.com/assistant-ui/assistant-ui/pull/5537) [`c868710`](https://github.com/assistant-ui/assistant-ui/commit/c8687104b0407f424d55dd0a369d692fe7a4c708) - fix: keep a settled tool call distinguishable from an unfinished one, so a tool returning false, 0, "" or null no longer loses its result on the cloud round trip and no longer reads as never completed ([@okisdev](https://github.com/okisdev))
+
+- [#5535](https://github.com/assistant-ui/assistant-ui/pull/5535) [`5ececc1`](https://github.com/assistant-ui/assistant-ui/commit/5ececc1df536e098f8ee252addd2e62be7d61a7a) - fix: synthesize a result for tool calls that have none, so a thread holding a cancelled or abandoned tool call no longer breaks every later run ([@okisdev](https://github.com/okisdev))
+
+## 0.3.31
+
+### Patch Changes
+
+- [#5296](https://github.com/assistant-ui/assistant-ui/pull/5296) [`936c52c`](https://github.com/assistant-ui/assistant-ui/commit/936c52c4301b89242572d9890c870050f63cbe93) - fix: DataStreamDecoder drops tool-call args deltas for an already-closed args stream instead of crashing mid-decode when a text delta interleaves between a tool call's begin and its args ([@Solaris-star](https://github.com/Solaris-star))
+
+- [#5318](https://github.com/assistant-ui/assistant-ui/pull/5318) [`ee87dd9`](https://github.com/assistant-ui/assistant-ui/commit/ee87dd9fef1389165bbfe0019be2a6995b2cfb24) - fix: accept case-insensitive `data:` URL schemes and normalize parsed mime types to lowercase ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+## 0.3.30
+
+### Patch Changes
+
+- [#5284](https://github.com/assistant-ui/assistant-ui/pull/5284) [`a8cd1c9`](https://github.com/assistant-ui/assistant-ui/commit/a8cd1c9ff95bae0921cbd7f7930c05be6d6192a0) - fix: addToolCallPart({response}) settles the tool-call part so the stream closes ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+## 0.3.29
+
+### Patch Changes
+
+- [#5278](https://github.com/assistant-ui/assistant-ui/pull/5278) [`f78e579`](https://github.com/assistant-ui/assistant-ui/commit/f78e5794d8d9d2f1c815485cb39a56f1072ed795) - fix: PlainTextEncoder emits assistant text only. Reasoning and tool-call argument deltas no longer leak into the output, non-text chunks (result, annotations, data, update-state, tool-call-args-text-finish) are skipped instead of throwing mid-stream, and the incorrect x-vercel-ai-data-stream header is removed from the response headers. ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+## 0.3.28
+
+### Patch Changes
+
+- [#5236](https://github.com/assistant-ui/assistant-ui/pull/5236) [`f9c1b0f`](https://github.com/assistant-ui/assistant-ui/commit/f9c1b0fec5ac4cae09c1c9da77f901c0799140ad) - fix: DataStreamChunkDecoder skips blank framing lines and drops colon-less lines with a warning instead of throwing ([@Yonom](https://github.com/Yonom))
+
+- [#5206](https://github.com/assistant-ui/assistant-ui/pull/5206) [`235c17e`](https://github.com/assistant-ui/assistant-ui/commit/235c17e22acae8a643c583905f3bf90955651794) - fix: parse SSEDecoder and data-stream chunk frames with secure-json-parse, matching the transport and UIMessageStream decoders; a malformed or prototype-pollution frame is now dropped with a warning and the stream continues instead of erroring the whole stream ([@rupic-app](https://github.com/apps/rupic-app))
+
+- [#5208](https://github.com/assistant-ui/assistant-ui/pull/5208) [`a0ddc86`](https://github.com/assistant-ui/assistant-ui/commit/a0ddc862b0c506bd791238ebf800868e4836820a) - Adopt `erasableSyntaxOnly`; public enums are now `as const` objects. ([@Yonom](https://github.com/Yonom))
+
+- [#5263](https://github.com/assistant-ui/assistant-ui/pull/5263) [`06f5266`](https://github.com/assistant-ui/assistant-ui/commit/06f5266bf8d7d347020c113c089b199b182a0099) - Same-priority duplicate tool registrations throw again. The `Tool` type gains an optional `overwrite` flag (discouraged escape hatch) that lets a later registration silently replace a same-priority tool of the same name; the flag is stripped from the merged output. ([@Yonom](https://github.com/Yonom))
+
+- [#5200](https://github.com/assistant-ui/assistant-ui/pull/5200) [`d319637`](https://github.com/assistant-ui/assistant-ui/commit/d319637df1297b7aa589a77ff268467270a85386) - fix: parse UIMessageStream frames with secure-json-parse, matching the transport decoder ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+## 0.3.27
+
+### Patch Changes
+
+- [#5176](https://github.com/assistant-ui/assistant-ui/pull/5176) [`8630186`](https://github.com/assistant-ui/assistant-ui/commit/8630186c86f651bd5e3db9901de14b3feff073ec) - fix: dedupe accumulator drop warnings per instance and drop class ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#5106](https://github.com/assistant-ui/assistant-ui/pull/5106) [`446a118`](https://github.com/assistant-ui/assistant-ui/commit/446a1187d38f3ca8ce12b1f0ac739400cb32d63e) - fix: isolate resumable stream observability hook errors ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#5045](https://github.com/assistant-ui/assistant-ui/pull/5045) [`a081656`](https://github.com/assistant-ui/assistant-ui/commit/a0816568bcb0632a67f6e09dc0c90e76cc2b50cc) - fix: prevent assistant stream task settlement from escaping as unhandled rejections ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#5044](https://github.com/assistant-ui/assistant-ui/pull/5044) [`25a5be0`](https://github.com/assistant-ui/assistant-ui/commit/25a5be0c8b7101a382ee7fc31102bdf4fb7ad114) - fix: avoid applying initial gorp stream operations twice ([@Kinfe123](https://github.com/Kinfe123))
+
+  The first decoded chunk now represents its authoritative snapshot as a
+  synthetic root `set`; later chunks preserve their incremental operations.
+  The deprecated object stream aliases share the same encoder and fix.
+
+- [#5141](https://github.com/assistant-ui/assistant-ui/pull/5141) [`47562fd`](https://github.com/assistant-ui/assistant-ui/commit/47562fd231b35fe41c61b437ff66021f9cf0e554) - fix: clean up abort listeners after frontend tool execution settles ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#5063](https://github.com/assistant-ui/assistant-ui/pull/5063) [`5e4dd9f`](https://github.com/assistant-ui/assistant-ui/commit/5e4dd9fd00161fd79df60821d2b9af0cd7ebcefd) - feat: add GorpStreamDeltaTracker, migrating gorp's delta-tracking (change frames, isChangedAt, getChangedKeys) into GorpStream ([@Yonom](https://github.com/Yonom))
+
+- [#5142](https://github.com/assistant-ui/assistant-ui/pull/5142) [`5da0d93`](https://github.com/assistant-ui/assistant-ui/commit/5da0d93808089b9fca35667ab442dff196de46b8) - fix: guard gorp accumulator path navigation against inherited keys and prototype-polluting path segments ([@Yonom](https://github.com/Yonom))
+
+- [#5064](https://github.com/assistant-ui/assistant-ui/pull/5064) [`85d4976`](https://github.com/assistant-ui/assistant-ui/commit/85d49764ca3585fc553257dafa00a47830727e36) - refactor: consolidate on a single wire protocol name (assistant-transport). Remove the unpublished gorp-shaped exports, expose diff tracking as AssistantTransportDeltaTracker and the state operation type as AssistantTransportStateOperation, and keep the published ObjectStream aliases working as deprecated delegates. ([@Yonom](https://github.com/Yonom))
+
+- [#5061](https://github.com/assistant-ui/assistant-ui/pull/5061) [`5135400`](https://github.com/assistant-ui/assistant-ui/commit/5135400d054297889312b9ae03fe803443ee2fae) - feat: rename ObjectStream to GorpStream (old names remain as deprecated aliases) ([@Yonom](https://github.com/Yonom))
+
+- [#4988](https://github.com/assistant-ui/assistant-ui/pull/4988) [`9a343db`](https://github.com/assistant-ui/assistant-ui/commit/9a343db871ceab7e574bfcec9ab22af0ddaf1841) - fix: guard object stream settlement after cancellation ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#5107](https://github.com/assistant-ui/assistant-ui/pull/5107) [`666aaab`](https://github.com/assistant-ui/assistant-ui/commit/666aaab6ac3a64ec0f58c3ae958186a9880d8764) - fix: prioritize backend tool results over stale argument parse errors ([@Solaris-star](https://github.com/Solaris-star))
+
+- [#5129](https://github.com/assistant-ui/assistant-ui/pull/5129) [`ba948d8`](https://github.com/assistant-ui/assistant-ui/commit/ba948d8192b8c4bf12cbe60ece4d0f2d11506aa6) - fix: cancel polyfilled async iterators when consumers stop early ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#5152](https://github.com/assistant-ui/assistant-ui/pull/5152) [`44aac58`](https://github.com/assistant-ui/assistant-ui/commit/44aac5834cff3a4f985b3b0aefe31c8b7951732f) - fix: validate assistant-transport chunk shape at the decode boundary and bounds-check accumulator part paths ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#5172](https://github.com/assistant-ui/assistant-ui/pull/5172) [`9402648`](https://github.com/assistant-ui/assistant-ui/commit/94026488709d1fcc4ed446f39e2dcb78f9eb1daf) - fix: validate per-type required fields at the assistant-transport decode boundary and drop malformed chunks in the accumulator instead of aborting the response; an unsupported part-start now inserts an empty reasoning placeholder to keep later part indices aligned ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#5155](https://github.com/assistant-ui/assistant-ui/pull/5155) [`4651ea5`](https://github.com/assistant-ui/assistant-ui/commit/4651ea5b003bcd56d82e0bb3de16f918d6722906) - fix: drop malformed UIMessageStream frames at the decode boundary and fix tool-result closing the active args stream ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#5174](https://github.com/assistant-ui/assistant-ui/pull/5174) [`2bc6798`](https://github.com/assistant-ui/assistant-ui/commit/2bc6798346378fd6c1f8b7e8423fda162d7f3a27) - fix: only record firstTokenTime when a text-delta actually mutates a part ([@rupic-app](https://github.com/apps/rupic-app))
+
+## 0.3.26
+
+### Patch Changes
+
+- [#4883](https://github.com/assistant-ui/assistant-ui/pull/4883) [`43b8ce8`](https://github.com/assistant-ui/assistant-ui/commit/43b8ce862520e1f53d837407c5fcd7106c9ffd7c) - fix: accept parameterized event-stream content types ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#4949](https://github.com/assistant-ui/assistant-ui/pull/4949) [`1e926b6`](https://github.com/assistant-ui/assistant-ui/commit/1e926b68a8f61d5d099a53c89ad25b168872b853) - refactor: back the internal SSE pipelines with the shared SSEEventDecoder ([@okisdev](https://github.com/okisdev))
+
+- [#4880](https://github.com/assistant-ui/assistant-ui/pull/4880) [`d6c7571`](https://github.com/assistant-ui/assistant-ui/commit/d6c757149df4cc66aa3261a3bd3beb041cac6c49) - feat: export a spec-complete SSE event decoder from assistant-stream/utils ([@okisdev](https://github.com/okisdev))
+
+- [#4876](https://github.com/assistant-ui/assistant-ui/pull/4876) [`4d7a447`](https://github.com/assistant-ui/assistant-ui/commit/4d7a4479b2dd673e3f5a356c4dd763f3aa72053d) - fix: parse all standard SSE line endings ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#4875](https://github.com/assistant-ui/assistant-ui/pull/4875) [`ca751f4`](https://github.com/assistant-ui/assistant-ui/commit/ca751f41905a82e9b1622d100af62b8b31314a5c) - fix: discard unterminated SSE frames ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#4755](https://github.com/assistant-ui/assistant-ui/pull/4755) [`38bf104`](https://github.com/assistant-ui/assistant-ui/commit/38bf1045406da7eff1b9c5847e4e7db96d327c2c) - feat: detect data stream protocol from response headers ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#4854](https://github.com/assistant-ui/assistant-ui/pull/4854) [`19b2a00`](https://github.com/assistant-ui/assistant-ui/commit/19b2a00add7f1900bc3fed579759400fc241747c) - fix: accept the AI SDK v5+ `delta` text chunks, `source-url`, flat `file`, and bare lifecycle chunks in UIMessageStreamDecoder ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#4746](https://github.com/assistant-ui/assistant-ui/pull/4746) [`0686f4e`](https://github.com/assistant-ui/assistant-ui/commit/0686f4e6b8ee5f6e17c968997ef11622ef8f9c98) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- [#4955](https://github.com/assistant-ui/assistant-ui/pull/4955) [`c2d2271`](https://github.com/assistant-ui/assistant-ui/commit/c2d2271b9709c235da18036a0edd5283ce279916) - refactor: remove the dead is-json copy ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#4842](https://github.com/assistant-ui/assistant-ui/pull/4842) [`84e8ddf`](https://github.com/assistant-ui/assistant-ui/commit/84e8ddf548d808d74d84b6be5a8ed28642baad3d) - feat: optional code and severity metadata on error chunks ([@okisdev](https://github.com/okisdev))
+
+- [#4887](https://github.com/assistant-ui/assistant-ui/pull/4887) [`d03e5cf`](https://github.com/assistant-ui/assistant-ui/commit/d03e5cf0e6efada832503fedc565a1fb8f14676a) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- [#4815](https://github.com/assistant-ui/assistant-ui/pull/4815) [`5325f09`](https://github.com/assistant-ui/assistant-ui/commit/5325f0985768b750b050cf07f592fdfed34eccac) - chore: update dependencies ([@okisdev](https://github.com/okisdev))
+
+## 0.3.25
+
+### Patch Changes
+
+- [#4687](https://github.com/assistant-ui/assistant-ui/pull/4687) [`f833bc1`](https://github.com/assistant-ui/assistant-ui/commit/f833bc118b49641f3f6e0ab22bcfc63bf0a04408) - feat: support server-side MCP connection timeouts ([@Kinfe123](https://github.com/Kinfe123))
+
+## 0.3.24
+
+### Patch Changes
+
+- [#4517](https://github.com/assistant-ui/assistant-ui/pull/4517) [`cefcf27`](https://github.com/assistant-ui/assistant-ui/commit/cefcf27b4b53ceafef18e469644d51797c11c8ff) - chore: update dependencies ([@okisdev](https://github.com/okisdev))
+
+## 0.3.23
+
+### Patch Changes
+
+- [#4393](https://github.com/assistant-ui/assistant-ui/pull/4393) [`434bba5`](https://github.com/assistant-ui/assistant-ui/commit/434bba5f7c59ab7cf6f1c78a8898fd4d3addb12d) - fix: resolve typecheck regressions ([@Yonom](https://github.com/Yonom))
+
+## 0.3.22
+
+### Patch Changes
+
+- [#4379](https://github.com/assistant-ui/assistant-ui/pull/4379) [`94cc028`](https://github.com/assistant-ui/assistant-ui/commit/94cc02875b4e813e1af7020709511bb5f61e6067) - feat: per-tool-call timing and stall detection. `ToolCallMessagePart` gains a `timing` field (`{ startedAt, completedAt? }` in epoch ms), auto-populated by the assistant-stream accumulator at part start and result, and accepted on `ThreadMessageLike` for external-store hosts. New `useToolCallElapsed()` hook returns the call's elapsed milliseconds, ticking once per second while running; `unstable_useMessageStallDetection({ thresholdMs })` reports mid-run output stalls by watching a message content fingerprint. The kit `ToolFallback` trigger renders the duration when timing is present. ([@okisdev](https://github.com/okisdev))
+
+## 0.3.21
+
+### Patch Changes
+
+- [#4306](https://github.com/assistant-ui/assistant-ui/pull/4306) [`15878d8`](https://github.com/assistant-ui/assistant-ui/commit/15878d8114edbbb82c2a467cf811478e5f4e08bc) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+## 0.3.20
+
+### Patch Changes
+
+- [#4163](https://github.com/assistant-ui/assistant-ui/pull/4163) [`cba2b42`](https://github.com/assistant-ui/assistant-ui/commit/cba2b42c26083e730ae07194186ab4473f9f4cf3) - fix(assistant-stream): resolve `argsReader.get()` to `undefined` once args close ([@Yonom](https://github.com/Yonom))
+
+  Awaiting an optional arg that the model never produced (`reader.args.get("optional")`) previously hung forever, because the args stream was never closed and pending handles were never settled. The reader now closes when args streaming finishes, resolving outstanding `get()` calls to `undefined` for absent fields and closing open `streamValues`/`streamText`/`forEach` streams.
+
+- [#4226](https://github.com/assistant-ui/assistant-ui/pull/4226) [`58f80e0`](https://github.com/assistant-ui/assistant-ui/commit/58f80e09b51a9d025403f8692c3f41adc6d403e0) - fix: avoid uploading backend-default schemas for use-generative frontend and human tools ([@Yonom](https://github.com/Yonom))
+
+- [#4212](https://github.com/assistant-ui/assistant-ui/pull/4212) [`5fe118d`](https://github.com/assistant-ui/assistant-ui/commit/5fe118d6e61fd661859ee0d6b5ef10a370992a84) - feat: add MCP server support to generative toolkits ([@Yonom](https://github.com/Yonom))
+
+- [#4213](https://github.com/assistant-ui/assistant-ui/pull/4213) [`dcd5897`](https://github.com/assistant-ui/assistant-ui/commit/dcd5897f6dd6ca6bfe6978c3c03371e070965eab) - feat: add provider-executed tool support to generative toolkits ([@Yonom](https://github.com/Yonom))
+
+- [#4236](https://github.com/assistant-ui/assistant-ui/pull/4236) [`ae54c55`](https://github.com/assistant-ui/assistant-ui/commit/ae54c55c8c8b0f9e9ef455ced1498f37d998c6cb) - feat: add `stubTool()` and experimental `useAuiToolOverrides()` for locally executed generative toolkit tools ([@Yonom](https://github.com/Yonom))
+
+## 0.3.19
+
+### Patch Changes
+
+- [#4176](https://github.com/assistant-ui/assistant-ui/pull/4176) [`27ae936`](https://github.com/assistant-ui/assistant-ui/commit/27ae936dec6dc5d05d21fd892af0a8e1db61928e) - feat: add the `ToolkitDeclaration` / `ToolkitDeclarationDefinition` types for authoring a toolkit permissively (a backend tool may declare `description`/`parameters`/`execute`); the canonical `Toolkit` keeps those fields erased. Author with `defineToolkit()` from `@assistant-ui/react`, which the `"use generative"` compiler strips per build. ([@Yonom](https://github.com/Yonom))
+
+## 0.3.18
+
+### Patch Changes
+
+- [#4172](https://github.com/assistant-ui/assistant-ui/pull/4172) [`1315789`](https://github.com/assistant-ui/assistant-ui/commit/13157895e4d69ad4266d6ab278edfc2e3ea1de92) - feat: add the `ToolkitDeclaration` / `ToolkitDeclarationDefinition` types for authoring a toolkit permissively (a backend tool may declare `description`/`parameters`/`execute`); the canonical `Toolkit` keeps those fields erased. Author with `defineToolkit()` from `@assistant-ui/next`, which the `"use generative"` compiler strips per build. ([@Yonom](https://github.com/Yonom))
+
+- [#4151](https://github.com/assistant-ui/assistant-ui/pull/4151) [`299d448`](https://github.com/assistant-ui/assistant-ui/commit/299d4488c8a5bbec0679680866f5975055fe71b3) - chore: drop stale `biome-ignore` pragmas now that the repo lints with oxlint ([@okisdev](https://github.com/okisdev))
+
+- [#4175](https://github.com/assistant-ui/assistant-ui/pull/4175) [`2dec3ae`](https://github.com/assistant-ui/assistant-ui/commit/2dec3aeba0431178f4ca26e470b304f5a89390ba) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- [#4167](https://github.com/assistant-ui/assistant-ui/pull/4167) [`fcb6baf`](https://github.com/assistant-ui/assistant-ui/commit/fcb6baf161a9ee7dda65191e0b42de12b368724d) - feat: add a `display` presentation hint to tools and a `"standalone-tool-call"` key to `groupPartByType`. ([@Yonom](https://github.com/Yonom))
+
+  Tool UIs fall into three buckets: prompting the user (human-in-the-loop), informing the user (generative UI), and traces of what the model is doing (routine frontend/backend tool calls). The first two should be surfaced on their own; the last belongs folded into the chain-of-thought trace. The new `display` field on a tool lets you place a tool in the right bucket without overloading `type`:
+
+  ```ts
+  const toolkit = {
+    ask_user: { type: "human", render: AskUI }, // standalone (forced — can't opt out)
+    search_web: { type: "frontend", render: SearchUI }, // inline trace (default)
+    checkout: {
+      type: "frontend",
+      render: CheckoutUI,
+      display: "standalone", // opt in
+    },
+  } satisfies Toolkit;
+  ```
+
+  - `display?: "standalone" | "inline"` is a client-only presentation hint (it never reaches the model). Defaults to `"inline"`.
+  - `human` tools are always `"standalone"` and cannot opt out (the type only allows `"standalone"`). MCP-app tool calls and the built-in generative-UI tool are standalone too. Every other tool defaults to inline and opts in explicitly.
+  - `groupPartByType` gains a synthetic `"standalone-tool-call"` key that matches all of the above. `MessagePrimitive.GroupedParts` passes the live tool-UI registry to the `groupBy` function as a second `context` argument (`{ toolUIs }`), and the helper reads it to resolve the registry-driven cases; MCP-app calls are detected from the part alone.
+  - The `"mcp-app"` key on `groupPartByType` is **deprecated** in favor of `"standalone-tool-call"` (a superset). It still works for back-compat.
+
+  The shadcn `thread.tsx` template is updated to use `"standalone-tool-call": []` in place of `"mcp-app": []`.
+
+- [#4133](https://github.com/assistant-ui/assistant-ui/pull/4133) [`c4d3eea`](https://github.com/assistant-ui/assistant-ui/commit/c4d3eeac6907a2fc15718f3c710d73d24eaeb652) - forward per-tool `providerOptions` from `useAssistantTool` through `toToolsJSONSchema` and `frontendTools` into the AI SDK request body, and emit tool entries in alphabetical order so identical tool sets produce byte-identical request bodies for stable prompt caching. `react-ag-ui` inherits the sort via `toAgUiTools`, so identical tool sets reach the AG-UI runtime in a stable order regardless of mount order. ([@okisdev](https://github.com/okisdev))
+
+  this lets you opt into provider-specific tool features (e.g. Anthropic's `defer_loading`, Anthropic Tool Search Tool) without any provider-aware code in assistant-ui:
+
+  ```ts
+  useAssistantTool({
+    toolName: "get_weather",
+    parameters: schema,
+    providerOptions: { anthropic: { deferLoading: true } },
+    execute: async ({ city }) => fetchWeather(city),
+  });
+  ```
+
+  the value is passed through verbatim; the AI SDK provider (`@ai-sdk/anthropic`, `@ai-sdk/openai`, ...) interprets it.
+
+## 0.3.17
+
+### Patch Changes
+
+- [#4116](https://github.com/assistant-ui/assistant-ui/pull/4116) [`d4f1db4`](https://github.com/assistant-ui/assistant-ui/commit/d4f1db428b1a1fe5c122150e1e366a377e9adb5f) - fix: preserve parentId on streamed text and reasoning parts ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+  `AssistantStreamController` dropped `parentId` for text/reasoning parts written through a `withParentId(...)` controller: `addTextPart`/`addReasoningPart` never attached it, and `appendText`/`appendReasoning` reused the open append part across a `parentId` change. This silently merged parts and broke the `AuiTextDelta`/`AuiReasoningDelta` data-stream round trip (including the decoder's own `withParentId(...).appendText(...)` path).
+
+## 0.3.16
+
+### Patch Changes
+
+- [#4096](https://github.com/assistant-ui/assistant-ui/pull/4096) [`13a12c4`](https://github.com/assistant-ui/assistant-ui/commit/13a12c46c94f7e5e62af02692cf3479fff48bd02) - docs(assistant-stream): fix README usage example and clarify wire-format pairing ([@okisdev](https://github.com/okisdev))
+
+  the README Usage snippet was calling `controller.appendText()` with no arguments and treating the return value as a writer, but `AssistantStreamController.appendText` has signature `(textDelta: string): void`. copy-pasting the old snippet threw `TypeError: Cannot read properties of undefined (reading 'append')` at the first `text.append(...)` call. switched the example to the actual API.
+
+  also added a short note that `createAssistantStreamResponse` returns a standard Web `Response` (drops into Next.js / Hono / Bun / Deno / Cloudflare Workers; Express and Fastify need a small adapter), and that the emitted bytes are the data stream wire format. on the frontend pair it with `useDataStreamRuntime({ api, protocol: "data-stream" })`; the default `protocol: "ui-message-stream"` expects AI SDK v6's SSE-based UI message stream format and will throw `Stream ended abruptly without receiving [DONE] marker` against this output.
+
+- [#4085](https://github.com/assistant-ui/assistant-ui/pull/4085) [`01244a5`](https://github.com/assistant-ui/assistant-ui/commit/01244a56026ee92bd4e49cb985136f9eb6d45154) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+## 0.3.15
+
+### Patch Changes
+
+- [#4023](https://github.com/assistant-ui/assistant-ui/pull/4023) [`94548fa`](https://github.com/assistant-ui/assistant-ui/commit/94548fa8d587962d8ab0338a9609a9ff21240c33) - docs: add JSDoc for assistant stream tool definitions ([@AVGVSTVS96](https://github.com/AVGVSTVS96))
+
+## 0.3.14
+
+### Patch Changes
+
+- [#3979](https://github.com/assistant-ui/assistant-ui/pull/3979) [`9ecda1d`](https://github.com/assistant-ui/assistant-ui/commit/9ecda1dfdd96f2c638e7b51cc951319ccacd06c9) - feat(assistant-stream): add resumable stream primitives ([@okisdev](https://github.com/okisdev))
+
+  new `assistant-stream/resumable` entrypoint for persisting an in-flight `AssistantStream` and replaying it after a disconnect or reload.
+
+  `createResumableStreamContext({ store, ttlMs?, waitUntil?, onAcquire?, onAppend?, onFinalize?, onError? })` returns `{ run, resume, requireResume, status, delete }`.
+
+  `createResumableAssistantStreamResponse` and `createResumeAssistantStreamResponse` bridge `AssistantStreamController` callbacks to any `AssistantStreamEncoder`.
+
+  `createInMemoryResumableStreamStore` covers dev and tests; Redis adapters live at `assistant-stream/resumable/redis` and `assistant-stream/resumable/ioredis` (peer deps), with pipelined appends and binary chunk values.
+
+  typed errors via `ResumableStreamError` with codes `"missing" | "exists" | "finalized" | "invalid-id"`.
+
+- [#4008](https://github.com/assistant-ui/assistant-ui/pull/4008) [`fa4510a`](https://github.com/assistant-ui/assistant-ui/commit/fa4510a3f3a23e0458ce8f3a397c352e3b0cde07) - feat: support multi-modal tool results via `toModelOutput` ([@okisdev](https://github.com/okisdev))
+
+  frontend tools can now project their execution output into multi-modal model content (text + image / pdf / arbitrary file parts), aligning with the AI SDK v6 `toModelOutput` callback. previously, tool results were always serialized as a single JSON value, so a "read pdf" style tool had no way to send the PDF back to a multi-modal model.
+  - `assistant-stream` exports a new `ToolModelContentPart` type (`{ type: "text", text } | { type: "file", data, mediaType, filename? }`) and a `ToolModelOutputFunction<TArgs, TResult>` callback type. `Tool.toModelOutput` is wired through `unstable_runPendingTools` and `ToolExecutionStream`, attaching the resulting `modelContent` to the `tool-call` part on the assistant message.
+  - `@assistant-ui/core` re-exports `ToolModelContentPart` and adds an optional `modelContent?: readonly ToolModelContentPart[]` field on `ToolCallMessagePart`. existing tools and renderers are unchanged.
+  - `@assistant-ui/react-ai-sdk`'s `frontendTools(...)` helper now also registers a `toModelOutput` on each forwarded tool. it transparently unwraps an envelope that `useAISDKRuntime` writes when a frontend-executed tool produced `modelContent`, turning it into AI SDK's `{ type: "content", value: [...] }` output. plain (non-envelope) outputs fall back to the existing `{ type: "text" | "json", value }` shape, so behavior for tools without `toModelOutput` is unchanged.
+
+  route handlers that adopt `toModelOutput` also need to pass `tools` to `convertToModelMessages` (this is the [AI SDK's documented pattern](https://ai-sdk.dev/docs/reference/ai-sdk-ui/convert-to-model-messages#multi-modal-tool-responses)):
+
+  ```ts
+  const aiSDKTools = { ...frontendTools(tools ?? {}) };
+  streamText({
+    messages: await convertToModelMessages(messages, { tools: aiSDKTools }),
+    tools: aiSDKTools,
+  });
+  ```
+
+  templates and existing examples are unchanged. they keep the simpler `convertToModelMessages(messages)` form because none of the tools they ship with use `toModelOutput`. the new tools guide page documents how to opt in.
+
+  **reserved key.** when a frontend tool defines `toModelOutput`, its result is persisted in the AI SDK chat as `{ __aui_modelContent: ToolModelContentPart[], value: <your result> }`. tools must not return objects whose top-level key is literally `__aui_modelContent`, or `convertMessage` will misread the result. the prefix is namespaced for this reason.
+
+  **read/write compatibility for persisted threads.** the envelope is recognized by `@assistant-ui/react-ai-sdk` from this version onward. if you persist UI messages and read them from multiple environments, upgrade every reader before any writer starts producing `toModelOutput`; otherwise older readers will treat the envelope object as the `result` and break the affected tool `render` functions.
+
+## 0.3.13
+
+### Patch Changes
+
+- [#3962](https://github.com/assistant-ui/assistant-ui/pull/3962) [`b090acb`](https://github.com/assistant-ui/assistant-ui/commit/b090acb98f6bf3579aab4efedddaff83a0b54c94) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+## 0.3.12
+
+### Patch Changes
+
+- [#3876](https://github.com/assistant-ui/assistant-ui/pull/3876) [`ce865bc`](https://github.com/assistant-ui/assistant-ui/commit/ce865bc46af996d53f89e18068139d4d38546ca6) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+## 0.3.11
+
+### Patch Changes
+
+- c988db8: chore: update dependencies
+
+## 0.3.10
+
+### Patch Changes
+
+- 2c5cd97: fix(assistant-stream): handle CRLF line endings in LineDecoderStream
+
+## 0.3.9
+
+### Patch Changes
+
+- dffb6b4: feat: add data part type to streaming pipeline
+
+  Add DataPart as a new streamable content part type, enabling AI to send structured named data that renders via makeAssistantDataUI. Includes appendData() controller method and DataStream serialization support.
+
+- 9103282: fix: resolve biome lint warnings (optional chaining, unused suppressions)
+- bdce66f: chore: update dependencies
+- 209ae81: chore: remove aui-source export condition from package.json exports
+
+## 0.3.8
+
+### Patch Changes
+
+- 3227e71: feat: add `toPartialJSONSchema` utility for making JSON Schema properties optional
+- 52403c3: chore: update dependencies
+
+## 0.3.7
+
+### Patch Changes
+
+- 736344c: chore: update dependencies
+
+## 0.3.6
+
+### Patch Changes
+
+- 427ffaa: refactor: drop all barrel files
+- 349f3c7: chore: update deps
+- 02614aa: feat: add multi-agent support
+  - `ReadonlyThreadProvider` and `MessagePartPrimitive.Messages` for rendering sub-agent messages
+  - `assistant-stream`: add `messages` field to `tool-result` chunks, `ToolResponseLike`, and `ToolCallPart` types, enabling sub-agent messages to flow through the streaming protocol
+
+## 0.3.5
+
+### Patch Changes
+
+- 2828b67: fix(assistant-stream): throw a clear error when a Standard Schema (e.g. Zod v3) cannot be converted to JSON Schema, instead of silently passing through invalid data. Also add support for `~standard.jsonSchema.input()` conversion path.
+
+## 0.3.4
+
+### Patch Changes
+
+- 36ef3a2: chore: update dependencies
+
+## 0.3.3
+
+### Patch Changes
+
+- 61b54e9: Add message timing metadata: `AssistantMessageTiming` type, automatic timing tracking in `AssistantMessageAccumulator`, `MessageTiming` type, `useMessageTiming()` hook, and client-side streaming timing for AI SDK runtime.
+- 93910bd: Rename .tsx files to .ts where no JSX syntax is used
+
+## 0.3.2
+
+### Patch Changes
+
+- a088518: chore: update dependencies
+
+## 0.3.1
+
+### Patch Changes
+
+- d45b893: chore: update dependencies
+
+## 0.3.0
+
+### Minor Changes
+
+- acbaf07: feat: add framework-agnostic `toToolsJSONSchema` and `toGenericMessages` utilities to `assistant-stream`
+
+## 0.2.48
+
+### Patch Changes
+
+- 605d825: chore: update dependencies
+
+## 0.2.47
+
+### Patch Changes
+
+- 3719567: chore: update deps
+
+## 0.2.46
+
+### Patch Changes
+
+- 57bd207: chore: update dependencies
+- cce009d: chore: use tsc for building packages
+
+## 0.2.45
+
+### Patch Changes
+
+- e8ea57b: chore: update deps
+
+## 0.2.44
+
+### Patch Changes
+
+- 89aec17: feat: AI SDK frontend tool execution cancellation support
+  fix: AI SDK isRunning status when running frontend tools
+
+## 0.2.43
+
+### Patch Changes
+
+- 01c31fe: chore: update dependencies
+
+## 0.2.42
+
+### Patch Changes
+
+- ec662cd: chore: update dependencies
+
+## 0.2.41
+
+### Patch Changes
+
+- 2c33091: chore: update deps
+
+## 0.2.40
+
+### Patch Changes
+
+- ef58020: feat(assistant-stream): parallel tool calling
+
+## 0.2.39
+
+### Patch Changes
+
+- 2fc7e99: chore: update deps
+
+## 0.2.38
+
+### Patch Changes
+
+- 2fc5c3d: feat: AssistantTransport wire format
+
+## 0.2.37
+
+### Patch Changes
+
+- 953db24: chore: update deps
+
+## 0.2.36
+
+### Patch Changes
+
+- chore: update deps
+
+## 0.2.35
+
+### Patch Changes
+
+- 7c5943b: fix: detect duplicate tool calls in data stream
+
+## 0.2.34
+
+### Patch Changes
+
+- e6a46e4: chore: update deps
+
+## 0.2.33
+
+### Patch Changes
+
+- 3caad00: refactor: rename interrupt -> human for tool input handling
+
+## 0.2.32
+
+### Patch Changes
+
+- e81784b: feat: Tool Call interrupt() resume() API
+
+## 0.2.31
+
+### Patch Changes
+
+- c0f5003: fix(stream): always use async to flush controller appends
+
+## 0.2.30
+
+### Patch Changes
+
+- 8812f86: chore: update deps
+
+## 0.2.29
+
+### Patch Changes
+
+- d19ebab: feat(assistant-transport): surface stream errors to caller
+
+## 0.2.28
+
+### Patch Changes
+
+- feat: throttle only on stream resume
+
+## 0.2.27
+
+### Patch Changes
+
+- fix: make accumulator throttling smoother
+
+## 0.2.26
+
+### Patch Changes
+
+- 0f21c70: feat: throttle AssistantMessageAccumulator emits
+
+## 0.2.25
+
+### Patch Changes
+
+- 2e7a10f: feat: createInitialMessage unstable_state support
+  feat: export AssistantMetaTransformStream
+
+## 0.2.24
+
+### Patch Changes
+
+- cf26771: feat: export AssistantTransformStream API
+
+## 0.2.23
+
+### Patch Changes
+
+- 12e0a77: chore: update deps
+
+## 0.2.22
+
+### Patch Changes
+
+- 0f063e0: chore: update dependencies
+
+## 0.2.21
+
+### Patch Changes
+
+- fix: race condition in RunController when using parentIds
+
+## 0.2.20
+
+### Patch Changes
+
+- f23fdb6: feat: add parent ID grouping for message parts
+
+## 0.2.19
+
+### Patch Changes
+
+- 20a4649: fix: preserve message error statuses, avoid being overwritten by finish chunks
+- 9793e64: fix: if tool calls have no argsText, assume empty object instead of crashing
+
+## 0.2.18
+
+### Patch Changes
+
+- 65b3ff1: chore: update deps
+
+## 0.2.17
+
+### Patch Changes
+
+- 644abb8: chore: update deps
+
+## 0.2.16
+
+### Patch Changes
+
+- de00319: fix: add assistant-stream/utils subpath import workaround
+
+## 0.2.15
+
+### Patch Changes
+
+- 51b8493: feat: add missing exports
+
+## 0.2.14
+
+### Patch Changes
+
+- 52e18bc: feat: ToolResponseLike
+
+## 0.2.13
+
+### Patch Changes
+
+- fix: Last is not a partial call attempt 3
+
+## 0.2.12
+
+### Patch Changes
+
+- fix: add another workaround for Last is not a partial call
+
+## 0.2.11
+
+### Patch Changes
+
+- fix: Last is not a partial call error
+
+## 0.2.10
+
+### Patch Changes
+
+- chore: update deps
+
+## 0.2.9
+
+### Patch Changes
+
+- fix: PlainTextEncoder should ignore part-start/finish
+
+## 0.2.8
+
+### Patch Changes
+
+- fix: close argsTextController when setResponse is called
+
+## 0.2.7
+
+### Patch Changes
+
+- 5cb9598: feat(assistant-stream): ObjectStream
+
+## 0.2.6
+
+### Patch Changes
+
+- 0809c9f: feat: add missing exports from 'assistant-stream'
+
+## 0.2.5
+
+### Patch Changes
+
+- c4c60cf: fix: server-side tool results should be forwarded to StreamCallController
+- 73a6ff1: feat: Tool.type
+
+## 0.2.4
+
+### Patch Changes
+
+- 98a680e: chore: update deps
+
+## 0.2.3
+
+### Patch Changes
+
+- 30ae924: fix: disabled tools should still execute if invoked
+
+## 0.2.2
+
+### Patch Changes
+
+- fix: ESM without bundler compat
+
+## 0.2.1
+
+### Patch Changes
+
+- fix: correctly include Typescript declarations
+
+## 0.2.0
+
+### Patch Changes
+
+- 557c3f7: build: drop CJS builds
+
+## 0.1.8
+
+### Patch Changes
+
+- fix: types in ESM
+
+## 0.1.7
+
+### Patch Changes
+
+- 51104f0: feat: ship declarationMaps
+
+## 0.1.6
+
+### Patch Changes
+
+- feat: export AssistantStreamController
+
+## 0.1.5
+
+### Patch Changes
+
+- 2e4a7c1: fix: correctly forward tool result from data stream
+
+## 0.1.4
+
+### Patch Changes
+
+- 62c2af7: feat: tool.streamCall API
+- b9c731a: chore: update dependencies
+
+## 0.1.3
+
+### Patch Changes
+
+- c0c9422: feat: useToolArgsFieldStatus
+
+## 0.1.2
+
+### Patch Changes
+
+- chore: update deps
+
+## 0.1.1
+
+### Patch Changes
+
+- fix: throw error when LineDecoderStream ends with incomplete line instead of emitting it
+
+## 0.1.0
+
+### Patch Changes
+
+- 1f65c94: fix: ToolResponse instanceof check via named symbol
+- 8df35f6: feat: fix duplicate tool calls appearing from ai-sdk
+- 476cbfb: fix: make text-delta support reasoning part type
+
+## 0.0.32
+
+### Patch Changes
+
+- 545a17c: fix: do not crash on tool call with empty argsText
+
+## 0.0.31
+
+### Patch Changes
+
+- 93c3eb4: fix: drop ToolResponseBrand
+
+## 0.0.30
+
+### Patch Changes
+
+- a22bc7a: refactor: merge setResult and setArtifact to setResponse
+- 39aecd7: chore: update dependencies
+
+## 0.0.29
+
+### Patch Changes
+
+- feat: expose assitant-stream ToolResponse API
+
+## 0.0.28
+
+### Patch Changes
+
+- 40579cd: feat: ToolResponse support
+
+## 0.0.27
+
+### Patch Changes
+
+- fix: assistant-stream appendText must only append to the very last part
+
+## 0.0.26
+
+### Patch Changes
+
+- c4d7b29: feat: tool call artifacts
+
+## 0.0.25
+
+### Patch Changes
+
+- fix: frontend tool call enqueue bug
+
+## 0.0.24
+
+### Patch Changes
+
+- chore: bump assistant-stream
+
+## 0.0.23
+
+### Patch Changes
+
+- 439ae67: fix: properly emit tool-call args-text finish
+
+## 0.0.22
+
+### Patch Changes
+
+- b07603d: feat: assistant-stream rewrite
+
+## 0.0.21
+
+### Patch Changes
+
+- fix: pin nanoid version for CJS compat
+
+## 0.0.20
+
+### Patch Changes
+
+- 7f7ab5e: refactor: assitant-stream API
+
+## 0.0.19
+
+### Patch Changes
+
+- 72e66db: chore: update dependencies
+
+## 0.0.18
+
+### Patch Changes
+
+- b44a7ad: feat: error message part
+- 22272e6: chore: update dependencies
+
+## 0.0.17
+
+### Patch Changes
+
+- 70ccbe6: feat: AssistantMessageStream
+
+## 0.0.16
+
+### Patch Changes
+
+- 345f3d5: chore: update dependencies
+
+## 0.0.15
+
+### Patch Changes
+
+- 4c2bf58: chore: update dependencies
+
+## 0.0.14
+
+### Patch Changes
+
+- 982a6a2: chore: update dependencies
+
+## 0.0.13
+
+### Patch Changes
+
+- ec3b8cc: chore: update dependencies
+
+## 0.0.12
+
+### Patch Changes
+
+- ignore unsupported data stream parts
+
+## 0.0.11
+
+### Patch Changes
+
+- 4c54273: chore: update dependencies
+
+## 0.0.10
+
+### Patch Changes
+
+- interop with module resolution node
+
+## 0.0.8
+
+### Patch Changes
+
+- 2112ce8: chore: update dependencies
+
+## 0.0.7
+
+### Patch Changes
+
+- 933b8c0: chore: update deps
+
+## 0.0.6
+
+### Patch Changes
+
+- c59d8b5: chore: update dependencies
+
+## 0.0.5
+
+### Patch Changes
+
+- 1ada091: chore: update deps
+
+## 0.0.4
+
+### Patch Changes
+
+- ff5b86c: chore: update deps
+
+## 0.0.3
+
+### Patch Changes
+
+- d2375cd: build: disable bundling in UI package releases
+
+## 0.0.1
+
+### Patch Changes
+
+- fb32e61: chore: update deps
+
+## 0.0.0
+
+### Patch Changes
+
+- fb46305: chore: update dependencies

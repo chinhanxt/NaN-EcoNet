@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Starter Extension</title>
+  <link rel="stylesheet" href="/styles.css">
+  <!-- Bridge to Antigravity: applies the host theme and defines window.sidecar. -->
+  <script src="/preload.js"></script>
+</head>
+<body>
+  <main class="panel">
+    <header class="panel-header">
+      <h1>Starter Extension</h1>
+      <p class="muted">A UI extension built with the Sidecar SDK. Edit it to make it your own.</p>
+    </header>
+
+    <section class="card" aria-labelledby="status-title">
+      <div class="card-header">
+        <h2 id="status-title">Status</h2>
+        <span id="status-badge" class="badge">Connecting…</span>
+      </div>
+      <dl class="facts">
+        <dt>Runtime</dt><dd id="status-node">–</dd>
+        <dt>Platform</dt><dd id="status-platform">–</dd>
+        <dt>Uptime</dt><dd id="status-uptime">–</dd>
+        <dt>Conversation</dt><dd id="status-conversation">–</dd>
+      </dl>
+    </section>
+
+    <section class="card" aria-labelledby="notes-title">
+      <div class="card-header">
+        <h2 id="notes-title">Notes</h2>
+        <span id="notes-saved" class="muted small"></span>
+      </div>
+      <p class="muted small">Saved in the extension's private data folder, so it survives restarts.</p>
+      <textarea id="notes-text" rows="4" placeholder="Write something to keep…"></textarea>
+      <div class="actions">
+        <button id="notes-save" type="button">Save</button>
+      </div>
+    </section>
+
+    <!-- Agent actions need an active conversation; app.js only shows this card
+         when the panel is opened from one. -->
+    <section id="agent-card" class="card" aria-labelledby="agent-title" hidden>
+      <div class="card-header">
+        <h2 id="agent-title">Ask the agent</h2>
+      </div>
+      <textarea id="agent-text" rows="3">Summarize what this UI extension can do and suggest one feature to add.</textarea>
+      <div class="actions">
+        <button id="agent-send" type="button">Send to conversation</button>
+        <button id="agent-new" type="button" class="secondary">New conversation</button>
+      </div>
+    </section>
+
+    <p id="toast" class="toast" role="status" aria-live="polite" hidden></p>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

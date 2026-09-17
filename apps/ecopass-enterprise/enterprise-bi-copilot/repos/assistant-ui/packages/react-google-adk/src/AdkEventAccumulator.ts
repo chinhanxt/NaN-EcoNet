@@ -1,0 +1,676 @@
+import { generateId } from "@assistant-ui/core";
+import { isRecord } from "@assistant-ui/core/internal";
+import type { MessageStatus } from "@assistant-ui/core";
+import type {
+  AdkEvent,
+  AdkEventPart,
+  AdkMessage,
+  AdkMessageContentPart,
+  AdkToolCall,
+  AdkToolConfirmation,
+  AdkAuthRequest,
+  AdkMessageMetadata,
+} from "./types";
+import type { ReadonlyJSONObject } from "assistant-stream/utils";
+import { normalizeAdkPart } from "./normalizeAdkPart";
+import { projectAdkToolApprovals } from "./adkToolApproval";
+import { isAdkFunctionError } from "./toAdkFunctionResponse";
+
+type InProgressMessage = AdkMessage & { type: "ai" };
+
+/**
+ * A session load replays the stored events through a fresh accumulator, so a
+ * message needs an id derived from the event that carries it rather than one
+ * minted per replay. An event with no id of its own has never been through the
+ * session and has nothing stable to derive from, so it keeps a generated one.
+ *
+ * A human message keeps the bare event id it has always had. The other kinds
+ * take a suffixed namespace, since one event can carry several of them: a tool
+ * message by the index of its part, an assistant message by how many this
+ * event has already opened.
+ */
+const toolMessageId = (event: AdkEvent, partIndex: number): string =>
+  event.id ? `${event.id}:${partIndex}` : generateId();
+
+const aiMessageId = (event: AdkEvent, ordinal: number): string =>
+  event.id ? `${event.id}:ai${ordinal === 0 ? "" : ordinal}` : generateId();
+
+const ADK_REQUEST_CONFIRMATION = "adk_request_confirmation";
+const ADK_REQUEST_CREDENTIAL = "adk_request_credential";
+
+/**
+ * Checks if an event is a final response using the same logic as ADK's
+ * `isFinalResponse()`.
+ */
+export const isFinalResponse = (event: AdkEvent): boolean => {
+  if (
+    event.actions?.skipSummarization ||
+    (event.longRunningToolIds && event.longRunningToolIds.length > 0)
+  ) {
+    return true;
+  }
+
+  const parts = event.content?.parts;
+  return (
+    !event.partial &&
+    (parts?.length ?? 0) > 0 &&
+    !parts!.some((p) => p.functionCall) &&
+    !parts!.some((p) => p.functionResponse) &&
+    !parts![parts!.length - 1]?.codeExecutionResult
+  );
+};
+
+const CONTENT_FILTER_REASONS = new Set([
+  "SAFETY",
+  "RECITATION",
+  "BLOCKLIST",
+  "PROHIBITED_CONTENT",
+  "SPII",
+  "LANGUAGE",
+  "IMAGE_SAFETY",
+  "IMAGE_RECITATION",
+  "IMAGE_OTHER",
+  "IMAGE_PROHIBITED_CONTENT",
+]);
+
+const ERROR_REASONS = new Set([
+  "MALFORMED_FUNCTION_CALL",
+  "UNEXPECTED_TOOL_CALL",
+]);
+
+const finishReasonToStatus = (
+  finishReason: string | undefined,
+): MessageStatus => {
+  if (finishReason === "MAX_TOKENS") {
+    return { type: "incomplete", reason: "length" };
+  }
+  if (finishReason && CONTENT_FILTER_REASONS.has(finishReason)) {
+    return {
+      type: "incomplete",
+      reason: "content-filter",
+      error: `Content filtered: ${finishReason}`,
+    };
+  }
+  if (finishReason && ERROR_REASONS.has(finishReason)) {
+    return {
+      type: "incomplete",
+      reason: "error",
+      error: `LLM error: ${finishReason}`,
+    };
+  }
+  return { type: "complete", reason: "stop" };
+};
+
+const mediaToContentPart = ({
+  inlineData,
+  fileData,
+}: Record<string, unknown>): AdkMessageContentPart | undefined => {
+  if (isRecord(inlineData)) {
+    const { mimeType, data } = inlineData;
+    if (typeof mimeType !== "string" || typeof data !== "string") return;
+    return mimeType.startsWith("image/")
+      ? { type: "image", mimeType, data }
+      : { type: "file", mimeType, data };
+  }
+  if (!isRecord(fileData)) return;
+  const { fileUri, mimeType } = fileData;
+  if (typeof fileUri !== "string") return;
+  return typeof mimeType !== "string" || mimeType.startsWith("image/")
+    ? { type: "image_url", url: fileUri }
+    : { type: "file_url", url: fileUri, mimeType };
+};
+
+// ── Snake_case normalization ──
+
+const normalizeEvent = (event: AdkEvent): AdkEvent => {
+  const e = event as Record<string, unknown>;
+  const result: Record<string, unknown> = { ...e };
+  if ("error_code" in e && !("errorCode" in e)) result.errorCode = e.error_code;
+  if ("error_message" in e && !("errorMessage" in e))
+    result.errorMessage = e.error_message;
+  if ("long_running_tool_ids" in e && !("longRunningToolIds" in e))
+    result.longRunningToolIds = e.long_running_tool_ids;
+  if ("turn_complete" in e && !("turnComplete" in e))
+    result.turnComplete = e.turn_complete;
+  if ("finish_reason" in e && !("finishReason" in e))
+    result.finishReason = e.finish_reason;
+  if ("invocation_id" in e && !("invocationId" in e))
+    result.invocationId = e.invocation_id;
+  if ("custom_metadata" in e && !("customMetadata" in e))
+    result.customMetadata = e.custom_metadata;
+  if ("grounding_metadata" in e && !("groundingMetadata" in e))
+    result.groundingMetadata = e.grounding_metadata;
+  if ("citation_metadata" in e && !("citationMetadata" in e))
+    result.citationMetadata = e.citation_metadata;
+  if ("usage_metadata" in e && !("usageMetadata" in e))
+    result.usageMetadata = e.usage_metadata;
+
+  if (result.actions) {
+    const a = result.actions as Record<string, unknown>;
+    const na: Record<string, unknown> = { ...a };
+    if ("state_delta" in a && !("stateDelta" in a))
+      na.stateDelta = a.state_delta;
+    if ("artifact_delta" in a && !("artifactDelta" in a))
+      na.artifactDelta = a.artifact_delta;
+    if ("transfer_to_agent" in a && !("transferToAgent" in a))
+      na.transferToAgent = a.transfer_to_agent;
+    if ("skip_summarization" in a && !("skipSummarization" in a))
+      na.skipSummarization = a.skip_summarization;
+    if ("requested_auth_configs" in a && !("requestedAuthConfigs" in a))
+      na.requestedAuthConfigs = a.requested_auth_configs;
+    if (
+      "requested_tool_confirmations" in a &&
+      !("requestedToolConfirmations" in a)
+    )
+      na.requestedToolConfirmations = a.requested_tool_confirmations;
+    result.actions = na;
+  }
+
+  if (result.content && (result.content as Record<string, unknown>).parts) {
+    const content = result.content as Record<string, unknown>;
+    const parts = content.parts as Record<string, unknown>[];
+    result.content = { ...content, parts: parts.map(normalizeAdkPart) };
+  }
+
+  return result as AdkEvent;
+};
+
+// ── Accumulator ──
+
+export class AdkEventAccumulator {
+  private messagesMap = new Map<string, AdkMessage>();
+  private currentMessageId: string | null = null;
+  private partialTextBuffer = "";
+  private finalTextReplacedThisEvent = false;
+  private finalReasoningReplacedThisEvent = false;
+  private partialReasoningBuffer = "";
+  private accumulatedStateDelta: Record<string, unknown> = Object.create(null);
+  private accumulatedArtifactDelta: Record<string, number> =
+    Object.create(null);
+  private lastAgentInfo: {
+    name?: string | undefined;
+    branch?: string | undefined;
+  } = {};
+  private lastTransferToAgent: string | undefined;
+  private pendingLongRunningToolIds = new Set<string>();
+  private escalated = false;
+  private messageMetadataMap = new Map<string, AdkMessageMetadata>();
+  // How many assistant messages each event has opened, so a replay of that
+  // event opens them with the same ids.
+  private aiMessageOrdinals = new Map<string, number>();
+  constructor(
+    initialMessages?: AdkMessage[],
+    initialLongRunningToolIds?: readonly string[],
+  ) {
+    if (initialMessages) {
+      for (const msg of initialMessages) {
+        this.messagesMap.set(msg.id, msg);
+      }
+    }
+    if (initialLongRunningToolIds) {
+      this.pendingLongRunningToolIds = new Set(initialLongRunningToolIds);
+    }
+  }
+
+  processEvent(rawEvent: AdkEvent): AdkMessage[] {
+    const event = normalizeEvent(rawEvent);
+
+    // Accumulate state delta
+    if (event.actions?.stateDelta) {
+      Object.assign(this.accumulatedStateDelta, event.actions.stateDelta);
+    }
+
+    // Accumulate artifact delta
+    if (event.actions?.artifactDelta) {
+      Object.assign(this.accumulatedArtifactDelta, event.actions.artifactDelta);
+    }
+
+    // Track escalation
+    if (event.actions?.escalate) {
+      this.escalated = true;
+    }
+
+    // Track agent transfer
+    if (event.actions?.transferToAgent) {
+      this.lastTransferToAgent = event.actions.transferToAgent;
+    }
+
+    // Track long-running tool IDs. Accumulate across events so that multiple
+    // HITL interrupts emitted in the same turn are all tracked — a
+    // single-event replacement would drop earlier ids.
+    if (event.longRunningToolIds?.length) {
+      for (const id of event.longRunningToolIds) {
+        this.pendingLongRunningToolIds.add(id);
+      }
+    }
+
+    // Track agent info
+    if (event.author && event.author !== "user") {
+      this.lastAgentInfo = {
+        name: event.author ?? undefined,
+        branch: event.branch ?? undefined,
+      };
+    }
+
+    // Handle interrupted events
+    if (event.interrupted) {
+      if (this.currentMessageId) {
+        const msg = this.messagesMap.get(this.currentMessageId);
+        if (msg && msg.type === "ai" && !msg.status) {
+          const updated: InProgressMessage = {
+            ...msg,
+            content: [...this.getContentArray(msg)],
+            status: { type: "incomplete", reason: "cancelled" },
+          };
+          this.messagesMap.set(updated.id, updated);
+        }
+      }
+      this.finalizeCurrentMessage();
+      return this.getMessages();
+    }
+
+    // Handle error events
+    if (event.errorCode || event.errorMessage) {
+      this.finalizeCurrentMessage();
+      const errorMsg = this.getOrCreateAiMessage(event);
+      const errorText =
+        event.errorMessage ?? event.errorCode ?? "Unknown error";
+      const updated: InProgressMessage = {
+        ...errorMsg,
+        content: [
+          ...this.getContentArray(errorMsg),
+          { type: "text", text: errorText },
+        ],
+        status: { type: "incomplete", reason: "error", error: errorText },
+      };
+      this.messagesMap.set(updated.id, updated);
+      this.currentMessageId = null;
+      return this.getMessages();
+    }
+
+    const parts = event.content?.parts;
+    if (!parts?.length) {
+      // Track metadata even for content-less events (e.g. turnComplete)
+      this.trackMessageMetadata(event);
+      return this.getMessages();
+    }
+
+    // User-authored events → create human message, not AI.
+    // Without this, user events fall through to processPart →
+    // getOrCreateAiMessage, producing type:"ai" messages that
+    // convertAdkMessage maps to role:"assistant".
+    if (event.author === "user") {
+      this.finalizeCurrentMessage();
+      const humanParts: AdkMessageContentPart[] = [];
+      const toolMessages: AdkMessage[] = [];
+      for (const [index, part] of parts.entries()) {
+        if (part.text != null && !part.thought) {
+          humanParts.push({ type: "text", text: part.text });
+        } else if (part.inlineData || part.fileData) {
+          const mediaPart = mediaToContentPart(part);
+          if (mediaPart) humanParts.push(mediaPart);
+        } else if (part.functionResponse?.id) {
+          // ADK records tool confirmation and other client-supplied tool
+          // results as user-authored function responses, and its request
+          // confirmation processors search user events for them. Dropping
+          // them here would replay a settled gate as pending. A response
+          // carrying no id answers no call: core drops it as an orphan, and
+          // keeping it would let it settle the batch it was grouped into.
+          toolMessages.push({
+            id: toolMessageId(event, index),
+            type: "tool",
+            tool_call_id: part.functionResponse.id,
+            name: part.functionResponse.name,
+            content: JSON.stringify(part.functionResponse.response),
+            status: isAdkFunctionError(part.functionResponse.response)
+              ? "error"
+              : "success",
+          });
+          // Only a user-authored response settles a long-running call; the response ADK authors for one is the tool's interim result.
+          this.pendingLongRunningToolIds.delete(part.functionResponse.id);
+        }
+      }
+      // The replies answer the preceding assistant turn, so they are emitted
+      // before any user content in the same event. A human message between the
+      // tool call and its reply splits them into separate converted messages,
+      // orphaning the reply and leaving its gate unsettled.
+      for (const toolMsg of toolMessages) {
+        this.messagesMap.set(toolMsg.id, toolMsg);
+      }
+      if (humanParts.length > 0) {
+        const id = event.id ?? generateId();
+        const first = humanParts[0];
+        const content: string | AdkMessageContentPart[] =
+          humanParts.length === 1 && first?.type === "text"
+            ? first.text
+            : humanParts;
+        this.messagesMap.set(id, { id, type: "human", content });
+      }
+      return this.getMessages();
+    }
+
+    // If author changed, finalize previous message
+    if (this.currentMessageId && event.author && event.author !== "user") {
+      const current = this.messagesMap.get(this.currentMessageId);
+      if (current && current.type === "ai" && current.author !== event.author) {
+        this.finalizeCurrentMessage();
+      }
+    }
+
+    // Replace-semantics close out the streamed partial buffer, which only
+    // the first final text/reasoning part of an event may do; later parts
+    // of the same event are distinct content and append.
+    this.finalTextReplacedThisEvent = false;
+    this.finalReasoningReplacedThisEvent = false;
+    for (const [index, part] of parts.entries()) {
+      this.processPart(part, event, index);
+    }
+
+    // Track per-message metadata (grounding, citation, usage)
+    this.trackMessageMetadata(event);
+
+    // Check isFinalResponse (can be true even for partial events via skipSummarization/longRunningToolIds)
+    if (isFinalResponse(event) && this.currentMessageId) {
+      const msg = this.messagesMap.get(this.currentMessageId);
+      // Skip manual "complete" when longRunningToolIds is the sole reason for
+      // isFinalResponse — let auto-status apply requires-action for pending tool calls.
+      const isHitlOnly =
+        event.longRunningToolIds &&
+        event.longRunningToolIds.length > 0 &&
+        !event.actions?.skipSummarization;
+      if (msg && msg.type === "ai" && !msg.status && !isHitlOnly) {
+        const status = finishReasonToStatus(event.finishReason);
+        const updated: InProgressMessage = {
+          ...msg,
+          content: [...this.getContentArray(msg)],
+          status,
+        };
+        this.messagesMap.set(updated.id, updated);
+      }
+    }
+
+    // Non-partial event finalizes the current message
+    if (!event.partial || isFinalResponse(event)) {
+      this.finalizeCurrentMessage();
+    }
+
+    return this.getMessages();
+  }
+
+  private processPart(
+    part: AdkEventPart,
+    event: AdkEvent,
+    partIndex: number,
+  ): void {
+    // Text with thought=true → reasoning (accumulated)
+    if (part.text != null && part.thought) {
+      const msg = this.getOrCreateAiMessage(event);
+      if (event.partial) {
+        this.partialReasoningBuffer += part.text;
+        this.replaceLastReasoningContent(msg, this.partialReasoningBuffer);
+      } else if (!this.finalReasoningReplacedThisEvent) {
+        this.finalReasoningReplacedThisEvent = true;
+        this.partialReasoningBuffer = "";
+        this.replaceLastReasoningContent(msg, part.text);
+      } else {
+        this.appendContent(msg, { type: "reasoning", text: part.text });
+      }
+      return;
+    }
+
+    // Regular text
+    if (part.text != null) {
+      const msg = this.getOrCreateAiMessage(event);
+      if (event.partial) {
+        this.partialTextBuffer += part.text;
+        this.replaceLastTextContent(msg, this.partialTextBuffer);
+      } else if (!this.finalTextReplacedThisEvent) {
+        this.finalTextReplacedThisEvent = true;
+        this.partialTextBuffer = "";
+        this.replaceLastTextContent(msg, part.text);
+      } else {
+        this.appendContent(msg, { type: "text", text: part.text });
+      }
+      return;
+    }
+
+    // Function call — skip partial events (args may be incomplete)
+    if (part.functionCall) {
+      if (event.partial) return;
+      const msg = this.getOrCreateAiMessage(event);
+      const toolCall: AdkToolCall = {
+        id: part.functionCall.id ?? generateId(),
+        name: part.functionCall.name,
+        args: (part.functionCall.args ?? {}) as ReadonlyJSONObject,
+        argsText: JSON.stringify(part.functionCall.args ?? {}),
+      };
+      const existing = [...(msg.tool_calls ?? [])];
+      const idx = existing.findIndex((tc) => tc.id === toolCall.id);
+      if (idx >= 0) {
+        existing[idx] = toolCall;
+      } else {
+        existing.push(toolCall);
+      }
+      const updated: InProgressMessage = {
+        ...msg,
+        content: [...this.getContentArray(msg)],
+        tool_calls: existing,
+      };
+      this.messagesMap.set(updated.id, updated);
+      return;
+    }
+
+    // Function response → tool message
+    if (part.functionResponse) {
+      this.finalizeCurrentMessage();
+      const toolMsg: AdkMessage = {
+        id: toolMessageId(event, partIndex),
+        type: "tool",
+        tool_call_id: part.functionResponse.id ?? "",
+        name: part.functionResponse.name,
+        content: JSON.stringify(part.functionResponse.response),
+        status: isAdkFunctionError(part.functionResponse.response)
+          ? "error"
+          : "success",
+      };
+      this.messagesMap.set(toolMsg.id, toolMsg);
+      return;
+    }
+
+    // Executable code
+    if (part.executableCode) {
+      const msg = this.getOrCreateAiMessage(event);
+      this.appendContent(msg, {
+        type: "code",
+        code: part.executableCode.code,
+        language: part.executableCode.language ?? "python",
+      });
+      return;
+    }
+
+    // Code execution result
+    if (part.codeExecutionResult) {
+      const msg = this.getOrCreateAiMessage(event);
+      this.appendContent(msg, {
+        type: "code_result",
+        output: part.codeExecutionResult.output,
+        outcome: part.codeExecutionResult.outcome ?? "OUTCOME_OK",
+      });
+      return;
+    }
+
+    const mediaPart = mediaToContentPart(part);
+    if (!mediaPart) return;
+    const msg = this.getOrCreateAiMessage(event);
+    this.appendContent(msg, mediaPart);
+  }
+
+  private trackMessageMetadata(event: AdkEvent): void {
+    if (
+      !this.currentMessageId ||
+      (!event.groundingMetadata &&
+        !event.citationMetadata &&
+        !event.usageMetadata)
+    )
+      return;
+
+    const existing = this.messageMetadataMap.get(this.currentMessageId) ?? {};
+    const updated: AdkMessageMetadata = { ...existing };
+    if (event.groundingMetadata)
+      updated.groundingMetadata = event.groundingMetadata;
+    if (event.citationMetadata)
+      updated.citationMetadata = event.citationMetadata;
+    if (event.usageMetadata) updated.usageMetadata = event.usageMetadata;
+    this.messageMetadataMap.set(this.currentMessageId, updated);
+  }
+
+  private getContentArray(msg: AdkMessage): AdkMessageContentPart[] {
+    return Array.isArray(msg.content)
+      ? (msg.content as AdkMessageContentPart[])
+      : [];
+  }
+
+  private getOrCreateAiMessage(event: AdkEvent): InProgressMessage {
+    if (this.currentMessageId) {
+      const existing = this.messagesMap.get(this.currentMessageId);
+      if (existing && existing.type === "ai") {
+        return existing;
+      }
+    }
+
+    const ordinal = this.aiMessageOrdinals.get(event.id ?? "") ?? 0;
+    this.aiMessageOrdinals.set(event.id ?? "", ordinal + 1);
+    const id = aiMessageId(event, ordinal);
+    const msg: InProgressMessage = {
+      id,
+      type: "ai",
+      content: [] as AdkMessageContentPart[],
+      ...(event.author != null && { author: event.author }),
+      ...(event.branch != null && { branch: event.branch }),
+    };
+    this.messagesMap.set(id, msg);
+    this.currentMessageId = id;
+    this.partialTextBuffer = "";
+    this.partialReasoningBuffer = "";
+    return msg;
+  }
+
+  private appendContent(
+    msg: InProgressMessage,
+    part: AdkMessageContentPart,
+  ): void {
+    const content = [...this.getContentArray(msg), part];
+    const updated: InProgressMessage = { ...msg, content };
+    this.messagesMap.set(updated.id, updated);
+  }
+
+  private replaceLastTextContent(msg: InProgressMessage, text: string): void {
+    const content = [...this.getContentArray(msg)];
+    const lastTextIdx = content.findLastIndex((p) => p.type === "text");
+    if (lastTextIdx >= 0) {
+      content[lastTextIdx] = { type: "text", text };
+    } else {
+      content.push({ type: "text", text });
+    }
+    const updated: InProgressMessage = { ...msg, content };
+    this.messagesMap.set(updated.id, updated);
+  }
+
+  private replaceLastReasoningContent(
+    msg: InProgressMessage,
+    text: string,
+  ): void {
+    const content = [...this.getContentArray(msg)];
+    const lastIdx = content.findLastIndex((p) => p.type === "reasoning");
+    if (lastIdx >= 0) {
+      content[lastIdx] = { type: "reasoning", text };
+    } else {
+      content.push({ type: "reasoning", text });
+    }
+    const updated: InProgressMessage = { ...msg, content };
+    this.messagesMap.set(updated.id, updated);
+  }
+
+  private finalizeCurrentMessage(): void {
+    this.partialTextBuffer = "";
+    this.partialReasoningBuffer = "";
+    this.currentMessageId = null;
+  }
+
+  // ADK resumes a confirmation or credential request only on a reply that quotes its synthetic call's id, so those calls are the whole record; requestedToolConfirmations and requestedAuthConfigs key the gated call instead, which no reply answers.
+  private getRequestCalls(name: string): AdkToolCall[] {
+    const calls = new Map<string, AdkToolCall>();
+    for (const msg of this.messagesMap.values()) {
+      if (msg.type !== "ai") continue;
+      for (const call of msg.tool_calls ?? []) {
+        if (call.name === name && !calls.has(call.id)) calls.set(call.id, call);
+      }
+    }
+    return [...calls.values()];
+  }
+
+  getMessages(): AdkMessage[] {
+    return [...this.messagesMap.values()];
+  }
+
+  getStateDelta(): Record<string, unknown> {
+    return { ...this.accumulatedStateDelta };
+  }
+
+  getArtifactDelta(): Record<string, number> {
+    return { ...this.accumulatedArtifactDelta };
+  }
+
+  getAgentInfo(): { name?: string | undefined; branch?: string | undefined } {
+    return { ...this.lastAgentInfo };
+  }
+
+  getLastTransferToAgent(): string | undefined {
+    return this.lastTransferToAgent;
+  }
+
+  getLongRunningToolIds(): string[] {
+    return [...this.pendingLongRunningToolIds];
+  }
+
+  getToolConfirmations(): AdkToolConfirmation[] {
+    const { approvals } = projectAdkToolApprovals(this.getMessages());
+    return this.getRequestCalls(ADK_REQUEST_CONFIRMATION)
+      .filter(({ id }) => approvals.get(id)?.approved === undefined)
+      .map(({ id, args = {} }) => {
+        const original = (args.originalFunctionCall ??
+          args.original_function_call) as Record<string, unknown> | undefined;
+        const confirmation = (args.toolConfirmation ??
+          args.tool_confirmation) as Record<string, unknown> | undefined;
+        return {
+          toolCallId: id,
+          toolName: (original?.name as string) ?? "",
+          args: (original?.args as Record<string, unknown>) ?? {},
+          hint: (confirmation?.hint as string) ?? "",
+          confirmed: false,
+          payload: confirmation?.payload,
+        };
+      });
+  }
+
+  getAuthRequests(): AdkAuthRequest[] {
+    const answered = new Set<string>();
+    for (const msg of this.messagesMap.values()) {
+      if (msg.type === "tool") answered.add(msg.tool_call_id);
+    }
+    return this.getRequestCalls(ADK_REQUEST_CREDENTIAL)
+      .filter(({ id }) => !answered.has(id))
+      .map(({ id, args = {} }) => ({
+        toolCallId: id,
+        authConfig: args.auth_config ?? args.authConfig,
+      }));
+  }
+
+  isEscalated(): boolean {
+    return this.escalated;
+  }
+
+  getMessageMetadata(): Map<string, AdkMessageMetadata> {
+    return new Map(this.messageMetadataMap);
+  }
+}

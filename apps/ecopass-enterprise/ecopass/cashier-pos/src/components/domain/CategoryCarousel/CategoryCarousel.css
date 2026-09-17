@@ -1,0 +1,45 @@
+.carousel-viewport {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  overflow: hidden;
+
+  /* PWA improvements */
+  touch-action: pan-y;
+  /* Allow vertical scroll, block horizontal */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  cursor: grab;
+}
+
+.carousel-track {
+  display: flex;
+  position: relative;
+  /* Use flex-start as centering is handled via transform */
+  justify-content: flex-start;
+  align-items: flex-start;
+
+  /* Handle gap here to simplify JS logic */
+  gap: 20px;
+  width: auto;
+}
+
+.carousel-slide {
+  flex-shrink: 0;
+  box-sizing: border-box;
+  /* Fixed card width */
+  width: 345px;
+  display: flex;
+  justify-content: center;
+
+  /* Prevent content dragging */
+  -webkit-user-drag: none;
+}
+
+/* Prevent image dragging/interaction */
+.carousel-slide img {
+  pointer-events: none;
+  -webkit-user-drag: none;
+  user-select: none;
+}

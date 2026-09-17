@@ -1,0 +1,128 @@
+import type { AssistantCloudAPI } from "./AssistantCloudAPI";
+import type { AssistantCloudRunReportToolCall } from "./runTelemetry";
+import { AssistantStream, PlainTextDecoder } from "assistant-stream";
+import {
+  CloudResponseError,
+  readCloudRecord,
+  readCloudString,
+} from "./cloudResponse";
+
+type AssistantCloudRunsStreamBody = {
+  thread_id: string;
+  assistant_id: "system/thread_title";
+  messages: readonly unknown[]; // TODO type
+};
+
+// NOTE: Keep this payload shape aligned with the strict runtime validator in
+// assistant-cloud: apps/api/src/endpoints/runs/create.ts
+// (createRunSchema). New telemetry fields must be added in both repos together.
+export type AssistantCloudRunReport = {
+  thread_id: string;
+  status: "completed" | "incomplete" | "error";
+  outcome_type?: "aborted" | "disconnected" | "length" | "content_filter";
+  message_id?: string;
+  first_token_ms?: number;
+  release?: string;
+  environment?: string;
+  tags?: string[];
+  provider?: string;
+  trace_id?: string;
+  error_code?: string;
+  error?: string;
+  total_steps?: number;
+  tool_calls?: AssistantCloudRunReportToolCall[];
+  steps?: {
+    input_tokens?: number;
+    output_tokens?: number;
+    reasoning_tokens?: number;
+    cached_input_tokens?: number;
+    tool_calls?: AssistantCloudRunReportToolCall[];
+    start_ms?: number;
+    end_ms?: number;
+    finish_reason?: string;
+  }[];
+  input_tokens?: number;
+  output_tokens?: number;
+  reasoning_tokens?: number;
+  cached_input_tokens?: number;
+  model_id?: string;
+  provider_type?: string;
+  duration_ms?: number;
+  output_text?: string;
+  metadata?: Record<string, unknown>;
+};
+
+export class AssistantCloudRuns {
+  private cloud: AssistantCloudAPI;
+
+  constructor(cloud: AssistantCloudAPI) {
+    this.cloud = cloud;
+  }
+
+  public __internal_getAssistantOptions(assistantId: string) {
+    return {
+      api: `${this.cloud._baseUrl}/v1/runs/stream`,
+      headers: async () => {
+        const headers = await this.cloud._auth.getAuthHeaders();
+        if (!headers) throw new Error("Authorization failed");
+        return {
+          ...headers,
+          Accept: "text/plain",
+          "Aui-Sdk": this.cloud.sdkHeader(),
+        };
+      },
+      body: {
+        assistant_id: assistantId,
+        response_format: "vercel-ai-data-stream/v1",
+        thread_id: "unstable_todo",
+      },
+    };
+  }
+
+  public async stream(
+    body: AssistantCloudRunsStreamBody,
+  ): Promise<AssistantStream> {
+    const response = await this.cloud.makeRawRequest("/runs/stream", {
+      method: "POST",
+      headers: {
+        Accept: "text/plain",
+      },
+      body,
+    });
+
+    if (!response.body) {
+      throw new CloudResponseError(
+        'Invalid Assistant Cloud response for "run stream": expected a response body',
+      );
+    }
+
+    const receivedContentType = response.headers.get("content-type");
+    const contentType = receivedContentType
+      ?.split(";", 1)[0]
+      ?.trim()
+      .toLowerCase();
+    if (contentType !== "text/plain") {
+      await response.body.cancel().catch(() => undefined);
+      throw new CloudResponseError(
+        `Invalid Assistant Cloud response for "run stream": expected a "text/plain" content type, received ${
+          receivedContentType
+            ? `"${receivedContentType}"`
+            : "no Content-Type header"
+        }`,
+      );
+    }
+
+    return AssistantStream.fromResponse(response, new PlainTextDecoder());
+  }
+
+  public async report(
+    body: AssistantCloudRunReport,
+  ): Promise<{ run_id: string }> {
+    const response = readCloudRecord(
+      await this.cloud.makeRequest("/runs", { method: "POST", body }),
+      "run report response",
+    );
+
+    return { run_id: readCloudString(response.run_id, "run_id") };
+  }
+}

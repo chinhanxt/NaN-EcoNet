@@ -1,0 +1,146 @@
+import { useEffectEvent } from "react";
+import { useResource, resource } from "@assistant-ui/tap";
+import type {
+  Unstable_TriggerAdapter,
+  Unstable_TriggerCategory,
+  Unstable_TriggerItem,
+} from "@assistant-ui/core";
+import type { AssistantClient } from "@assistant-ui/store";
+import { TriggerDetectionResource } from "./triggerDetectionResource";
+import { TriggerKeyboardResource } from "./triggerKeyboardResource";
+import { TriggerNavigationResource } from "./triggerNavigationResource";
+import {
+  TriggerSelectionResource,
+  type SelectItemOverride,
+  type TriggerBehavior,
+} from "./triggerSelectionResource";
+import type { TriggerMatcher } from "./detectTrigger";
+
+export type { SelectItemOverride, TriggerBehavior };
+export type { TriggerPopoverKeyEvent } from "./triggerKeyboardResource";
+
+/** @deprecated Use `TriggerBehavior`. */
+export type OnSelectBehavior = TriggerBehavior;
+
+export type TriggerPopoverResourceOutput = {
+  readonly open: boolean;
+  readonly query: string;
+  readonly activeCategoryId: string | null;
+  readonly categories: readonly Unstable_TriggerCategory[];
+  readonly items: readonly Unstable_TriggerItem[];
+  readonly highlightedIndex: number;
+  readonly isSearchMode: boolean;
+  /** Whether the adapter is currently resolving items (async sources). */
+  readonly isLoading: boolean;
+  /** Stable ID prefix for generating accessible element IDs. */
+  readonly popoverId: string;
+  /** ID of the currently highlighted item (for aria-activedescendant). */
+  readonly highlightedItemId: string | undefined;
+
+  selectCategory(categoryId: string): void;
+  goBack(): void;
+  selectItem(item: Unstable_TriggerItem): void;
+  close(): void;
+  /** Move the highlight to an entry index (e.g. from pointer hover). Out-of-range values are ignored. */
+  highlightIndex(index: number): void;
+  handleKeyDown(e: {
+    readonly key: string;
+    readonly shiftKey: boolean;
+    preventDefault(): void;
+  }): boolean;
+
+  setCursorPosition(pos: number): void;
+  registerSelectItemOverride(fn: SelectItemOverride): () => void;
+};
+
+/** Composes detection, navigation, keyboard, and selection sub-resources. */
+const useTriggerPopoverResource = ({
+  adapter,
+  text,
+  triggerChar,
+  matcher,
+  behavior,
+  aui,
+  popoverId,
+  isLoading,
+}: {
+  adapter: Unstable_TriggerAdapter | undefined;
+  text: string;
+  triggerChar: string;
+  matcher: TriggerMatcher | undefined;
+  behavior: TriggerBehavior | undefined;
+  aui: AssistantClient;
+  /** Stable ID for accessible element IDs (pass React's useId() from component layer). */
+  popoverId: string;
+  isLoading: boolean;
+}): TriggerPopoverResourceOutput => {
+  const detection = useResource(
+    TriggerDetectionResource({ text, triggerChar, matcher }),
+  );
+
+  const open =
+    detection.trigger !== null &&
+    adapter !== undefined &&
+    behavior !== undefined;
+
+  const navigation = useResource(
+    TriggerNavigationResource({
+      adapter,
+      query: detection.query,
+      open,
+    }),
+  );
+
+  const onSelected = useEffectEvent(() => {
+    navigation.goBack();
+  });
+
+  const selection = useResource(
+    TriggerSelectionResource({
+      behavior,
+      trigger: detection.trigger,
+      aui,
+      triggerChar,
+      setCursorPosition: detection.setCursorPosition,
+      onSelected,
+    }),
+  );
+
+  const keyboard = useResource(
+    TriggerKeyboardResource({
+      navigableList: navigation.navigableList,
+      isSearchMode: navigation.isSearchMode,
+      activeCategoryId: navigation.activeCategoryId,
+      query: detection.query,
+      popoverId,
+      open,
+      selectItem: selection.selectItem,
+      selectCategory: navigation.selectCategory,
+      goBack: navigation.goBack,
+      close: selection.close,
+    }),
+  );
+
+  return {
+    open,
+    query: detection.query,
+    activeCategoryId: navigation.activeCategoryId,
+    categories: navigation.categories,
+    items: navigation.items,
+    highlightedIndex: keyboard.highlightedIndex,
+    isSearchMode: navigation.isSearchMode,
+    isLoading,
+    popoverId,
+    highlightedItemId: keyboard.highlightedItemId,
+    selectCategory: navigation.selectCategory,
+    goBack: navigation.goBack,
+    selectItem: selection.selectItem,
+    close: selection.close,
+    highlightIndex: keyboard.highlightIndex,
+    handleKeyDown: keyboard.handleKeyDown,
+    setCursorPosition: detection.setCursorPosition,
+    registerSelectItemOverride: selection.registerSelectItemOverride,
+  };
+};
+
+export const TriggerPopoverResource = resource(useTriggerPopoverResource);

@@ -1,0 +1,416 @@
+{
+  "_meta": {
+    "description": "D6 fixtures for spring-ai / render-a2ui",
+    "sourceFile": "d5-all.json",
+    "copiedFrom": "langgraph-python",
+    "created": "2026-05-21"
+  },
+  "fixtures": [
+    {
+      "_comment": "Observed tool-free Spring risk generator request with the actual catalog and source-bound account exposures.",
+      "match": {
+        "userMessage": "Are any accounts or pipeline deals at risk this quarter?",
+        "context": "spring-ai",
+        "hasToolResult": false,
+        "systemMessage": [
+          "Respond with ONLY plain JSON, no markdown or tool calls.",
+          "declarative-gen-ui-catalog",
+          "$615k"
+        ]
+      },
+      "response": {
+        "content": "{\"surfaceId\":\"risk-summary\",\"catalogId\":\"declarative-gen-ui-catalog\",\"components\":[{\"id\":\"root\",\"component\":\"Column\",\"children\":[\"risk-kpis\",\"northwind\",\"cascadia\",\"atlas\"]},{\"id\":\"risk-kpis\",\"component\":\"Row\",\"children\":[\"risk-arr\",\"risk-count\",\"risk-largest\"]},{\"id\":\"risk-arr\",\"component\":\"Metric\",\"label\":\"ARR at risk\",\"value\":\"$615k\",\"trend\":\"down\"},{\"id\":\"risk-count\",\"component\":\"Metric\",\"label\":\"Accounts at risk\",\"value\":\"3\"},{\"id\":\"risk-largest\",\"component\":\"Metric\",\"label\":\"Biggest exposure: Northwind\",\"value\":\"$340k\"},{\"id\":\"northwind\",\"component\":\"Card\",\"title\":\"Northwind Retail\",\"child\":\"northwind-content\"},{\"id\":\"northwind-content\",\"component\":\"Column\",\"children\":[\"northwind-badge\",\"northwind-reason\"]},{\"id\":\"northwind-badge\",\"component\":\"StatusBadge\",\"text\":\"High risk\",\"variant\":\"error\"},{\"id\":\"northwind-reason\",\"component\":\"Text\",\"text\":\"Renewal: $340k. No contact for 6 weeks.\"},{\"id\":\"cascadia\",\"component\":\"Card\",\"title\":\"Cascadia Outfitters\",\"child\":\"cascadia-content\"},{\"id\":\"cascadia-content\",\"component\":\"Column\",\"children\":[\"cascadia-badge\",\"cascadia-reason\"]},{\"id\":\"cascadia-badge\",\"component\":\"StatusBadge\",\"text\":\"Medium risk\",\"variant\":\"warning\"},{\"id\":\"cascadia-reason\",\"component\":\"Text\",\"text\":\"Renewal: $180k. Champion left.\"},{\"id\":\"atlas\",\"component\":\"Card\",\"title\":\"Atlas Goods\",\"child\":\"atlas-content\"},{\"id\":\"atlas-content\",\"component\":\"Column\",\"children\":[\"atlas-badge\",\"atlas-reason\"]},{\"id\":\"atlas-badge\",\"component\":\"StatusBadge\",\"text\":\"Medium risk\",\"variant\":\"warning\"},{\"id\":\"atlas-reason\",\"component\":\"Text\",\"text\":\"Renewal: $95k. Stalled legal review.\"}]}"
+      }
+    },
+    {
+      "_comment": "Observed Spring secondary request with the actual registered DataTable schema and source-bound rep values; schema-valid v0.9 response.",
+      "match": {
+        "userMessage": "How are our sales reps performing against quota?",
+        "context": "spring-ai",
+        "hasToolResult": false,
+        "systemMessage": [
+          "Respond with ONLY plain JSON, no markdown or tool calls.",
+          "declarative-gen-ui-catalog",
+          "Dana Whitfield 124%",
+          "\"DataTable\":"
+        ]
+      },
+      "response": {
+        "content": "{\"surfaceId\":\"sales-reps\",\"catalogId\":\"declarative-gen-ui-catalog\",\"components\":[{\"id\":\"root\",\"component\":\"Column\",\"children\":[\"rep-card\"]},{\"id\":\"rep-card\",\"component\":\"Card\",\"title\":\"Sales rep performance\",\"child\":\"rep-content\"},{\"id\":\"rep-content\",\"component\":\"Column\",\"children\":[\"reps\",\"quota\"]},{\"id\":\"reps\",\"component\":\"DataTable\",\"columns\":[{\"key\":\"rep\",\"label\":\"Sales rep\"},{\"key\":\"attainment\",\"label\":\"Quota attainment\"}],\"rows\":[{\"rep\":\"Dana Whitfield\",\"attainment\":\"124%\"},{\"rep\":\"Marcus Lee\",\"attainment\":\"108%\"},{\"rep\":\"Priya Sharma\",\"attainment\":\"97%\"},{\"rep\":\"Tom Okafor\",\"attainment\":\"88%\"},{\"rep\":\"Elena Vasquez\",\"attainment\":\"71%\"}]},{\"id\":\"quota\",\"component\":\"BarChart\",\"title\":\"Quota attainment\",\"description\":\"Percent of quota by sales rep\",\"data\":[{\"label\":\"Dana Whitfield\",\"value\":124},{\"label\":\"Marcus Lee\",\"value\":108},{\"label\":\"Priya Sharma\",\"value\":97},{\"label\":\"Tom Okafor\",\"value\":88},{\"label\":\"Elena Vasquez\",\"value\":71}]}]}"
+      }
+    },
+    {
+      "_comment": "Observed Spring secondary plain-JSON request; catalog and source-bound Vantage Threads facts are present in the actual prompt.",
+      "match": {
+        "userMessage": "Show me my sales dashboard for this quarter.",
+        "context": "spring-ai",
+        "hasToolResult": false,
+        "systemMessage": [
+          "Respond with ONLY plain JSON, no markdown or tool calls.",
+          "declarative-gen-ui-catalog",
+          "$4.2M"
+        ]
+      },
+      "response": {
+        "content": "{\"surfaceId\":\"sales-dashboard\",\"catalogId\":\"declarative-gen-ui-catalog\",\"components\":[{\"id\":\"root\",\"component\":\"Column\",\"children\":[\"kpis\",\"charts\"]},{\"id\":\"kpis\",\"component\":\"Row\",\"children\":[\"revenue\",\"customers\",\"win\",\"deal\"]},{\"id\":\"charts\",\"component\":\"Row\",\"children\":[\"region\",\"monthly\"]},{\"id\":\"revenue\",\"component\":\"Metric\",\"label\":\"Revenue\",\"value\":\"$4.2M\",\"trend\":\"up\"},{\"id\":\"customers\",\"component\":\"Metric\",\"label\":\"New customers\",\"value\":\"186\",\"trend\":\"up\"},{\"id\":\"win\",\"component\":\"Metric\",\"label\":\"Win rate\",\"value\":\"31%\",\"trend\":\"down\"},{\"id\":\"deal\",\"component\":\"Metric\",\"label\":\"Average deal\",\"value\":\"$22.6k\",\"trend\":\"up\"},{\"id\":\"region\",\"component\":\"PieChart\",\"title\":\"Revenue by region\",\"description\":\"Vantage Threads · Q2 sales\",\"data\":[{\"label\":\"North America\",\"value\":1900000},{\"label\":\"EMEA\",\"value\":1300000},{\"label\":\"APAC\",\"value\":720000},{\"label\":\"LATAM\",\"value\":280000}]},{\"id\":\"monthly\",\"component\":\"BarChart\",\"title\":\"Monthly revenue\",\"description\":\"Vantage Threads · USD\",\"data\":[{\"label\":\"Jan\",\"value\":1210000},{\"label\":\"Feb\",\"value\":1340000},{\"label\":\"Mar\",\"value\":1650000},{\"label\":\"Apr\",\"value\":1380000},{\"label\":\"May\",\"value\":1420000},{\"label\":\"Jun\",\"value\":1400000}]}]}"
+      }
+    },
+    {
+      "_comment": "Observed Spring secondary plain-JSON request for the standalone region pie chart.",
+      "match": {
+        "userMessage": "Show a pie chart of sales by region.",
+        "context": "spring-ai",
+        "hasToolResult": false,
+        "systemMessage": [
+          "Respond with ONLY plain JSON, no markdown or tool calls.",
+          "declarative-gen-ui-catalog",
+          "North America $1.9M"
+        ]
+      },
+      "response": {
+        "content": "{\"surfaceId\":\"region-revenue\",\"catalogId\":\"declarative-gen-ui-catalog\",\"components\":[{\"id\":\"root\",\"component\":\"PieChart\",\"title\":\"Revenue by region\",\"description\":\"Vantage Threads - Q2 sales\",\"data\":[{\"label\":\"North America\",\"value\":1900000},{\"label\":\"EMEA\",\"value\":1300000},{\"label\":\"APAC\",\"value\":720000},{\"label\":\"LATAM\",\"value\":280000}]}]}"
+      }
+    },
+    {
+      "_comment": "Observed Spring secondary plain-JSON request for grounded quarterly revenue bars.",
+      "match": {
+        "userMessage": "Render a bar chart of quarterly revenue.",
+        "context": "spring-ai",
+        "hasToolResult": false,
+        "systemMessage": [
+          "Respond with ONLY plain JSON, no markdown or tool calls.",
+          "declarative-gen-ui-catalog",
+          "Jan $1.21M"
+        ]
+      },
+      "response": {
+        "content": "{\"surfaceId\":\"quarterly-revenue\",\"catalogId\":\"declarative-gen-ui-catalog\",\"components\":[{\"id\":\"root\",\"component\":\"BarChart\",\"title\":\"Quarterly revenue\",\"description\":\"Vantage Threads - Aggregated from Jan-Jun monthly revenue\",\"data\":[{\"label\":\"Q1\",\"value\":4200000},{\"label\":\"Q2\",\"value\":4200000}]}]}"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "render the a2ui schema",
+        "turnIndex": 0,
+        "context": "spring-ai"
+      },
+      "response": {
+        "content": "The A2UI fixed-schema component was rendered. The schema-driven UI received the agent's payload and produced the corresponding UI element from the locked schema definition."
+      }
+    },
+    {
+      "match": {
+        "userMessage": "have the agent emit a ui",
+        "turnIndex": 0,
+        "context": "spring-ai"
+      },
+      "response": {
+        "content": "The agent emitted a UI block as part of its turn. The agent acts as the UI generator: its response payload describes the component and the renderer materialized it inline with the assistant message."
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Show me a pie chart of revenue by category",
+        "hasToolResult": false,
+        "context": "spring-ai"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "id": "call_d5_render_pie_chart_001",
+            "name": "render_pie_chart",
+            "arguments": "{\"title\":\"Revenue by Category\",\"description\":\"Revenue breakdown by product category (Q4)\",\"data\":[{\"label\":\"Electronics\",\"value\":42000},{\"label\":\"Clothing\",\"value\":28000},{\"label\":\"Food\",\"value\":18000},{\"label\":\"Books\",\"value\":12000}]}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Show me a pie chart of revenue by category",
+        "hasToolResult": true,
+        "context": "spring-ai"
+      },
+      "response": {
+        "content": "Pie chart rendered above — Electronics is the largest slice, followed by Clothing, Food, and Books."
+      }
+    },
+    {
+      "match": {
+        "userMessage": "render the declarative card",
+        "turnIndex": 0,
+        "context": "spring-ai"
+      },
+      "response": {
+        "content": "The declarative gen-UI specification has been resolved into a rendered card. The component descriptor was forwarded to the frontend renderer which materialized the card declaratively from the schema."
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Show me a profile card for Ada Lovelace",
+        "hasToolResult": false,
+        "context": "spring-ai"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "id": "call_d5_show_card_001",
+            "name": "show_card",
+            "arguments": "{\"title\":\"Ada Lovelace\",\"body\":\"English mathematician (1815\\u20131852), credited as the first computer programmer for her notes on Charles Babbage's Analytical Engine \\u2014 including what is now recognized as the first algorithm intended to be carried out by a machine.\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Show me a profile card for Ada Lovelace",
+        "hasToolResult": true,
+        "context": "spring-ai"
+      },
+      "response": {
+        "content": "Here is a quick card for Ada Lovelace — the rendered card above shows a short biography. Let me know if you want a deeper dive on her work or a different historical figure."
+      }
+    },
+    {
+      "match": {
+        "userMessage": "trip to mars",
+        "hasToolResult": false,
+        "context": "spring-ai"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "id": "call_d5_generate_steps_001",
+            "name": "generate_task_steps",
+            "arguments": "{\"steps\":[{\"description\":\"Research Mars mission requirements and timeline\",\"status\":\"enabled\"},{\"description\":\"Design spacecraft and life support systems\",\"status\":\"enabled\"},{\"description\":\"Recruit and train the crew\",\"status\":\"enabled\"},{\"description\":\"Launch and navigate to Mars\",\"status\":\"enabled\"},{\"description\":\"Land and establish base camp\",\"status\":\"enabled\"}]}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "trip to mars",
+        "hasToolResult": true,
+        "context": "spring-ai"
+      },
+      "response": {
+        "content": "Great choices! I will proceed with executing the selected steps for your trip to Mars. Let me work through each one."
+      }
+    },
+    {
+      "match": {
+        "userMessage": "KPI dashboard",
+        "toolCallId": "call_d5_a2ui_dynamic_kpi_001",
+        "context": "spring-ai"
+      },
+      "response": {
+        "content": "Here is the KPI dashboard you requested."
+      }
+    },
+    {
+      "match": {
+        "userMessage": "KPI dashboard",
+        "toolName": "generate_a2ui",
+        "context": "spring-ai"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "generate_a2ui",
+            "arguments": "{\"context\":\"KPI dashboard\"}",
+            "id": "call_d5_a2ui_dynamic_kpi_001"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "KPI dashboard",
+        "toolName": "_design_a2ui_surface",
+        "context": "spring-ai"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "id": "call_d5_design_a2ui_kpi_001",
+            "name": "_design_a2ui_surface",
+            "arguments": "{\"surfaceId\": \"kpi-dashboard\", \"catalogId\": \"declarative-gen-ui-catalog\", \"components\": [{\"id\": \"root\", \"component\": \"Card\", \"title\": \"Quarterly KPIs\", \"subtitle\": \"Revenue, signups, and churn\", \"child\": \"metrics-row\"}, {\"id\": \"metrics-row\", \"component\": \"Row\", \"children\": [\"m-rev\", \"m-sign\", \"m-churn\"], \"gap\": 16}, {\"id\": \"m-rev\", \"component\": \"Metric\", \"label\": \"Revenue\", \"value\": \"$1.24M\", \"trend\": \"up\"}, {\"id\": \"m-sign\", \"component\": \"Metric\", \"label\": \"Signups\", \"value\": \"8,420\", \"trend\": \"up\"}, {\"id\": \"m-churn\", \"component\": \"Metric\", \"label\": \"Churn\", \"value\": \"2.3%\", \"trend\": \"down\"}]}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "status report on system health",
+        "toolCallId": "call_d5_a2ui_dynamic_status_001",
+        "context": "spring-ai"
+      },
+      "response": {
+        "content": "Here is the system health status report."
+      }
+    },
+    {
+      "match": {
+        "userMessage": "status report on system health",
+        "toolName": "generate_a2ui",
+        "context": "spring-ai"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "generate_a2ui",
+            "arguments": "{\"context\":\"status report on system health\"}",
+            "id": "call_d5_a2ui_dynamic_status_001"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "status report on system health",
+        "toolName": "_design_a2ui_surface",
+        "context": "spring-ai"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "id": "call_d5_design_a2ui_status_001",
+            "name": "_design_a2ui_surface",
+            "arguments": "{\"surfaceId\": \"status-report\", \"catalogId\": \"declarative-gen-ui-catalog\", \"components\": [{\"id\": \"root\", \"component\": \"Card\", \"title\": \"System health\", \"subtitle\": \"Live status\", \"child\": \"rows\"}, {\"id\": \"rows\", \"component\": \"Column\", \"children\": [\"r-api\", \"r-db\", \"r-bg\"], \"gap\": 8}, {\"id\": \"r-api\", \"component\": \"Row\", \"children\": [\"l-api\", \"b-api\"], \"gap\": 8}, {\"id\": \"l-api\", \"component\": \"InfoRow\", \"label\": \"API\", \"value\": \"p99 142ms\"}, {\"id\": \"b-api\", \"component\": \"StatusBadge\", \"text\": \"Healthy\", \"variant\": \"success\"}, {\"id\": \"r-db\", \"component\": \"Row\", \"children\": [\"l-db\", \"b-db\"], \"gap\": 8}, {\"id\": \"l-db\", \"component\": \"InfoRow\", \"label\": \"Database\", \"value\": \"Replication lag 220ms\"}, {\"id\": \"b-db\", \"component\": \"StatusBadge\", \"text\": \"Degraded\", \"variant\": \"warning\"}, {\"id\": \"r-bg\", \"component\": \"Row\", \"children\": [\"l-bg\", \"b-bg\"], \"gap\": 8}, {\"id\": \"l-bg\", \"component\": \"InfoRow\", \"label\": \"Background workers\", \"value\": \"Queue depth 12\"}, {\"id\": \"b-bg\", \"component\": \"StatusBadge\", \"text\": \"Healthy\", \"variant\": \"success\"}]}"
+          }
+        ]
+      }
+    },
+    {
+      "_comment": "render_a2ui — KPI dashboard pill (Google-ADK secondary tool name). Card has a single `child` slot (per myDefinitions.Card.props.child: string), so we wrap the three Metrics in a basic-catalog Column to satisfy the multi-child layout.",
+      "match": {
+        "userMessage": "KPI dashboard",
+        "toolName": "render_a2ui",
+        "context": "spring-ai"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "render_a2ui",
+            "arguments": {
+              "surfaceId": "declarative-surface",
+              "catalogId": "declarative-gen-ui-catalog",
+              "components": [
+                {
+                  "id": "root",
+                  "component": "Card",
+                  "title": "KPI dashboard",
+                  "subtitle": "Last 30 days",
+                  "child": "metrics-col"
+                },
+                {
+                  "id": "metrics-col",
+                  "component": "Column",
+                  "children": [
+                    "metric-revenue",
+                    "metric-signups",
+                    "metric-churn"
+                  ],
+                  "gap": 12
+                },
+                {
+                  "id": "metric-revenue",
+                  "component": "Metric",
+                  "label": "Revenue",
+                  "value": "$1.2M",
+                  "trend": "up"
+                },
+                {
+                  "id": "metric-signups",
+                  "component": "Metric",
+                  "label": "Signups",
+                  "value": "4,820",
+                  "trend": "up"
+                },
+                {
+                  "id": "metric-churn",
+                  "component": "Metric",
+                  "label": "Churn",
+                  "value": "2.1%",
+                  "trend": "down"
+                }
+              ],
+              "data": {}
+            }
+          }
+        ]
+      }
+    },
+    {
+      "_comment": "render_a2ui — status-report pill (Google-ADK). Card has single `child` slot, so wrap the three StatusBadges in a basic-catalog Column.",
+      "match": {
+        "userMessage": "status report on system health",
+        "toolName": "render_a2ui",
+        "context": "spring-ai"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "render_a2ui",
+            "arguments": {
+              "surfaceId": "declarative-surface",
+              "catalogId": "declarative-gen-ui-catalog",
+              "components": [
+                {
+                  "id": "root",
+                  "component": "Card",
+                  "title": "System health",
+                  "subtitle": "All services",
+                  "child": "status-col"
+                },
+                {
+                  "id": "status-col",
+                  "component": "Column",
+                  "children": [
+                    "status-api",
+                    "status-db",
+                    "status-workers"
+                  ],
+                  "gap": 8
+                },
+                {
+                  "id": "status-api",
+                  "component": "StatusBadge",
+                  "text": "API: healthy",
+                  "variant": "success"
+                },
+                {
+                  "id": "status-db",
+                  "component": "StatusBadge",
+                  "text": "Database: healthy",
+                  "variant": "success"
+                },
+                {
+                  "id": "status-workers",
+                  "component": "StatusBadge",
+                  "text": "Workers: degraded",
+                  "variant": "warning"
+                }
+              ],
+              "data": {}
+            }
+          }
+        ]
+      }
+    },
+{
+  "_comment": "Observed tool-free account request with actual InfoRow schema and canonical Meridian facts.",
+  "match": {
+    "userMessage": "Pull up the details on our biggest account.",
+    "context": "spring-ai",
+    "hasToolResult": false,
+    "systemMessage": [
+      "Respond with ONLY plain JSON, no markdown or tool calls.",
+      "declarative-gen-ui-catalog",
+      "Meridian Apparel Group"
+    ]
+  },
+  "response": {
+    "content": "{\"surfaceId\":\"account-details\",\"catalogId\":\"declarative-gen-ui-catalog\",\"components\":[{\"id\":\"root\",\"component\":\"Column\",\"children\":[\"account-card\",\"product-revenue\"]},{\"id\":\"account-card\",\"component\":\"Card\",\"title\":\"Meridian Apparel Group\",\"child\":\"account-facts\"},{\"id\":\"account-facts\",\"component\":\"Column\",\"children\":[\"owner\",\"region\",\"arr\",\"renewal\",\"contact\",\"health\",\"opportunities\"]},{\"id\":\"owner\",\"component\":\"InfoRow\",\"label\":\"Owner\",\"value\":\"Dana Whitfield\"},{\"id\":\"region\",\"component\":\"InfoRow\",\"label\":\"Region\",\"value\":\"North America\"},{\"id\":\"arr\",\"component\":\"InfoRow\",\"label\":\"ARR\",\"value\":\"$612k\"},{\"id\":\"renewal\",\"component\":\"InfoRow\",\"label\":\"Renewal date\",\"value\":\"Sep 30\"},{\"id\":\"contact\",\"component\":\"InfoRow\",\"label\":\"Last contact\",\"value\":\"3 days ago\"},{\"id\":\"health\",\"component\":\"InfoRow\",\"label\":\"Health\",\"value\":\"green\"},{\"id\":\"opportunities\",\"component\":\"InfoRow\",\"label\":\"Open opportunities\",\"value\":\"4 worth $210k\"},{\"id\":\"product-revenue\",\"component\":\"PieChart\",\"title\":\"Revenue by product line\",\"description\":\"Meridian Apparel Group annual recurring revenue by product line.\",\"data\":[{\"label\":\"Outerwear\",\"value\":260000},{\"label\":\"Footwear\",\"value\":180000},{\"label\":\"Accessories\",\"value\":112000},{\"label\":\"Custom\",\"value\":60000}]}]}"
+  }
+}
+]
+}

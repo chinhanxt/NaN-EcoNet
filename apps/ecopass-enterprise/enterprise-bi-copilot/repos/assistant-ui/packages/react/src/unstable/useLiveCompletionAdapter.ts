@@ -1,0 +1,227 @@
+"use client";
+
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import type {
+  Unstable_TriggerAdapter,
+  Unstable_TriggerItem,
+} from "@assistant-ui/core";
+
+export type Unstable_UseLiveCompletionAdapterOptions = {
+  /**
+   * Fetches the items for a query from an async source. Called debounced; the
+   * resolved items are cached and returned synchronously to the popover on the
+   * next render.
+   */
+  readonly fetcher: (query: string) => Promise<readonly Unstable_TriggerItem[]>;
+  /**
+   * Identifies the fetcher's data source. Change this when switching accounts,
+   * workspaces, or another boundary that should invalidate cached results.
+   */
+  readonly cacheKey?: string | number | undefined;
+  /** Debounce applied before a fetch fires, in milliseconds. @default 60 */
+  readonly debounceMs?: number | undefined;
+  /** When `false`, no fetch is scheduled and the adapter stays empty. @default true */
+  readonly enabled?: boolean | undefined;
+};
+
+/** Sentinel that no real query (including the empty string) equals, so the first query always fetches. */
+const NO_QUERY = "\u0000";
+
+/**
+ * @deprecated Under active development and may change without notice.
+ *
+ * Bridges an async completion source (a server search, a gateway RPC) into the
+ * synchronous `Unstable_TriggerAdapter` that `ComposerTriggerPopover` consumes.
+ * `search(query)` returns the last fetched items synchronously and schedules a
+ * debounced fetch when the query changes; when results arrive the returned
+ * `adapter` identity changes, which re-runs the popover's lookup so the fresh
+ * items render. This is a search-only adapter (`categories` are empty).
+ *
+ * `isLoading` is `true` while a fetch is in flight. Pass it to the popover's
+ * `isLoading` prop to render a loading state.
+ *
+ * @example
+ * ```tsx
+ * const mentions = unstable_useLiveCompletionAdapter({
+ *   fetcher: (query) => searchUsers(query),
+ * });
+ *
+ * <ComposerTriggerPopover
+ *   char="@"
+ *   adapter={mentions.adapter}
+ *   isLoading={mentions.isLoading}
+ *   directive={{ onInserted }}
+ * />
+ * ```
+ */
+export function unstable_useLiveCompletionAdapter(
+  options: Unstable_UseLiveCompletionAdapterOptions,
+): { adapter: Unstable_TriggerAdapter; isLoading: boolean } {
+  const { fetcher, cacheKey, debounceMs = 60, enabled = true } = options;
+
+  const [state, setState] = useState<{
+    query: string;
+    items: readonly Unstable_TriggerItem[];
+    failed: boolean;
+  }>({ query: NO_QUERY, items: [], failed: false });
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetcherRef = useRef(fetcher);
+  // The debounce timer must only observe fetchers from committed renders.
+  useLayoutEffect(() => {
+    fetcherRef.current = fetcher;
+  }, [fetcher]);
+
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tokenRef = useRef(0);
+  const pendingQueryRef = useRef<string | null>(null);
+  const retryableQueryRef = useRef<string | null>(null);
+  const pendingRetryQueryRef = useRef<string | null>(null);
+  const inactiveRef = useRef(true);
+  const deferredQueryRef = useRef<string | null>(null);
+
+  const cancelTimer = useCallback(() => {
+    if (timerRef.current !== null) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  const rearmPendingRetry = useCallback(() => {
+    const query = pendingRetryQueryRef.current;
+    if (query === null) return;
+    retryableQueryRef.current = query;
+    pendingRetryQueryRef.current = null;
+  }, []);
+
+  const scheduleFetch = useCallback(
+    (query: string) => {
+      if (!enabled) return;
+      if (inactiveRef.current) {
+        deferredQueryRef.current = query;
+        return;
+      }
+      if (pendingQueryRef.current === query) return;
+      rearmPendingRetry();
+      if (retryableQueryRef.current === query) {
+        retryableQueryRef.current = null;
+        pendingRetryQueryRef.current = query;
+      }
+      pendingQueryRef.current = query;
+      cancelTimer();
+      const token = ++tokenRef.current;
+      setIsLoading(true);
+      timerRef.current = setTimeout(() => {
+        timerRef.current = null;
+        Promise.resolve()
+          .then(() => fetcherRef.current(query))
+          .then(
+            (items) => {
+              if (token !== tokenRef.current) return;
+              pendingRetryQueryRef.current = null;
+              setState({ query, items, failed: false });
+              setIsLoading(false);
+            },
+            () => {
+              if (token !== tokenRef.current) return;
+              pendingQueryRef.current = null;
+              pendingRetryQueryRef.current = null;
+              setState({ query, items: [], failed: true });
+              setIsLoading(false);
+            },
+          );
+      }, debounceMs);
+    },
+    [enabled, debounceMs, cancelTimer, rearmPendingRetry],
+  );
+
+  const scheduleFetchRef = useRef(scheduleFetch);
+  useLayoutEffect(() => {
+    scheduleFetchRef.current = scheduleFetch;
+  }, [scheduleFetch]);
+
+  const invalidatePending = useCallback(() => {
+    rearmPendingRetry();
+    cancelTimer();
+    pendingQueryRef.current = null;
+    tokenRef.current += 1;
+    setIsLoading(false);
+  }, [cancelTimer, rearmPendingRetry]);
+
+  const cacheKeyRef = useRef(cacheKey);
+  useLayoutEffect(() => {
+    if (cacheKeyRef.current === cacheKey) return;
+    cacheKeyRef.current = cacheKey;
+    invalidatePending();
+    retryableQueryRef.current = null;
+    pendingRetryQueryRef.current = null;
+    setState({ query: NO_QUERY, items: [], failed: false });
+  }, [cacheKey, invalidatePending]);
+
+  useEffect(() => {
+    if (enabled) return;
+    invalidatePending();
+    setState((s) =>
+      s.query === NO_QUERY ? s : { query: NO_QUERY, items: [], failed: false },
+    );
+  }, [enabled, invalidatePending]);
+
+  // Render-time searches can outlive an abandoned render, so they only arm
+  // request work after this hook commits.
+  useLayoutEffect(() => {
+    inactiveRef.current = false;
+    const deferredQuery = deferredQueryRef.current;
+    deferredQueryRef.current = null;
+    if (deferredQuery !== null) scheduleFetchRef.current(deferredQuery);
+    return () => {
+      inactiveRef.current = true;
+      invalidatePending();
+    };
+  }, [invalidatePending]);
+
+  // Arm retries only after the failed state commits. Arming during rejection
+  // would let the failure render immediately schedule another request.
+  useEffect(() => {
+    retryableQueryRef.current = state.failed ? state.query : null;
+  }, [state]);
+
+  const adapter = useMemo<Unstable_TriggerAdapter>(
+    () => ({
+      categories: () => [],
+      categoryItems: () => [],
+      search: (query: string) => {
+        // search() runs inside the popover's render; defer state updates with
+        // queueMicrotask so they are not dispatched while another component renders.
+        if (query !== state.query || retryableQueryRef.current === query) {
+          queueMicrotask(() => scheduleFetch(query));
+        } else {
+          queueMicrotask(() => {
+            if (
+              deferredQueryRef.current !== null &&
+              deferredQueryRef.current !== query
+            ) {
+              deferredQueryRef.current = null;
+            }
+            if (
+              pendingQueryRef.current !== null &&
+              pendingQueryRef.current !== query
+            ) {
+              invalidatePending();
+            }
+          });
+        }
+        return state.items;
+      },
+    }),
+    [state, scheduleFetch, invalidatePending],
+  );
+
+  return { adapter, isLoading };
+}

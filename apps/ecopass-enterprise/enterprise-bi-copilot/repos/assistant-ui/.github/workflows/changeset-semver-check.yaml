@@ -1,0 +1,52 @@
+name: Changeset Semver Check
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Semver Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Checkout PR merge ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm and node.js
+        uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # ratchet:pnpm/setup@v2.1.0
+        with:
+          runtime: node@24
+          install: false
+
+      - name: Test the changeset checker
+        run: node --test scripts/check-changesets.test.mjs
+
+      - name: Verify changesets only name releasable packages
+        run: node scripts/check-changesets.mjs
+
+      - name: Test the changeset semver checker
+        run: node --test scripts/check-changeset-semver.test.mjs
+
+      - name: Check changeset bump types against package versions
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/check-changeset-semver.mjs
+
+      - name: Verify changed published sources have changesets
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/check-changesets.mjs --changed-packages

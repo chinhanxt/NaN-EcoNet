@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "@tsconfig/strictest/tsconfig.json",
+  "compilerOptions": {
+    "typeRoots": [
+      "${configDir}/node_modules/@types",
+      "${configDir}/../node_modules/@types",
+      "${configDir}/../../node_modules/@types",
+      "${configDir}/../../../node_modules/@types",
+      "${configDir}/node_modules/@assistant-ui/x-buildutils/types",
+      "${configDir}/../node_modules/@assistant-ui/x-buildutils/types",
+      "${configDir}/../../node_modules/@assistant-ui/x-buildutils/types",
+      "${configDir}/../../../node_modules/@assistant-ui/x-buildutils/types",
+      "${configDir}/types"
+    ],
+    "types": ["browser-process", "aui-build"],
+    "moduleResolution": "bundler",
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "target": "ESNext",
+    "module": "ESNext",
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "lib": ["dom", "dom.iterable", "ES2023"],
+    "stripInternal": true,
+    "noPropertyAccessFromIndexSignature": false
+  }
+}

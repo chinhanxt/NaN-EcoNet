@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum";
+  }
+
+  body {
+    background-color: #F8FAFC;
+    color: #090D16;
+    margin: 0;
+    padding: 0;
+    font-weight: 500;
+  }
+
+  /* Enterprise Numeric Precision */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Clean Minimalist Corporate Scrollbar */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+  }
+
+  /* Hide CopilotKit dev console / inspector overlay */
+  cpk-web-inspector,
+  .copilotKitDevConsole {
+    display: none !important;
+  }
+}
+
+@layer utilities {
+  /* Strict line wrap prevention for headers and data pills */
+  .no-wrap-header {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Tactile button press feedback */
+  .btn-tactile {
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .btn-tactile:active {
+    transform: scale(0.98);
+  }
+
+  /* Clean enterprise border contrast */
+  .border-corporate {
+    border-color: #E2E8F0;
+  }
+}

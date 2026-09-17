@@ -1,0 +1,236 @@
+"use client";
+
+import type {
+  MessageStatus,
+  ThreadAssistantMessage,
+  ThreadMessage,
+} from "@assistant-ui/core";
+import {
+  parseDataUrl,
+  resolveFilePartSource,
+} from "@assistant-ui/core/internal";
+import type { A2AMessage, A2APart, A2ATaskState } from "./types";
+
+function isImageMediaType(mediaType?: string): boolean {
+  return !!mediaType && mediaType.startsWith("image/");
+}
+
+export function a2aPartToContent(
+  part: A2APart,
+): ThreadAssistantMessage["content"][number] {
+  if (part.text !== undefined) {
+    return { type: "text", text: part.text };
+  }
+  if (part.url !== undefined) {
+    if (isImageMediaType(part.mediaType)) {
+      return {
+        type: "image",
+        image: part.url,
+        ...(part.filename && { filename: part.filename }),
+      };
+    }
+    return {
+      type: "file",
+      data: part.url,
+      mimeType: part.mediaType ?? "application/octet-stream",
+      sourceType: "url",
+      ...(part.filename && { filename: part.filename }),
+    };
+  }
+  if (part.raw !== undefined) {
+    if (isImageMediaType(part.mediaType)) {
+      return {
+        type: "image",
+        image: `data:${part.mediaType};base64,${part.raw}`,
+        ...(part.filename && { filename: part.filename }),
+      };
+    }
+    return {
+      type: "file",
+      data: part.raw,
+      mimeType: part.mediaType ?? "application/octet-stream",
+      ...(part.filename && { filename: part.filename }),
+    };
+  }
+  if (part.data !== undefined) {
+    return { type: "text", text: JSON.stringify(part.data, null, 2) };
+  }
+  return { type: "text", text: "" };
+}
+
+export function a2aPartsToContent(
+  parts: A2APart[],
+): ThreadAssistantMessage["content"] {
+  return (Array.isArray(parts) ? parts : []).map(a2aPartToContent);
+}
+
+const TERMINAL_STATES = new Set<A2ATaskState>([
+  "completed",
+  "failed",
+  "canceled",
+  "rejected",
+]);
+
+const INTERRUPTED_STATES = new Set<A2ATaskState>([
+  "input_required",
+  "auth_required",
+]);
+
+export function isTerminalTaskState(state: A2ATaskState): boolean {
+  return TERMINAL_STATES.has(state);
+}
+
+export function isInterruptedTaskState(state: A2ATaskState): boolean {
+  return INTERRUPTED_STATES.has(state);
+}
+
+export function taskStateToMessageStatus(state: A2ATaskState): MessageStatus {
+  switch (state) {
+    case "submitted":
+    case "working":
+      return { type: "running" };
+    case "completed":
+      return { type: "complete", reason: "stop" };
+    case "failed":
+    case "rejected":
+      return { type: "incomplete", reason: "error" };
+    case "canceled":
+      return { type: "incomplete", reason: "cancelled" };
+    case "input_required":
+    case "auth_required":
+      return { type: "requires-action", reason: "interrupt" };
+    default:
+      return { type: "running" };
+  }
+}
+
+export function contentPartsToA2AParts(
+  content: ReadonlyArray<{
+    type: string;
+    text?: string | undefined;
+    image?: string | undefined;
+    data?: unknown;
+    mimeType?: string | undefined;
+    filename?: string | undefined;
+    sourceType?: "url" | "id" | undefined;
+    audio?: { data: string; format: string } | undefined;
+  }>,
+  fallbackMimeType?: string,
+): A2APart[] {
+  return content
+    .map((part): A2APart | null => {
+      switch (part.type) {
+        case "text":
+          return { text: part.text ?? "" };
+        case "image": {
+          if (!part.image) return null;
+          const parsed = parseDataUrl(part.image);
+          if (parsed) {
+            return {
+              raw: parsed.data,
+              mediaType: parsed.mimeType,
+              ...(part.filename && { filename: part.filename }),
+            };
+          }
+          return {
+            url: part.image,
+            ...(fallbackMimeType && { mediaType: fallbackMimeType }),
+            ...(part.filename && { filename: part.filename }),
+          };
+        }
+        case "file": {
+          if (typeof part.data !== "string") return null;
+          const declaredMimeType = part.mimeType || fallbackMimeType;
+          const source = resolveFilePartSource({
+            data: part.data,
+            mimeType: declaredMimeType ?? "application/octet-stream",
+            sourceType: part.sourceType,
+          });
+          if (source.kind === "url") {
+            return {
+              url: source.url,
+              ...(declaredMimeType && { mediaType: declaredMimeType }),
+              ...(part.filename && { filename: part.filename }),
+            };
+          }
+          const parsed = parseDataUrl(part.data);
+          if (parsed) {
+            return {
+              raw: source.data,
+              mediaType: source.mimeType,
+              ...(part.filename && { filename: part.filename }),
+            };
+          }
+          if (/^data:/i.test(part.data)) {
+            return {
+              url: part.data,
+              ...(declaredMimeType && { mediaType: declaredMimeType }),
+              ...(part.filename && { filename: part.filename }),
+            };
+          }
+          return {
+            raw: source.data,
+            ...(declaredMimeType && { mediaType: declaredMimeType }),
+            ...(part.filename && { filename: part.filename }),
+          };
+        }
+        case "audio": {
+          if (!part.audio) return null;
+          return {
+            raw: parseDataUrl(part.audio.data)?.data ?? part.audio.data,
+            mediaType: `audio/${part.audio.format}`,
+          };
+        }
+        case "data": {
+          if (part.data === undefined) return null;
+          return { data: part.data };
+        }
+        default:
+          return null;
+      }
+    })
+    .filter((p): p is A2APart => p !== null);
+}
+
+export function a2aMessageToContent(
+  message: A2AMessage,
+): ThreadAssistantMessage["content"] {
+  return a2aPartsToContent(message?.parts ?? []);
+}
+
+export function threadMessageToA2AMessage(
+  message: ThreadMessage,
+  options: {
+    contextId?: string | undefined;
+    taskId?: string | undefined;
+  } = {},
+): A2AMessage {
+  const parts: A2APart[] = [];
+
+  if (message.role === "user") {
+    parts.push(...contentPartsToA2AParts(message.content));
+    for (const attachment of message.attachments ?? []) {
+      parts.push(
+        ...contentPartsToA2AParts(
+          attachment.content ?? [],
+          attachment.contentType,
+        ),
+      );
+    }
+  }
+
+  const a2aMsg: A2AMessage = {
+    messageId: message.id,
+    role: "user",
+    parts,
+  };
+
+  if (options.contextId) {
+    a2aMsg.contextId = options.contextId;
+  }
+  if (options.taskId) {
+    a2aMsg.taskId = options.taskId;
+  }
+
+  return a2aMsg;
+}

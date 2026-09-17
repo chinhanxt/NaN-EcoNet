@@ -1,0 +1,207 @@
+import {
+  Component,
+  ChangeDetectionStrategy,
+  computed,
+  inject,
+  input,
+  signal,
+} from "@angular/core";
+
+import { TitleCasePipe } from "@angular/common";
+import { FormsModule } from "@angular/forms";
+import type {
+  HumanInTheLoopToolCall,
+  HumanInTheLoopToolRenderer,
+} from "@copilotkit/angular";
+import {
+  connectAgentContext,
+  CopilotKit,
+  injectAgentStore,
+  registerHumanInTheLoop,
+} from "@copilotkit/angular";
+import { RenderToolCalls } from "@copilotkit/angular";
+import { z } from "zod";
+
+@Component({
+  selector: "require-approval",
+  standalone: true,
+  imports: [FormsModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
+  template: `
+    <div>Require approval</div>
+    <button (click)="respond({ approved: true })">Approve</button>
+    <button (click)="respond({ approved: false })">Deny</button>
+  `,
+})
+export class RequireApprovalComponent implements HumanInTheLoopToolRenderer {
+  toolCall =
+    input.required<
+      HumanInTheLoopToolCall<{ action: string; reason: string }>
+    >();
+
+  respond(result: { approved: boolean }) {
+    this.toolCall().respond(result);
+  }
+}
+
+@Component({
+  selector: "headless-chat",
+  standalone: true,
+  imports: [FormsModule, RenderToolCalls, TitleCasePipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <div
+      class="headless-container"
+      style="display: flex; flex-direction: column; height: 100vh; width: 100vw"
+    >
+      <div
+        class="messages"
+        style="
+          flex: 1;
+          overflow: auto;
+          padding: 16px;
+          background: #f9fafb;
+          color: #111827;
+        "
+      >
+        @for (m of messages(); track m) {
+          <div style="margin-bottom: 16px">
+            <div style="font-weight: 600; color: #374151">
+              {{ m.role | titlecase }}
+            </div>
+            <div style="white-space: pre-wrap">{{ m.content }}</div>
+            @if (m.role === "assistant") {
+              <copilot-render-tool-calls
+                [message]="m"
+                [messages]="messages()"
+                [isLoading]="isRunning()"
+              />
+            }
+          </div>
+        }
+        @if (isRunning()) {
+          <div style="opacity: 0.9; color: #6b7280">Thinking…</div>
+        }
+      </div>
+
+      <form
+        (ngSubmit)="send()"
+        style="
+          display: flex;
+          gap: 8px;
+          padding: 12px;
+          background: #ffffff;
+          border-top: 1px solid #e5e7eb;
+        "
+      >
+        <input
+          name="message"
+          [(ngModel)]="inputValue"
+          [disabled]="isRunning()"
+          placeholder="Type a message…"
+          style="
+            flex: 1;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            background: #ffffff;
+            color: #111827;
+            outline: none;
+          "
+        />
+        <button
+          type="submit"
+          [disabled]="!inputValue.trim() || isRunning()"
+          style="
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid #1d4ed8;
+            background: #2563eb;
+            color: #ffffff;
+            cursor: pointer;
+          "
+        >
+          Send
+        </button>
+        <button
+          type="button"
+          (click)="clearThreads()"
+          style="
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            background: #ffffff;
+            color: #374151;
+            cursor: pointer;
+          "
+        >
+          Clear threads
+        </button>
+      </form>
+    </div>
+  `,
+})
+export class HeadlessChatComponent {
+  readonly agentStore = injectAgentStore("openai");
+  readonly agent = computed(() => this.agentStore()?.agent);
+  readonly isRunning = computed(() => !!this.agentStore()?.isRunning());
+  readonly messages = computed(() => this.agentStore()?.messages());
+  readonly copilotkit = inject(CopilotKit);
+
+  inputValue = "";
+
+  constructor() {
+    registerHumanInTheLoop({
+      name: "requireApproval",
+      description: "Requires human approval before proceeding",
+      parameters: z.object({
+        action: z.string(),
+        reason: z.string(),
+      }),
+      component: RequireApprovalComponent,
+    });
+
+    connectAgentContext(
+      signal({
+        value: "voice-mode",
+        description: "active",
+      }),
+    );
+  }
+
+  async clearThreads() {
+    const runtimeUrl = this.copilotkit.core?.runtimeUrl;
+    if (!runtimeUrl) return;
+    const url = runtimeUrl.replace(/\/$/, "");
+    try {
+      const res = await fetch(`${url}/threads/clear`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        console.error(
+          `Failed to clear threads: HTTP ${res.status} ${res.statusText}`,
+        );
+      }
+    } catch (err) {
+      console.error("Failed to clear threads", err);
+    }
+  }
+
+  async send() {
+    const content = this.inputValue.trim();
+    const agent = this.agent();
+    const isRunning = this.isRunning();
+
+    if (!agent || !content || isRunning) return;
+
+    agent.addMessage({ id: crypto.randomUUID(), role: "user", content });
+    this.inputValue = "";
+
+    try {
+      await this.copilotkit.core.runAgent({ agent });
+    } catch (e) {
+      console.error("Agent run error", e);
+    }
+  }
+}

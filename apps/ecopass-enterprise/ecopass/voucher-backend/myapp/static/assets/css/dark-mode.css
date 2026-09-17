@@ -1,0 +1,513 @@
+/*--------------------------------------------------------------
+# Dark Mode
+--------------------------------------------------------------*/
+body.dark-mode {
+  background: #181a1b;
+  color: #e0e6eb;
+}
+
+body.dark-mode a {
+  color: #58a6ff;
+}
+
+body.dark-mode a:hover {
+  color: #79c0ff;
+}
+
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode h5,
+body.dark-mode h6 {
+  color: #e0e6eb;
+}
+
+body.dark-mode .pagetitle h1 {
+  color: #e0e6eb;
+}
+
+body.dark-mode .back-to-top {
+  background: #21262d;
+}
+
+body.dark-mode .back-to-top:hover {
+  background: #30363d;
+}
+
+body.dark-mode .dropdown-menu {
+  background-color: #21262d;
+  box-shadow: 0 5px 30px 0 rgba(0, 0, 0, 0.5);
+}
+
+body.dark-mode .dropdown-menu .dropdown-header,
+body.dark-mode .dropdown-menu .dropdown-footer {
+  color: #e0e6eb;
+}
+
+body.dark-mode .dropdown-menu .dropdown-item {
+  color: #e0e6eb;
+}
+
+body.dark-mode .dropdown-menu .dropdown-item:hover {
+  background-color: #30363d;
+}
+
+body.dark-mode .card {
+  background-color: #21262d;
+  color: #e0e6eb;
+  box-shadow: 0px 0 30px rgba(0, 0, 0, 0.5);
+}
+
+body.dark-mode .card-header,
+body.dark-mode .card-footer {
+  background-color: #343a40;
+  color: #e0e6eb;
+}
+
+body.dark-mode .breadcrumb {
+  color: #8b949e;
+}
+
+body.dark-mode .breadcrumb a {
+  color: #58a6ff;
+}
+
+body.dark-mode .breadcrumb a:hover {
+  color: #79c0ff;
+}
+
+body.dark-mode .breadcrumb .active {
+  color: #79c0ff;
+}
+
+body.dark-mode .header {
+  background-color: #161b22;
+  color: #e0e6eb;
+}
+
+body.dark-mode .header .toggle-sidebar-btn {
+  color: #e0e6eb;
+}
+
+body.dark-mode .header .search-form input {
+  background-color: #0d1117;
+  color: #e0e6eb;
+  border: 1px solid rgba(110, 118, 129, 0.4);
+}
+
+body.dark-mode .header .search-form input:focus,
+body.dark-mode .header .search-form input:hover {
+  background-color: #0d1117;
+  border: 1px solid rgba(110, 118, 129, 0.6);
+}
+
+body.dark-mode .header .search-form button i {
+  color: #e0e6eb;
+}
+
+body.dark-mode .sidebar {
+  background-color: #161b22;
+  color: #e0e6eb;
+}
+
+body.dark-mode .sidebar-nav .nav-link {
+  background: #161b22;
+  color: #e0e6eb;
+}
+
+body.dark-mode .sidebar-nav .nav-link.collapsed {
+  color: #8b949e;
+}
+
+body.dark-mode .sidebar-nav .nav-link:hover,
+body.dark-mode .sidebar-nav .nav-link:not(.collapsed):hover {
+  background: #21262d;
+  color: #e0e6eb;
+}
+
+body.dark-mode .sidebar-nav .nav-content a {
+  color: #8b949e;
+}
+
+body.dark-mode .sidebar-nav .nav-content a:hover,
+body.dark-mode .sidebar-nav .nav-content a.active {
+  color: #58a6ff;
+}
+
+body.dark-mode .dashboard .info-card h6 {
+  color: #e0e6eb;
+}
+
+body.dark-mode .dashboard .card-icon {
+  background: #0d1117;
+}
+
+body.dark-mode .dashboard .activity .activity-item .activite-label {
+  color: #8b949e;
+}
+
+body.dark-mode .dashboard .activity .activity-item .activity-content {
+  color: #e0e6eb;
+}
+
+body.dark-mode .dashboard .news h4 a {
+  color: #58a6ff;
+}
+
+body.dark-mode .dashboard .news h4 a:hover {
+  color: #79c0ff;
+}
+
+body.dark-mode .dashboard .news p {
+  color: #8b949e;
+}
+
+body.dark-mode .dashboard .recent-sales .table thead {
+  background: #0d1117;
+}
+
+body.dark-mode .dashboard .recent-sales .table thead th {
+  color: #727272;
+}
+
+body.dark-mode .dashboard .top-selling .table thead {
+  background: #0d1117;
+}
+
+body.dark-mode .dashboard .top-selling .table thead th {
+  color: #727272;
+}
+
+body.dark-mode .contact .info-box {
+  background-color: #21262d;
+  color: #727272;
+}
+
+body.dark-mode .contact .info-box i {
+  color: #58a6ff;
+}
+
+body.dark-mode .contact .php-email-form .error-message {
+  background: #e5534b;
+}
+
+body.dark-mode .contact .php-email-form .sent-message {
+  background: #24a158;
+}
+
+body.dark-mode .contact .php-email-form .loading {
+  background: #161b22;
+}
+
+body.dark-mode .contact .php-email-form input,
+body.dark-mode .contact .php-email-form textarea {
+  background-color: #0d1117;
+  color: #727272;
+}
+
+body.dark-mode .contact .php-email-form input:focus,
+body.dark-mode .contact .php-email-form textarea:focus {
+  border-color: #58a6ff;
+}
+
+body.dark-mode .contact .php-email-form button[type=submit] {
+  background: #58a6ff;
+}
+
+body.dark-mode .error-404 {
+  background-color: #161b22;
+  color: #727272;
+}
+
+body.dark-mode .footer {
+  color: #e0e6eb;
+}
+
+body.dark-mode .logo span {
+  color: #e0e6eb;
+}
+
+body.dark-mode .footer .copyright {
+  text-align: center;
+  color: #012970;
+}
+
+body.dark-mode .footer .credits {
+  padding-top: 5px;
+  text-align: center;
+  font-size: 13px;
+  color: #012970;
+}
+
+body.dark-mode .header-nav .nav-profile {
+  color: #e0e6eb;
+}
+
+body.dark-mode .canvas {
+  color: #e0e6eb;  
+}
+
+body.dark-mode {
+    background-color: #121212;
+    color: #ffffff;
+}
+
+body.dark-mode .navbar, body.dark-mode .card {
+    background-color: #1e1e1e;
+}
+
+body.dark-mode .btn-primary {
+  background-color: #333333;
+  border-color: #444444;
+}
+
+body.dark-mode .echart-tooltip {
+  background-color: #333 !important;
+  border-color: #aaa !important;
+  color: #fff !important;
+}
+
+body.dark-mode .text-dark {
+  color: #ffffff !important;
+}
+
+body.dark-mode .text-muted {
+  color: #b3b3b3 !important;
+}
+
+body.dark-mode .footer .copyright {
+  color: #646668 !important;
+}
+
+body.dark-mode .footer .copyright h5 {
+  color: #646668 !important;
+}
+
+body.dark-mode .footer .credits {
+  color: #646668 !important;
+}
+
+body.dark-mode .form-control {
+  background-color: #2a2a2a !important;
+  color: #e0e0e0 !important;
+  border-color: #444 !important;
+}
+
+body.dark-mode .form-control::placeholder {
+  color: #888 !important;
+}
+
+body.dark-mode .form-select {
+  background-color: #2a2a2a !important;
+  color: #e0e0e0 !important;
+  border-color: #444 !important;
+}
+
+body.dark-mode #id_old_password,
+body.dark-mode #id_new_password1,
+body.dark-mode #id_new_password2 {
+  background-color: #2a2a2a !important;
+  color: #e0e0e0 !important;
+  -webkit-text-fill-color: #e0e0e0 !important;
+}
+
+body.dark-mode {
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+body.dark-mode input[type="password"] {
+  background-color: #2a2a2a !important;
+  color: #e0e0e0 !important;
+  -webkit-text-fill-color: #e0e0e0 !important;
+}
+
+body.dark-mode input[type="password"]::placeholder {
+  color: #888 !important;
+}
+
+/* custom css for show-item.html */
+body.dark-mode .default-tile {
+  background-color: #2a2a2a;
+  color: #e0e6eb;
+}
+
+/* Dark mode for description */
+body.dark-mode .content {
+  color: #e0e6eb;
+}
+
+body.dark-mode .table-striped th{
+  border-color: #21262d;
+  background-color: #2a2a2a;
+  color:  lightgrey;
+}
+
+body.dark-mode .table-striped>tbody>tr:nth-of-type(odd)>*{
+  background-color: lightgrey;
+}
+
+body.dark-mode .table-striped>tbody>tr:nth-of-type(even)>*{
+  background-color: darkgrey;
+}
+
+/*
+body.dark-mode .card-available {
+  background-color: #0f150e;
+}
+*/
+
+body.dark-mode .card-used {
+  background-color: #0c1a2b;
+}
+
+body.dark-mode .card-expired {
+  background-color: #290d0d;
+}
+
+body.dark-mode .card-title span {
+  color: #e0e6eb;
+}
+
+body.dark-mode .footer {
+  border-top: 1px solid #222;
+}
+
+body.dark-mode .btn-download {
+  color: #ffffff;
+  background-color: #6c757d00;
+}
+
+body.dark-mode .btn-success {
+  color: white;
+}
+
+body.dark-mode .btn-success:hover {
+  color: white;
+}
+
+body.dark-mode .btn-danger {
+  color: white;
+}
+
+body.dark-mode .btn-danger:hover {
+  color: white;
+}
+
+body.dark-mode .btn-feature {
+  color: white !important;
+  background-color: #414141;
+}
+
+body.dark-mode .btn-feature:hover {
+  background-color: #6c757d00;
+}
+
+body.dark-mode .dashboard-voucher {
+  background-color: #7c6128;  
+}
+
+body.dark-mode .dashboard-coupon {
+  background-color: #476439;  
+}
+
+body.dark-mode .dashboard-giftcard {
+  background-color: #7e3434;  
+}
+
+body.dark-mode .dashboard-loyalty {
+  background-color: #5470c6;  
+}
+
+body.dark-mode .dashboard-giftcard .card-body h5,
+body.dark-mode .dashboard-giftcard .card-body h6,
+body.dark-mode .dashboard-voucher .card-body h5,
+body.dark-mode .dashboard-voucher .card-body h6,
+body.dark-mode .dashboard-coupon .card-body h5,
+body.dark-mode .dashboard-coupon .card-body h6,
+body.dark-mode .dashboard-loyalty .card-body h5,
+body.dark-mode .dashboard-loyalty .card-body h6
+ {
+  color: #e0e6eb;
+}
+
+body.dark-mode .list-group-item {
+  background-color: gray;
+  border-color:  black;
+}
+
+.dark-mode .alert {
+  background-color: #1e1e2f;
+  color: #f1f1f1;
+  border-left: 5px solid;
+  border-radius: 0.5rem;
+}
+
+.dark-mode .alert-success {
+  border-color: #28a745;
+  background-color: #243024;
+  color: #d4edda;
+}
+
+.dark-mode .alert-danger,
+.dark-mode .alert-error {
+  border-color: #dc3545;
+  background-color: #2b1f1f;
+  color: #f8d7da;
+}
+
+.dark-mode .alert-warning {
+  border-color: #ffc107;
+  background-color: #332e1b;
+  color: #fff3cd;
+}
+
+.dark-mode .alert-info {
+  border-color: #0dcaf0;
+  background-color: #1b2a32;
+  color: #cff4fc;
+}
+
+.dark-mode .btn-close {
+  filter: invert(1);
+}
+
+/*--------------------------------------------------------------
+# Dark Mode - Barcode/QR Code Scanability Fix
+--------------------------------------------------------------*/
+
+/* Add white background to QR code images in sidebar for scanability */
+body.dark-mode .qr-image {
+  background-color: #ffffff;
+  padding: 12px;
+  border-radius: 12px;
+}
+
+/* Add white background to barcode fallbacks in inventory/list views */
+body.dark-mode .item-logo[alt="QR Code"] {
+  background-color: #ffffff;
+  padding: 6px;
+}
+
+/* Fullscreen QR overlay - white background for scanability */
+body.dark-mode .qr-overlay {
+  background: #ffffff;
+}
+
+body.dark-mode .qr-overlay img {
+  filter: none;
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+}
+
+/* Make close button visible on white background */
+body.dark-mode #qr-close-btn {
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+}
+
+body.dark-mode #qr-close-btn:hover {
+  background: rgba(0, 0, 0, 0.95);
+}

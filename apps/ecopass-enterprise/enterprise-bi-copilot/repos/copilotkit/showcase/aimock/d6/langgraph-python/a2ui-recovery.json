@@ -1,0 +1,122 @@
+{
+ "_meta": {
+  "description": "D6 fixtures for langgraph-python / a2ui-recovery (A2UI error recovery)",
+  "_note": "Backend-owned A2UI (get_a2ui_tools, injectA2UITool=false). No context gate: observed inner requests carry no x-aimock-context or x-test-id. Context-free matchers remain eligible for any integration with matching request content; prompt wording is not an isolation boundary. The HEAL/EXHAUST prompts are also present in built-in-agent/a2ui-recovery.json. The user prompt plus toolName=render_a2ui separates inner requests from outer generate_a2ui calls. HEAL: invalid dangling child -> validator feedback -> valid surface (declarative-metric x2). EXHAUST: invalid on every attempt -> a2ui_recovery_exhausted. Retry matching uses request feedback, not shared sequence counters; outer narration matches the scenario prompt, offered generate_a2ui tool, and current-turn tool result (hasToolResult=true). Verified local runtime: ag-ui-langgraph 0.0.41 with ag-ui-a2ui-toolkit 0.0.4. The toolkit recovery.py format_validation_errors/augment_prompt_with_validation_errors produces the [code] path: message feedback and retry header; ag_ui_langgraph/a2ui_tool.py sends that prompt as SystemMessage. These are observed versions, not a proven minimum or compatibility promise for later versions.",
+  "created": "2026-06-26"
+ },
+ "fixtures": [
+  {
+   "_comment": "HEAL pill - inner render_a2ui retry after the missing-metric validation error: VALID surface (Column + two Metric tiles). Match request feedback rather than shared sequence counters so repeated heal requests recover independently. This feedback gate is load-bearing: if it misses, the generic invalid HEAL entry can repeat and exhaust like EXHAUST. Diagnose the actual selected fixture and retry prompt; the HEAL metric assertion must still pass.",
+   "match": {
+    "userMessage": "Build my Q2 revenue summary and self-correct a malformed first attempt.",
+    "toolName": "render_a2ui",
+    "systemMessage": [
+     "## Previous attempt was invalid — fix these and regenerate:",
+     "[unresolved_child] components[0].children[0]: Child reference 'missing-metric' does not match any component id"
+    ]
+   },
+   "response": {
+    "toolCalls": [
+     {
+      "id": "call_d6_lp_recover_heal_good",
+      "name": "render_a2ui",
+      "arguments": "{\"surfaceId\": \"recovery-demo\", \"catalogId\": \"declarative-gen-ui-catalog\", \"components\": [{\"id\": \"root\", \"component\": \"Column\", \"gap\": 16, \"children\": [\"m1\", \"m2\"]}, {\"id\": \"m1\", \"component\": \"Metric\", \"label\": \"Quarterly Revenue\", \"value\": \"$4.2M\", \"trend\": \"up\", \"trendValue\": \"+12% QoQ\"}, {\"id\": \"m2\", \"component\": \"Metric\", \"label\": \"Win Rate\", \"value\": \"31%\", \"trend\": \"down\", \"trendValue\": \"-2 pts\"}], \"data\": {}}"
+     }
+    ]
+   },
+   "chunkSize": 9999
+  },
+  {
+   "_comment": "HEAL pill - first inner render_a2ui attempt: structurally INVALID (root references a missing child). The validator rejects it and adds the retry feedback matched by the preceding fixture.",
+   "match": {
+    "userMessage": "Build my Q2 revenue summary and self-correct a malformed first attempt.",
+    "toolName": "render_a2ui"
+   },
+   "response": {
+    "toolCalls": [
+     {
+      "id": "call_d6_lp_recover_heal_bad",
+      "name": "render_a2ui",
+      "arguments": "{\"surfaceId\": \"recovery-demo\", \"catalogId\": \"declarative-gen-ui-catalog\", \"components\": [{\"id\": \"root\", \"component\": \"Column\", \"gap\": 16, \"children\": [\"missing-metric\"]}]}"
+     }
+    ]
+   },
+   "chunkSize": 9999
+  },
+  {
+   "_comment": "HEAL pill - outer narration after the current generate_a2ui result; previous-turn results do not terminate a new request.",
+   "match": {
+    "userMessage": "Build my Q2 revenue summary and self-correct a malformed first attempt.",
+    "toolName": "generate_a2ui",
+    "hasToolResult": true
+   },
+   "response": {
+    "content": "The first render came back malformed - I recovered and painted your Q2 revenue summary."
+   },
+   "chunkSize": 9999
+  },
+  {
+   "_comment": "HEAL pill - outer generate_a2ui initiation with a fresh generated call ID, preserving each healed activity in conversation history.",
+   "match": {
+    "userMessage": "Build my Q2 revenue summary and self-correct a malformed first attempt.",
+    "toolName": "generate_a2ui",
+    "hasToolResult": false
+   },
+   "response": {
+    "toolCalls": [
+     {
+      "name": "generate_a2ui",
+      "arguments": "{\"intent\": \"create\"}"
+     }
+    ]
+   },
+   "chunkSize": 9999
+  },
+  {
+   "_comment": "EXHAUST pill - inner render_a2ui: structurally INVALID on every attempt (unresolved child) -> recovery exhausts.",
+   "match": {
+    "userMessage": "Build a report that fails every validation pass so I can preview the fallback.",
+    "toolName": "render_a2ui"
+   },
+   "response": {
+    "toolCalls": [
+     {
+      "id": "call_d6_lp_recover_exhaust_design",
+      "name": "render_a2ui",
+      "arguments": "{\"surfaceId\": \"recovery-demo-fail\", \"catalogId\": \"declarative-gen-ui-catalog\", \"components\": [{\"id\": \"root\", \"component\": \"Column\", \"gap\": 16, \"children\": [\"never-defined\"]}]}"
+     }
+    ]
+   },
+   "chunkSize": 9999
+  },
+  {
+   "_comment": "EXHAUST pill - outer narration after the current generate_a2ui recovery-exhausted result; previous-turn results do not terminate a new request.",
+   "match": {
+    "userMessage": "Build a report that fails every validation pass so I can preview the fallback.",
+    "toolName": "generate_a2ui",
+    "hasToolResult": true
+   },
+   "response": {
+    "content": "I couldn't produce a valid surface after several attempts - showing a graceful fallback instead."
+   },
+   "chunkSize": 9999
+  },
+  {
+   "_comment": "EXHAUST pill - outer generate_a2ui initiation with a fresh generated call ID, preserving each fallback activity in conversation history.",
+   "match": {
+    "userMessage": "Build a report that fails every validation pass so I can preview the fallback.",
+    "toolName": "generate_a2ui",
+    "hasToolResult": false
+   },
+   "response": {
+    "toolCalls": [
+     {
+      "name": "generate_a2ui",
+      "arguments": "{\"intent\": \"create\"}"
+     }
+    ]
+   },
+   "chunkSize": 9999
+  }
+ ]
+}

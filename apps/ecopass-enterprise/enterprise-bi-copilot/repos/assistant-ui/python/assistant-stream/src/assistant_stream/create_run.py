@@ -1,0 +1,395 @@
+import asyncio
+import logging
+from typing import Any, AsyncGenerator, Callable, Coroutine, List, Optional, Sequence, Union
+from assistant_stream.assistant_stream_chunk import (
+    AssistantStreamChunk,
+    TextDeltaChunk,
+    ReasoningDeltaChunk,
+    ReasoningPartStartChunk,
+    ToolResultChunk,
+    DataChunk,
+    ErrorChunk,
+    SourceChunk,
+    FileChunk,
+    AnnotationsChunk,
+    StepStartChunk,
+    StepFinishChunk,
+    ToolCallBeginChunk,
+)
+from assistant_stream.modules.tool_call import (
+    create_tool_call,
+    ToolCallController,
+    generate_openai_style_tool_call_id,
+)
+from assistant_stream.queue_stream import enqueue_threadsafe, queue_stream
+from assistant_stream.state_manager import StateManager
+
+logger = logging.getLogger(__name__)
+
+
+def _log_detached_task_error(task: asyncio.Task[None]) -> None:
+    try:
+        task.result()
+    except asyncio.CancelledError:
+        return
+    except Exception:
+        logger.warning(
+            "Suppressed callback exception after interrupted early-close cleanup",
+            exc_info=True,
+        )
+
+
+def _cancel_detached_task(task: asyncio.Task[None]) -> None:
+    task.add_done_callback(_log_detached_task_error)
+    task.cancel()
+
+
+class ReadOnlyCancellationSignal:
+    """Read-only view over an asyncio.Event used for cancellation."""
+
+    def __init__(self, event: asyncio.Event):
+        self._event = event
+
+    def is_set(self) -> bool:
+        return self._event.is_set()
+
+    async def wait(self) -> bool:
+        return await self._event.wait()
+
+
+class RunController:
+    def __init__(self, queue, state_data, parent_id: Optional[str] = None):
+        self._queue = queue
+        self._loop = asyncio.get_running_loop()
+        self._dispose_callbacks = []
+        self._stream_tasks = []
+        self._stream_tasks_to_drain = []
+        self._state_manager = StateManager(self._put_chunk_nowait, state_data)
+        self._parent_id = parent_id
+        self._cancelled_event = asyncio.Event()
+        self._cancelled_signal = ReadOnlyCancellationSignal(self._cancelled_event)
+
+    def with_parent_id(self, parent_id: str) -> 'RunController':
+        """Create a new RunController instance with the specified parent_id.
+
+        Every field but the parent id is shared with this controller, so the
+        derived one skips ``__init__``, which would build and discard a whole
+        StateManager and require a running event loop.
+        """
+        controller = RunController.__new__(RunController)
+        controller._queue = self._queue
+        controller._loop = self._loop
+        controller._dispose_callbacks = self._dispose_callbacks
+        controller._stream_tasks = self._stream_tasks
+        controller._stream_tasks_to_drain = self._stream_tasks_to_drain
+        controller._state_manager = self._state_manager
+        controller._parent_id = parent_id
+        controller._cancelled_event = self._cancelled_event
+        controller._cancelled_signal = self._cancelled_signal
+        return controller
+
+    def append_text(self, text_delta: str) -> None:
+        """Append a text delta to the stream."""
+        chunk = TextDeltaChunk(text_delta=text_delta, parent_id=self._parent_id)
+        self._flush_and_put_chunk(chunk)
+
+    def add_reasoning_part(self, unstable_summary: str) -> None:
+        """Open a reasoning part carrying an app-authored summary.
+
+        Reasoning parts are otherwise implied by their deltas, so a summary is
+        the only thing this opens a part for.
+        """
+        chunk = ReasoningPartStartChunk(
+            unstable_summary=unstable_summary, parent_id=self._parent_id
+        )
+        self._flush_and_put_chunk(chunk)
+
+    def append_reasoning(self, reasoning_delta: str) -> None:
+        """Append a reasoning delta to the stream."""
+        chunk = ReasoningDeltaChunk(reasoning_delta=reasoning_delta, parent_id=self._parent_id)
+        self._flush_and_put_chunk(chunk)
+
+    def append_state_text(
+        self, path: Sequence[Union[str, int]], text_delta: str
+    ) -> None:
+        """Append a text delta at a state path using an append-text operation."""
+        self._state_manager.append_text(path, text_delta)
+
+    def flush(self) -> None:
+        """Emit buffered state operations ahead of any subsequent stream chunk."""
+        self._state_manager.flush()
+
+    async def add_tool_call(
+        self, tool_name: str, tool_call_id: str = None
+    ) -> ToolCallController:
+        """Add a tool call to the stream."""
+        if tool_call_id is None:
+            tool_call_id = generate_openai_style_tool_call_id()
+
+        stream, controller = await create_tool_call(tool_name, tool_call_id, self._parent_id)
+        self._dispose_callbacks.append(controller.close)
+
+        task = self._add_stream_task(stream)
+        self._stream_tasks_to_drain.append(task)
+        return controller
+
+    def add_tool_result(self, tool_call_id: str, result: Any) -> None:
+        """Add a tool result to the stream."""
+        chunk = ToolResultChunk(
+            tool_call_id=tool_call_id,
+            result=result,
+        )
+        self._flush_and_put_chunk(chunk)
+
+    def add_stream(self, stream: AsyncGenerator[AssistantStreamChunk, None]) -> None:
+        """Append a substream to the main stream."""
+        self._add_stream_task(stream)
+
+    def _add_stream_task(
+        self, stream: AsyncGenerator[AssistantStreamChunk, None]
+    ) -> asyncio.Task[None]:
+
+        async def reader():
+            async for chunk in stream:
+                self._flush_and_put_chunk(chunk)
+
+        task = asyncio.create_task(reader())
+        self._stream_tasks.append(task)
+        return task
+
+    def add_data(self, data: Any) -> None:
+        """Emit an event to the main stream."""
+        chunk = DataChunk(data=data)
+        self._flush_and_put_chunk(chunk)
+
+    def add_error(self, error: str) -> None:
+        """Emit an error to the main stream."""
+        chunk = ErrorChunk(error=error)
+        self._flush_and_put_chunk(chunk)
+    
+    def add_source(self, id: str, url: str, title: Optional[str] = None) -> None:
+        """Add a source to the stream."""
+        chunk = SourceChunk(
+            id=id,
+            url=url,
+            title=title,
+            parent_id=self._parent_id
+        )
+        self._flush_and_put_chunk(chunk)
+
+    def add_file(self, data: str, mime_type: str) -> None:
+        """Add a file to the stream."""
+        chunk = FileChunk(
+            data=data,
+            mime_type=mime_type,
+            parent_id=self._parent_id,
+        )
+        self._flush_and_put_chunk(chunk)
+
+    def add_annotations(self, annotations: List[Any]) -> None:
+        """Add annotations to the stream."""
+        chunk = AnnotationsChunk(annotations=annotations)
+        self._flush_and_put_chunk(chunk)
+
+    def add_step_start(self, message_id: str) -> None:
+        """Start a model generation step."""
+        chunk = StepStartChunk(message_id=message_id)
+        self._flush_and_put_chunk(chunk)
+
+    def add_step_finish(
+        self,
+        finish_reason: str,
+        input_tokens: int = 0,
+        output_tokens: int = 0,
+        is_continued: bool = False,
+    ) -> None:
+        """Finish a model generation step and report usage for that step."""
+        chunk = StepFinishChunk(
+            finish_reason=finish_reason,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            is_continued=is_continued,
+        )
+        self._flush_and_put_chunk(chunk)
+
+    def _put_chunk_nowait(self, chunk):
+        """Helper method to put a chunk in the queue without waiting.
+
+        This is used as a callback for the StateManager.
+        """
+        enqueue_threadsafe(self._loop, self._queue, chunk)
+
+    def _flush_and_put_chunk(self, chunk):
+        """Helper method to flush state operations and put a chunk in the queue.
+
+        This ensures state operations are sent before other operations.
+        """
+        # Flush any pending state operations first
+        self._state_manager.flush()
+        # Add the chunk to the queue
+        enqueue_threadsafe(self._loop, self._queue, chunk)
+
+    @property
+    def state(self):
+        """Access the state proxy object for making state updates.
+
+        This property provides a proxy object that allows navigating to any path
+        in the state, reading values, and setting values, which will trigger the
+        appropriate state update operation.
+
+        If the state is None, this property returns None directly.
+        You can set the root state directly by assigning to this property.
+
+        Example:
+            controller.state = {"user": {"name": "John"}, "messages": [{"text": "Hi"}]}
+            controller.state["user"]["name"] = "Bob"
+            name = controller.state["user"]["name"]
+            controller.state["messages"][0]["text"] += " chunk"  # emits append-text once non-empty
+
+            # Explicit equivalent:
+            controller.append_state_text(["messages", 0, "text"], " chunk")
+        """
+        return self._state_manager.state
+
+    @state.setter
+    def state(self, value):
+        """Set the entire state object.
+
+        Args:
+            value: The new state value to set
+        """
+        self._state_manager.add_operations(
+            [{"type": "set", "path": [], "value": value}]
+        )
+
+    @property
+    def cancelled_event(self) -> ReadOnlyCancellationSignal:
+        """Expose cancellation signal for cooperative cancellation."""
+        return self._cancelled_signal
+
+    @property
+    def is_cancelled(self) -> bool:
+        """Return whether this run has been cancelled."""
+        return self._cancelled_event.is_set()
+
+    def _mark_cancelled(self) -> None:
+        """Set cancellation signal once."""
+        if not self._cancelled_event.is_set():
+            self._cancelled_event.set()
+
+
+async def create_run(
+    callback: Callable[[RunController], Coroutine[Any, Any, None]],
+    *,
+    state: Any | None = None,
+) -> AsyncGenerator[AssistantStreamChunk, None]:
+    queue = asyncio.Queue()
+    controller = RunController(queue, state_data=state)
+
+    async def background_task():
+        callback_failed = False
+        try:
+            await callback(controller)
+        except BaseException as e:
+            callback_failed = True
+            if isinstance(e, Exception):
+                controller.add_error(str(e))
+            raise
+        finally:
+            # Flush any pending state updates before disposing
+            controller._state_manager.flush()
+
+            dispose_index = 0
+
+            def drain_dispose_callbacks():
+                nonlocal dispose_index
+                while dispose_index < len(controller._dispose_callbacks):
+                    dispose = controller._dispose_callbacks[dispose_index]
+                    dispose_index += 1
+                    dispose()
+
+            async def cancel_stream_tasks():
+                task_index = 0
+                drain_index = 0
+                while True:
+                    drain_dispose_callbacks()
+
+                    tasks_to_drain = controller._stream_tasks_to_drain[drain_index:]
+                    if tasks_to_drain:
+                        await asyncio.gather(*tasks_to_drain, return_exceptions=True)
+                        drain_index += len(tasks_to_drain)
+                        continue
+
+                    if task_index >= len(controller._stream_tasks):
+                        break
+
+                    tasks = controller._stream_tasks[task_index:]
+                    for task in tasks:
+                        if not task.done():
+                            task.cancel()
+                    await asyncio.gather(*tasks, return_exceptions=True)
+                    task_index += len(tasks)
+                drain_dispose_callbacks()
+
+            async def finish_stream_task_cancellation():
+                cleanup_task = asyncio.create_task(cancel_stream_tasks())
+                while not cleanup_task.done():
+                    try:
+                        await asyncio.wait({cleanup_task})
+                    except asyncio.CancelledError:
+                        # Cleanup remains uncancellable so nested readers cannot be orphaned.
+                        pass
+                cleanup_task.result()
+
+            drain_dispose_callbacks()
+            try:
+                if callback_failed:
+                    await finish_stream_task_cancellation()
+                else:
+                    try:
+                        task_index = 0
+                        while task_index < len(controller._stream_tasks):
+                            tasks = controller._stream_tasks[task_index:]
+                            await asyncio.gather(*tasks)
+                            task_index += len(tasks)
+                            drain_dispose_callbacks()
+                    except BaseException:
+                        await finish_stream_task_cancellation()
+                        raise
+            finally:
+                enqueue_threadsafe(asyncio.get_running_loop(), queue, None)
+
+    task = asyncio.create_task(background_task())
+    ended_normally = False
+
+    try:
+        async for chunk in queue_stream(controller._queue):
+            yield chunk
+        ended_normally = True
+    finally:
+        if ended_normally:
+            # The `None` sentinel is queued at the end of `background_task`, so
+            # normal stream completion implies `task` is already done here.
+            # `result()` preserves normal-path error propagation.
+            task.result()
+        else:
+            controller._mark_cancelled()
+            try:
+                # Callbacks get 50ms to observe `is_cancelled` and stop on their own.
+                # `asyncio.wait` rather than `shield`: Python 3.14 reports the late
+                # failure of an interrupted shield to the loop's exception handler.
+                await asyncio.wait({task}, timeout=0.05)
+                if not task.done():
+                    task.cancel()
+                    await asyncio.wait({task})
+            except asyncio.CancelledError:
+                _cancel_detached_task(task)
+                raise
+            error = None if task.cancelled() else task.exception()
+            if error is not None:
+                if not isinstance(error, Exception):
+                    raise error
+                logger.warning(
+                    "Suppressed callback exception during early-close cleanup",
+                    exc_info=error,
+                )

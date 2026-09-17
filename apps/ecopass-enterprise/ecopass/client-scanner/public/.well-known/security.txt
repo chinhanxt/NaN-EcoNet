@@ -1,0 +1,13 @@
+# Our security address
+Contact: mailto:security@cldsi.de
+
+# Our OpenPGP key
+Encryption: https://cldsi.de/pgp.txt
+
+Preferred-Languages: en, de
+
+# Our seurity policy
+Policy: https://security.philip.media/
+Acknowledgments: https://security.philip.media/Acknowledgments
+
+Canonical: https://veganify.app/.well-known/security.txt

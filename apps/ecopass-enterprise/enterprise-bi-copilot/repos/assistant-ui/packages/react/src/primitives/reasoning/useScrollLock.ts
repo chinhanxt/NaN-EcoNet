@@ -1,0 +1,121 @@
+"use client";
+
+import { type RefObject, useCallback, useEffect, useRef } from "react";
+
+const findScrollableAncestor = (element: HTMLElement | null) => {
+  let current = element;
+  while (current) {
+    const { overflowY } = getComputedStyle(current);
+    if (overflowY === "scroll" || overflowY === "auto") return current;
+    current = current.parentElement;
+  }
+  return null;
+};
+
+/**
+ * Locks scroll position during collapsible/height animations and hides scrollbar.
+ *
+ * This utility prevents page jumps when content height changes during animations,
+ * providing a smooth user experience. It finds the nearest scrollable ancestor and
+ * temporarily locks its scroll position while the animation completes.
+ *
+ * - Prevents forced reflows: no layout reads, mutations scoped to scrollable parent only
+ * - Reactive: only intercepts scroll events when browser actually adjusts
+ * - Cleans up automatically after animation duration
+ *
+ * @param animatedElementRef - Ref to the animated element
+ * @param animationDuration - Lock duration in milliseconds
+ * @returns Function to activate the scroll lock
+ *
+ * @example
+ * ```tsx
+ * const collapsibleRef = useRef<HTMLDivElement>(null);
+ * const lockScroll = useScrollLock(collapsibleRef, 200);
+ *
+ * const handleCollapse = () => {
+ *   lockScroll(); // Lock scroll before collapsing
+ *   setIsOpen(false);
+ * };
+ * ```
+ */
+export const useScrollLock = <T extends HTMLElement = HTMLElement>(
+  animatedElementRef: RefObject<T | null>,
+  animationDuration: number,
+) => {
+  const cleanupRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    return () => {
+      cleanupRef.current?.();
+    };
+  }, []);
+
+  const lockScroll = useCallback(() => {
+    cleanupRef.current?.();
+
+    const scrollContainer = findScrollableAncestor(animatedElementRef.current);
+    if (!scrollContainer) {
+      cleanupRef.current = null;
+      return;
+    }
+
+    const scrollPosition = scrollContainer.scrollTop;
+    const scrollbarWidth = scrollContainer.style.scrollbarWidth;
+
+    // Hiding the scrollbar collapses its gutter on classic scrollbars, which
+    // shifts centered content horizontally; compensate with padding on the
+    // side the scrollbar occupies (the left side in RTL).
+    const computed = getComputedStyle(scrollContainer);
+    const paddingSide =
+      computed.direction === "rtl" ? "paddingLeft" : "paddingRight";
+    const previousPadding = scrollContainer.style[paddingSide];
+    const elementScrollbarSize =
+      scrollContainer.offsetWidth -
+      scrollContainer.clientWidth -
+      parseFloat(computed.borderLeftWidth) -
+      parseFloat(computed.borderRightWidth);
+    // A root element's offsetWidth already excludes the viewport scrollbar, so
+    // the element formula reports zero once the scroll propagates to the
+    // viewport, and only then does the viewport measure apply. A body that
+    // scrolls in its own right is measured by the element formula like any
+    // other scroller, whether or not the viewport is scrolling too.
+    const ownerDocument = scrollContainer.ownerDocument;
+    const isRootScroller =
+      scrollContainer === ownerDocument.documentElement ||
+      scrollContainer === ownerDocument.body;
+    const scrollbarSize =
+      isRootScroller && elementScrollbarSize <= 0
+        ? (ownerDocument.defaultView?.innerWidth ?? 0) -
+          ownerDocument.documentElement.clientWidth
+        : elementScrollbarSize;
+
+    scrollContainer.style.scrollbarWidth = "none";
+    if (scrollbarSize > 0) {
+      scrollContainer.style[paddingSide] = `${
+        parseFloat(computed[paddingSide]) + scrollbarSize
+      }px`;
+    }
+
+    const restoreStyles = () => {
+      scrollContainer.style.scrollbarWidth = scrollbarWidth;
+      scrollContainer.style[paddingSide] = previousPadding;
+    };
+
+    const resetPosition = () => (scrollContainer.scrollTop = scrollPosition);
+    scrollContainer.addEventListener("scroll", resetPosition);
+
+    const timeoutId = setTimeout(() => {
+      scrollContainer.removeEventListener("scroll", resetPosition);
+      restoreStyles();
+      cleanupRef.current = null;
+    }, animationDuration);
+
+    cleanupRef.current = () => {
+      clearTimeout(timeoutId);
+      scrollContainer.removeEventListener("scroll", resetPosition);
+      restoreStyles();
+    };
+  }, [animationDuration, animatedElementRef]);
+
+  return lockScroll;
+};

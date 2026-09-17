@@ -1,0 +1,222 @@
+import { describe, it, expect } from "vitest";
+import { createTapRoot, useResource } from "@assistant-ui/tap";
+import type { Tool } from "assistant-stream";
+import { ModelContext } from "./model-context-client";
+import type {
+  ModelContext as ModelContextValue,
+  ModelContextProvider,
+} from "../../model-context/types";
+import { mergeModelContexts } from "../../model-context/types";
+
+const tick = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+const provider = (ctx: ModelContextValue): ModelContextProvider => ({
+  getModelContext: () => ctx,
+});
+
+const toolFixture = (): Tool<any, any> =>
+  ({ description: "", parameters: {} as any }) as unknown as Tool<any, any>;
+
+const render = () => {
+  const root = createTapRoot(function Root() {
+    return useResource(ModelContext());
+  });
+  return { sub: root, unmount: () => root.unmount() };
+};
+
+describe("ModelContext", () => {
+  it("starts with undefined modelName and an empty toolNames array", () => {
+    const { sub, unmount } = render();
+    try {
+      const state = sub.getValue().getState();
+      expect(state.modelName).toBeUndefined();
+      expect(state.toolNames).toEqual([]);
+    } finally {
+      unmount();
+    }
+  });
+
+  it("reflects modelName from a registered provider", async () => {
+    const { sub, unmount } = render();
+    try {
+      sub
+        .getValue()
+        .register(provider({ config: { modelName: "gpt-5.6-luna" } }));
+      await tick();
+
+      expect(sub.getValue().getState().modelName).toBe("gpt-5.6-luna");
+    } finally {
+      unmount();
+    }
+  });
+
+  it("reflects tool names from a registered provider", async () => {
+    const { sub, unmount } = render();
+    try {
+      sub
+        .getValue()
+        .register(
+          provider({ tools: { foo: toolFixture(), bar: toolFixture() } }),
+        );
+      await tick();
+
+      expect(sub.getValue().getState().toolNames).toEqual(["bar", "foo"]);
+    } finally {
+      unmount();
+    }
+  });
+
+  it("keeps the same state reference when an extra provider does not change the merged values", async () => {
+    const { sub, unmount } = render();
+    try {
+      sub
+        .getValue()
+        .register(provider({ config: { modelName: "gpt-5.6-luna" } }));
+      await tick();
+      const before = sub.getValue().getState();
+
+      sub
+        .getValue()
+        .register(provider({ config: { modelName: "gpt-5.6-luna" } }));
+      await tick();
+      const after = sub.getValue().getState();
+
+      expect(after).toBe(before);
+    } finally {
+      unmount();
+    }
+  });
+
+  it("clears modelName when the last contributing provider unsubscribes", async () => {
+    const { sub, unmount } = render();
+    try {
+      const unsubscribe = sub
+        .getValue()
+        .register(provider({ config: { modelName: "gpt-5.6-luna" } }));
+      await tick();
+      expect(sub.getValue().getState().modelName).toBe("gpt-5.6-luna");
+
+      unsubscribe();
+      await tick();
+      expect(sub.getValue().getState().modelName).toBeUndefined();
+      expect(sub.getValue().getState().toolNames).toEqual([]);
+    } finally {
+      unmount();
+    }
+  });
+
+  it("reflects modelName synchronously after register without awaiting", () => {
+    const { sub, unmount } = render();
+    try {
+      sub
+        .getValue()
+        .register(provider({ config: { modelName: "gpt-5.6-luna" } }));
+
+      expect(sub.getValue().getState().modelName).toBe("gpt-5.6-luna");
+    } finally {
+      unmount();
+    }
+  });
+});
+
+describe("mergeModelContexts", () => {
+  it("merges a higher-priority tool override into an existing tool", () => {
+    const execute = async () => ({ ok: true });
+    const merged = mergeModelContexts(
+      new Set([
+        provider({
+          priority: 0,
+          tools: {
+            add_task: {
+              type: "frontend",
+              description: "Add a task",
+              parameters: { type: "object", properties: {} } as any,
+              renderText: { running: "Adding task" },
+            } as Tool<any, any>,
+          },
+        }),
+        provider({
+          priority: 1000,
+          tools: {
+            add_task: {
+              execute,
+            } as unknown as Tool<any, any>,
+          },
+        }),
+      ]),
+    );
+
+    expect(merged.tools?.add_task).toMatchObject({
+      type: "frontend",
+      description: "Add a task",
+    });
+    expect(merged.tools?.add_task?.execute).toBe(execute);
+    expect(merged.tools?.add_task?.parameters).toEqual({
+      type: "object",
+      properties: {},
+    });
+  });
+
+  it("rejects duplicate tools at the same priority", () => {
+    expect(() =>
+      mergeModelContexts(
+        new Set([
+          provider({ tools: { duplicate: toolFixture() } }),
+          provider({ tools: { duplicate: toolFixture() } }),
+        ]),
+      ),
+    ).toThrow(/already exists/);
+  });
+
+  it("silently replaces a same-priority tool when the later registration sets overwrite", () => {
+    const merged = mergeModelContexts(
+      new Set([
+        provider({ tools: { duplicate: toolFixture() } }),
+        provider({
+          tools: {
+            duplicate: {
+              ...toolFixture(),
+              description: "latest",
+              overwrite: true,
+            } as Tool<any, any>,
+          },
+        }),
+      ]),
+    );
+
+    expect(merged.tools?.duplicate?.description).toBe("latest");
+    expect(merged.tools?.duplicate?.overwrite).toBeUndefined();
+  });
+
+  it("preserves the highest priority when a lower-priority provider reuses the same tool object", () => {
+    const shared = {
+      ...toolFixture(),
+      description: "high priority",
+    } as Tool<any, any>;
+    const execute = async () => ({ ok: true });
+    const merged = mergeModelContexts(
+      new Set([
+        provider({
+          priority: 1000,
+          tools: { shared },
+        }),
+        provider({
+          priority: 0,
+          tools: { shared },
+        }),
+        provider({
+          priority: 500,
+          tools: {
+            shared: {
+              description: "medium priority",
+              execute,
+            } as unknown as Tool<any, any>,
+          },
+        }),
+      ]),
+    );
+
+    expect(merged.tools?.shared?.description).toBe("high priority");
+    expect(merged.tools?.shared?.execute).toBe(execute);
+  });
+});

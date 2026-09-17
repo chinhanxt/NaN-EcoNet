@@ -1,0 +1,789 @@
+import { describe, expect, it } from "vitest";
+import type { StandardJSONSchemaV1 } from "@standard-schema/spec";
+import {
+  toJSONSchema,
+  toPartialJSONSchema,
+  toToolsJSONSchema,
+} from "./schema-utils";
+import type { Tool } from "./tool-types";
+
+const standardSchemaReturning = (result: Record<string, unknown>) => ({
+  "~standard": {
+    version: 1 as const,
+    vendor: "test",
+    validate: () => ({ value: {} }),
+    jsonSchema: {
+      input: () => ({ type: "object", ...result }),
+      output: () => ({ type: "object" }),
+    },
+  },
+});
+
+describe("toJSONSchema", () => {
+  it("ignores the non-spec ~standard.toJSONSchema hook", () => {
+    const mockStandardSchema = {
+      "~standard": {
+        version: 1 as const,
+        vendor: "test",
+        validate: () => ({ value: {} }),
+        toJSONSchema: () => ({
+          type: "object",
+          properties: { name: { type: "string" } },
+        }),
+      },
+    };
+
+    expect(() => toJSONSchema(mockStandardSchema)).toThrow(
+      'Could not convert the "test" schema to JSON Schema',
+    );
+  });
+
+  it("passes the draft-07 target to object with toJSONSchema() method", () => {
+    let receivedOptions: StandardJSONSchemaV1.Options | undefined;
+    const schemaWithMethod = {
+      toJSONSchema: (options: StandardJSONSchemaV1.Options) => {
+        receivedOptions = options;
+        return {
+          $schema:
+            options.target === "draft-07"
+              ? "http://json-schema.org/draft-07/schema#"
+              : "https://json-schema.org/draft/2020-12/schema",
+          type: "object",
+          properties: { age: { type: "number" } },
+        };
+      },
+    };
+
+    const result = toJSONSchema(schemaWithMethod as never);
+    expect(receivedOptions).toEqual({ target: "draft-07" });
+    expect(result).toEqual({
+      $schema: "http://json-schema.org/draft-07/schema#",
+      type: "object",
+      properties: { age: { type: "number" } },
+    });
+  });
+
+  it("converts object with toJSON() method", () => {
+    const schemaWithToJSON = {
+      toJSON: () => ({
+        type: "object",
+        properties: { active: { type: "boolean" } },
+      }),
+    };
+
+    const result = toJSONSchema(schemaWithToJSON as never);
+    expect(result).toEqual({
+      type: "object",
+      properties: { active: { type: "boolean" } },
+    });
+  });
+
+  it("passes through plain JSONSchema7", () => {
+    const plainSchema = {
+      type: "object" as const,
+      properties: {
+        email: { type: "string" as const, format: "email" },
+      },
+      required: ["email"],
+    };
+
+    const result = toJSONSchema(plainSchema);
+    expect(result).toEqual(plainSchema);
+  });
+
+  it("prioritizes StandardSchema over toJSONSchema method", () => {
+    const mixedSchema = {
+      "~standard": {
+        version: 1 as const,
+        vendor: "test",
+        validate: () => ({ value: {} }),
+        jsonSchema: {
+          input: () => ({ type: "string", description: "from standard" }),
+          output: () => ({ type: "number" }),
+        },
+      },
+      toJSONSchema: () => ({ type: "number", description: "from method" }),
+    };
+
+    const result = toJSONSchema(mixedSchema);
+    expect(result).toEqual({ type: "string", description: "from standard" });
+  });
+
+  it("prioritizes toJSONSchema over toJSON method", () => {
+    const mixedSchema = {
+      toJSONSchema: () => ({
+        type: "string",
+        description: "from toJSONSchema",
+      }),
+      toJSON: () => ({ type: "number", description: "from toJSON" }),
+    };
+
+    const result = toJSONSchema(mixedSchema as never);
+    expect(result).toEqual({
+      type: "string",
+      description: "from toJSONSchema",
+    });
+  });
+
+  it("throws when StandardSchema has no JSON Schema conversion method", () => {
+    const schemaWithoutMethod = {
+      "~standard": {
+        version: 1 as const,
+        vendor: "test",
+        validate: () => ({ value: {} }),
+        // no toJSONSchema method and no jsonSchema property
+      },
+    };
+
+    expect(() => toJSONSchema(schemaWithoutMethod)).toThrow(
+      "wrap the schema with test's Standard JSON Schema helper",
+    );
+  });
+
+  it("names the Zod helper when a Zod schema has no converter", () => {
+    const zodMiniSchema = {
+      "~standard": {
+        version: 1 as const,
+        vendor: "zod",
+        validate: () => ({ value: {} }),
+      },
+    };
+
+    expect(() => toJSONSchema(zodMiniSchema)).toThrow(
+      "convert it with z.toJSONSchema(schema)",
+    );
+  });
+
+  it("converts Standard JSON Schema inputs to draft-07 for tool parameters", () => {
+    const schema = {
+      "~standard": {
+        version: 1 as const,
+        vendor: "test",
+        validate: () => ({ value: {} }),
+        jsonSchema: {
+          input: ({ target }: StandardJSONSchemaV1.Options) => {
+            expect(target).toBe("draft-07");
+            return {
+              type: "object",
+              properties: { name: { type: "string" } },
+            };
+          },
+          output: () => ({ type: "number" }),
+        },
+      },
+    };
+
+    const result = toJSONSchema(schema);
+    expect(result).toEqual({
+      type: "object",
+      properties: { name: { type: "string" } },
+    });
+    expect(toToolsJSONSchema({ example: { parameters: schema } })).toEqual({
+      example: {
+        parameters: {
+          type: "object",
+          properties: { name: { type: "string" } },
+        },
+      },
+    });
+  });
+
+  it("rejects a Standard JSON Schema converter that ignores the target", () => {
+    const schema = {
+      "~standard": {
+        version: 1 as const,
+        vendor: "test",
+        validate: () => ({ value: {} }),
+        jsonSchema: {
+          input: () => ({
+            $schema: "https://json-schema.org/draft/2020-12/schema",
+            type: "object",
+          }),
+          output: () => ({ type: "object" }),
+        },
+      },
+    };
+
+    expect(() => toJSONSchema(schema)).toThrow(
+      'asked for a draft-07 JSON Schema and returned "https://json-schema.org/draft/2020-12/schema"',
+    );
+  });
+
+  it("accepts every spelling of the draft-07 dialect id", () => {
+    for (const $schema of [
+      "http://json-schema.org/draft-07/schema#",
+      "http://json-schema.org/draft-07/schema",
+      "https://json-schema.org/draft-07/schema#",
+      "https://json-schema.org/draft-07/schema",
+    ]) {
+      expect(toJSONSchema(standardSchemaReturning({ $schema }))).toEqual({
+        $schema,
+        type: "object",
+      });
+    }
+  });
+
+  it("accepts an undeclared dialect from the Standard JSON Schema converter", () => {
+    const declared = {
+      type: "object",
+      properties: { item: { $ref: "#/$defs/item" } },
+      $defs: { item: { type: "string" } },
+    };
+
+    expect(toJSONSchema(standardSchemaReturning(declared))).toEqual(declared);
+  });
+
+  it("passes through a toJSONSchema() method answering in another dialect", () => {
+    const schema = {
+      toJSONSchema: () => ({
+        $schema: "https://json-schema.org/draft/2020-12/schema",
+        type: "object",
+      }),
+    };
+
+    expect(toJSONSchema(schema as never)).toEqual({
+      $schema: "https://json-schema.org/draft/2020-12/schema",
+      type: "object",
+    });
+  });
+
+  it("passes through a toJSON() result in another dialect", () => {
+    const schema = {
+      toJSON: () => ({
+        $schema: "https://json-schema.org/draft/2020-12/schema",
+        type: "object",
+      }),
+    };
+
+    expect(toJSONSchema(schema as never)).toEqual({
+      $schema: "https://json-schema.org/draft/2020-12/schema",
+      type: "object",
+    });
+  });
+
+  it("passes through a plain schema in another dialect", () => {
+    const plainSchema = {
+      $schema: "https://json-schema.org/draft/2020-12/schema",
+      type: "object" as const,
+    };
+
+    expect(toJSONSchema(plainSchema)).toEqual(plainSchema);
+  });
+
+  it("keeps converting tools whose parameters arrive in another dialect", () => {
+    const remoteInputSchema = {
+      $schema: "https://json-schema.org/draft/2020-12/schema",
+      type: "object" as const,
+      properties: { query: { type: "string" as const } },
+    };
+
+    expect(
+      toToolsJSONSchema({ remote: { parameters: remoteInputSchema } }),
+    ).toEqual({ remote: { parameters: remoteInputSchema } });
+  });
+});
+
+describe("toPartialJSONSchema", () => {
+  it("removes required from a flat object schema", () => {
+    const schema = {
+      type: "object" as const,
+      properties: {
+        name: { type: "string" as const },
+        age: { type: "number" as const },
+      },
+      required: ["name", "age"],
+    };
+    const result = toPartialJSONSchema(schema);
+    expect(result.required).toBeUndefined();
+    expect(result.properties).toEqual(schema.properties);
+  });
+
+  it("recursively removes required from nested objects", () => {
+    const schema = {
+      type: "object" as const,
+      properties: {
+        address: {
+          type: "object" as const,
+          properties: {
+            street: { type: "string" as const },
+            city: { type: "string" as const },
+          },
+          required: ["street", "city"],
+        },
+      },
+      required: ["address"],
+    };
+    const result = toPartialJSONSchema(schema);
+    expect(result.required).toBeUndefined();
+    const address = result.properties!.address as Record<string, unknown>;
+    expect(address.required).toBeUndefined();
+  });
+
+  it("removes nested required without properties and preserves value constraints", () => {
+    const schema = {
+      type: "object" as const,
+      properties: {
+        settings: {
+          type: "object" as const,
+          required: ["name"],
+          additionalProperties: { type: "string" as const },
+        },
+      },
+      required: ["settings"],
+    };
+
+    expect(toPartialJSONSchema(schema)).toEqual({
+      type: "object",
+      properties: {
+        settings: {
+          type: "object",
+          additionalProperties: { type: "string" },
+        },
+      },
+    });
+    expect(schema.properties.settings.required).toEqual(["name"]);
+  });
+
+  it("leaves array item schemas unchanged", () => {
+    const schema = {
+      type: "object" as const,
+      properties: {
+        tags: {
+          type: "array" as const,
+          items: {
+            type: "object" as const,
+            properties: { label: { type: "string" as const } },
+            required: ["label"],
+          },
+        },
+      },
+      required: ["tags"],
+    };
+    const result = toPartialJSONSchema(schema);
+    expect(result.required).toBeUndefined();
+    const tags = result.properties!.tags as Record<string, unknown>;
+    const items = tags.items as Record<string, unknown>;
+    expect(items.required).toEqual(["label"]);
+  });
+
+  it("handles schema with no required field", () => {
+    const schema = {
+      type: "object" as const,
+      properties: { x: { type: "string" as const } },
+    };
+    const result = toPartialJSONSchema(schema);
+    expect(result).toEqual(schema);
+  });
+
+  it("does not mutate the input schema", () => {
+    const schema = {
+      type: "object" as const,
+      properties: { a: { type: "string" as const } },
+      required: ["a"],
+    };
+    toPartialJSONSchema(schema);
+    expect(schema.required).toEqual(["a"]);
+  });
+
+  it("preserves additionalProperties", () => {
+    const schema = {
+      type: "object" as const,
+      properties: { x: { type: "string" as const } },
+      required: ["x"],
+      additionalProperties: false,
+    };
+    const result = toPartialJSONSchema(schema);
+    expect(result.additionalProperties).toBe(false);
+    expect(result.required).toBeUndefined();
+  });
+});
+
+describe("toToolsJSONSchema", () => {
+  describe("filtering", () => {
+    it("excludes disabled tools by default", () => {
+      const tools: Record<string, Tool> = {
+        enabledTool: {
+          description: "Enabled tool",
+          parameters: { type: "object", properties: {} },
+        },
+        disabledTool: {
+          disabled: true,
+          description: "Disabled tool",
+          parameters: { type: "object", properties: {} },
+        },
+      };
+
+      const result = toToolsJSONSchema(tools);
+      expect(result).toHaveProperty("enabledTool");
+      expect(result).not.toHaveProperty("disabledTool");
+    });
+
+    it("excludes backend tools by default", () => {
+      const tools: Record<string, Tool> = {
+        frontendTool: {
+          type: "frontend",
+          description: "Frontend tool",
+          parameters: { type: "object", properties: {} },
+          execute: async () => {},
+        },
+        backendTool: {
+          type: "backend",
+        },
+      };
+
+      const result = toToolsJSONSchema(tools);
+      expect(result).toHaveProperty("frontendTool");
+      expect(result).not.toHaveProperty("backendTool");
+    });
+
+    it("includes frontend tools", () => {
+      const tools: Record<string, Tool> = {
+        myTool: {
+          type: "frontend",
+          description: "A frontend tool",
+          parameters: { type: "object", properties: { x: { type: "number" } } },
+          execute: async () => {},
+        },
+      };
+
+      const result = toToolsJSONSchema(tools);
+      expect(result).toEqual({
+        myTool: {
+          description: "A frontend tool",
+          parameters: { type: "object", properties: { x: { type: "number" } } },
+        },
+      });
+    });
+
+    it("excludes frontend tools without execute by default", () => {
+      const tools: Record<string, Tool> = {
+        stubbedTool: {
+          type: "frontend",
+          description: "A frontend tool supplied by local overrides",
+          parameters: { type: "object", properties: {} },
+        },
+      };
+
+      const result = toToolsJSONSchema(tools);
+      expect(result).not.toHaveProperty("stubbedTool");
+    });
+
+    it("includes human tools", () => {
+      const tools: Record<string, Tool> = {
+        humanTool: {
+          type: "human",
+          description: "A human tool",
+          parameters: { type: "object", properties: {} },
+        },
+      };
+
+      const result = toToolsJSONSchema(tools);
+      expect(result).toHaveProperty("humanTool");
+    });
+
+    it("omits schemas for tools with backend parameter defaults", () => {
+      const tools: Record<string, Tool> = {
+        generatedFrontendTool: {
+          type: "frontend",
+          description: "A generated frontend tool",
+          parameters: { type: "object", properties: {} },
+          execute: async () => {},
+          unstable_backendDefault: { parameters: true },
+        },
+        generatedHumanTool: {
+          type: "human",
+          description: "A generated human tool",
+          parameters: { type: "object", properties: {} },
+          unstable_backendDefault: { parameters: true },
+        },
+        olderFrontendTool: {
+          type: "frontend",
+          description: "An older frontend tool",
+          parameters: { type: "object", properties: {} },
+          execute: async () => {},
+        },
+      };
+
+      const result = toToolsJSONSchema(tools);
+      expect(result).not.toHaveProperty("generatedFrontendTool");
+      expect(result).not.toHaveProperty("generatedHumanTool");
+      expect(result).toHaveProperty("olderFrontendTool");
+    });
+
+    it("excludes tools without parameters", () => {
+      const tools: Record<string, Tool> = {
+        withParams: {
+          description: "With params",
+          parameters: { type: "object", properties: {} },
+        },
+        withoutParams: {
+          type: "backend",
+        },
+      };
+
+      const result = toToolsJSONSchema(tools);
+      expect(result).toHaveProperty("withParams");
+      expect(result).not.toHaveProperty("withoutParams");
+    });
+
+    it("respects custom filter function", () => {
+      const tools: Record<string, Tool> = {
+        tool_a: {
+          disabled: true,
+          parameters: { type: "object", properties: {} },
+        },
+        tool_b: {
+          type: "backend",
+        },
+        tool_c: {
+          parameters: { type: "object", properties: {} },
+        },
+      };
+
+      // Custom filter that includes all tools regardless of disabled/backend
+      const result = toToolsJSONSchema(tools, {
+        filter: () => true,
+      });
+
+      // tool_a and tool_c have parameters, tool_b does not
+      expect(result).toHaveProperty("tool_a");
+      expect(result).not.toHaveProperty("tool_b"); // still excluded due to no parameters
+      expect(result).toHaveProperty("tool_c");
+    });
+
+    it("always excludes backend-default parameters with a custom filter", () => {
+      const tools: Record<string, Tool> = {
+        backendDefaultTool: {
+          type: "frontend",
+          parameters: { type: "object", properties: {} },
+          execute: async () => {},
+          unstable_backendDefault: { parameters: true },
+        },
+        normalTool: {
+          parameters: { type: "object", properties: {} },
+        },
+      };
+
+      const result = toToolsJSONSchema(tools, {
+        filter: () => true,
+      });
+
+      expect(result).not.toHaveProperty("backendDefaultTool");
+      expect(result).toHaveProperty("normalTool");
+    });
+
+    it("custom filter receives name and tool", () => {
+      const tools: Record<string, Tool> = {
+        prefixed_tool: {
+          description: "Should include",
+          parameters: { type: "object", properties: {} },
+        },
+        other_tool: {
+          description: "Should exclude",
+          parameters: { type: "object", properties: {} },
+        },
+      };
+
+      const result = toToolsJSONSchema(tools, {
+        filter: (name, tool) =>
+          name.startsWith("prefixed_") && tool.description !== undefined,
+      });
+
+      expect(result).toHaveProperty("prefixed_tool");
+      expect(result).not.toHaveProperty("other_tool");
+    });
+  });
+
+  describe("output format", () => {
+    it("includes description when present", () => {
+      const tools: Record<string, Tool> = {
+        myTool: {
+          description: "This is my tool",
+          parameters: { type: "object", properties: {} },
+        },
+      };
+
+      const result = toToolsJSONSchema(tools);
+      expect(result.myTool).toEqual({
+        description: "This is my tool",
+        parameters: { type: "object", properties: {} },
+      });
+    });
+
+    it("omits description when absent", () => {
+      const tools: Record<string, Tool> = {
+        myTool: {
+          parameters: { type: "object", properties: {} },
+        },
+      };
+
+      const result = toToolsJSONSchema(tools);
+      expect(result.myTool).toEqual({
+        parameters: { type: "object", properties: {} },
+      });
+      expect(result.myTool).not.toHaveProperty("description");
+    });
+
+    it("omits description when empty string", () => {
+      const tools: Record<string, Tool> = {
+        myTool: {
+          description: "",
+          parameters: { type: "object", properties: {} },
+        },
+      };
+
+      const result = toToolsJSONSchema(tools);
+      expect(result.myTool).not.toHaveProperty("description");
+    });
+
+    it("converts parameters via toJSONSchema", () => {
+      const mockStandardSchema = {
+        "~standard": {
+          version: 1 as const,
+          vendor: "test",
+          validate: () => ({ value: {} }),
+          jsonSchema: {
+            input: () => ({
+              type: "object",
+              properties: { converted: { type: "boolean" } },
+            }),
+            output: () => ({ type: "object" }),
+          },
+        },
+      };
+
+      const tools: Record<string, Tool> = {
+        myTool: {
+          description: "Test",
+          parameters: mockStandardSchema,
+        },
+      };
+
+      const result = toToolsJSONSchema(tools);
+      expect(result.myTool!.parameters).toEqual({
+        type: "object",
+        properties: { converted: { type: "boolean" } },
+      });
+    });
+
+    it("forwards providerOptions verbatim when present", () => {
+      const tools: Record<string, Tool> = {
+        myTool: {
+          description: "Test",
+          parameters: { type: "object", properties: {} },
+          providerOptions: { anthropic: { deferLoading: true } },
+        },
+      };
+
+      const result = toToolsJSONSchema(tools);
+      expect(result.myTool).toEqual({
+        description: "Test",
+        parameters: { type: "object", properties: {} },
+        providerOptions: { anthropic: { deferLoading: true } },
+      });
+    });
+
+    it("omits providerOptions when absent", () => {
+      const tools: Record<string, Tool> = {
+        myTool: {
+          parameters: { type: "object", properties: {} },
+        },
+      };
+
+      const result = toToolsJSONSchema(tools);
+      expect(result.myTool).not.toHaveProperty("providerOptions");
+    });
+  });
+
+  describe("stable ordering", () => {
+    it("emits tool names in alphabetical order", () => {
+      const tools: Record<string, Tool> = {
+        zebra: { parameters: { type: "object", properties: {} } },
+        apple: { parameters: { type: "object", properties: {} } },
+        mango: { parameters: { type: "object", properties: {} } },
+      };
+
+      const result = toToolsJSONSchema(tools);
+      expect(Object.keys(result)).toEqual(["apple", "mango", "zebra"]);
+    });
+
+    it("produces byte-identical output regardless of insertion order", () => {
+      const a: Record<string, Tool> = {
+        zebra: { parameters: { type: "object", properties: {} } },
+        apple: { parameters: { type: "object", properties: {} } },
+      };
+      const b: Record<string, Tool> = {
+        apple: { parameters: { type: "object", properties: {} } },
+        zebra: { parameters: { type: "object", properties: {} } },
+      };
+
+      expect(JSON.stringify(toToolsJSONSchema(a))).toBe(
+        JSON.stringify(toToolsJSONSchema(b)),
+      );
+    });
+  });
+
+  describe("edge cases", () => {
+    it("returns empty object for undefined tools", () => {
+      const result = toToolsJSONSchema(undefined);
+      expect(result).toEqual({});
+    });
+
+    it("returns empty object for empty tools", () => {
+      const result = toToolsJSONSchema({});
+      expect(result).toEqual({});
+    });
+
+    it("returns empty object when all tools are filtered out", () => {
+      const tools: Record<string, Tool> = {
+        disabled1: {
+          disabled: true,
+          parameters: { type: "object", properties: {} },
+        },
+        disabled2: {
+          disabled: true,
+          parameters: { type: "object", properties: {} },
+        },
+      };
+
+      const result = toToolsJSONSchema(tools);
+      expect(result).toEqual({});
+    });
+
+    it("handles tools with undefined type (defaults to frontend behavior)", () => {
+      const tools: Record<string, Tool> = {
+        myTool: {
+          // no type specified
+          description: "Tool without type",
+          parameters: { type: "object", properties: {} },
+        },
+      };
+
+      const result = toToolsJSONSchema(tools);
+      expect(result).toHaveProperty("myTool");
+    });
+
+    it("handles multiple tools correctly", () => {
+      const tools: Record<string, Tool> = {
+        tool_1: {
+          description: "First tool",
+          parameters: { type: "object", properties: { a: { type: "string" } } },
+        },
+        tool_2: {
+          description: "Second tool",
+          parameters: { type: "object", properties: { b: { type: "number" } } },
+        },
+        tool_3: {
+          disabled: true,
+          parameters: { type: "object", properties: {} },
+        },
+      };
+
+      const result = toToolsJSONSchema(tools);
+      expect(Object.keys(result)).toHaveLength(2);
+      expect(result).toHaveProperty("tool_1");
+      expect(result).toHaveProperty("tool_2");
+      expect(result).not.toHaveProperty("tool_3");
+    });
+  });
+});

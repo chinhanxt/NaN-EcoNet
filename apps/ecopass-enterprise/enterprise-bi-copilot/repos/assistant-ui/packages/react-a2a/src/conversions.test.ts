@@ -1,0 +1,693 @@
+import { describe, it, expect } from "vitest";
+import {
+  a2aPartToContent,
+  a2aPartsToContent,
+  a2aMessageToContent,
+  taskStateToMessageStatus,
+  contentPartsToA2AParts,
+  isTerminalTaskState,
+  isInterruptedTaskState,
+  threadMessageToA2AMessage,
+} from "./conversions";
+import type { A2APart, A2AMessage, A2ATaskState } from "./types";
+
+describe("a2aPartToContent", () => {
+  it("converts text part", () => {
+    const part: A2APart = { text: "Hello world" };
+    expect(a2aPartToContent(part)).toEqual({
+      type: "text",
+      text: "Hello world",
+    });
+  });
+
+  it("converts image URL part", () => {
+    const part: A2APart = {
+      url: "https://example.com/img.png",
+      mediaType: "image/png",
+    };
+    expect(a2aPartToContent(part)).toEqual({
+      type: "image",
+      image: "https://example.com/img.png",
+    });
+  });
+
+  it("converts non-image URL to a url-sourced file part", () => {
+    const part: A2APart = {
+      url: "https://example.com/doc.pdf",
+      mediaType: "application/pdf",
+      filename: "doc.pdf",
+    };
+    expect(a2aPartToContent(part)).toEqual({
+      type: "file",
+      data: "https://example.com/doc.pdf",
+      mimeType: "application/pdf",
+      sourceType: "url",
+      filename: "doc.pdf",
+    });
+  });
+
+  it("converts URL without filename to a file part without filename", () => {
+    const part: A2APart = {
+      url: "https://example.com/doc.pdf",
+      mediaType: "application/pdf",
+    };
+    expect(a2aPartToContent(part)).toEqual({
+      type: "file",
+      data: "https://example.com/doc.pdf",
+      mimeType: "application/pdf",
+      sourceType: "url",
+    });
+  });
+
+  it("falls back to application/octet-stream for a URL without mediaType", () => {
+    const part: A2APart = { url: "https://example.com/download" };
+    expect(a2aPartToContent(part)).toEqual({
+      type: "file",
+      data: "https://example.com/download",
+      mimeType: "application/octet-stream",
+      sourceType: "url",
+    });
+  });
+
+  it("keeps the wire filename on an image URL part", () => {
+    const part: A2APart = {
+      url: "https://example.com/img.png",
+      mediaType: "image/png",
+      filename: "img.png",
+    };
+    expect(a2aPartToContent(part)).toEqual({
+      type: "image",
+      image: "https://example.com/img.png",
+      filename: "img.png",
+    });
+  });
+
+  it("converts raw image bytes to data URI", () => {
+    const part: A2APart = {
+      raw: "iVBORw0KGgo=",
+      mediaType: "image/png",
+    };
+    expect(a2aPartToContent(part)).toEqual({
+      type: "image",
+      image: "data:image/png;base64,iVBORw0KGgo=",
+    });
+  });
+
+  it("keeps the wire filename on raw image bytes", () => {
+    const part: A2APart = {
+      raw: "iVBORw0KGgo=",
+      mediaType: "image/png",
+      filename: "img.png",
+    };
+    expect(a2aPartToContent(part)).toEqual({
+      type: "image",
+      image: "data:image/png;base64,iVBORw0KGgo=",
+      filename: "img.png",
+    });
+  });
+
+  it("converts raw non-image bytes to a base64 file part", () => {
+    const part: A2APart = {
+      raw: "AAAA",
+      mediaType: "application/pdf",
+      filename: "report.pdf",
+    };
+    expect(a2aPartToContent(part)).toEqual({
+      type: "file",
+      data: "AAAA",
+      mimeType: "application/pdf",
+      filename: "report.pdf",
+    });
+  });
+
+  it("converts raw audio bytes to a file part with the audio mime type", () => {
+    const part: A2APart = {
+      raw: "SGVsbG8=",
+      mediaType: "audio/mp3",
+    };
+    expect(a2aPartToContent(part)).toEqual({
+      type: "file",
+      data: "SGVsbG8=",
+      mimeType: "audio/mp3",
+    });
+  });
+
+  it("falls back to application/octet-stream for raw bytes without mediaType", () => {
+    const part: A2APart = { raw: "AAAA" };
+    expect(a2aPartToContent(part)).toEqual({
+      type: "file",
+      data: "AAAA",
+      mimeType: "application/octet-stream",
+    });
+  });
+
+  it("converts data part as JSON", () => {
+    const part: A2APart = { data: { key: "value", count: 42 } };
+    const result = a2aPartToContent(part);
+    expect(result.type).toBe("text");
+    expect(JSON.parse((result as { text: string }).text)).toEqual({
+      key: "value",
+      count: 42,
+    });
+  });
+
+  it("returns empty text for empty part", () => {
+    const part: A2APart = {};
+    expect(a2aPartToContent(part)).toEqual({ type: "text", text: "" });
+  });
+});
+
+describe("inbound file part round trip", () => {
+  const restoreFilePart = (part: A2APart) => {
+    const restored = a2aPartToContent(part);
+    if (restored.type !== "file") throw new Error("expected a file part");
+    return restored;
+  };
+
+  it("reproduces a url wire part through the outbound converter", () => {
+    const part: A2APart = {
+      url: "https://example.com/doc.pdf",
+      mediaType: "application/pdf",
+      filename: "doc.pdf",
+    };
+    expect(contentPartsToA2AParts([restoreFilePart(part)])).toEqual([part]);
+  });
+
+  it("reproduces a raw wire part through the outbound converter", () => {
+    const part: A2APart = {
+      raw: "AAAA",
+      mediaType: "application/pdf",
+      filename: "report.pdf",
+    };
+    expect(contentPartsToA2AParts([restoreFilePart(part)])).toEqual([part]);
+  });
+
+  it("reproduces a raw image wire part through the outbound converter", () => {
+    const part: A2APart = {
+      raw: "iVBORw0KGgo=",
+      mediaType: "image/png",
+      filename: "img.png",
+    };
+    const restored = a2aPartToContent(part);
+    if (restored.type !== "image") throw new Error("expected an image part");
+    expect(contentPartsToA2AParts([restored])).toEqual([part]);
+  });
+
+  it("resends a url part without mediaType with the octet-stream fallback", () => {
+    const part: A2APart = { url: "https://example.com/download" };
+    expect(contentPartsToA2AParts([restoreFilePart(part)])).toEqual([
+      {
+        url: "https://example.com/download",
+        mediaType: "application/octet-stream",
+      },
+    ]);
+  });
+
+  it("resends a raw part without mediaType with the octet-stream fallback", () => {
+    const part: A2APart = { raw: "AAAA" };
+    expect(contentPartsToA2AParts([restoreFilePart(part)])).toEqual([
+      { raw: "AAAA", mediaType: "application/octet-stream" },
+    ]);
+  });
+});
+
+describe("a2aPartsToContent", () => {
+  it("converts multiple parts", () => {
+    const parts: A2APart[] = [
+      { text: "Hello" },
+      { url: "https://img.com/a.jpg", mediaType: "image/jpeg" },
+    ];
+    const result = a2aPartsToContent(parts);
+    expect(result).toHaveLength(2);
+    expect(result[0]).toEqual({ type: "text", text: "Hello" });
+    expect(result[1]).toEqual({
+      type: "image",
+      image: "https://img.com/a.jpg",
+    });
+  });
+
+  it("handles empty parts array", () => {
+    expect(a2aPartsToContent([])).toEqual([]);
+  });
+
+  it.each([undefined, null, {}, "not-an-array"])(
+    "treats %j parts as empty content",
+    (parts) => {
+      expect(a2aPartsToContent(parts as unknown as A2APart[])).toEqual([]);
+    },
+  );
+});
+
+describe("a2aMessageToContent", () => {
+  it("converts message parts to content", () => {
+    const msg: A2AMessage = {
+      messageId: "m1",
+      role: "agent",
+      parts: [{ text: "Hello" }, { text: " world" }],
+    };
+    const result = a2aMessageToContent(msg);
+    expect(result).toHaveLength(2);
+    expect(result[0]).toEqual({ type: "text", text: "Hello" });
+    expect(result[1]).toEqual({ type: "text", text: " world" });
+  });
+
+  it.each([undefined, null, {}, "not-an-array"])(
+    "treats a message with %j parts as empty content",
+    (parts) => {
+      expect(a2aMessageToContent({ parts } as unknown as A2AMessage)).toEqual(
+        [],
+      );
+    },
+  );
+});
+
+describe("taskStateToMessageStatus", () => {
+  it("maps submitted to running", () => {
+    expect(taskStateToMessageStatus("submitted")).toEqual({
+      type: "running",
+    });
+  });
+
+  it("maps working to running", () => {
+    expect(taskStateToMessageStatus("working")).toEqual({
+      type: "running",
+    });
+  });
+
+  it("maps completed to complete", () => {
+    expect(taskStateToMessageStatus("completed")).toEqual({
+      type: "complete",
+      reason: "stop",
+    });
+  });
+
+  it("maps failed to error", () => {
+    expect(taskStateToMessageStatus("failed")).toEqual({
+      type: "incomplete",
+      reason: "error",
+    });
+  });
+
+  it("maps canceled to cancelled", () => {
+    expect(taskStateToMessageStatus("canceled")).toEqual({
+      type: "incomplete",
+      reason: "cancelled",
+    });
+  });
+
+  it("maps rejected to error", () => {
+    expect(taskStateToMessageStatus("rejected")).toEqual({
+      type: "incomplete",
+      reason: "error",
+    });
+  });
+
+  it("maps input_required to requires-action", () => {
+    expect(taskStateToMessageStatus("input_required")).toEqual({
+      type: "requires-action",
+      reason: "interrupt",
+    });
+  });
+
+  it("maps auth_required to requires-action", () => {
+    expect(taskStateToMessageStatus("auth_required")).toEqual({
+      type: "requires-action",
+      reason: "interrupt",
+    });
+  });
+
+  it("maps unspecified to running", () => {
+    expect(taskStateToMessageStatus("unspecified")).toEqual({
+      type: "running",
+    });
+  });
+});
+
+describe("isTerminalTaskState", () => {
+  it.each(["completed", "failed", "canceled", "rejected"] as A2ATaskState[])(
+    "returns true for %s",
+    (state) => {
+      expect(isTerminalTaskState(state)).toBe(true);
+    },
+  );
+
+  it.each([
+    "submitted",
+    "working",
+    "input_required",
+    "auth_required",
+    "unspecified",
+  ] as A2ATaskState[])("returns false for %s", (state) => {
+    expect(isTerminalTaskState(state)).toBe(false);
+  });
+});
+
+describe("isInterruptedTaskState", () => {
+  it.each(["input_required", "auth_required"] as A2ATaskState[])(
+    "returns true for %s",
+    (state) => {
+      expect(isInterruptedTaskState(state)).toBe(true);
+    },
+  );
+
+  it.each([
+    "submitted",
+    "working",
+    "completed",
+    "failed",
+    "canceled",
+    "rejected",
+    "unspecified",
+  ] as A2ATaskState[])("returns false for %s", (state) => {
+    expect(isInterruptedTaskState(state)).toBe(false);
+  });
+});
+
+describe("contentPartsToA2AParts", () => {
+  it("converts text parts", () => {
+    const result = contentPartsToA2AParts([{ type: "text", text: "hi" }]);
+    expect(result).toEqual([{ text: "hi" }]);
+  });
+
+  it("converts image URL parts without stamping a mediaType", () => {
+    const result = contentPartsToA2AParts([
+      { type: "image", image: "https://img.com/a.png" },
+    ]);
+    expect(result).toEqual([{ url: "https://img.com/a.png" }]);
+  });
+
+  it("applies the fallback MIME type to image URL parts", () => {
+    const result = contentPartsToA2AParts(
+      [{ type: "image", image: "https://img.com/a.png" }],
+      "image/png",
+    );
+    expect(result).toEqual([
+      { url: "https://img.com/a.png", mediaType: "image/png" },
+    ]);
+  });
+
+  it("applies the fallback MIME type and filename to image URL parts together", () => {
+    const result = contentPartsToA2AParts(
+      [{ type: "image", image: "https://img.com/a.png", filename: "a.png" }],
+      "image/png",
+    );
+    expect(result).toEqual([
+      {
+        url: "https://img.com/a.png",
+        mediaType: "image/png",
+        filename: "a.png",
+      },
+    ]);
+  });
+
+  it("passes non-base64 data URLs through as URLs for image parts", () => {
+    const result = contentPartsToA2AParts([
+      { type: "image", image: "data:text/plain,hello" },
+    ]);
+    expect(result).toEqual([{ url: "data:text/plain,hello" }]);
+  });
+
+  it("converts image data URLs to raw bytes with the embedded MIME type", () => {
+    const result = contentPartsToA2AParts([
+      { type: "image", image: "data:image/png;base64,aGVsbG8=" },
+    ]);
+    expect(result).toEqual([{ raw: "aGVsbG8=", mediaType: "image/png" }]);
+  });
+
+  it("propagates image filenames", () => {
+    const result = contentPartsToA2AParts([
+      {
+        type: "image",
+        image: "data:image/png;base64,aGVsbG8=",
+        filename: "a.png",
+      },
+    ]);
+    expect(result).toEqual([
+      { raw: "aGVsbG8=", mediaType: "image/png", filename: "a.png" },
+    ]);
+  });
+
+  it("skips image parts with no URL", () => {
+    const result = contentPartsToA2AParts([{ type: "image" }]);
+    expect(result).toEqual([]);
+  });
+
+  it("converts file parts with http URLs", () => {
+    const result = contentPartsToA2AParts([
+      {
+        type: "file",
+        data: "https://files.com/doc.pdf",
+        mimeType: "application/pdf",
+        filename: "doc.pdf",
+      },
+    ]);
+    expect(result).toEqual([
+      {
+        url: "https://files.com/doc.pdf",
+        mediaType: "application/pdf",
+        filename: "doc.pdf",
+      },
+    ]);
+  });
+
+  it("honors sourceType url for non-http references", () => {
+    const result = contentPartsToA2AParts([
+      {
+        type: "file",
+        data: "s3://bucket/report.pdf",
+        mimeType: "application/pdf",
+        filename: "report.pdf",
+        sourceType: "url",
+      },
+    ]);
+    expect(result).toEqual([
+      {
+        url: "s3://bucket/report.pdf",
+        mediaType: "application/pdf",
+        filename: "report.pdf",
+      },
+    ]);
+  });
+
+  it("treats non-http references as raw bytes without sourceType", () => {
+    const result = contentPartsToA2AParts([
+      {
+        type: "file",
+        data: "s3://bucket/report.pdf",
+        mimeType: "application/pdf",
+      },
+    ]);
+    expect(result).toEqual([
+      { raw: "s3://bucket/report.pdf", mediaType: "application/pdf" },
+    ]);
+  });
+
+  it("ignores sourceType id", () => {
+    const result = contentPartsToA2AParts([
+      {
+        type: "file",
+        data: "file-abc123",
+        mimeType: "application/pdf",
+        sourceType: "id",
+      },
+    ]);
+    expect(result).toEqual([
+      { raw: "file-abc123", mediaType: "application/pdf" },
+    ]);
+  });
+
+  it("converts file parts with data URLs to raw bytes", () => {
+    const result = contentPartsToA2AParts([
+      {
+        type: "file",
+        data: "data:application/pdf;base64,ZmlsZQ==",
+        mimeType: "application/pdf",
+      },
+    ]);
+    expect(result).toEqual([{ raw: "ZmlsZQ==", mediaType: "application/pdf" }]);
+  });
+
+  it("converts file parts with raw base64 data", () => {
+    const result = contentPartsToA2AParts([
+      { type: "file", data: "ZmlsZQ==", mimeType: "text/csv" },
+    ]);
+    expect(result).toEqual([{ raw: "ZmlsZQ==", mediaType: "text/csv" }]);
+  });
+
+  it("preserves raw zero-byte file data", () => {
+    const result = contentPartsToA2AParts([
+      {
+        type: "file",
+        data: "",
+        mimeType: "text/plain",
+        filename: "empty.txt",
+      },
+    ]);
+    expect(result).toEqual([
+      { raw: "", mediaType: "text/plain", filename: "empty.txt" },
+    ]);
+  });
+
+  it("falls back to the attachment MIME type when the file part MIME is empty", () => {
+    const result = contentPartsToA2AParts(
+      [{ type: "file", data: "ZmlsZQ==", mimeType: "" }],
+      "application/pdf",
+    );
+    expect(result).toEqual([{ raw: "ZmlsZQ==", mediaType: "application/pdf" }]);
+  });
+
+  it("omits mediaType when no MIME type is known", () => {
+    const result = contentPartsToA2AParts([
+      { type: "file", data: "ZmlsZQ==", mimeType: "" },
+    ]);
+    expect(result).toEqual([{ raw: "ZmlsZQ==" }]);
+  });
+
+  it("skips file parts with no data", () => {
+    const result = contentPartsToA2AParts([
+      { type: "file", mimeType: "application/pdf" },
+    ]);
+    expect(result).toEqual([]);
+  });
+
+  it("skips file parts with non-string data", () => {
+    const result = contentPartsToA2AParts([
+      { type: "file", data: { nested: true }, mimeType: "application/pdf" },
+    ]);
+    expect(result).toEqual([]);
+  });
+
+  it("passes non-base64 data URLs through as URLs for file parts", () => {
+    const result = contentPartsToA2AParts([
+      { type: "file", data: "data:text/plain,hello", mimeType: "text/plain" },
+    ]);
+    expect(result).toEqual([
+      { url: "data:text/plain,hello", mediaType: "text/plain" },
+    ]);
+  });
+
+  it("passes uppercase-scheme non-base64 data URLs through as URLs for file parts", () => {
+    const result = contentPartsToA2AParts([
+      { type: "file", data: "DATA:text/plain,hello", mimeType: "text/plain" },
+    ]);
+    expect(result).toEqual([
+      { url: "DATA:text/plain,hello", mediaType: "text/plain" },
+    ]);
+  });
+
+  it("converts zero-byte data URLs in file parts to empty raw bytes", () => {
+    const result = contentPartsToA2AParts([
+      { type: "file", data: "data:application/pdf;base64,", mimeType: "" },
+    ]);
+    expect(result).toEqual([{ raw: "", mediaType: "application/pdf" }]);
+  });
+
+  it("converts zero-byte data URLs in image parts to empty raw bytes", () => {
+    const result = contentPartsToA2AParts([
+      { type: "image", image: "data:image/png;base64," },
+    ]);
+    expect(result).toEqual([{ raw: "", mediaType: "image/png" }]);
+  });
+
+  it("converts audio parts to raw bytes with the format MIME type", () => {
+    const result = contentPartsToA2AParts([
+      { type: "audio", audio: { data: "c291bmQ=", format: "mp3" } },
+    ]);
+    expect(result).toEqual([{ raw: "c291bmQ=", mediaType: "audio/mp3" }]);
+  });
+
+  it("strips data URL envelopes from audio payloads and keeps the format MIME type", () => {
+    const result = contentPartsToA2AParts([
+      {
+        type: "audio",
+        audio: { data: "data:audio/mpeg;base64,c291bmQ=", format: "mp3" },
+      },
+    ]);
+    expect(result).toEqual([{ raw: "c291bmQ=", mediaType: "audio/mp3" }]);
+  });
+
+  it("skips audio parts with no payload", () => {
+    const result = contentPartsToA2AParts([{ type: "audio" }]);
+    expect(result).toEqual([]);
+  });
+
+  it("converts data parts to the a2a data field", () => {
+    const result = contentPartsToA2AParts([
+      { type: "data", data: { chart: "bar", values: [1, 2] } },
+    ]);
+    expect(result).toEqual([{ data: { chart: "bar", values: [1, 2] } }]);
+  });
+
+  it("keeps falsy but defined data part payloads", () => {
+    const result = contentPartsToA2AParts([
+      { type: "data", data: null },
+      { type: "data", data: 0 },
+    ]);
+    expect(result).toEqual([{ data: null }, { data: 0 }]);
+  });
+
+  it("skips data parts with an undefined payload", () => {
+    const result = contentPartsToA2AParts([{ type: "data" }]);
+    expect(result).toEqual([]);
+  });
+
+  it("skips unknown part types", () => {
+    const result = contentPartsToA2AParts([
+      { type: "text", text: "hi" },
+      { type: "video" },
+    ]);
+    expect(result).toEqual([{ text: "hi" }]);
+  });
+
+  it("handles empty input", () => {
+    expect(contentPartsToA2AParts([])).toEqual([]);
+  });
+});
+
+describe("threadMessageToA2AMessage", () => {
+  const userMessage = {
+    id: "msg-1",
+    role: "user",
+    createdAt: new Date(),
+    content: [{ type: "text" as const, text: "hello" }],
+    attachments: [
+      {
+        id: "att-1",
+        type: "file" as const,
+        name: "notes.txt",
+        contentType: "text/plain",
+        status: { type: "complete" as const },
+        content: [{ type: "text" as const, text: "attached" }],
+      },
+    ],
+    metadata: { custom: {} },
+  } as any;
+
+  it("converts user content and appends attachment parts", () => {
+    const result = threadMessageToA2AMessage(userMessage);
+    expect(result.messageId).toBe("msg-1");
+    expect(result.role).toBe("user");
+    expect(result.parts).toEqual([{ text: "hello" }, { text: "attached" }]);
+    expect(result.contextId).toBeUndefined();
+    expect(result.taskId).toBeUndefined();
+  });
+
+  it("attaches contextId and taskId when provided", () => {
+    const result = threadMessageToA2AMessage(userMessage, {
+      contextId: "ctx-1",
+      taskId: "task-1",
+    });
+    expect(result.contextId).toBe("ctx-1");
+    expect(result.taskId).toBe("task-1");
+  });
+
+  it("skips undefined options and non-user content", () => {
+    const result = threadMessageToA2AMessage(
+      { ...userMessage, role: "assistant" },
+      { contextId: undefined, taskId: undefined },
+    );
+    expect(result.parts).toEqual([]);
+    expect(result.contextId).toBeUndefined();
+    expect(result.taskId).toBeUndefined();
+  });
+});

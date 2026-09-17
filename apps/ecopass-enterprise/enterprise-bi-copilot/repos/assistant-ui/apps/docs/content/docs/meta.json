@@ -1,0 +1,20 @@
+{
+  "pages": [
+    "(before-you-start)",
+    "(getting-started)",
+    "react-native",
+    "ink",
+    "tap",
+    "store",
+    "guides",
+    "tools",
+    "primitives",
+    "runtimes",
+    "integrations",
+    "cloud",
+    "utilities",
+    "migrations",
+    "copilots",
+    "(reference)"
+  ]
+}

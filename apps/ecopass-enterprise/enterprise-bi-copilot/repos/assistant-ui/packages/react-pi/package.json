@@ -1,0 +1,87 @@
+{
+  "name": "@assistant-ui/react-pi",
+  "version": "0.0.24",
+  "description": "Pi coding-agent runtime adapter for assistant-ui",
+  "keywords": [
+    "pi",
+    "pi-coding-agent",
+    "assistant-ui",
+    "react",
+    "ai",
+    "chat",
+    "agents",
+    "coding-agent"
+  ],
+  "author": "AgentbaseAI Inc.",
+  "license": "MIT",
+  "homepage": "https://www.assistant-ui.com/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/assistant-ui/assistant-ui.git",
+    "directory": "packages/react-pi"
+  },
+  "bugs": {
+    "url": "https://github.com/assistant-ui/assistant-ui/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "default": "./dist/node.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "aui-build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@assistant-ui/core": "^0.3.20",
+    "@assistant-ui/store": "^0.3.14",
+    "@standard-schema/spec": "^1.1.0",
+    "assistant-stream": "^0.3.44"
+  },
+  "peerDependencies": {
+    "@assistant-ui/react": "^0.15.18",
+    "@earendil-works/pi-coding-agent": ">=0.80.8",
+    "@types/react": "*",
+    "react": "^18 || ^19"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    },
+    "@types/react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@assistant-ui/react": "workspace:*",
+    "@assistant-ui/x-buildutils": "workspace:*",
+    "@earendil-works/pi-coding-agent": "^0.85.1",
+    "@types/node": "^26.5.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "jsdom": "^30.0.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "vitest": "^5.0.1"
+  }
+}

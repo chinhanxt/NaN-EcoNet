@@ -1,0 +1,154 @@
+---
+title: ChatGPT Clone Example
+description: Open-source ChatGPT clone built in React with assistant-ui — centered welcome composer, high-contrast user bubbles, tooltipped controls, and full assistant action bar.
+---
+
+## Overview
+
+The ChatGPT Clone demonstrates how to customize assistant-ui to match OpenAI's ChatGPT interface. This version mirrors the current chatgpt.com layout: a centered welcome composer, tooltipped attachment/dictation/voice controls, high-contrast user bubbles with Copy + Edit actions, and an always-visible assistant action bar with thumbs, share, speak, reload, and more.
+
+## Features
+
+- **Theme-Aware**: White light mode (`#ffffff`) and black dark mode (`#000000`) with ChatGPT-style `#212121` composer surfaces
+- **Centered Empty State**: "Where should we begin?" heading + composer rendered together above the viewport center
+- **Tooltipped Composer Controls**: Add attachment, Dictate, and voice-mode buttons use ChatGPT's circular controls and hover tooltips
+- **Four-State Primary Action**: Cancel (running), StopDictation (recording), Send (typing), Dictate + voice mode (idle)
+- **Assistant Action Bar**: Always visible — Copy, Good response, Bad response, Read aloud, Share, Regenerate, More
+- **User Bubble**: Right-aligned high-contrast bubble with Copy + Edit actions below on hover
+- **Sticky Footer**: Composer + "ChatGPT can make mistakes" disclaimer at the bottom of the chat
+
+## Quick Start
+
+```bash
+npx assistant-ui add thread
+```
+
+## Code
+
+The ChatGPT clone splits into an `EmptyState` and a sticky chat layout. The same composer shell is shared by both:
+
+```tsx
+import {
+  AuiIf,
+  ThreadPrimitive,
+  ComposerPrimitive,
+  ActionBarPrimitive,
+} from "@assistant-ui/react";
+import { PlusIcon } from "lucide-react";
+import { TooltipIconButton } from "@/components/assistant-ui/elements/tooltip-icon-button";
+
+export const ChatGPT = () => (
+  <ThreadPrimitive.Root className="bg-white text-[#0d0d0d] dark:bg-black dark:text-[#ececec]">
+    <AuiIf condition={(s) => s.thread.isEmpty}>
+      <EmptyState />
+    </AuiIf>
+    <AuiIf condition={(s) => !s.thread.isEmpty}>
+      <ThreadPrimitive.Viewport>
+        <ThreadPrimitive.Messages />
+        <ThreadPrimitive.ViewportFooter className="sticky bottom-0">
+          <Composer placeholder="Ask anything" />
+          <p>ChatGPT can make mistakes. Check important info.</p>
+        </ThreadPrimitive.ViewportFooter>
+      </ThreadPrimitive.Viewport>
+    </AuiIf>
+  </ThreadPrimitive.Root>
+);
+
+const Composer = ({ placeholder }: { placeholder: string }) => (
+  <ComposerPrimitive.Root className="rounded-[28px] border border-[#e5e5e5] bg-white dark:border-transparent dark:bg-[#212121]">
+    <div className="flex items-end gap-1">
+      <ComposerPrimitive.AddAttachment asChild>
+        <TooltipIconButton tooltip="Add photos & files" aria-label="Add attachment">
+          <PlusIcon />
+        </TooltipIconButton>
+      </ComposerPrimitive.AddAttachment>
+      <ComposerPrimitive.Input autoFocus rows={1} placeholder={placeholder} />
+      <PrimaryAction />
+    </div>
+  </ComposerPrimitive.Root>
+);
+```
+
+### Four-State Primary Action
+
+```tsx
+<AuiIf condition={(s) => s.thread.isRunning}>
+  <ComposerPrimitive.Cancel />
+</AuiIf>
+<AuiIf condition={(s) => !s.thread.isRunning && s.composer.dictation != null}>
+  <ComposerPrimitive.StopDictation />
+</AuiIf>
+<AuiIf
+  condition={(s) =>
+    !s.thread.isRunning && s.composer.dictation == null && !s.composer.isEmpty
+  }
+>
+  <ComposerPrimitive.Send />
+</AuiIf>
+<AuiIf
+  condition={(s) =>
+    !s.thread.isRunning && s.composer.dictation == null && s.composer.isEmpty
+  }
+>
+  <ComposerPrimitive.Dictate asChild>
+    <TooltipIconButton tooltip="Dictate" aria-label="Dictate">
+      <Mic />
+    </TooltipIconButton>
+  </ComposerPrimitive.Dictate>
+  <TooltipIconButton
+    tooltip="Use voice mode"
+    aria-hidden="true"
+    tabIndex={-1}
+    className="bg-[#0d0d0d] text-white dark:bg-white dark:text-black"
+  >
+    <AudioLines />
+  </TooltipIconButton>
+</AuiIf>
+```
+
+The conditions are mutually exclusive in priority order (`Cancel > StopDictation > Send > Dictate/voice mode`) so dictation can be paused even when transcribed text is in the composer.
+
+### User Bubble and Actions
+
+```tsx
+<MessagePrimitive.Root className="flex flex-col items-end gap-1">
+  <div className="max-w-[70%] rounded-[22px] bg-[#0d0d0d] px-4 py-2.5 text-white dark:bg-[#ececec] dark:text-[#0d0d0d]">
+    <MessagePrimitive.Parts />
+  </div>
+
+  <ActionBarPrimitive.Root autohide="always">
+    <ActionBarPrimitive.Copy asChild>
+      <TooltipIconButton tooltip="Copy" />
+    </ActionBarPrimitive.Copy>
+    <ActionBarPrimitive.Edit asChild>
+      <TooltipIconButton tooltip="Edit" />
+    </ActionBarPrimitive.Edit>
+  </ActionBarPrimitive.Root>
+</MessagePrimitive.Root>
+```
+
+### Color Palette
+
+| Element | Light | Dark |
+|---------|-------|------|
+| Background | `#ffffff` | `#000000` |
+| Composer surface | `#ffffff` | `#212121` |
+| Composer border / edge | `#e5e5e5` | `transparent` + inset white edge |
+| Primary text | `#0d0d0d` | `#ececec` |
+| Muted text | `#5d5d5d` | `#afafaf` |
+| User bubble | `#0d0d0d` (white text) | `#ececec` (`#0d0d0d` text) |
+| Action icon | `#5d5d5d` | `#cdcdcd` |
+| Icon hover background | black at 7% | white at 15% |
+| Send / voice button | `#0d0d0d` (white icon) | `#ffffff` (black icon) |
+
+### Styling Details
+
+- **Composer**: `rounded-[28px]` with a thin light-mode border, dark `#212121` surface, and an inset dark-mode edge
+- **Empty Layout**: 24px/400 heading + composer raised above center; no avatar
+- **Composer Buttons**: 36px circular controls with hover tooltips and background-only hover states
+- **Assistant Action Bar**: 32px controls, 8px radius, zero gap, background-only hover, and tooltips on every action
+- **User Bubble**: `rounded-[22px]`, 70% max width, high-contrast theme colors, Copy + Edit actions below on hover
+
+## Source
+
+<SourceLink href="https://github.com/assistant-ui/assistant-ui/blob/main/apps/docs/components/pages/examples/chatgpt.tsx" />

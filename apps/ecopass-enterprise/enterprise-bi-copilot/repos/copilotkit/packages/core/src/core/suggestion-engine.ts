@@ -1,0 +1,645 @@
+import type { AbstractAgent, Message, Tool } from "@ag-ui/client";
+import { HttpAgent } from "@ag-ui/client";
+import { randomUUID, partialJSONParse } from "@copilotkit/shared";
+import type { CopilotKitCore } from "./core";
+import type { CopilotKitCoreGetSuggestionsResult } from "./core";
+import type { CopilotKitCoreFriendsAccess } from "./core";
+import type {
+  DynamicSuggestionsConfig,
+  StaticSuggestionsConfig,
+  Suggestion,
+  SuggestionsConfig,
+} from "../types";
+
+/**
+ * The minimal cancellation surface a running suggestion generation exposes.
+ * Both a cloned `AbstractAgent` (via `abortRun`) and the stateless fetch shim
+ * (which aborts an `AbortController`) satisfy this, so `clearSuggestions` can
+ * cancel either uniformly.
+ */
+interface AbortableSuggestionRun {
+  abortRun(): void;
+}
+
+/**
+ * Manages suggestion generation, streaming, and lifecycle for CopilotKitCore.
+ * Handles both dynamic (AI-generated) and static suggestions.
+ */
+export class SuggestionEngine {
+  private _suggestionsConfig: Record<string, SuggestionsConfig> = {};
+  private _suggestions: Record<string, Record<string, Suggestion[]>> = {};
+  private _runningSuggestions: Record<string, AbortableSuggestionRun[]> = {};
+
+  constructor(private core: CopilotKitCore) {}
+
+  /**
+   * Initialize with suggestion configs
+   */
+  initialize(suggestionsConfig: SuggestionsConfig[]): void {
+    for (const config of suggestionsConfig) {
+      this._suggestionsConfig[randomUUID()] = config;
+    }
+  }
+
+  /**
+   * Add a suggestion configuration
+   * @returns The ID of the created config
+   */
+  addSuggestionsConfig(config: SuggestionsConfig): string {
+    const id = randomUUID();
+    this._suggestionsConfig[id] = config;
+    void this.notifySuggestionsConfigChanged();
+    return id;
+  }
+
+  /**
+   * Remove a suggestion configuration by ID
+   */
+  removeSuggestionsConfig(id: string): void {
+    delete this._suggestionsConfig[id];
+    void this.notifySuggestionsConfigChanged();
+  }
+
+  /**
+   * Reload suggestions for a specific agent
+   * This triggers generation of new suggestions based on current configs
+   */
+  public reloadSuggestions(agentId: string): void {
+    this.clearSuggestions(agentId);
+
+    // The agent may legitimately be missing here (e.g. runtime info still loading,
+    // or the consumer agent is configured but not yet registered) — static suggestions
+    // don't need it, only dynamic generation does. Treat that case as "no messages yet"
+    // and process static configs anyway.
+    const agent = (
+      this.core as unknown as CopilotKitCoreFriendsAccess
+    ).getAgent(agentId);
+
+    const messageCount = agent?.messages?.length ?? 0;
+    let hasAnySuggestions = false;
+
+    for (const config of Object.values(this._suggestionsConfig)) {
+      // Check if config applies to this agent
+      if (
+        config.consumerAgentId !== undefined &&
+        config.consumerAgentId !== "*" &&
+        config.consumerAgentId !== agentId
+      ) {
+        continue;
+      }
+
+      // Check availability based on message count
+      if (!this.shouldShowSuggestions(config, messageCount)) {
+        continue;
+      }
+
+      const suggestionId = randomUUID();
+
+      if (isDynamicSuggestionsConfig(config)) {
+        // Dynamic suggestions need a real agent (provider + consumer messages).
+        // Skip when the agent isn't ready yet — `reloadSuggestions` will be
+        // called again once it is.
+        if (!agent) {
+          continue;
+        }
+        if (!hasAnySuggestions) {
+          hasAnySuggestions = true;
+          void this.notifySuggestionsStartedLoading(agentId);
+        }
+        void this.generateSuggestions(suggestionId, config, agentId);
+      } else if (isStaticSuggestionsConfig(config)) {
+        this.addStaticSuggestions(suggestionId, config, agentId);
+      }
+    }
+  }
+
+  /**
+   * Clear all suggestions for a specific agent
+   */
+  public clearSuggestions(agentId: string): void {
+    const runningAgents = this._runningSuggestions[agentId];
+    if (runningAgents) {
+      for (const agent of runningAgents) {
+        agent.abortRun();
+      }
+      delete this._runningSuggestions[agentId];
+    }
+    this._suggestions[agentId] = {};
+
+    void this.notifySuggestionsChanged(agentId, []);
+  }
+
+  /**
+   * Get current suggestions for an agent
+   */
+  public getSuggestions(agentId: string): CopilotKitCoreGetSuggestionsResult {
+    const suggestions = Object.values(this._suggestions[agentId] ?? {}).flat();
+    const isLoading = (this._runningSuggestions[agentId]?.length ?? 0) > 0;
+    return { suggestions, isLoading };
+  }
+
+  /**
+   * Generate suggestions by running a provider agent and extracting the
+   * `copilotkitSuggest` tool call from its streamed messages.
+   *
+   * Two transports, one set of mechanics: both seed an agent with the
+   * consumer's messages + state and the instruction, then `runAgent` with
+   * forced `copilotkitSuggest` tool choice, parsing suggestions as messages
+   * stream in via `onMessagesChanged`.
+   *
+   * - **Stateless** (runtime advertises `suggestions` and transport isn't
+   *   `single`): a stock `HttpAgent` pointed at `/agent/:id/suggest`. That
+   *   endpoint runs the provider directly and streams AG-UI SSE **without**
+   *   persisting a thread, and a plain `HttpAgent` only ever speaks REST SSE —
+   *   it never routes through the Intelligence websocket delegate (which would
+   *   persist a thread). This is the path that removes the thread flood.
+   * - **Fallback** (capability absent → old runtime, or `single` transport):
+   *   clone the provider agent and run it client-side, as before.
+   *
+   * Gated to non-`single` transports because this client only builds the
+   * multi-route `/agent/:id/suggest` URL; single-route deployments (not the
+   * persisting-thread/Intelligence case) fall through to the clone fallback.
+   */
+  private async generateSuggestions(
+    suggestionId: string,
+    config: DynamicSuggestionsConfig,
+    consumerAgentId: string,
+  ): Promise<void> {
+    // The cancellable handle for this generation, removed from the running set
+    // in `finally`. `abortRun` flips `aborted` before cancelling the underlying
+    // agent so the `catch` can distinguish a deliberate clear/reload from a real
+    // failure — some engines (undici, some React Native) reject an aborted run
+    // with a non-"AbortError" error that `isAbortError` alone would misclassify.
+    let runHandle: AbortableSuggestionRun | undefined = undefined;
+    let aborted = false;
+    try {
+      const friends = this.core as unknown as CopilotKitCoreFriendsAccess;
+      const resolvedProviderAgentId = config.providerAgentId ?? "default";
+      const suggestionsProviderAgent = friends.getAgent(
+        resolvedProviderAgentId,
+      );
+      if (!suggestionsProviderAgent) {
+        throw new Error(
+          `Suggestions provider agent not found: ${resolvedProviderAgentId}`,
+        );
+      }
+      const suggestionsConsumerAgent = friends.getAgent(consumerAgentId);
+      if (!suggestionsConsumerAgent) {
+        throw new Error(
+          `Suggestions consumer agent not found: ${consumerAgentId}`,
+        );
+      }
+
+      const instructionContent = [
+        `Suggest what the user could say next. Provide clear, highly relevant suggestions by calling the \`copilotkitSuggest\` tool.`,
+        `Provide at least ${config.minSuggestions ?? 1} and at most ${
+          config.maxSuggestions ?? 3
+        } suggestions.`,
+        `The user has the following tools available: ${JSON.stringify(
+          friends.buildFrontendTools(consumerAgentId),
+        )}.`,
+        ` ${config.instructions}`,
+      ].join("\n");
+
+      // Initialize suggestion storage for this agent/suggestion combo
+      this._suggestions[consumerAgentId] = {
+        ...this._suggestions[consumerAgentId],
+        [suggestionId]: [],
+      };
+
+      // Deep-clone the consumer's messages + state so the suggestion run sees
+      // the same context a real turn would, without sharing mutable references.
+      const seededMessages: Message[] = JSON.parse(
+        JSON.stringify(suggestionsConsumerAgent.messages),
+      );
+      const seededState: unknown = JSON.parse(
+        JSON.stringify(suggestionsConsumerAgent.state ?? {}),
+      );
+
+      const useStateless =
+        this.core.suggestions === true &&
+        this.core.runtimeTransport !== "single";
+
+      let suggestionAgent: AbstractAgent;
+      if (useStateless) {
+        const suggestUrl = `${this.core.runtimeUrl}/agent/${encodeURIComponent(
+          resolvedProviderAgentId,
+        )}/suggest`;
+        const credentials = this.core.credentials;
+        suggestionAgent = new HttpAgent({
+          agentId: resolvedProviderAgentId,
+          url: suggestUrl,
+          headers: { ...this.core.headers },
+          // `HttpAgentConfig` has no `credentials` field; inject it via a fetch
+          // wrapper so cookie-based / self-hosted auth still rides along on the
+          // `/suggest` request.
+          ...(credentials
+            ? {
+                fetch: (url: string, requestInit: RequestInit) =>
+                  fetch(url, { ...requestInit, credentials }),
+              }
+            : {}),
+        });
+      } else {
+        suggestionAgent = suggestionsProviderAgent.clone();
+      }
+
+      suggestionAgent.threadId = suggestionId;
+      suggestionAgent.setMessages(seededMessages);
+      suggestionAgent.setState(seededState);
+
+      runHandle = {
+        abortRun: () => {
+          aborted = true;
+          suggestionAgent.abortRun();
+        },
+      };
+      this._runningSuggestions[consumerAgentId] = [
+        ...(this._runningSuggestions[consumerAgentId] ?? []),
+        runHandle,
+      ];
+
+      suggestionAgent.addMessage({
+        id: suggestionId,
+        role: "user",
+        content: instructionContent,
+      });
+
+      await suggestionAgent.runAgent(
+        {
+          context: friends.getContextForAgent(consumerAgentId),
+          forwardedProps: {
+            ...friends.properties,
+            toolChoice: {
+              type: "function",
+              function: { name: "copilotkitSuggest" },
+            },
+          },
+          tools: [SUGGEST_TOOL],
+        },
+        {
+          onMessagesChanged: ({ messages }) => {
+            this.extractSuggestions(
+              messages,
+              suggestionId,
+              consumerAgentId,
+              true,
+            );
+          },
+        },
+      );
+    } catch (error) {
+      // An abort is expected when suggestions are cleared/reloaded mid-flight;
+      // swallow it quietly rather than surfacing it as a failure. `isAbortError`
+      // is the primary (name-based) check; `aborted` covers engines that reject
+      // an aborted run with a differently-named error (or a `TypeError`).
+      if (!isAbortError(error) && !aborted) {
+        console.warn("Error generating suggestions:", error);
+      }
+    } finally {
+      // Finalize suggestions by marking them as no longer loading
+      this.finalizeSuggestions(suggestionId, consumerAgentId);
+
+      // Remove this run from the running set. `runHandle` may be undefined when
+      // generation threw before it was assigned (e.g. provider/consumer agent
+      // lookup failed); still perform cleanup so the loading balance holds. If
+      // no runs remain for this consumer, emit finished-loading — otherwise a
+      // subscriber that saw `started` would hang in the loading state.
+      const runningAgents = this._runningSuggestions[consumerAgentId];
+      const remaining = runHandle
+        ? (runningAgents ?? []).filter((a) => a !== runHandle)
+        : (runningAgents ?? []);
+
+      if (remaining.length === 0) {
+        delete this._runningSuggestions[consumerAgentId];
+        await this.notifySuggestionsFinishedLoading(consumerAgentId);
+      } else {
+        this._runningSuggestions[consumerAgentId] = remaining;
+      }
+    }
+  }
+
+  /**
+   * Finalize suggestions by marking them as no longer loading
+   */
+  private finalizeSuggestions(
+    suggestionId: string,
+    consumerAgentId: string,
+  ): void {
+    const agentSuggestions = this._suggestions[consumerAgentId];
+    const currentSuggestions = agentSuggestions?.[suggestionId];
+
+    if (
+      agentSuggestions &&
+      currentSuggestions &&
+      currentSuggestions.length > 0
+    ) {
+      // Filter out empty suggestions and mark remaining as no longer loading
+      const finalizedSuggestions = currentSuggestions
+        .filter(
+          (suggestion) => suggestion.title !== "" || suggestion.message !== "",
+        )
+        .map((suggestion) => ({
+          ...suggestion,
+          isLoading: false,
+        }));
+
+      if (finalizedSuggestions.length > 0) {
+        agentSuggestions[suggestionId] = finalizedSuggestions;
+      } else {
+        delete agentSuggestions[suggestionId];
+      }
+
+      // Get all aggregated suggestions for this agent
+      const allSuggestions = Object.values(
+        this._suggestions[consumerAgentId] ?? {},
+      ).flat();
+
+      void this.notifySuggestionsChanged(
+        consumerAgentId,
+        allSuggestions,
+        "finalized",
+      );
+    }
+  }
+
+  /**
+   * Extract suggestions from messages (called during streaming)
+   */
+  extractSuggestions(
+    messages: readonly Message[],
+    suggestionId: string,
+    consumerAgentId: string,
+    isRunning: boolean,
+  ): void {
+    const idx = messages.findIndex((message) => message.id === suggestionId);
+    if (idx == -1) {
+      return;
+    }
+
+    const suggestions: Suggestion[] = [];
+    const newMessages = messages.slice(idx + 1);
+
+    for (const message of newMessages) {
+      if (message.role === "assistant" && message.toolCalls) {
+        for (const toolCall of message.toolCalls) {
+          if (toolCall.function.name === "copilotkitSuggest") {
+            // Join all argument chunks into a single string for parsing
+            // arguments can be either a string or an array of strings
+            const fullArgs = Array.isArray(toolCall.function.arguments)
+              ? toolCall.function.arguments.join("")
+              : toolCall.function.arguments;
+            const parsed = partialJSONParse(fullArgs);
+            if (
+              parsed &&
+              typeof parsed === "object" &&
+              "suggestions" in parsed
+            ) {
+              const parsedSuggestions = (parsed as any).suggestions;
+              if (Array.isArray(parsedSuggestions)) {
+                for (const item of parsedSuggestions) {
+                  if (item && typeof item === "object" && "title" in item) {
+                    suggestions.push({
+                      title: item.title ?? "",
+                      message: item.message ?? "",
+                      // Defaults to false; only the trailing item is flipped to
+                      // true below, and only while a streaming run is in flight.
+                      isLoading: false,
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Set isLoading for the last suggestion if still running
+    if (isRunning && suggestions.length > 0) {
+      suggestions[suggestions.length - 1]!.isLoading = true;
+    }
+
+    const agentSuggestions = this._suggestions[consumerAgentId];
+    if (agentSuggestions) {
+      agentSuggestions[suggestionId] = suggestions;
+
+      // Get all aggregated suggestions for this agent
+      const allSuggestions = Object.values(
+        this._suggestions[consumerAgentId] ?? {},
+      ).flat();
+
+      void this.notifySuggestionsChanged(
+        consumerAgentId,
+        allSuggestions,
+        "suggestions changed",
+      );
+    }
+  }
+
+  /**
+   * Notify subscribers of suggestions config changes
+   */
+  private async notifySuggestionsConfigChanged(): Promise<void> {
+    await (
+      this.core as unknown as CopilotKitCoreFriendsAccess
+    ).notifySubscribers(
+      (subscriber) =>
+        subscriber.onSuggestionsConfigChanged?.({
+          copilotkit: this.core,
+          suggestionsConfig: this._suggestionsConfig,
+        }),
+      "Subscriber onSuggestionsConfigChanged error:",
+    );
+  }
+
+  /**
+   * Notify subscribers of suggestions changes
+   */
+  private async notifySuggestionsChanged(
+    agentId: string,
+    suggestions: Suggestion[],
+    context: string = "",
+  ): Promise<void> {
+    await (
+      this.core as unknown as CopilotKitCoreFriendsAccess
+    ).notifySubscribers(
+      (subscriber) =>
+        subscriber.onSuggestionsChanged?.({
+          copilotkit: this.core,
+          agentId,
+          suggestions,
+        }),
+      `Subscriber onSuggestionsChanged error: ${context}`,
+    );
+  }
+
+  /**
+   * Notify subscribers that suggestions started loading
+   */
+  private async notifySuggestionsStartedLoading(
+    agentId: string,
+  ): Promise<void> {
+    await (
+      this.core as unknown as CopilotKitCoreFriendsAccess
+    ).notifySubscribers(
+      (subscriber) =>
+        subscriber.onSuggestionsStartedLoading?.({
+          copilotkit: this.core,
+          agentId,
+        }),
+      "Subscriber onSuggestionsStartedLoading error:",
+    );
+  }
+
+  /**
+   * Notify subscribers that suggestions finished loading
+   */
+  private async notifySuggestionsFinishedLoading(
+    agentId: string,
+  ): Promise<void> {
+    await (
+      this.core as unknown as CopilotKitCoreFriendsAccess
+    ).notifySubscribers(
+      (subscriber) =>
+        subscriber.onSuggestionsFinishedLoading?.({
+          copilotkit: this.core,
+          agentId,
+        }),
+      "Subscriber onSuggestionsFinishedLoading error:",
+    );
+  }
+
+  /**
+   * Check if suggestions should be shown based on availability and message count
+   */
+  private shouldShowSuggestions(
+    config: SuggestionsConfig,
+    messageCount: number,
+  ): boolean {
+    const availability = config.available;
+
+    // Default behavior if no availability specified
+    if (!availability) {
+      if (isDynamicSuggestionsConfig(config)) {
+        return messageCount > 0; // Default: after-first-message
+      } else {
+        return messageCount === 0; // Default: before-first-message
+      }
+    }
+
+    switch (availability) {
+      case "disabled":
+        return false;
+      case "before-first-message":
+        return messageCount === 0;
+      case "after-first-message":
+        return messageCount > 0;
+      case "always":
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * Add static suggestions directly without AI generation
+   */
+  private addStaticSuggestions(
+    suggestionId: string,
+    config: StaticSuggestionsConfig,
+    consumerAgentId: string,
+  ): void {
+    // Mark all as not loading since they're static
+    const suggestions = config.suggestions.map((s) => ({
+      ...s,
+      isLoading: false,
+    }));
+
+    // Store suggestions
+    this._suggestions[consumerAgentId] = {
+      ...this._suggestions[consumerAgentId],
+      [suggestionId]: suggestions,
+    };
+
+    // Notify subscribers
+    const allSuggestions = Object.values(
+      this._suggestions[consumerAgentId] ?? {},
+    ).flat();
+
+    void this.notifySuggestionsChanged(
+      consumerAgentId,
+      allSuggestions,
+      "static suggestions added",
+    );
+  }
+}
+
+/**
+ * Detects an `AbortController`-driven cancellation so the stateless path can
+ * treat it as an expected (non-error) outcome on clear/reload.
+ */
+export function isAbortError(error: unknown): boolean {
+  // Detect purely by name: a `DOMException` is NOT `instanceof Error` in Safari
+  // and older engines, so gating on `instanceof Error` would misclassify a real
+  // user abort as a failure in the browser (this package runs client-side).
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "name" in error &&
+    (error as { name?: unknown }).name === "AbortError"
+  );
+}
+
+/**
+ * Type guard for dynamic suggestions config
+ */
+function isDynamicSuggestionsConfig(
+  config: SuggestionsConfig,
+): config is DynamicSuggestionsConfig {
+  return "instructions" in config;
+}
+
+/**
+ * Type guard for static suggestions config
+ */
+function isStaticSuggestionsConfig(
+  config: SuggestionsConfig,
+): config is StaticSuggestionsConfig {
+  return "suggestions" in config;
+}
+
+/**
+ * The tool definition for AI-generated suggestions
+ */
+const SUGGEST_TOOL: Tool = {
+  name: "copilotkitSuggest",
+  description: "Suggest what the user could say next",
+  parameters: {
+    type: "object",
+    properties: {
+      suggestions: {
+        type: "array",
+        description: "List of suggestions shown to the user as buttons.",
+        items: {
+          type: "object",
+          properties: {
+            title: {
+              type: "string",
+              description:
+                "The title of the suggestion. This is shown as a button and should be short.",
+            },
+            message: {
+              type: "string",
+              description:
+                "The message to send when the suggestion is clicked. This should be a clear, complete sentence " +
+                "and will be sent as an instruction to the AI.",
+            },
+          },
+          required: ["title", "message"],
+        },
+      },
+    },
+    required: ["suggestions"],
+  },
+};

@@ -1,0 +1,100 @@
+---
+title: Overview
+description: Unstyled, accessible building blocks for AI chat interfaces — Thread, Composer, Message, and more, ready to compose with assistant-ui.
+platforms: ["react"]
+---
+
+Primitives are the unstyled layer of assistant-ui: accessible React components that handle all the wiring of AI chat, including state management, keyboard shortcuts, auto-scrolling, streaming, and tool calls, and leave every visual decision to you.
+
+## Primitives or elements?
+
+assistant-ui ships two layers:
+
+- **[Elements](/elements)** are styled, installable components built from primitives. Each element's page shows a live demo, its install command, and both ways to use it: wired to a runtime, or driven by plain props. If you want ready-made UI, or anything else element-related, the [element catalog](/elements) is the place to look; this section never duplicates it.
+- **Primitives** (this section) are what elements are made of. Reach for them when the UI you need doesn't exist as an element, such as a floating composer, a custom message layout, or an inline editing experience.
+
+```tsx
+import { ComposerPrimitive } from "@assistant-ui/react";
+
+<ComposerPrimitive.Root>
+  <ComposerPrimitive.Input placeholder="Ask anything..." />
+  <ComposerPrimitive.Send>Send</ComposerPrimitive.Send>
+</ComposerPrimitive.Root>
+```
+
+This renders an unstyled `<form>` with a `<textarea>` and a `<button>`. No styles, no opinions, but it already handles submit-on-enter, focus management, empty-state disabling, and streaming state.
+
+## How they work
+
+Every primitive follows the same pattern inspired by [Radix UI](https://www.radix-ui.com/):
+
+- **`Primitive.Root`**: container that provides context to child parts
+- **`Primitive.PartName`**: individual elements (input, button, text, etc.)
+- **`asChild`**: merge primitive behavior onto your own element instead of rendering a wrapper
+- **`AuiIf`**: conditional rendering based on state
+
+Primitives read from the nearest runtime context. Place them inside an `AssistantRuntimeProvider` and they work without prop drilling or manual state wiring.
+
+## Available primitives
+
+<Cards>
+  <Card title="Composer" href="/docs/primitives/composer">
+    Text input, send button, attachments, and dictation. The interface for composing new messages or editing existing ones.
+  </Card>
+  <Card title="Thread" href="/docs/primitives/thread">
+    The scrollable message container with auto-scroll, empty states, and message rendering.
+  </Card>
+  <Card title="Message" href="/docs/primitives/message">
+    Individual message rendering with role-based content, parts, and metadata.
+  </Card>
+  <Card title="ActionBar" href="/docs/primitives/action-bar">
+    Copy, reload, edit, and other message actions.
+  </Card>
+  <Card title="BranchPicker" href="/docs/primitives/branch-picker">
+    Navigate between message branches (alternative responses).
+  </Card>
+  <Card title="ThreadList" href="/docs/primitives/thread-list">
+    Multi-thread management: list, create, switch, and archive threads.
+  </Card>
+  <Card title="AssistantModal" href="/docs/primitives/assistant-modal">
+    Floating chat popover built on Radix UI Popover.
+  </Card>
+  <Card title="Attachment" href="/docs/primitives/attachment">
+    File and image attachment rendering.
+  </Card>
+  <Card title="Suggestion" href="/docs/primitives/suggestion">
+    Suggested prompts and quick actions.
+  </Card>
+  <Card title="SelectionToolbar" href="/docs/primitives/selection-toolbar">
+    Floating toolbar for text selection actions like quoting.
+  </Card>
+  <Card title="Error" href="/docs/primitives/error">
+    Error display with accessible alert role and automatic error text.
+  </Card>
+  <Card title="ChainOfThought" href="/docs/primitives/chain-of-thought">
+    Collapsible reasoning accordion for thinking steps and tool calls.
+  </Card>
+</Cards>
+
+`MessagePartPrimitive` (for rendering individual text, image, and streaming parts) is documented within the [Message](/docs/primitives/message#messagepartprimitive) primitive page.
+
+## Related primitive references
+
+Additional primitive references:
+
+- [MessagePartPrimitive](/docs/api-reference/primitives/message-part)
+- [ThreadListItemPrimitive](/docs/api-reference/primitives/thread-list-item)
+- [ThreadListItemMorePrimitive](/docs/api-reference/primitives/thread-list-item-more)
+- [ActionBarMorePrimitive](/docs/api-reference/primitives/action-bar-more)
+- [AuiIf](/docs/api-reference/primitives/assistant-if)
+
+## Common mistakes
+
+- Forgetting to wrap primitives with runtime context (`AssistantRuntimeProvider` + runtime hook)
+- Mixing deprecated props with current APIs (`submitOnEnter`, `autoSend`, legacy `Suggestion`)
+- Mounting primitives in the wrong context (`ActionBarPrimitive` / `BranchPickerPrimitive` outside `MessagePrimitive.Root`)
+- Using unstable props unintentionally (`unstable_*` APIs)
+
+## Next steps
+
+Browse the [element catalog](/elements) if a ready-made component covers your case. Otherwise start with the [Composer](/docs/primitives/composer) primitive to see how primitives work in practice, or jump to the [API Reference](/docs/api-reference/primitives/composer) for full prop details.

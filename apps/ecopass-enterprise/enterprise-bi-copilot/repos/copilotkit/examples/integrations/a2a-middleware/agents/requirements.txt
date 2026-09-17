@@ -1,0 +1,71 @@
+# ============================================================================
+# A2A + AG-UI Starter - Python Agent Dependencies
+# ============================================================================
+
+# ============================================================================
+# AG-UI Protocol Implementation
+# ============================================================================
+# ag-ui-adk: Allows ADK agents to communicate with the frontend via AG-UI Protocol
+# This is used by the orchestrator agent to receive messages from the UI
+ag-ui-adk>=0.0.1
+
+# ============================================================================
+# A2A Protocol Implementation
+# ============================================================================
+# a2a-sdk: The A2A Protocol SDK, which owns the `a2a` import namespace.
+# This package enables the Research and Analysis agents to communicate via A2A.
+#
+# Do NOT add a bare `a2a` requirement here. The project published on PyPI as
+# `a2a` is an unrelated AWS/Azure service-mapping tool that installs into the
+# same `a2a/` directory and drags in scrapy, twisted and lxml.
+#
+# The upper bound is load-bearing. a2a-sdk 1.x implements A2A protocol v1.0:
+# it drops `a2a.server.apps` (and `A2AStarletteApplication` with it) and moves
+# to a protobuf core, so the agents below do not import under it. The frontend
+# side of this starter is pinned to @ag-ui/a2a-middleware 0.0.2, which bundles
+# @a2a-js/sdk 0.2.5 and speaks the pre-1.0 wire format, so the Python agents
+# have to stay on the 0.3 line until that middleware ships a v1.0 client.
+a2a-sdk[http-server]>=0.3,<1.0
+
+# ============================================================================
+# Google ADK (Agent Development Kit)
+# ============================================================================
+# google-adk: Google's framework for building AI agents with Gemini models
+# Used by: Orchestrator Agent, Analysis Agent
+# litellm: Unified interface for multiple LLM providers (dependency of ADK)
+google-adk>=0.1.0
+litellm>=1.0.0
+
+# ============================================================================
+# LangGraph Framework
+# ============================================================================
+# langgraph: LangChain's framework for building stateful agent workflows
+# langchain: Core LangChain library for LLM applications
+# langchain-openai: OpenAI integration for LangChain
+# Used by: Research Agent
+langgraph>=0.2.0
+langchain>=0.3.0
+langchain-openai>=0.2.0
+
+# ============================================================================
+# Web Server
+# ============================================================================
+# fastapi: Modern Python web framework for building agent HTTP endpoints
+# uvicorn: ASGI server for running FastAPI applications
+# All agents expose HTTP endpoints using FastAPI
+fastapi>=0.115.0
+uvicorn>=0.30.0
+
+# ============================================================================
+# Utilities
+# ============================================================================
+# python-dotenv: Loads environment variables from .env file
+# Used to configure API keys (GOOGLE_API_KEY, OPENAI_API_KEY)
+python-dotenv>=1.0.0
+
+# ============================================================================
+# LLM Providers
+# ============================================================================
+# openai: OpenAI Python SDK for GPT models
+# Used by the Research Agent (LangGraph)
+openai>=1.0.0
