@@ -93,3 +93,8 @@
 - Nhiem vu: feat(engine): xay dung Streamlit dashboard phan tich hoi tu tham so thuat toan
 - Ky su thuc hien: chinhan (NaN-Team)
 - Ket qua: Tich hop lien phan he dat chuan.
+
+#### [Sprint Checkpoint 070] 2026-09-18 19:11
+- Nhiem vu: feat(deploy): viet docker-compose.yml tong the ket noi ca 3 phan he monorepo
+- Ky su thuc hien: chinhan (NaN-Team)
+- Ket qua: Tich hop lien phan he dat chuan.
