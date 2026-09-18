@@ -88,3 +88,8 @@
 - Nhiem vu: feat(engine): ket noi MapLibre GL JS voi may chu OSRM hien thi tuyen duong da mau
 - Ky su thuc hien: chinhan (NaN-Team)
 - Ket qua: Tich hop lien phan he dat chuan.
+
+#### [Sprint Checkpoint 069] 2026-09-18 18:55
+- Nhiem vu: feat(engine): xay dung Streamlit dashboard phan tich hoi tu tham so thuat toan
+- Ky su thuc hien: chinhan (NaN-Team)
+- Ket qua: Tich hop lien phan he dat chuan.
