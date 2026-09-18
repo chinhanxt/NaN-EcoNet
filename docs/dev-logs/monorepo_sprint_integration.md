@@ -83,3 +83,8 @@
 - Nhiem vu: feat(social): tich hop Exponential Backoff with Jitter chong khoa tai khoan
 - Ky su thuc hien: chinhan (NaN-Team)
 - Ket qua: Tich hop lien phan he dat chuan.
+
+#### [Sprint Checkpoint 068] 2026-09-18 17:32
+- Nhiem vu: feat(engine): ket noi MapLibre GL JS voi may chu OSRM hien thi tuyen duong da mau
+- Ky su thuc hien: chinhan (NaN-Team)
+- Ket qua: Tich hop lien phan he dat chuan.
