@@ -1,0 +1,172 @@
+small:
+  m:
+    type: int
+    min: 1
+    max: 10
+    steps: 1
+    number: 5
+    default: 3
+  I:
+    type: int
+    min: 5
+    max: 25
+    steps: 5
+    default: 15
+  alpha:
+    type: float
+    min: 0.75
+    max: 1.75
+    steps: 5
+    number: 5
+    default: 1.12
+  beta:
+    type: float
+    min: 0.75
+    max: 1.75
+    steps: 5
+    number: 5
+    default: 1.43
+  rho:
+    type: float
+    min: 0.2
+    max: 0.8
+    steps: 5
+    number: 5
+    default: 0.75
+  Q:
+    type: float
+    min: 1.0
+    max: 3.0
+    steps: 5
+    number: 5
+    default: 1.56
+  LS:
+    type: int
+    min: 10
+    max: 90
+    steps: 5
+    number: 5
+    default: 50
+  t:
+    type: int
+    min: 20
+    max: 60
+    steps: 5
+    number: 5
+    default: 50
+  p:
+    type: int
+    number: 5
+    default: 64
+medium:
+  m:
+    type: int
+    min: 1
+    max: 20
+    steps: 2
+    number: 5
+    default: 5
+  I:
+    type: int
+    min: 5
+    max: 30
+    steps: 5
+    number: 5
+    default: 30
+  alpha:
+    type: float
+    min: 0.75
+    max: 1.75
+    steps: 0.25
+    number: 5
+    default: 1.1644079306735833
+  beta:
+    type: float
+    min: 0.75
+    max: 1.75
+    steps: 0.25
+    number: 5
+    default: 1.231355790111825
+  rho:
+    type: float
+    min: 0.2
+    max: 0.8
+    steps: 0.2
+    number: 5
+    default: 0.31243381926810376
+  Q:
+    type: float
+    min: 1.0
+    max: 3.0
+    steps: 0.3
+    number: 5
+    default: 1.3630971346491676
+  LS:
+    type: int
+    min: 10
+    max: 100
+    steps: 10
+    number: 5
+    default: 30
+  t:
+    type: int
+    min: 30
+    max: 100
+    steps: 15
+    number: 5
+    default: 70
+  p:
+    type: int
+    default: 64
+large:
+  m:
+    type: int
+    min: 10
+    max: 100
+    steps: 5
+    default: 10
+  I:
+    type: int
+    min: 15
+    max: 70
+    steps: 5
+    default: 20
+  alpha:
+    type: float
+    min: 0.75
+    max: 2.0
+    steps: 5
+    default: 1.25
+  beta:
+    type: float
+    min: 0.75
+    max: 2.0
+    steps: 5
+    default: 1.0
+  rho:
+    type: float
+    min: 0.2
+    max: 0.8
+    steps: 5
+    default: 0.5
+  Q:
+    type: float
+    min: 1.0
+    max: 3.0
+    steps: 5
+    default: 2.0
+  LS:
+    type: int
+    min: 10
+    max: 100
+    steps: 5
+    default: 50
+  t:
+    type: int
+    min: 30
+    max: 80
+    steps: 5
+    default: 50
+  p:
+    type: int
+    default: 64

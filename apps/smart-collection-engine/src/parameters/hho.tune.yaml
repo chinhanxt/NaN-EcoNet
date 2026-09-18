@@ -1,0 +1,133 @@
+small:
+  max_iter:
+    type: int
+    range: [100, 2000]
+    default: 200
+    step: 50
+  population_size:
+    type: int
+    range: [50, 2000]
+    default: 100
+    step: 10
+  num_hawks:
+    type: int
+    range: [5, 500]
+    default: 10
+    step: 1
+  num_iterations:
+    type: int
+    range: [10, 500]
+    default: 30
+    step: 5
+  lower_bound:
+    type: float
+    range: [0.0, 0.5]
+    default: 0.0
+    step: 0.1
+  upper_bound:
+    type: float
+    range: [0.5, 2.0]
+    default: 1.0
+    step: 0.1
+  learning_rate:
+    type: float
+    range: [0.0001, 0.01]
+    default: 0.0001
+    step: 0.0001
+  beta:
+    type: float
+    range: [1.0, 2.5]
+    default: 1.5
+    step: 0.1
+  p:
+    type: float
+    range: [0.1, 0.3, 0.5]
+    default: 0.1
+medium:
+  max_iter:
+    type: int
+    range: [100, 5000]
+    default: 200
+    step: 50
+  population_size:
+    type: int
+    range: [50, 1000]
+    default: 100
+    step: 10
+  num_hawks:
+    type: int
+    range: [5, 1000]
+    default: 10
+    step: 1
+  num_iterations:
+    type: int
+    range: [10, 1000]
+    default: 30
+    step: 5
+  lower_bound:
+    type: float
+    range: [0.0, 0.5]
+    default: 0.0
+    step: 0.1
+  upper_bound:
+    type: float
+    range: [0.5, 2.0]
+    default: 1.0
+    step: 0.1
+  learning_rate:
+    type: float
+    range: [0.0001, 0.01]
+    default: 0.0001
+    step: 0.0001
+  beta:
+    type: float
+    range: [1.0, 2.5]
+    default: 1.5
+    step: 0.1
+  p:
+    type: float
+    range: [0.1, 0.3, 0.5]
+    default: 0.1
+large:
+  max_iter:
+    type: int
+    range: [100, 10000]
+    default: 200
+    step: 50
+  population_size:
+    type: int
+    range: [50, 5000]
+    default: 100
+    step: 10
+  num_hawks:
+    type: int
+    range: [5, 5000]
+    default: 10
+    step: 1
+  num_iterations:
+    type: int
+    range: [10, 5000]
+    default: 30
+    step: 5
+  lower_bound:
+    type: float
+    range: [0.0, 0.5]
+    default: 0.0
+    step: 0.1
+  upper_bound:
+    type: float
+    range: [0.5, 2.0]
+    default: 1.0
+    step: 0.1
+  learning_rate:
+    type: float
+    range: [0.0001, 0.01]
+    default: 0.0001
+  beta:
+    type: float
+    range: [1.0, 2.5]
+    default: 1.5
+  p:
+    type: float
+    range: [0.1, 0.3, 0.5]
+    default: 0.1

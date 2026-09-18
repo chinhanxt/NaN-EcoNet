@@ -1,0 +1,74 @@
+small:
+  i_max:
+    type: int
+    range: [5, 10, 20, 50, 70, 100]
+    default: 20
+  pop_size: 
+    type: int
+    range: [50, 100, 150, 200, 250, 300]
+  c_rate:
+    type: float
+    range: [0.1, 0.2, 0.5, 0.7, 0.9, 0.95]
+    default: 0.95
+  m_rate:
+    type: float
+    range: [0.1, 0.2, 0.5, 0.7, 0.9]
+    default: 0.1
+  ls_intensity:
+    type: int
+    range: [5hho, 10, 20, 50, 70, 100, 150, 200]
+    default: 20
+  p:
+    type: float
+    range: []
+    default: 0.5
+medium:
+  i_max: 
+    type: int
+    range: [10, 20, 50, 70, 100, 150, 200]
+    default: 50
+  pop_size: 
+    type: int
+    range: [100, 200, 300, 400, 500, 600]
+    default: 200
+  c_rate: 
+    type: float
+    range: [0.1, 0.2, 0.5, 0.7, 0.9, 0.95]
+    default: 0.95
+  m_rate: 
+    type: float
+    range: [0.1, 0.2, 0.5, 0.7, 0.9]
+    default: 0.1
+  ls_intensity:
+    type: int
+    range: [20, 50, 70, 100, 150, 200]
+    default: 50
+  p:
+    type: float
+    range: []
+    default: 0.3
+large:
+  i_max: 
+    type: int
+    range: [60, 70, 80, 90, 100, 110]
+    default: 70
+  pop_size: 
+    type: int
+    range: [100, 150, 200, 250, 300]
+    default: 150
+  c_rate: 
+    type: float
+    range: [0.1, 0.2, 0.5, 0.7, 0.9, 0.95]
+    default: 0.95
+  m_rate: 
+    type: float
+    range: [0.1, 0.2, 0.5, 0.7, 0.9]
+    default: 0.1
+  ls_intensity: 
+    type: int
+    range: [30, 40, 50, 60, 70, 80, 90, 100]
+    default: 50
+  p:
+    type: float
+    range: []
+    default: 0.1

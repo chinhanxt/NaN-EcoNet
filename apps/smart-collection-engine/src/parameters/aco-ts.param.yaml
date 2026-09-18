@@ -1,0 +1,41 @@
+small:
+  data_dir: ../data/25
+  params:
+    num_ants: 1024
+    Q: 9
+    alpha: 4.25
+    beta: 1.25
+    evaporation_rate: 0.21
+    num_iterations: 20
+    p: 0.5
+    stagnation_limit: 20
+  num_runs: 10
+  output_csv: ../output/solutions/small_aco_ts.csv
+
+medium:
+  data_dir: ../data/50
+  params:
+    Q: 9
+    alpha: 4.25
+    beta: 1.25
+    evaporation_rate: 0.21
+    num_ants: 1536
+    num_iterations: 40
+    p: 0.3
+    stagnation_limit: 20
+  num_runs: 5
+  output_csv: ../output/solutions/medium_aco_ts.csv
+
+large:
+  data_dir: ../data/100
+  params:
+    Q: 9
+    alpha: 4.25
+    beta: 1.25
+    evaporation_rate: 0.21
+    num_ants: 3072
+    num_iterations: 50
+    p: 0.1
+    stagnation_limit: 20
+  num_runs: 5
+  output_csv: ../output/solutions/large_aco_ts.csv

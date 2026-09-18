@@ -1,0 +1,44 @@
+small:
+  data_dir: ../data/25
+  params:
+    m: 15
+    I: 10 # Number of iterations
+    p: 64
+    LS: 0 # Number of local search iterations
+    t: 10
+    Q: 2.0
+    alpha: 1.25
+    beta: 1.0
+    rho: 0.5
+  num_runs: 10
+  output_csv: ../output/solutions/small_paco.csv
+
+medium:
+  data_dir: ../data/50
+  params:
+    m: 30
+    I: 10 # Number of iterations
+    Q: 2.0
+    t: 40
+    LS: 40 # Number of local search iterations
+    alpha: 1.25
+    beta: 1.0
+    p: 64
+    rho: 0.5
+  num_runs: 10
+  output_csv: ../output/solutions/medium_paco.csv
+
+large:
+  data_dir: ../data/100
+  params:
+    m: 50
+    I: 10 # Number of iterations
+    Q: 2.0
+    LS: 100 # Number of local search iterations
+    alpha: 1.25
+    beta: 1.0
+    p: 64
+    rho: 0.5
+    t: 40
+  num_runs: 10
+  output_csv: ../output/solutions/large_paco.csv

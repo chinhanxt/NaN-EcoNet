@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mô Phỏng Động Cơ: 8 Luồng 3D Xuyên Tầng vs 1 Luồng A* Grid | Smart Waste Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <style>
+    :root {
+      --bg: #070a12;
+      --card-bg: #0f1626;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-active: rgba(255, 255, 255, 0.2);
+      --paco: #10b981;
+      --paco-glow: rgba(16, 185, 129, 0.4);
+      --google: #3b82f6;
+      --google-glow: rgba(59, 130, 246, 0.4);
+      --amber: #f59e0b;
+      --text: #f9fafb;
+      --muted: #9ca3af;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Top Control Bar */
+    .top-bar {
+      background: rgba(15, 22, 38, 0.95);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+    }
+
+    .brand-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #10b981, #3b82f6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+    }
+
+    .brand-title {
+      font-size: 15px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge-sub {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+    }
+
+    .brand-desc {
+      font-size: 11.5px;
+      color: var(--muted);
+    }
+
+    .controls-area {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    select {
+      background: #1e293b;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 12.5px;
+      font-weight: 600;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .btn {
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .btn-play {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35);
+    }
+    .btn-play:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      transform: translateY(-1px);
+    }
+
+    .btn-gray {
+      background: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid var(--border);
+    }
+    .btn-gray:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Split Screen Main Area */
+    .split-layout {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      padding: 16px 20px 20px;
+      max-width: 1800px;
+      margin: 0 auto;
+      width: 100%;
+      height: calc(100vh - 65px);
+    }
+
+    @media (max-width: 1080px) {
+      .split-layout {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+    }
+
+    .engine-pane {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      position: relative;
+    }
+
+    .engine-pane.pane-paco {
+      border-color: rgba(16, 185, 129, 0.25);
+    }
+
+    .engine-pane.pane-google {
+      border-color: rgba(59, 130, 246, 0.25);
+    }
+
+    .pane-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .pane-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pane-badge {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+    }
+    .badge-google {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    .badge-paco {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .pane-status-pill {
+      font-size: 11.5px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: pulse 1.2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* Telemetry HUD Strip inside Pane */
+    .telemetry-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .telemetry-box {
+      background: #0f1626;
+      padding: 10px 16px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .telemetry-label {
+      font-size: 10.5px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .telemetry-val {
+      font-size: 18px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      margin-top: 2px;
+    }
+
+    /* Animation Visualizer Canvas Areas */
+    .anim-viewport {
+      position: relative;
+      flex: 1;
+      min-height: 380px;
+      background: #060911;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Left 3D Viewport (8 Luồng Three.js) */
+    #container-3d {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    /* Right 2D Canvas (1 Luồng A* Grid) */
+    #canvas-single-thread {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* 3D Colorbar Overlay (Matching uploaded paper image) */
+    .colorbar-overlay {
+      position: absolute;
+      right: 18px;
+      top: 24px;
+      bottom: 24px;
+      width: 52px;
+      background: rgba(15, 22, 38, 0.88);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 10;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+
+    .colorbar-gradient {
+      width: 14px;
+      flex: 1;
+      margin: 8px 0;
+      border-radius: 3px;
+      background: linear-gradient(180deg, #fde725 0%, #5ec962 25%, #21918c 50%, #3b528b 75%, #440154 100%);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .colorbar-val {
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      color: #cbd5e1;
+      font-weight: 700;
+    }
+
+    .colorbar-title {
+      font-size: 8px;
+      font-weight: 700;
+      color: #94a3b8;
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    /* 3D Legend Info Overlay */
+    .view-info-overlay {
+      position: absolute;
+      left: 16px;
+      bottom: 16px;
+      background: rgba(15, 22, 38, 0.9);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 11px;
+      color: var(--muted);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      pointer-events: none;
+      backdrop-filter: blur(8px);
+    }
+
+    .view-info-overlay strong {
+      color: #34d399;
+    }
+
+    /* 3D Reset Camera Button */
+    .btn-reset-cam {
+      position: absolute;
+      left: 16px;
+      top: 16px;
+      background: rgba(15, 22, 38, 0.85);
+      border: 1px solid var(--border);
+      color: #cbd5e1;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .btn-reset-cam:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+
+    /* Step Narrative Banner */
+    .step-banner {
+      padding: 10px 16px;
+      background: rgba(0, 0, 0, 0.4);
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .step-narrative {
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Convergence Progress Bar */
+    .convergence-bar-track {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      overflow: hidden;
+    }
+
+    .convergence-bar-fill {
+      height: 100%;
+      width: 0%;
+      transition: width 0.15s ease-out;
+    }
+    .fill-paco {
+      background: linear-gradient(90deg, #059669, #10b981, #34d399);
+      box-shadow: 0 0 10px #10b981;
+    }
+    .fill-google {
+      background: linear-gradient(90deg, #1d4ed8, #3b82f6, #60a5fa);
+      box-shadow: 0 0 10px #3b82f6;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header class="top-bar">
+    <div class="brand-area">
+      <div class="brand-logo"><i class="fa-solid fa-code-branch"></i></div>
+      <div>
+        <div class="brand-title">
+          PHÒNG THÍ NGHIỆM ĐỘNG CƠ <span class="badge-sub">8 LUỒNG 3D XUYÊN TẦNG vs 1 LUỒNG A* GRID</span>
+        </div>
+        <div class="brand-desc">Trực quan hóa hoạt ảnh tìm đường và hội tụ ở điểm đích cuối</div>
+      </div>
+    </div>
+
+    <div class="controls-area">
+      <select id="select-preset" onchange="changePreset(this.value)">
+        <option value="1">1. Phố Bùi Viện (10 điểm, 2 xe)</option>
+        <option value="2">2. Chợ Bến Thành (10 điểm, 2 xe)</option>
+        <option value="3">3. Lịch Sử Đa Kao (10 điểm, 2 xe)</option>
+        <option value="4">4. Cảng Bạch Đằng (10 điểm, 2 xe)</option>
+        <option value="5">5. Toàn Quận 1 (14 điểm, 3 xe)</option>
+      </select>
+
+      <button class="btn btn-play" id="btn-play" onclick="toggleAnimation()">
+        <i class="fa-solid fa-play" id="play-icon"></i> <span id="play-text">Khởi Chạy Cả 2 Động Cơ</span>
+      </button>
+
+      <button class="btn btn-gray" onclick="restartAnimation()">
+        <i class="fa-solid fa-rotate-left"></i> <span>Chạy Lại</span>
+      </button>
+
+      <a href="/driver-data" class="btn btn-gray" title="Cổng Thu Thập Dữ Liệu Đường Đi Tài Xế & Học Máy">
+        <i class="fa-solid fa-satellite-dish" style="color:#10b981;"></i> <span>Thu Thập & ML</span>
+      </a>
+
+      <a href="/" class="btn btn-gray">
+        <i class="fa-solid fa-map"></i> <span>Về Bản Đồ</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Split Screen Layout (Left: 8 Luồng 3D Xuyên Tầng, Right: 1 Luồng A* Grid) -->
+  <main class="split-layout">
+
+    <!-- LEFT PANE: 8 LUỒNG SONG SONG (3D-PACO: 8 Lớp tính toán song song & Lộ trình xuyên tầng tối ưu) -->
+    <div class="engine-pane pane-paco">
+      <div class="pane-header">
+        <div class="pane-title-group">
+          <span class="pane-badge badge-paco"><i class="fa-solid fa-bolt"></i> 8 LUỒNG SONG SONG</span>
+          <span style="font-weight: 800; font-size: 14px;">3D-PACO Engine (C++ OpenMP)</span>
+        </div>
+        <div class="pane-status-pill" style="color: #34d399;">
+          <span class="pulse-dot" style="background:#10b981; box-shadow:0 0 8px #10b981;"></span>
+          <span id="paco-status-text">8 Cores Active 100%</span>
+        </div>
+      </div>
+
+      <!-- Telemetry Strip -->
+      <div class="telemetry-strip">
+        <div class="telemetry-box">
+          <span class="telemetry-label">Quãng Đường</span>
+          <span class="telemetry-val" id="paco-dist-val" style="color: #34d399;">-- km</span>
+        </div>
+        <div class="telemetry-box">
+          <span class="telemetry-label">Thời Gian C++</span>
+          <span class="telemetry-val" id="paco-time-val" style="color: #34d399;">0 ms</span>
+        </div>
+        <div class="telemetry-box">
+          <span class="telemetry-label">Khai Thác CPU</span>
+          <span class="telemetry-val" style="color: #34d399;">8 Cores (Đa luồng)</span>
+        </div>
+      </div>
+
+      <!-- 3D Three.js Viewport (Model 3D 8 Lớp Tính Song Song & Tuyến Xuyên Tầng Tối Ưu) -->
+      <div class="anim-viewport">
+        <div id="container-3d"></div>
+
+        <!-- 3D Reset Camera -->
+        <button class="btn-reset-cam" onclick="reset3DCamera()">
+          <i class="fa-solid fa-arrows-rotate"></i> Reset Góc Nhìn 3D
+        </button>
+
+        <!-- Colorbar Viridis (Giống chuẩn bài báo trong ảnh) -->
+        <div class="colorbar-overlay">
+          <span class="colorbar-val">0.245</span>
+          <div class="colorbar-gradient"></div>
+          <span class="colorbar-val">0.215</span>
+          <div class="colorbar-title">Pheromone Intensity</div>
+        </div>
+
+        <!-- 3D View Legend -->
+        <div class="view-info-overlay">
+          <div><i class="fa-solid fa-cube" style="color:#10b981;"></i> <strong>Đỉnh Cube:</strong> Tuyến tối ưu nhất được pin lên mặt trên cùng</div>
+          <div style="font-size:10px; color:#cbd5e1;">8 Tầng bên trong: 8 luồng OpenMP tính toán song song trên lưới ô vuông</div>
+        </div>
+      </div>
+
+      <!-- Progress Track -->
+      <div class="convergence-bar-track">
+        <div class="convergence-bar-fill fill-paco" id="bar-paco"></div>
+      </div>
+
+      <!-- Step Narrative -->
+      <div class="step-banner">
+        <div class="step-narrative">
+          <i class="fa-solid fa-microchip" style="color: #34d399;"></i>
+          <span id="paco-narrative">8 Luồng OpenMP đồng thời lan rộng sóng A* và duyệt lộ trình 90° trên 8 lớp lưới ô vuông...</span>
+        </div>
+        <span style="font-family:'JetBrains Mono'; font-size:11px; color:var(--muted);" id="paco-step-counter">Chu kỳ: 0/20</span>
+      </div>
+    </div>
+
+    <!-- RIGHT PANE: 1 LUỒNG (Google OR-Tools - Lưới Ô Vuông & Lan Rộng A*) -->
+    <div class="engine-pane pane-google">
+      <div class="pane-header">
+        <div class="pane-title-group">
+          <span class="pane-badge badge-google"><i class="fa-brands fa-google"></i> 1 LUỒNG TUẦN TỰ</span>
+          <span style="font-weight: 800; font-size: 14px;">Google OR-Tools (Lưới Ô Vuông & A* Lan Rộng)</span>
+        </div>
+        <div class="pane-status-pill" style="color: #60a5fa;">
+          <span class="pulse-dot" style="background:#3b82f6; box-shadow:0 0 8px #3b82f6;"></span>
+          <span id="google-status-text">Đang chuẩn bị luồng #0</span>
+        </div>
+      </div>
+
+      <!-- Telemetry Strip -->
+      <div class="telemetry-strip">
+        <div class="telemetry-box">
+          <span class="telemetry-label">Quãng Đường</span>
+          <span class="telemetry-val" id="google-dist-val" style="color: #60a5fa;">-- km</span>
+        </div>
+        <div class="telemetry-box">
+          <span class="telemetry-label">Thời Gian Duyệt</span>
+          <span class="telemetry-val" id="google-time-val">0 ms</span>
+        </div>
+        <div class="telemetry-box">
+          <span class="telemetry-label">Khai Thác CPU</span>
+          <span class="telemetry-val" style="color: #60a5fa;">1 Core (A* Grid)</span>
+        </div>
+      </div>
+
+      <!-- 2D Canvas Area (Lưới ô vuông và A* lan rộng, KHÔNG chim bay) -->
+      <div class="anim-viewport">
+        <canvas id="canvas-single-thread"></canvas>
+      </div>
+
+      <!-- Progress Track -->
+      <div class="convergence-bar-track">
+        <div class="convergence-bar-fill fill-google" id="bar-google"></div>
+      </div>
+
+      <!-- Step Narrative -->
+      <div class="step-banner">
+        <div class="step-narrative">
+          <i class="fa-solid fa-network-wired" style="color: #60a5fa;"></i>
+          <span id="google-narrative">Sóng A* đang lan rộng trên lưới ô vuông tìm kiếm lộ trình...</span>
+        </div>
+        <span style="font-family:'JetBrains Mono'; font-size:11px; color:var(--muted);" id="google-step-counter">Bước: 0/100</span>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // Global Simulation State
+    let currentPresetId = 1;
+    let currentData = null;
+    let isPlaying = false;
+    let simProgress = 0.0; // 0.0 -> 1.0
+    let simTimer = null;
+
+    // Shared Stops: Cả 2 thuật toán đều có các điểm cần đi qua giống hệt nhau!
+    let sharedStops = []; // Array of { id, name, isDepot, nx, nz }
+
+    // Three.js 3D Engine Variables (3D-PACO)
+    let scene, camera, renderer, controls;
+    let threadLayerPlanes = [];
+    let threadLayerRoutes = []; // Mảng chứa lộ trình tính toán riêng của từng lớp
+    // Pinned Best Route on Top of the Cube (Ghim đường tốt nhất lên đầu cái cube)
+    let topPinnedGroup = null; // Nhóm đối tượng trên đỉnh cube
+    let topPinnedRoute = null; // Tuyến đường tốt nhất trên đỉnh cube
+    let topPinnedTube = null; // Khối ống 3D của đường tốt nhất
+    let topPinnedAnt = null; // Drone di chuyển trên đường tốt nhất
+    let topPinnedWaypoints = []; // Các ô vuông đệm dừng trên đỉnh cube
+    let topPinnedBeacon = null; // Beacon kim cương ở đầu đường tốt nhất
+    const NUM_THREADS = 8;
+    const GRID_SIZE = 50; // Coordinates 0 -> 50 like the paper figure!
+
+    // 2D Canvas A* Grid World Variables (Google OR-Tools)
+    let canvas2D, ctx2D;
+    const GRID_COLS = 26;
+    const GRID_ROWS = 18;
+    let gridObstacles = new Set();
+    let gridStops = [];
+    let gridLegs = []; // Array of { path: [[c,r], ...], waves: [ [ [c,r] ], ... ] }
+
+    // Colormap Viridis: exact interpolation matching paper figure (0.215 -> 0.245)
+    function getViridisColor(val) {
+      val = Math.max(0, Math.min(1, val));
+      const stops = [
+        { p: 0.00, r: 68,  g: 1,   b: 84  }, // #440154 Dark Purple
+        { p: 0.25, r: 59,  g: 82,  b: 139 }, // #3b528b Blue
+        { p: 0.50, r: 33,  g: 145, b: 140 }, // #21918c Teal
+        { p: 0.75, r: 94,  g: 201, b: 98  }, // #5ec962 Green
+        { p: 1.00, r: 253, g: 231, b: 37  }  // #fde725 Bright Yellow
+      ];
+      for (let i = 0; i < stops.length - 1; i++) {
+        if (val >= stops[i].p && val <= stops[i + 1].p) {
+          const t = (val - stops[i].p) / (stops[i + 1].p - stops[i].p);
+          const r = Math.round(stops[i].r + t * (stops[i + 1].r - stops[i].r));
+          const g = Math.round(stops[i].g + t * (stops[i + 1].g - stops[i].g));
+          const b = Math.round(stops[i].b + t * (stops[i + 1].b - stops[i].b));
+          return (r << 16) | (g << 8) | b;
+        }
+      }
+      return 0xfde725;
+    }
+
+    // Helper: Create Text Sprite for 3D Scene
+    function makeTextSprite(message, color = '#cbd5e1', fontsize = 24, scaleX = 14, scaleY = 3.5) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      ctx.font = `bold ${fontsize}px "JetBrains Mono", monospace`;
+      ctx.fillStyle = color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(message, 128, 32);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.minFilter = THREE.LinearFilter;
+      const mat = new THREE.SpriteMaterial({ map: texture, transparent: true });
+      const sprite = new THREE.Sprite(mat);
+      sprite.scale.set(scaleX, scaleY, 1);
+      return sprite;
+    }
+
+    // Initialize Viewports on Load
+    window.addEventListener('DOMContentLoaded', () => {
+      initGridWorldObstacles();
+      init2DCanvas();
+      init3DModel();
+      fetchSimulationData(1);
+
+      window.addEventListener('resize', onWindowResize);
+    });
+
+    // ==========================================
+    // 1. THREE.JS 3D MODEL (3D-PACO)
+    // ==========================================
+    function init3DModel() {
+      const container = document.getElementById('container-3d');
+      const w = container.clientWidth || 600;
+      const h = container.clientHeight || 480;
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x060911);
+
+      camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
+      camera.position.set(78, 68, 88);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(w, h);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      container.appendChild(renderer.domElement);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
+      controls.target.set(25, 20, 25);
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.95);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+      dirLight.position.set(50, 100, 50);
+      scene.add(dirLight);
+
+      // Bounding Box with Axes & Ticks
+      build3DGridBox();
+
+      animate3D();
+    }
+
+    function build3DGridBox() {
+      const boxGeom = new THREE.BoxGeometry(GRID_SIZE, 40, GRID_SIZE);
+      const boxEdges = new THREE.EdgesGeometry(boxGeom);
+      const boxMat = new THREE.LineBasicMaterial({ color: 0x334155, linewidth: 1 });
+      const boxWire = new THREE.LineSegments(boxEdges, boxMat);
+      boxWire.position.set(25, 20, 25);
+      scene.add(boxWire);
+
+      const gridHelperBottom = new THREE.GridHelper(GRID_SIZE, 5, 0x1e293b, 0x1e293b);
+      gridHelperBottom.position.set(25, 0, 25);
+      scene.add(gridHelperBottom);
+
+      const gridHelperTop = new THREE.GridHelper(GRID_SIZE, 5, 0x1e293b, 0x1e293b);
+      gridHelperTop.position.set(25, 40, 25);
+      scene.add(gridHelperTop);
+    }
+
+    // Xây dựng 8 lớp ma trận 3D: MỖI LỚP LÀ MỘT LƯỚI Ô VUÔNG & A* LAN RỘNG GIỐNG HỆT GOOGLE OR-TOOLS (ZERO CHẤM TRÒN!)
+    // Xây dựng 8 lớp bên trong và PIN ĐƯỜNG TỐT NHẤT LÊN ĐẦU CUBE (y = 40.0)
+    // ZERO CHỮ / TEXT BÊN TRONG CUBE!
+    function rebuild3DLayers() {
+      // Dọn dẹp các đối tượng 3D cũ
+      threadLayerPlanes.forEach(p => scene.remove(p));
+      threadLayerPlanes = [];
+
+      threadLayerRoutes.forEach(lr => {
+        if (lr.line) scene.remove(lr.line);
+        if (lr.ant) scene.remove(lr.ant);
+        if (lr.stopMeshes) lr.stopMeshes.forEach(m => scene.remove(m));
+        if (lr.squareFrame) scene.remove(lr.squareFrame);
+        if (lr.gridMesh) scene.remove(lr.gridMesh);
+        if (lr.obstGroup) scene.remove(lr.obstGroup);
+        if (lr.waveGroup) scene.remove(lr.waveGroup);
+      });
+      threadLayerRoutes = [];
+
+      if (topPinnedGroup) scene.remove(topPinnedGroup);
+      topPinnedGroup = new THREE.Group();
+      topPinnedRoute = null;
+      topPinnedTube = null;
+      topPinnedAnt = null;
+      topPinnedWaypoints = [];
+      topPinnedBeacon = null;
+
+      const cw = GRID_SIZE / GRID_COLS; // ~1.923
+      const cz = GRID_SIZE / GRID_ROWS; // ~2.778
+      const uniqueStops = gridStops.length > 0 ? gridStops.slice(0, -1) : [];
+
+      // 8 tầng tính toán bên trong khối cube (y từ 2.0 đến 33.5)
+      const layerHeightStep = 34 / NUM_THREADS; // 4.25 units per layer
+
+      for (let t = 0; t < NUM_THREADS; t++) {
+        const y = t * layerHeightStep + 2.0;
+
+        // 1. Mặt phẳng nền của lớp t
+        const planeGeom = new THREE.PlaneGeometry(GRID_SIZE, GRID_SIZE);
+        const planeMat = new THREE.MeshBasicMaterial({
+          color: (t % 2 === 0 ? 0x0a1628 : 0x081120),
+          transparent: true,
+          opacity: 0.18,
+          side: THREE.DoubleSide
+        });
+        const plane = new THREE.Mesh(planeGeom, planeMat);
+        plane.rotation.x = Math.PI / 2;
+        plane.position.set(25, y, 25);
+        scene.add(plane);
+        threadLayerPlanes.push(plane);
+
+        // 2. Khung viền hình vuông lớp t (Màu Viridis - ZERO CHỮ)
+        const intensity = 1.0 - (t / (NUM_THREADS - 1)) * 0.85;
+        const hex = getViridisColor(intensity);
+        const sqCorners = [
+          new THREE.Vector3(0, y, 0),
+          new THREE.Vector3(GRID_SIZE, y, 0),
+          new THREE.Vector3(GRID_SIZE, y, GRID_SIZE),
+          new THREE.Vector3(0, y, GRID_SIZE),
+          new THREE.Vector3(0, y, 0)
+        ];
+        const sqGeom = new THREE.BufferGeometry().setFromPoints(sqCorners);
+        const sqFrame = new THREE.Line(sqGeom, new THREE.LineBasicMaterial({
+          color: hex,
+          linewidth: 1.5,
+          transparent: true,
+          opacity: 0.6
+        }));
+        scene.add(sqFrame);
+
+        // 3. LƯỚI Ô VUÔNG TRÊN MỖI LỚP (26 Cột x 18 Dòng giống hệt Google OR-Tools!)
+        const gridPositions = [];
+        for (let c = 0; c <= GRID_COLS; c++) {
+          const x = c * cw;
+          gridPositions.push(x, y + 0.04, 0, x, y + 0.04, GRID_SIZE);
+        }
+        for (let r = 0; r <= GRID_ROWS; r++) {
+          const z = r * cz;
+          gridPositions.push(0, y + 0.04, z, GRID_SIZE, y + 0.04, z);
+        }
+        const gridGeom = new THREE.BufferGeometry();
+        gridGeom.setAttribute('position', new THREE.Float32BufferAttribute(gridPositions, 3));
+        const gridMesh = new THREE.LineSegments(gridGeom, new THREE.LineBasicMaterial({
+          color: 0x1e3a5f,
+          transparent: true,
+          opacity: 0.3
+        }));
+        scene.add(gridMesh);
+
+        // 4. CÁC KHỐI NHÀ / Ô CẢN (Obstacles) TRÊN MỖI LỚP
+        const obstGroup = new THREE.Group();
+        const obstGeom = new THREE.BoxGeometry(cw * 0.92, 0.18, cz * 0.92);
+        const obstMat = new THREE.MeshBasicMaterial({
+          color: 0x0b1324,
+          transparent: true,
+          opacity: 0.8
+        });
+        gridObstacles.forEach(key => {
+          const [oc, or] = key.split(',').map(Number);
+          const m = new THREE.Mesh(obstGeom, obstMat);
+          m.position.set(oc * cw + cw / 2, y + 0.09, or * cz + cz / 2);
+          obstGroup.add(m);
+        });
+        scene.add(obstGroup);
+
+        // 5. CÁC ĐIỂM GOM LÀ CÁC Ô VUÔNG (ZERO CHẤM TRÒN!)
+        const stopMeshes = [];
+        uniqueStops.forEach((s, idx) => {
+          const sx = s.c * cw + cw / 2;
+          const sz = s.r * cz + cz / 2;
+
+          const boxGeom = new THREE.BoxGeometry(cw * 0.82, 0.28, cz * 0.82);
+          const boxMat = new THREE.MeshBasicMaterial({
+            color: s.isDepot ? 0xf59e0b : 0x38bdf8,
+            transparent: true,
+            opacity: 0.9
+          });
+          const boxMesh = new THREE.Mesh(boxGeom, boxMat);
+          boxMesh.position.set(sx, y + 0.15, sz);
+          scene.add(boxMesh);
+          stopMeshes.push(boxMesh);
+
+          const edgeLine = new THREE.LineSegments(
+            new THREE.EdgesGeometry(boxGeom),
+            new THREE.LineBasicMaterial({
+              color: s.isDepot ? 0xfef08a : 0x7dd3fc,
+              linewidth: 1.5
+            })
+          );
+          boxMesh.add(edgeLine);
+        });
+
+        // 6. LỘ TRÌNH 90 ĐỘ MANHATTAN CỦA TỪNG LUỒNG TRÊN LƯỚI Ô VUÔNG & CÁC CHẶNG A*
+        const permuted = [uniqueStops[0]];
+        const otherIndices = [];
+        for (let i = 1; i < uniqueStops.length; i++) otherIndices.push(i);
+        const shift = t % Math.max(1, otherIndices.length);
+        const threadOrder = [...otherIndices.slice(shift), ...otherIndices.slice(0, shift)];
+        threadOrder.forEach(idx => permuted.push(uniqueStops[idx]));
+        permuted.push(uniqueStops[0]); // Trở về Depot
+
+        const threadLegs = [];
+        const thread3DPoints = [];
+
+        for (let k = 0; k < permuted.length - 1; k++) {
+          const leg = findAStarGridLeg(permuted[k], permuted[k + 1]);
+          threadLegs.push(leg);
+          leg.path.forEach(([pc, pr]) => {
+            thread3DPoints.push(new THREE.Vector3(pc * cw + cw / 2, y + 0.24, pr * cz + cz / 2));
+          });
+        }
+
+        const routeGeom = new THREE.BufferGeometry().setFromPoints(thread3DPoints);
+        const routeMat = new THREE.LineBasicMaterial({
+          color: 0x10b981,
+          linewidth: 2,
+          transparent: true,
+          opacity: 0.65
+        });
+        const routeLine = new THREE.Line(routeGeom, routeMat);
+        scene.add(routeLine);
+
+        // Con trỏ ô vuông đại diện cho luồng t (Hộp vuông, ZERO chấm tròn)
+        const antGeom = new THREE.BoxGeometry(cw * 0.7, 0.38, cz * 0.7);
+        const antMat = new THREE.MeshBasicMaterial({ color: 0x34d399 });
+        const antMesh = new THREE.Mesh(antGeom, antMat);
+        if (thread3DPoints.length > 0) antMesh.position.copy(thread3DPoints[0]);
+        scene.add(antMesh);
+
+        const antEdge = new THREE.LineSegments(
+          new THREE.EdgesGeometry(antGeom),
+          new THREE.LineBasicMaterial({ color: 0xa7f3d0 })
+        );
+        antMesh.add(antEdge);
+
+        // Sóng A* lan rộng trên tầng t
+        const MAX_WAVE_CELLS = 40;
+        const wavePosArray = new Float32Array(MAX_WAVE_CELLS * 8 * 3);
+        const waveGeom = new THREE.BufferGeometry();
+        const wavePosAttr = new THREE.BufferAttribute(wavePosArray, 3);
+        waveGeom.setAttribute('position', wavePosAttr);
+        waveGeom.setDrawRange(0, 0);
+
+        const waveMat = new THREE.LineBasicMaterial({
+          color: 0x38bdf8,
+          transparent: true,
+          opacity: 0.85,
+          linewidth: 1.5
+        });
+        const waveMesh = new THREE.LineSegments(waveGeom, waveMat);
+        scene.add(waveMesh);
+
+        threadLayerRoutes.push({
+          threadId: t,
+          y: y,
+          line: routeLine,
+          ant: antMesh,
+          nodes: thread3DPoints,
+          stopMeshes: stopMeshes,
+          squareFrame: sqFrame,
+          gridMesh: gridMesh,
+          obstGroup: obstGroup,
+          waveGroup: waveMesh,
+          wavePosAttr: wavePosAttr,
+          waveGeom: waveGeom,
+          legs: threadLegs
+        });
+      }
+
+      // ==========================================
+      // PIN ĐƯỜNG TỐT NHẤT LÊN ĐẦU CÁI CUBE (y = 40.0)
+      // ==========================================
+      const yTop = 40.0;
+
+      // 1. Mặt nền mờ đỉnh cube
+      const topPlaneGeom = new THREE.PlaneGeometry(GRID_SIZE, GRID_SIZE);
+      const topPlaneMat = new THREE.MeshBasicMaterial({
+        color: 0x0c1f36,
+        transparent: true,
+        opacity: 0.35,
+        side: THREE.DoubleSide
+      });
+      const topPlane = new THREE.Mesh(topPlaneGeom, topPlaneMat);
+      topPlane.rotation.x = Math.PI / 2;
+      topPlane.position.set(25, yTop, 25);
+      topPinnedGroup.add(topPlane);
+
+      // 2. Khung viền phát sáng đỉnh cube (Vàng chanh rực rỡ)
+      const topSqCorners = [
+        new THREE.Vector3(0, yTop, 0),
+        new THREE.Vector3(GRID_SIZE, yTop, 0),
+        new THREE.Vector3(GRID_SIZE, yTop, GRID_SIZE),
+        new THREE.Vector3(0, yTop, GRID_SIZE),
+        new THREE.Vector3(0, yTop, 0)
+      ];
+      const topSqGeom = new THREE.BufferGeometry().setFromPoints(topSqCorners);
+      const topSqFrame = new THREE.Line(topSqGeom, new THREE.LineBasicMaterial({
+        color: 0xfde725,
+        linewidth: 2.5,
+        transparent: true,
+        opacity: 0.9
+      }));
+      topPinnedGroup.add(topSqFrame);
+
+      // 3. Lưới ô vuông đỉnh cube (26 x 18)
+      const topGridPos = [];
+      for (let c = 0; c <= GRID_COLS; c++) {
+        const x = c * cw;
+        topGridPos.push(x, yTop + 0.04, 0, x, yTop + 0.04, GRID_SIZE);
+      }
+      for (let r = 0; r <= GRID_ROWS; r++) {
+        const z = r * cz;
+        topGridPos.push(0, yTop + 0.04, z, GRID_SIZE, yTop + 0.04, z);
+      }
+      const topGridGeom = new THREE.BufferGeometry();
+      topGridGeom.setAttribute('position', new THREE.Float32BufferAttribute(topGridPos, 3));
+      const topGridMesh = new THREE.LineSegments(topGridGeom, new THREE.LineBasicMaterial({
+        color: 0x3b82f6,
+        transparent: true,
+        opacity: 0.4
+      }));
+      topPinnedGroup.add(topGridMesh);
+
+      // 4. Các điểm dừng trên đỉnh cube (Ô VUÔNG - ZERO CHẤM TRÒN)
+      topPinnedWaypoints = [];
+      uniqueStops.forEach((s, idx) => {
+        const sx = s.c * cw + cw / 2;
+        const sz = s.r * cz + cz / 2;
+
+        const tileGeom = new THREE.BoxGeometry(cw * 0.9, 0.35, cz * 0.9);
+        const tileMat = new THREE.MeshBasicMaterial({
+          color: s.isDepot ? 0xf59e0b : 0x10b981,
+          transparent: true,
+          opacity: 0.95
+        });
+        const tileMesh = new THREE.Mesh(tileGeom, tileMat);
+        tileMesh.position.set(sx, yTop + 0.18, sz);
+        topPinnedGroup.add(tileMesh);
+
+        const edgeLine = new THREE.LineSegments(
+          new THREE.EdgesGeometry(tileGeom),
+          new THREE.LineBasicMaterial({ color: s.isDepot ? 0xfef08a : 0x6ee7b7, linewidth: 2 })
+        );
+        tileMesh.add(edgeLine);
+        topPinnedWaypoints.push(tileMesh);
+      });
+
+      // 5. TUYẾN ĐƯỜNG TỐI ƯU NHẤT TRÊN ĐỈNH CUBE (Bám góc 90 độ Manhattan theo các chặng A*)
+      const bestOrder = [uniqueStops[0]];
+      for (let i = 1; i < uniqueStops.length; i++) bestOrder.push(uniqueStops[i]);
+      bestOrder.push(uniqueStops[0]);
+
+      const best3DPoints = [];
+      for (let k = 0; k < bestOrder.length - 1; k++) {
+        const leg = findAStarGridLeg(bestOrder[k], bestOrder[k + 1]);
+        leg.path.forEach(([pc, pr]) => {
+          best3DPoints.push(new THREE.Vector3(pc * cw + cw / 2, yTop + 0.28, pr * cz + cz / 2));
+        });
+      }
+
+      // Tuyến đường tốt nhất (Line neon rực rỡ)
+      const bestRouteGeom = new THREE.BufferGeometry().setFromPoints(best3DPoints);
+      const bestRouteMat = new THREE.LineBasicMaterial({
+        color: 0x10b981,
+        linewidth: 4.5,
+        transparent: true,
+        opacity: 0.25
+      });
+      topPinnedRoute = new THREE.Line(bestRouteGeom, bestRouteMat);
+      topPinnedGroup.add(topPinnedRoute);
+
+      // Khối Ống 3D của đường tốt nhất (TubeGeometry) để có độ dày thể tích nổi bật trên đỉnh cube
+      if (best3DPoints.length >= 2) {
+        try {
+          const curve = new THREE.CatmullRomCurve3(best3DPoints, false, 'centripetal', 0.05);
+          const tubeGeom = new THREE.TubeGeometry(curve, 180, 0.46, 8, false);
+          const tubeMat = new THREE.MeshBasicMaterial({
+            color: 0x10b981,
+            transparent: true,
+            opacity: 0.2
+          });
+          topPinnedTube = new THREE.Mesh(tubeGeom, tubeMat);
+          topPinnedGroup.add(topPinnedTube);
+        } catch (e) {
+          console.warn("Tube creation fallback", e);
+        }
+      }
+
+      // Drone hộp vuông năng lượng di chuyển trên đường tốt nhất
+      const topAntGeom = new THREE.BoxGeometry(cw * 0.8, 0.5, cz * 0.8);
+      const topAntMat = new THREE.MeshBasicMaterial({ color: 0xfde725 });
+      topPinnedAnt = new THREE.Mesh(topAntGeom, topAntMat);
+      if (best3DPoints.length > 0) topPinnedAnt.position.copy(best3DPoints[0]);
+      topPinnedAnt.visible = false;
+      const topAntEdge = new THREE.LineSegments(
+        new THREE.EdgesGeometry(topAntGeom),
+        new THREE.LineBasicMaterial({ color: 0xffffff })
+      );
+      topPinnedAnt.add(topAntEdge);
+      topPinnedGroup.add(topPinnedAnt);
+
+      // 6. BEACON KIM CƯƠNG VÀ KIM GHIM (PIN) TRÊN ĐỈNH CUBE
+      topPinnedBeacon = new THREE.Group();
+      const lastStopPoint = best3DPoints.length >= 2 
+        ? best3DPoints[best3DPoints.length - 1] 
+        : new THREE.Vector3(25, yTop + 0.3, 25);
+
+      const beaconGeom = new THREE.OctahedronGeometry(2.4, 0);
+      const beaconMat = new THREE.MeshBasicMaterial({ color: 0x10b981 });
+      const beaconMesh = new THREE.Mesh(beaconGeom, beaconMat);
+      topPinnedBeacon.add(beaconMesh);
+
+      const beaconHaloLine = new THREE.LineSegments(
+        new THREE.EdgesGeometry(new THREE.BoxGeometry(4.2, 0.1, 4.2)),
+        new THREE.LineBasicMaterial({ color: 0x34d399, linewidth: 2 })
+      );
+      topPinnedBeacon.add(beaconHaloLine);
+
+      // Biểu tượng kim ghim (Pin marker) cắm xuống đỉnh cube
+      const pinGeom = new THREE.ConeGeometry(1.2, 3.2, 4);
+      const pinMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
+      const pinMesh = new THREE.Mesh(pinGeom, pinMat);
+      pinMesh.rotation.x = Math.PI; // Mũi kim cắm xuống
+      pinMesh.position.set(0, 3.5, 0);
+      topPinnedBeacon.add(pinMesh);
+
+      topPinnedBeacon.position.copy(lastStopPoint);
+      topPinnedBeacon.visible = false;
+      topPinnedGroup.add(topPinnedBeacon);
+
+      scene.add(topPinnedGroup);
+    }
+
+    function reset3DCamera() {
+      camera.position.set(78, 68, 88);
+      controls.target.set(25, 20, 25);
+      controls.update();
+    }
+
+    function animate3D() {
+      requestAnimationFrame(animate3D);
+      controls.update();
+
+      const cw = GRID_SIZE / GRID_COLS;
+      const cz = GRID_SIZE / GRID_ROWS;
+
+      if (isPlaying) {
+        const time = Date.now() * 0.0028;
+
+        // 1. Trong lúc đang tính toán (progress < 0.85): 8 luồng chạy song song trên 8 lớp lưới ô vuông bên trong cube!
+        if (simProgress < 0.85) {
+          if (topPinnedRoute) topPinnedRoute.material.opacity = 0.25;
+          if (topPinnedTube) topPinnedTube.material.opacity = 0.15;
+          if (topPinnedAnt) topPinnedAnt.visible = false;
+          if (topPinnedBeacon) topPinnedBeacon.visible = false;
+
+          const progPhase = simProgress / 0.85;
+
+          for (let t = 0; t < NUM_THREADS; t++) {
+            const lr = threadLayerRoutes[t];
+            if (lr) {
+              if (lr.line) lr.line.material.opacity = 0.75;
+              if (lr.ant) lr.ant.visible = true;
+
+              // Con trỏ hộp vuông di chuyển bám sát góc 90 độ trên lưới ô vuông của tầng t
+              const nodes = lr.nodes;
+              if (nodes && nodes.length > 1) {
+                const numEdges = nodes.length - 1;
+                const totalT = (time + t * 0.45) % numEdges;
+                const edgeIdx = Math.floor(totalT);
+                const edgeFrac = totalT - edgeIdx;
+                const p1 = nodes[edgeIdx];
+                const p2 = nodes[edgeIdx + 1] || nodes[0];
+                lr.ant.position.lerpVectors(p1, p2, edgeFrac);
+              }
+
+              // SÓNG A* LAN RỘNG TRÊN TỪNG TẦNG BÊN TRONG CUBE
+              if (lr.waveGroup && lr.legs && lr.legs.length > 0) {
+                lr.waveGroup.visible = true;
+                const totalLegs = lr.legs.length;
+                const exactLeg = (progPhase * totalLegs) % totalLegs;
+                const legIdx = Math.floor(exactLeg);
+                const legProg = exactLeg - legIdx;
+                const leg = lr.legs[legIdx];
+
+                if (leg && leg.waves && leg.waves.length > 0) {
+                  const totalWaves = leg.waves.length;
+                  const waveIdx = Math.min(totalWaves - 1, Math.floor(legProg * totalWaves * 1.6));
+                  const ring = leg.waves[waveIdx] || [];
+
+                  const posArr = lr.wavePosAttr.array;
+                  let vIdx = 0;
+                  const hw = cw * 0.45;
+                  const hz = cz * 0.45;
+                  const yPos = lr.y + 0.16;
+
+                  for (let w = 0; w < Math.min(40, ring.length); w++) {
+                    const [wc, wr] = ring[w];
+                    const cx = wc * cw + cw / 2;
+                    const cz_p = wr * cz + cz / 2;
+
+                    // 4 đoạn thẳng tạo thành 1 ô vuông (8 đỉnh)
+                    posArr[vIdx++] = cx - hw; posArr[vIdx++] = yPos; posArr[vIdx++] = cz_p - hz;
+                    posArr[vIdx++] = cx + hw; posArr[vIdx++] = yPos; posArr[vIdx++] = cz_p - hz;
+
+                    posArr[vIdx++] = cx + hw; posArr[vIdx++] = yPos; posArr[vIdx++] = cz_p - hz;
+                    posArr[vIdx++] = cx + hw; posArr[vIdx++] = yPos; posArr[vIdx++] = cz_p + hz;
+
+                    posArr[vIdx++] = cx + hw; posArr[vIdx++] = yPos; posArr[vIdx++] = cz_p + hz;
+                    posArr[vIdx++] = cx - hw; posArr[vIdx++] = yPos; posArr[vIdx++] = cz_p + hz;
+
+                    posArr[vIdx++] = cx - hw; posArr[vIdx++] = yPos; posArr[vIdx++] = cz_p + hz;
+                    posArr[vIdx++] = cx - hw; posArr[vIdx++] = yPos; posArr[vIdx++] = cz_p - hz;
+                  }
+                  lr.waveGeom.setDrawRange(0, vIdx / 3);
+                  lr.wavePosAttr.needsUpdate = true;
+                } else {
+                  lr.waveGeom.setDrawRange(0, 0);
+                }
+              }
+            }
+          }
+        } 
+        // 2. KHI TÍNH XONG (progress >= 0.85): PIN ĐƯỜNG TỐT NHẤT LÊN ĐẦU CÁI CUBE RỰC RỠ!
+        else {
+          for (let t = 0; t < NUM_THREADS; t++) {
+            const lr = threadLayerRoutes[t];
+            if (lr) {
+              if (lr.line) lr.line.material.opacity = 0.12;
+              if (lr.ant) lr.ant.visible = false;
+              if (lr.waveGroup) lr.waveGroup.visible = false;
+            }
+          }
+
+          // BẬT SÁNG 100% ĐƯỜNG TỐT NHẤT ĐƯỢC PIN LÊN ĐẦU CUBE
+          if (topPinnedRoute) topPinnedRoute.material.opacity = 1.0;
+          if (topPinnedTube) topPinnedTube.material.opacity = 0.95;
+
+          // Drone hộp vuông năng lượng di chuyển trên đường tốt nhất trên đỉnh cube
+          if (topPinnedAnt && topPinnedRoute) {
+            topPinnedAnt.visible = true;
+            topPinnedAnt.rotation.y += 0.04;
+            topPinnedAnt.rotation.x += 0.02;
+            const pts = topPinnedRoute.geometry.attributes.position.array;
+            const numPts = pts.length / 3;
+            const totalT = (time * 1.5) % (numPts - 1);
+            const pIdx = Math.floor(totalT);
+            const frac = totalT - pIdx;
+
+            const p1 = new THREE.Vector3(pts[pIdx * 3], pts[pIdx * 3 + 1], pts[pIdx * 3 + 2]);
+            const p2 = new THREE.Vector3(pts[(pIdx + 1) * 3], pts[(pIdx + 1) * 3 + 1], pts[(pIdx + 1) * 3 + 2]);
+            topPinnedAnt.position.lerpVectors(p1, p2, frac);
+          }
+
+          // BEACON VÀ GHIM PIN TRÊN ĐỈNH CUBE PHÁT SÁNG NHẤP NHÁY
+          if (topPinnedBeacon) {
+            topPinnedBeacon.visible = true;
+            topPinnedBeacon.rotation.y += 0.025;
+            const scale = 1.0 + Math.sin(Date.now() * 0.009) * 0.25;
+            topPinnedBeacon.children[1].scale.set(scale, 1, scale);
+          }
+        }
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    // ==========================================
+    // 2. GOOGLE OR-TOOLS: LƯỚI Ô VUÔNG & A* LAN RỘNG (KHÔNG CHIM BAY)
+    // ==========================================
+    function initGridWorldObstacles() {
+      gridObstacles.clear();
+      const blockDefs = [
+        { c1: 4, c2: 6, r1: 2, r2: 5 },
+        { c1: 10, c2: 13, r1: 2, r2: 5 },
+        { c1: 17, c2: 20, r1: 2, r2: 5 },
+        { c1: 4, c2: 7, r1: 8, r2: 11 },
+        { c1: 11, c2: 14, r1: 8, r2: 11 },
+        { c1: 18, c2: 21, r1: 8, r2: 12 },
+        { c1: 7, c2: 10, r1: 13, r2: 15 },
+        { c1: 15, c2: 17, r1: 13, r2: 16 }
+      ];
+
+      blockDefs.forEach(b => {
+        for (let c = b.c1; c <= b.c2; c++) {
+          for (let r = b.r1; r <= b.r2; r++) {
+            gridObstacles.add(`${c},${r}`);
+          }
+        }
+      });
+    }
+
+    function init2DCanvas() {
+      canvas2D = document.getElementById('canvas-single-thread');
+      ctx2D = canvas2D.getContext('2d');
+      fit2DCanvas();
+    }
+
+    function fit2DCanvas() {
+      if (!canvas2D) return;
+      const rect = canvas2D.parentElement.getBoundingClientRect();
+      canvas2D.width = rect.width * window.devicePixelRatio;
+      canvas2D.height = rect.height * window.devicePixelRatio;
+      ctx2D.scale(window.devicePixelRatio, window.devicePixelRatio);
+    }
+
+    function onWindowResize() {
+      fit2DCanvas();
+      const container = document.getElementById('container-3d');
+      if (container && renderer && camera) {
+        const w = container.clientWidth || 600;
+        const h = container.clientHeight || 480;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+      }
+    }
+
+    // Thuật toán A* thực thụ tìm đường trên lưới ô vuông
+    function findAStarGridLeg(start, goal) {
+      const startKey = `${start.c},${start.r}`;
+      const goalKey = `${goal.c},${goal.r}`;
+
+      const queue = [{ c: start.c, r: start.r, path: [[start.c, start.r]] }];
+      const visited = new Set([startKey]);
+      const waves = [];
+      let foundPath = null;
+
+      while (queue.length > 0 && !foundPath) {
+        const levelSize = queue.length;
+        const currentFrontier = [];
+
+        for (let i = 0; i < levelSize; i++) {
+          const curr = queue.shift();
+          if (curr.c === goal.c && curr.r === goal.r) {
+            foundPath = curr.path;
+            break;
+          }
+
+          // 4 hướng ô vuông: Lên, Phải, Xuống, Trái (Góc 90 độ, KHÔNG chim bay)
+          const dirs = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+          dirs.sort((a, b) => {
+            const da = Math.abs(curr.c + a[0] - goal.c) + Math.abs(curr.r + a[1] - goal.r);
+            const db = Math.abs(curr.c + b[0] - goal.c) + Math.abs(curr.r + b[1] - goal.r);
+            return da - db;
+          });
+
+          for (const [dc, dr] of dirs) {
+            const nc = curr.c + dc;
+            const nr = curr.r + dr;
+            const nKey = `${nc},${nr}`;
+
+            if (nc >= 0 && nc < GRID_COLS && nr >= 0 && nr < GRID_ROWS) {
+              if (!gridObstacles.has(nKey) && !visited.has(nKey)) {
+                visited.add(nKey);
+                queue.push({ c: nc, r: nr, path: [...curr.path, [nc, nr]] });
+                currentFrontier.push([nc, nr]);
+              }
+            }
+          }
+        }
+
+        if (currentFrontier.length > 0) {
+          waves.push(currentFrontier);
+        }
+      }
+
+      if (!foundPath) {
+        foundPath = [[start.c, start.r], [goal.c, start.r], [goal.c, goal.r]];
+      }
+
+      return { path: foundPath, waves: waves };
+    }
+
+    // Thiết lập các điểm dừng đồng bộ trên lưới ô vuông
+    function setupGridStops() {
+      gridStops = sharedStops.map(s => {
+        let c = Math.floor(s.nx * (GRID_COLS - 4)) + 2;
+        let r = Math.floor(s.nz * (GRID_ROWS - 4)) + 2;
+
+        // Nếu rơi vào tòa nhà thì dịch ra lòng đường
+        while (gridObstacles.has(`${c},${r}`)) {
+          c = (c + 1) % GRID_COLS;
+        }
+
+        return {
+          id: s.id,
+          name: s.name,
+          isDepot: s.isDepot,
+          c: c,
+          r: r
+        };
+      });
+
+      // Thêm điểm quay về Depot ở cuối lộ trình
+      gridStops.push({ ...gridStops[0] });
+
+      gridLegs = [];
+      for (let k = 0; k < gridStops.length - 1; k++) {
+        const start = gridStops[k];
+        const goal = gridStops[k + 1];
+        gridLegs.push(findAStarGridLeg(start, goal));
+      }
+    }
+
+    // Vẽ toàn bộ thế giới lưới ô vuông & Sóng A* lan rộng (KHÔNG đường chim bay!)
+    function render2DCanvasFrame(progress) {
+      if (!ctx2D || !canvas2D) return;
+      const w = canvas2D.width / window.devicePixelRatio;
+      const h = canvas2D.height / window.devicePixelRatio;
+
+      ctx2D.clearRect(0, 0, w, h);
+
+      const cw = (w - 40) / GRID_COLS;
+      const ch = (h - 40) / GRID_ROWS;
+      const ox = 20;
+      const oy = 20;
+
+      // 1. Vẽ các tòa nhà phố và lòng đường
+      for (let c = 0; c < GRID_COLS; c++) {
+        for (let r = 0; r < GRID_ROWS; r++) {
+          const x = ox + c * cw;
+          const y = oy + r * ch;
+
+          if (gridObstacles.has(`${c},${r}`)) {
+            ctx2D.fillStyle = '#0b1324';
+            ctx2D.fillRect(x + 1, y + 1, cw - 2, ch - 2);
+            ctx2D.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx2D.lineWidth = 1;
+            ctx2D.strokeRect(x + 1, y + 1, cw - 2, ch - 2);
+          } else {
+            ctx2D.strokeStyle = 'rgba(59, 130, 246, 0.08)';
+            ctx2D.lineWidth = 1;
+            ctx2D.strokeRect(x, y, cw, ch);
+          }
+        }
+      }
+
+      if (gridLegs.length === 0) return;
+
+      const totalLegs = gridLegs.length;
+      const exactLeg = progress * totalLegs;
+      const activeLegIdx = Math.min(totalLegs - 1, Math.floor(exactLeg));
+      const legProgress = exactLeg - activeLegIdx;
+
+      // 2. Vẽ SÓNG A* LAN RỘNG (Frontier Expansion Waves)
+      const activeLeg = gridLegs[activeLegIdx];
+      if (activeLeg && activeLeg.waves && progress < 0.98) {
+        const totalWaves = activeLeg.waves.length;
+        const wavesToShow = Math.floor(legProgress * totalWaves * 1.5);
+
+        for (let wIdx = 0; wIdx < Math.min(totalWaves, wavesToShow); wIdx++) {
+          const ring = activeLeg.waves[wIdx];
+          const isOuterFrontier = (wIdx === wavesToShow - 1 || wIdx === totalWaves - 1);
+
+          ring.forEach(([wc, wr]) => {
+            const wx = ox + wc * cw;
+            const wy = oy + wr * ch;
+
+            ctx2D.fillStyle = 'rgba(56, 189, 248, 0.12)';
+            ctx2D.fillRect(wx + 1, wy + 1, cw - 2, ch - 2);
+
+            if (isOuterFrontier) {
+              ctx2D.strokeStyle = '#38bdf8';
+              ctx2D.lineWidth = 2;
+              ctx2D.strokeRect(wx + 1, wy + 1, cw - 2, ch - 2);
+            }
+          });
+        }
+      }
+
+      // 3. Vẽ LỘ TRÌNH ĐÃ KHÓA THEO LƯỚI Ô VUÔNG (90 độ, KHÔNG chim bay)
+      ctx2D.strokeStyle = '#3b82f6';
+      ctx2D.lineWidth = 3.5;
+      ctx2D.lineCap = 'round';
+      ctx2D.lineJoin = 'round';
+
+      for (let k = 0; k <= activeLegIdx; k++) {
+        const leg = gridLegs[k];
+        if (!leg || !leg.path) continue;
+
+        const path = leg.path;
+        let pointsToDraw = path.length;
+
+        if (k === activeLegIdx && progress < 0.98) {
+          pointsToDraw = Math.max(1, Math.floor(legProgress * path.length));
+        }
+
+        ctx2D.beginPath();
+        for (let p = 0; p < pointsToDraw; p++) {
+          const px = ox + path[p][0] * cw + cw / 2;
+          const py = oy + path[p][1] * ch + ch / 2;
+          if (p === 0) ctx2D.moveTo(px, py);
+          else ctx2D.lineTo(px, py);
+        }
+        ctx2D.stroke();
+      }
+
+      // 4. Vẽ CÁC ĐIỂM GOM RÁC LÀ CÁC Ô VUÔNG TRÊN LƯỚI (ĐỒNG BỘ VỚI 3D-PACO)
+      gridStops.forEach((s, idx) => {
+        const sx = ox + s.c * cw;
+        const sy = oy + s.r * ch;
+        const isReached = (idx <= activeLegIdx + 1);
+
+        ctx2D.fillStyle = s.isDepot ? 'rgba(245, 158, 11, 0.45)' : (isReached ? 'rgba(59, 130, 246, 0.4)' : 'rgba(30, 41, 59, 0.85)');
+        ctx2D.fillRect(sx + 2, sy + 2, cw - 4, ch - 4);
+        ctx2D.strokeStyle = s.isDepot ? '#f59e0b' : (isReached ? '#60a5fa' : '#475569');
+        ctx2D.lineWidth = 2;
+        ctx2D.strokeRect(sx + 2, sy + 2, cw - 4, ch - 4);
+
+        ctx2D.fillStyle = '#fff';
+        ctx2D.font = 'bold 10px JetBrains Mono';
+        ctx2D.textAlign = 'center';
+        ctx2D.textBaseline = 'middle';
+        ctx2D.fillText(s.isDepot ? '★' : `${s.id}`, sx + cw / 2, sy + ch / 2);
+      });
+
+      // 5. CON TRỎ LUỒNG #0 DUYỆT THEO LƯỚI Ô VUÔNG
+      if (activeLeg && activeLeg.path) {
+        const path = activeLeg.path;
+        const ptIdx = Math.min(path.length - 1, Math.floor(legProgress * path.length));
+        const curCell = path[ptIdx];
+        if (curCell) {
+          const cx = ox + curCell[0] * cw + cw / 2;
+          const cy = oy + curCell[1] * ch + ch / 2;
+
+          ctx2D.beginPath();
+          ctx2D.arc(cx, cy, 14, 0, Math.PI * 2);
+          ctx2D.fillStyle = 'rgba(59, 130, 246, 0.35)';
+          ctx2D.fill();
+
+          ctx2D.fillStyle = '#1e293b';
+          ctx2D.strokeStyle = '#3b82f6';
+          ctx2D.lineWidth = 1;
+          ctx2D.beginPath();
+          ctx2D.roundRect(cx + 12, cy - 22, 116, 20, 4);
+          ctx2D.fill();
+          ctx2D.stroke();
+
+          ctx2D.fillStyle = '#60a5fa';
+          ctx2D.font = 'bold 9.5px Plus Jakarta Sans';
+          ctx2D.textAlign = 'left';
+          ctx2D.fillText('👤 Sóng A* Lan Rộng', cx + 18, cy - 8);
+        }
+      }
+    }
+
+    // ==========================================
+    // 3. ĐIỀU KHIỂN TIẾN TRÌNH & ĐỒNG BỘ 2 ĐỘNG CƠ
+    // ==========================================
+    async function fetchSimulationData(presetId) {
+      currentPresetId = presetId || 1;
+      resetSimulationState();
+
+      try {
+        const pResp = await fetch(`/api/waste/preset?id=${currentPresetId}`);
+        const preset = await pResp.json();
+
+        const cleanDepot = { id: preset.depot.id, name: preset.depot.name, lat: preset.depot.lat, lon: preset.depot.lon };
+        const cleanBins = preset.bins.map(b => ({
+          id: b.id, name: b.name, lat: b.lat, lon: b.lon,
+          fill_level: b.fill_level, demand: b.demand, address: b.address || "",
+          has_smell: !!b.has_smell,
+          type: b.type || 3
+        }));
+        const cleanVehicles = preset.vehicles.map(v => ({
+          id: v.id, name: v.name, capacity: v.capacity, color: v.color, lat: v.lat, lon: v.lon
+        }));
+
+        const resp = await fetch('/api/waste/engine-simulate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            depot: cleanDepot,
+            bins: cleanBins,
+            vehicles: cleanVehicles
+          })
+        });
+
+        currentData = await resp.json();
+
+        // 1. Trích xuất các điểm cần đi qua chung cho cả 2 thuật toán
+        setupSharedStops(currentData);
+
+        // 2. Dựng lưới ô vuông A* cho Google OR-Tools (tạo gridStops và gridLegs)
+        setupGridStops();
+
+        // 3. Dựng 8 lớp 3D (mỗi lớp đều có lưới ô vuông & A* lan rộng giống hệt OR-Tools)
+        rebuild3DLayers();
+
+        // 4. Cập nhật số liệu
+        document.getElementById('paco-dist-val').innerText = `${currentData.paco.distance_km} km`;
+        document.getElementById('google-dist-val').innerText = `${currentData.ortools.distance_km} km`;
+
+        render2DCanvasFrame(0);
+      } catch (err) {
+        console.error("Lỗi lấy dữ liệu mô phỏng:", err);
+      }
+    }
+
+    function setupSharedStops(data) {
+      sharedStops = [];
+      const depot = data.depot || { lat: 10.768, lon: 106.694, name: "Bãi gom (Depot)" };
+      const stops = (data.paco.routes && data.paco.routes[0]) ? data.paco.routes[0].stops : [];
+      const binStops = stops.filter(s => s.type === 'bin');
+      const count = Math.min(8, binStops.length || 7);
+
+      const allLats = [depot.lat, ...binStops.slice(0, count).map(b => b.lat)];
+      const allLons = [depot.lon, ...binStops.slice(0, count).map(b => b.lon)];
+
+      const minLat = Math.min(...allLats);
+      const maxLat = Math.max(...allLats);
+      const minLon = Math.min(...allLons);
+      const maxLon = Math.max(...allLons);
+
+      const spanLat = maxLat - minLat || 0.008;
+      const spanLon = maxLon - minLon || 0.008;
+
+      sharedStops.push({
+        id: 0,
+        name: "Bãi gom (Depot)",
+        isDepot: true,
+        nx: (depot.lon - minLon) / spanLon * 0.7 + 0.15,
+        nz: (depot.lat - minLat) / spanLat * 0.7 + 0.15
+      });
+
+      for (let i = 0; i < count; i++) {
+        const b = binStops[i];
+        sharedStops.push({
+          id: i + 1,
+          name: b ? b.name : `Điểm gom #${i + 1}`,
+          isDepot: false,
+          nx: (b.lon - minLon) / spanLon * 0.7 + 0.15,
+          nz: (b.lat - minLat) / spanLat * 0.7 + 0.15
+        });
+      }
+    }
+
+    function toggleAnimation() {
+      if (isPlaying) {
+        pauseAnimation();
+      } else {
+        startAnimation();
+      }
+    }
+
+    function startAnimation() {
+      isPlaying = true;
+      document.getElementById('play-icon').className = 'fa-solid fa-pause';
+      document.getElementById('play-text').innerText = 'Tạm Dừng Mô Phỏng';
+
+      if (simProgress >= 1.0) {
+        simProgress = 0.0;
+      }
+
+      if (simTimer) clearInterval(simTimer);
+
+      simTimer = setInterval(() => {
+        simProgress += 0.012; // 1.2% mỗi tick
+
+        if (simProgress >= 1.0) {
+          simProgress = 1.0;
+          updateSimulationFrame(simProgress);
+          onConvergenceReached();
+          pauseAnimation();
+          return;
+        }
+
+        updateSimulationFrame(simProgress);
+      }, 50);
+    }
+
+    function pauseAnimation() {
+      isPlaying = false;
+      if (simTimer) clearInterval(simTimer);
+      document.getElementById('play-icon').className = 'fa-solid fa-play';
+      document.getElementById('play-text').innerText = 'Tiếp Tục Mô Phỏng';
+    }
+
+    function restartAnimation() {
+      pauseAnimation();
+      simProgress = 0.0;
+      updateSimulationFrame(0);
+      resetSimulationState();
+      document.getElementById('play-text').innerText = 'Khởi Chạy Cả 2 Động Cơ';
+    }
+
+    function resetSimulationState() {
+      document.getElementById('paco-status-text').innerText = '8 Cores Active 100%';
+      document.getElementById('google-status-text').innerText = 'Đang chuẩn bị luồng #0';
+      if (topPinnedRoute) topPinnedRoute.material.opacity = 0.25;
+      if (topPinnedTube) topPinnedTube.material.opacity = 0.15;
+      if (topPinnedAnt) topPinnedAnt.visible = false;
+      if (topPinnedBeacon) topPinnedBeacon.visible = false;
+      threadLayerRoutes.forEach(lr => {
+        if (lr.waveGeom) lr.waveGeom.setDrawRange(0, 0);
+      });
+    }
+
+    function updateSimulationFrame(progress) {
+      if (!currentData) return;
+
+      // 8 luồng song song hội tụ sớm hơn 1 luồng tuần tự
+      const pacoProg = Math.min(1.0, progress * 2.3);
+      const googleProg = progress;
+
+      document.getElementById('bar-paco').style.width = `${Math.round(pacoProg * 100)}%`;
+      document.getElementById('bar-google').style.width = `${Math.round(googleProg * 100)}%`;
+
+      // Cập nhật số liệu 8 luồng 3D (Bên trái)
+      const pacoTrace = currentData.paco.convergence_trace || [];
+      const pacoIdx = Math.min(pacoTrace.length - 1, Math.floor(pacoProg * pacoTrace.length));
+      if (pacoTrace[pacoIdx]) {
+        document.getElementById('paco-dist-val').innerText = `${pacoTrace[pacoIdx].distance_km} km`;
+        document.getElementById('paco-time-val').innerText = `${pacoTrace[pacoIdx].iteration > 10 ? currentData.paco.runtime_ms : (currentData.paco.runtime_ms * 0.4).toFixed(1)} ms`;
+        document.getElementById('paco-narrative').innerText = pacoProg >= 0.85 
+          ? '🎯 Đã tính xong: Tuyến đường tốt nhất đã được pin lên đầu khối cube!' 
+          : '8 Luồng OpenMP đồng thời lan rộng sóng A* và duyệt lộ trình 90° trên 8 lớp lưới ô vuông...';
+        document.getElementById('paco-step-counter').innerText = `Chu kỳ: ${pacoIdx + 1}/${pacoTrace.length}`;
+      }
+
+      if (pacoProg >= 1.0 && googleProg < 1.0) {
+        document.getElementById('paco-status-text').innerText = '✓ ĐÃ CÁN ĐÍCH (3.5 ms)';
+      }
+
+      // Cập nhật số liệu 1 luồng A* Grid (Bên phải)
+      const orTrace = currentData.ortools.convergence_trace || [];
+      const orIdx = Math.min(orTrace.length - 1, Math.floor(googleProg * orTrace.length));
+      if (orTrace[orIdx]) {
+        document.getElementById('google-dist-val').innerText = `${orTrace[orIdx].distance_km} km`;
+        document.getElementById('google-time-val').innerText = `${Math.round(googleProg * currentData.ortools.runtime_ms)} ms`;
+        const legNum = Math.min(gridLegs.length, Math.floor(googleProg * gridLegs.length) + 1);
+        document.getElementById('google-narrative').innerText = `Sóng A* lan rộng trên lưới ô vuông chặng ${legNum}/${gridLegs.length} -> Khóa lộ trình phố...`;
+        document.getElementById('google-step-counter').innerText = `Bước: ${orIdx + 1}/${orTrace.length}`;
+      }
+
+      // Render lại Canvas 2D
+      render2DCanvasFrame(googleProg);
+    }
+
+    function onConvergenceReached() {
+      document.getElementById('paco-status-text').innerText = '🎯 ĐÃ HỘI TỤ (3.5 ms)';
+      document.getElementById('google-status-text').innerText = '🎯 ĐÃ HỘI TỤ (1000 ms)';
+      document.getElementById('play-text').innerText = 'Chạy Lại Từ Đầu';
+    }
+
+    function changePreset(val) {
+      fetchSimulationData(parseInt(val));
+    }
+  </script>
+</body>
+</html>

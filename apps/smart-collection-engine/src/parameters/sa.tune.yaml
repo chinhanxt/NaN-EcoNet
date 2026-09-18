@@ -1,0 +1,36 @@
+parameters:
+  max_iter:
+    type: int
+    range: [1000, 100000]
+    default: 10000
+    step: 1000
+  T0:
+    type: float
+    range: [10.0, 1000.0]
+    default: 100.0
+    step: 10.0
+  Tf:
+    type: float
+    range: [0.01, 1.0]
+    default: 0.1
+    step: 0.01
+  alpha:
+    type: float
+    range: [0.8, 0.999]
+    default: 0.95
+    step: 0.01
+  beta:
+    type: float
+    range: [1.0, 10.0]
+    default: 1.0
+    step: 0.5
+  patience:
+    type: int
+    range: [10, 500]
+    default: 100
+    step: 10
+  p:
+    type: float
+    range: [0.01, 0.5]
+    default: 0.1
+    step: 0.01

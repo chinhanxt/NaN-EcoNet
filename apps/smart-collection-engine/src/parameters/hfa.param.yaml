@@ -1,0 +1,48 @@
+large:
+  beta: 1.0
+  c_rate: 0.95
+  data_dir: data/100
+  gamma: 0.5
+  i_max: 500
+  ls_intensity: 3
+  m_rate: 0.1
+  num_runs: 1
+  output_csv: /tmp/bao_temp_output.csv
+  p: 0.1
+  params:
+    c_rate: 0.95
+    i_max: 80
+    ls_intensity: 30
+    m_rate: 0.2282771922133208
+    p: 0.1
+    pop_size: 100
+  pop_size: 2000
+medium:
+  beta: 1.0
+  c_rate: 0.95
+  data_dir: data/50
+  gamma: 0.5
+  i_max: 200
+  ls_intensity: 2
+  m_rate: 0.1
+  num_runs: 1
+  output_csv: /tmp/bao_temp_output.csv
+  p: 0.1
+  params:
+    c_rate: 0.9312486595456815
+    i_max: 50
+    ls_intensity: 20
+    m_rate: 0.26628587483891264
+    p: 0.1
+    pop_size: 100
+small:
+  data_dir: data/25
+  num_runs: 1
+  output_csv: /tmp/bao_temp_output.csv
+  params:
+    c_rate: 0.5549516022945802
+    i_max: 20
+    ls_intensity: 5
+    m_rate: 0.43956024304123065
+    p: 0.1
+    pop_size: 50

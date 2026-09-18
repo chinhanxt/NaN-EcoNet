@@ -1,0 +1,30 @@
+parameters:
+  I:
+    type: int
+    value: 10
+  LS:
+    type: int
+    value: 100
+  alpha:
+    type: float
+    value: 1.25
+  beta:
+    type: float
+    value: 0.75
+  rho:
+    type: float
+    value: 0.6
+  Q:
+    type: float
+    value: 2.0
+  t:
+    type: int
+    value: 40
+  total_ants:
+    type: int
+    # value: 2560 for large
+    value: 1920 # for medium
+    # value: 960
+  p:
+    type: int
+    value: [1, 8, 16, 32, 64]

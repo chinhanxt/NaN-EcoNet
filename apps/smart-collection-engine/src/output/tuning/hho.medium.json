@@ -1,0 +1,13 @@
+{
+  "best_params": {
+    "max_iter": 1000,
+    "population_size": 500,
+    "num_hawks": 100,
+    "lower_bound": 0.0,
+    "upper_bound": 2.0,
+    "learning_rate": 0.01,
+    "beta": 1.0,
+    "p": 0.1
+  },
+  "best_objective": 477.68198700000005
+}

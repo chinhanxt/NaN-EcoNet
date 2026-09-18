@@ -1,0 +1,38 @@
+parameters:
+  m:
+    type: int
+    range: [5, 25, 50, 75, 100]
+    # default: 50
+    default: 30 # Medium size for testing
+  I:
+    type: int
+    range: [5, 10, 15, 20]
+    default: 10
+  LS:
+    type: int
+    range: [10, 50, 100, 150]
+    default: 40
+  alpha:
+    type: float
+    range: [0.5, 0.75, 1.0, 1.25, 1.5]
+    default: 1.25
+  beta:
+    type: float
+    range: [0.5, 0.75, 1.0, 1.25]
+    default: 1.0
+  rho:
+    type: float
+    range: [0.15, 0.3, 0.45, 0.6]
+    default: 0.45
+  Q:
+    type: float
+    range: [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
+    default: 2.0
+  t:
+    type: int
+    range: [10, 40, 70, 100, 130]
+    default: 40
+  p:
+    type: int
+    range: []
+    default: 64

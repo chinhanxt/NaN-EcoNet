@@ -1,0 +1,10 @@
+{
+  "best_params": {
+    "i_max": 50,
+    "pop_size": 100,
+    "c_rate": 0.9090362655653389,
+    "m_rate": 0.2837593886875394,
+    "ls_intensity": 20
+  },
+  "best_objective": 544.1051400000001
+}

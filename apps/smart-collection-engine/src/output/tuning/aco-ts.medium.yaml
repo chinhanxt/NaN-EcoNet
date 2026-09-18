@@ -1,0 +1,9 @@
+aco-ts:
+  Q: 9
+  alpha: 4.25
+  beta: 1.25
+  evaporation_rate: 0.21000000000000002
+  num_ants: 1536
+  num_iterations: 70
+  p: 0.29999999999999999
+  stagnation_limit: 20

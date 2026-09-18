@@ -1,0 +1,3447 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Waste Collection & Route Optimization (District 1)</title>
+
+  <!-- Leaflet Map Engine (100% Bulletproof 2D Rendering, No WebGL GPU Crashes) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body, html {
+      width: 100%; height: 100%; overflow: hidden;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0f172a; color: #1e293b;
+    }
+    /* Split Screen Dual Map Container */
+    #maps-container {
+      position: absolute;
+      top: 0; bottom: 0; left: 0; right: 0;
+      width: 100%; height: 100%;
+      display: flex;
+      background: #0f172a;
+      overflow: hidden;
+    }
+    .map-pane {
+      position: relative;
+      height: 100%;
+      flex: 1;
+      min-width: 0;
+      transition: flex 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #map, #map-google {
+      position: absolute;
+      top: 0; bottom: 0; left: 0; right: 0;
+      width: 100%; height: 100%;
+      background: #e2e8f0;
+    }
+    #split-divider {
+      position: relative;
+      width: 5px;
+      background: linear-gradient(180deg, #10b981 0%, #3b82f6 50%, #10b981 100%);
+      z-index: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 16px rgba(0,0,0,0.5);
+      flex-shrink: 0;
+    }
+    .split-vs-badge {
+      position: absolute;
+      top: 126px;
+      width: 36px; height: 36px;
+      background: #0f172a;
+      color: #38bdf8;
+      font-weight: 900;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+      border: 2px solid #38bdf8;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+      user-select: none;
+    }
+
+    /* Floating Pane Banners (Strict 1-line horizontal bar) */
+    .split-pane-header {
+      position: absolute;
+      top: 126px;
+      z-index: 490;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      padding: 5px 12px;
+      height: 38px;
+      box-sizing: border-box;
+      border-radius: 9px;
+      color: #ffffff;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      font-family: 'Inter', sans-serif;
+      pointer-events: auto;
+      white-space: nowrap !important;
+      flex-wrap: nowrap !important;
+      transition: all 0.25s ease;
+    }
+    .paco-pane-header {
+      left: 14px; right: 26px;
+      border: 1px solid rgba(16, 185, 129, 0.5);
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.18);
+    }
+    .google-pane-header {
+      left: 26px; right: 14px;
+      border: 1px solid rgba(59, 130, 246, 0.5);
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.18);
+    }
+    .split-pane-brand {
+      display: flex; align-items: center; gap: 8px;
+      white-space: nowrap !important;
+      flex-shrink: 0;
+    }
+    .split-badge {
+      padding: 3px 9px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 800;
+      display: inline-flex; align-items: center; gap: 5px;
+      letter-spacing: -0.2px;
+      white-space: nowrap !important;
+      flex-shrink: 0;
+    }
+    .paco-badge {
+      background: #10b981; color: #ffffff;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+    }
+    .google-badge {
+      background: #2563eb; color: #ffffff;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+    }
+    .split-subtitle {
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 600;
+      white-space: nowrap !important;
+      flex-shrink: 1;
+    }
+    .split-metrics-group {
+      display: flex; align-items: center; gap: 10px;
+      white-space: nowrap !important;
+      flex-shrink: 0;
+    }
+    .split-metric {
+      font-size: 11.5px;
+      display: inline-flex; align-items: center; gap: 4px;
+      color: #e2e8f0;
+      white-space: nowrap !important;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .m-label {
+      color: #94a3b8;
+      font-size: 10.5px;
+      font-weight: 600;
+      white-space: nowrap !important;
+      text-transform: none;
+      display: inline;
+    }
+    .m-val {
+      font-weight: 800;
+      color: #ffffff;
+      white-space: nowrap !important;
+      font-variant-numeric: tabular-nums;
+    }
+    .split-metric-tag {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(52, 211, 153, 0.4);
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 10.5px;
+      font-weight: 700;
+      white-space: nowrap !important;
+      flex-shrink: 0;
+    }
+    .google-tag {
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+      border-color: rgba(96, 165, 250, 0.4);
+    }
+
+    /* Single Map Mode Overrides */
+    #maps-container.single-mode #pane-google,
+    #maps-container.single-mode #split-divider,
+    #maps-container.single-mode .split-pane-header {
+      display: none !important;
+    }
+    #maps-container.single-mode #pane-paco {
+      flex: 1 1 100% !important;
+      width: 100% !important;
+    }
+
+    /* Split Toggle Button */
+    .btn-split {
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
+      color: #38bdf8 !important;
+      border: 1px solid rgba(56, 189, 248, 0.4) !important;
+      font-weight: 700 !important;
+    }
+    .btn-split.active {
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+      color: #ffffff !important;
+      border-color: #38bdf8 !important;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4) !important;
+    }
+
+    /* Clean Leaflet default icon styles */
+    .leaflet-div-icon {
+      background: transparent !important;
+      border: none !important;
+    }
+    .leaflet-popup-content-wrapper {
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+      font-family: 'Inter', sans-serif;
+    }
+    .leaflet-popup-content {
+      margin: 12px 16px;
+      line-height: 1.45;
+    }
+    .leaflet-container {
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Top Floating Control Bar */
+    .control-panel {
+      position: absolute;
+      top: 12px; left: 16px; right: 16px;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      border-radius: 12px;
+      padding: 5px 10px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.10);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .nav-section {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .nav-left { flex-shrink: 0; }
+    .nav-center { display: flex; align-items: center; gap: 5px; justify-content: center; }
+    .nav-right { flex-shrink: 0; display: flex; align-items: center; gap: 5px; }
+    .nav-divider {
+      width: 1px;
+      height: 20px;
+      background: #e2e8f0;
+      margin: 0 1px;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      display: flex; align-items: center; gap: 8px;
+      user-select: none;
+      flex-shrink: 0;
+      cursor: default;
+    }
+    .brand-icon {
+      width: 30px; height: 30px; border-radius: 8px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      display: flex; align-items: center; justify-content: center;
+      color: #ffffff; font-size: 15px;
+      box-shadow: 0 2px 6px rgba(16, 185, 129, 0.35);
+    }
+    .brand-title {
+      font-weight: 800; font-size: 13px; line-height: 1.15; color: #0f172a;
+      letter-spacing: -0.3px;
+    }
+    .brand-sub {
+      font-size: 9px; font-weight: 700; color: #059669;
+      letter-spacing: 0.5px; text-transform: uppercase;
+      display: block;
+    }
+
+    /* Mode Buttons (Add bin, depot, incident) */
+    .preset-group {
+      display: flex; align-items: center; gap: 4px;
+    }
+    .mode-group {
+      display: flex; background: #f1f5f9; border-radius: 8px; padding: 2px; gap: 2px;
+      flex-shrink: 0; border: 1px solid #e2e8f0;
+    }
+    .btn-mode {
+      border: none; background: transparent; padding: 4px 7px;
+      border-radius: 6px; font-size: 11px; font-weight: 600; color: #475569;
+      cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.18s;
+      white-space: nowrap;
+    }
+    .btn-mode:hover { color: #0f172a; background: rgba(255,255,255,0.7); }
+    .btn-mode.active {
+      background: #ffffff; color: #0f172a;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+    }
+    .btn-mode.active-bin { color: #059669; font-weight: 700; }
+    .btn-mode.active-depot { color: #dc2626; font-weight: 700; }
+    .btn-mode.active-truck { color: #2563eb; font-weight: 700; }
+    .btn-mode.active-incident { color: #d97706; font-weight: 700; }
+
+    /* Incident Dropdown Split Button */
+    .incident-dropdown-container {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      border-radius: 6px;
+      transition: all 0.18s;
+    }
+    .incident-dropdown-container.active {
+      background: #ffffff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .incident-dropdown-container.active .btn-incident-toggle {
+      color: #d97706;
+      background: transparent;
+      box-shadow: none;
+    }
+    .incident-dropdown-container.active .btn-incident-arrow {
+      color: #d97706;
+    }
+    .btn-incident-toggle {
+      border: none;
+      background: transparent;
+      padding: 4px 5px 4px 7px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.18s;
+    }
+    .btn-incident-arrow {
+      border: none;
+      border-left: 1px solid rgba(203, 213, 225, 0.6);
+      background: transparent;
+      padding: 4px 6px;
+      font-size: 9.5px;
+      color: #64748b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.18s;
+      border-radius: 0 6px 6px 0;
+    }
+    .btn-incident-arrow:hover {
+      background: rgba(0, 0, 0, 0.05);
+      color: #0f172a;
+    }
+    .incident-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      width: 330px;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
+      padding: 6px;
+      z-index: 2100;
+      display: none;
+      animation: fadeInDropdown 0.15s ease-out;
+    }
+    .incident-menu.show {
+      display: block;
+    }
+    @keyframes fadeInDropdown {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .incident-menu-header {
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 6px 8px 6px;
+      border-bottom: 1px solid #f1f5f9;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .incident-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: 1px solid transparent;
+      margin-bottom: 3px;
+    }
+    .incident-menu-item:hover {
+      background: #f8fafc;
+      border-color: #e2e8f0;
+    }
+    .incident-menu-item.selected {
+      background: #fffbeb;
+      border-color: #fde68a;
+    }
+    .incident-item-icon {
+      font-size: 18px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      flex-shrink: 0;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .incident-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .incident-item-title {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .incident-item-sub {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 2px;
+      line-height: 1.3;
+    }
+    .incident-badge-ai {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #059669;
+      background: #ecfdf5;
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid #a7f3d0;
+      white-space: nowrap;
+    }
+    .incident-badge-human {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #dc2626;
+      background: #fef2f2;
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid #fecaca;
+      white-space: nowrap;
+    }
+    .incident-badge-mixed {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #d97706;
+      background: #fffbeb;
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid #fde68a;
+      white-space: nowrap;
+    }
+
+    /* Action Buttons */
+    .action-group {
+      display: flex; align-items: center; gap: 5px;
+    }
+    .btn-action {
+      border: none; border-radius: 8px; padding: 4px 8px;
+      font-size: 11px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; gap: 4px;
+      transition: all 0.2s; white-space: nowrap; flex-shrink: 0;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #ffffff; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.45);
+    }
+    .btn-secondary {
+      background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;
+    }
+    .btn-secondary:hover { background: #e2e8f0; }
+    .btn-icon-only {
+      padding: 4px 7px !important;
+      min-width: 28px;
+      justify-content: center;
+    }
+
+    .btn-sim {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: #ffffff; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    }
+    .btn-sim:hover {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      transform: translateY(-1px);
+    }
+    .btn-sim.simulating {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+    }
+
+    .btn-battle {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: #ffffff; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+    }
+    .btn-battle:hover {
+      background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+      transform: translateY(-1px);
+    }
+
+    .btn-preset {
+      background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;
+      padding: 5px 9px; font-size: 11.5px;
+    }
+    .btn-preset:hover {
+      background: #e2e8f0; color: #0f172a;
+    }
+
+    .btn-iot {
+      background: #f0fdfa; color: #0d9488; border: 1px solid #99f6e4;
+      font-size: 11px; padding: 5px 8px;
+    }
+    .btn-iot.active {
+      background: #0d9488; color: #ffffff; border-color: #0d9488;
+      box-shadow: 0 2px 8px rgba(13, 148, 136, 0.35);
+    }
+    .btn-iot:hover {
+      background: #ccfbf1;
+    }
+
+    /* Unified Live Stats Capsule */
+    .stats-capsule {
+      display: flex; align-items: center; gap: 5px;
+      background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+      padding: 2px 7px; font-size: 10.5px; font-weight: 700; color: #334155;
+      user-select: none; flex-shrink: 0;
+    }
+    .stat-pill-item {
+      display: flex; align-items: center; gap: 3px; white-space: nowrap;
+    }
+    .stat-pill-item i { font-size: 10.5px; }
+    .stat-pill-decision {
+      color: #6d28d9; background: #f5f3ff; border: 1px solid #ddd6fe;
+      padding: 1px 5px; border-radius: 5px; font-size: 10px;
+    }
+    .stat-sep {
+      color: #cbd5e1; font-weight: normal; font-size: 9px;
+    }
+
+    /* Log Drawer / Panel */
+    .btn-drawer-toggle {
+      border: 1px solid #cbd5e1; background: #ffffff; border-radius: 8px;
+      padding: 4px 8px; font-size: 11px; font-weight: 700; color: #334155;
+      cursor: pointer; display: flex; align-items: center; gap: 4px;
+      white-space: nowrap; flex-shrink: 0; transition: all 0.2s;
+    }
+    .btn-drawer-toggle:hover {
+      background: #f8fafc; border-color: #94a3b8; color: #0f172a;
+    }
+    .drawer {
+      position: absolute; top: 76px; right: 16px; width: 380px; max-height: calc(100vh - 120px);
+      z-index: 1000; background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(14px);
+      border: 1px solid rgba(226, 232, 240, 0.9); border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.15); display: flex; flex-direction: column;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .drawer.closed { transform: translateX(410px); opacity: 0; pointer-events: none; }
+    .drawer-header {
+      padding: 12px 16px; border-bottom: 1px solid #e2e8f0;
+      font-weight: 700; font-size: 13.5px; display: flex; align-items: center;
+      justify-content: space-between;
+    }
+    .drawer-body { padding: 12px 16px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+
+    /* Timeline Items */
+    .timeline-item {
+      display: flex; gap: 10px; font-size: 12px; line-height: 1.4;
+      padding: 8px 10px; border-radius: 8px; background: #f8fafc; border-left: 3px solid #cbd5e1;
+    }
+    .timeline-ai { border-left-color: #3b82f6; background: #eff6ff; color: #1e40af; }
+    .timeline-incident { border-left-color: #f59e0b; background: #fefce8; color: #854d0e; }
+    .timeline-human { border-left-color: #ec4899; background: #fdf2f8; color: #9d174d; }
+    .timeline-collected { border-left-color: #10b981; background: #ecfdf5; color: #065f46; }
+
+    /* Truck Status Card in Drawer */
+    .truck-card {
+      background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;
+    }
+    .truck-card-header { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 700; margin-bottom: 6px; }
+    .progress-bar { width: 100%; height: 7px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; background: #10b981; transition: width 0.3s; }
+
+    /* Style Switcher (Basemap styles) - Bottom-Left Layer 1 */
+    .style-picker {
+      position: absolute; bottom: 18px; left: 18px; z-index: 500;
+      background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(226, 232, 240, 0.9); border-radius: 8px;
+      padding: 3px; display: flex; gap: 3px; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+    }
+    .style-btn {
+      border: none; background: transparent; padding: 4px 9px; border-radius: 5px;
+      font-size: 11px; font-weight: 600; color: #64748b; cursor: pointer;
+      display: flex; align-items: center; gap: 4px; transition: all 0.2s;
+    }
+    .style-btn:hover { background: #f1f5f9; color: #0f172a; }
+    .style-btn.active { background: #10b981; color: #ffffff; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3); }
+
+    /* Custom Map Markers */
+    .marker-depot-wrap,
+    .marker-bin-wrap,
+    .marker-incident-wrap,
+    .marker-truck-wrap,
+    .stop-badge-wrap {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .marker-depot-inner {
+      width: 38px; height: 38px; background: #dc2626; border: 3px solid #ffffff;
+      border-radius: 50%; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+      display: flex; align-items: center; justify-content: center; color: #ffffff;
+      font-size: 16px; position: relative;
+    }
+    .marker-depot-inner::after {
+      content: ''; position: absolute; width: 100%; height: 100%; border-radius: 50%;
+      border: 2px solid #dc2626; animation: pulse-ring 2s infinite ease-out;
+    }
+    @keyframes pulse-ring { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(1.8); opacity: 0; } }
+
+    .marker-bin-inner {
+      width: 32px; height: 32px; border-radius: 50%; border: 2.5px solid #ffffff;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.25); display: flex; align-items: center;
+      justify-content: center; color: #ffffff; font-size: 12px; font-weight: 700;
+      transition: transform 0.15s ease-out;
+    }
+    .marker-bin-wrap:hover .marker-bin-inner { transform: scale(1.25); }
+    .bin-empty { background: #94a3b8; }
+    .bin-medium { background: #f59e0b; }
+    .bin-full { background: #ea580c; }
+    .bin-collected { background: #10b981 !important; }
+    .bin-inaccessible {
+      background: #dc2626 !important;
+      border-color: #fef08a !important;
+      animation: pulse-danger 1.5s infinite;
+      will-change: transform;
+    }
+    @keyframes pulse-danger {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+      50% { transform: scale(1.15); box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
+    }
+
+    /* Waste Collection Types & Decision Badges */
+    .bin-type-badge {
+      position: absolute;
+      bottom: -6px;
+      left: -6px;
+      width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      background: #1e293b;
+      border: 1.5px solid #ffffff;
+      font-size: 9.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      z-index: 5;
+    }
+    .bin-hub-ring {
+      border: 3px solid #7c3aed !important;
+      box-shadow: 0 0 14px rgba(124, 58, 237, 0.65), 0 3px 8px rgba(0,0,0,0.3) !important;
+      width: 36px !important;
+      height: 36px !important;
+    }
+    .bin-home-ring {
+      border: 2.5px solid #3b82f6 !important;
+    }
+    .bin-flex-ring {
+      border: 2.5px solid #f59e0b !important;
+    }
+
+    /* Decision Floating Legend - Bottom-Left Layer 2 (Stacked above Style Switcher) */
+    .decision-legend {
+      position: absolute;
+      bottom: 58px;
+      left: 18px;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      padding: 8px 12px;
+      color: #f8fafc;
+      font-size: 11px;
+      z-index: 480;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      font-family: 'Inter', sans-serif;
+      pointer-events: auto;
+      line-height: 1.65;
+      user-select: none;
+      transition: all 0.25s ease;
+      min-width: 195px;
+    }
+    .legend-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 5px; gap: 8px;
+    }
+    .legend-title {
+      font-weight: 700;
+      font-size: 11px;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .btn-legend-toggle {
+      background: transparent; border: none; color: #94a3b8; font-size: 10px;
+      cursor: pointer; padding: 2px 4px; border-radius: 4px; transition: all 0.15s;
+    }
+    .btn-legend-toggle:hover { color: #ffffff; background: rgba(255,255,255,0.15); }
+    .decision-legend.collapsed .legend-body {
+      display: none;
+    }
+    .decision-legend.collapsed {
+      padding: 6px 10px;
+    }
+    .decision-legend.collapsed .legend-header {
+      margin-bottom: 0;
+    }
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .legend-icon-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      font-size: 11px;
+    }
+    .legend-dash-line {
+      display: inline-block;
+      width: 22px;
+      height: 2px;
+      border-top: 2.5px dashed #8b5cf6;
+    }
+    .legend-solid-line {
+      display: inline-block;
+      width: 22px;
+      height: 3px;
+      background: #10b981;
+      border-radius: 2px;
+    }
+
+    /* Smelly bin indicator & noxious vapor aura */
+    .bin-smelly-badge {
+      position: absolute;
+      top: -12px;
+      right: -10px;
+      font-size: 15px;
+      line-height: 1;
+      animation: stink-wobble 1.3s infinite ease-in-out;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35));
+      pointer-events: none;
+      z-index: 10;
+      will-change: transform;
+    }
+    @keyframes stink-wobble {
+      0%, 100% { transform: rotate(-8deg) scale(1); }
+      50% { transform: rotate(12deg) scale(1.25); }
+    }
+    .bin-smelly-aura {
+      position: absolute;
+      top: -8px; left: -8px; right: -8px; bottom: -8px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(132, 204, 22, 0.5) 0%, rgba(34, 197, 94, 0.2) 60%, transparent 80%);
+      animation: stink-pulse 2s infinite ease-in-out;
+      pointer-events: none;
+      z-index: 1;
+      will-change: transform, opacity;
+    }
+    @keyframes stink-pulse {
+      0%, 100% { transform: scale(1); opacity: 0.6; }
+      50% { transform: scale(1.4); opacity: 1; }
+    }
+
+    /* Modern Toggle Switch for Smell */
+    .switch-smell {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      margin: 0;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .switch-smell input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider-smell {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #cbd5e1;
+      transition: all 0.25s ease;
+      border-radius: 24px;
+      border: 1.5px solid #94a3b8;
+    }
+    .slider-smell:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 2px;
+      bottom: 2px;
+      background-color: white;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+    }
+    .switch-smell input:checked + .slider-smell {
+      background-color: #f59e0b;
+      border-color: #d97706;
+    }
+    .switch-smell input:checked + .slider-smell:before {
+      transform: translateX(20px);
+      background-color: #ffffff;
+    }
+
+    /* Range slider custom styling */
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: #e2e8f0;
+      border-radius: 6px;
+      height: 6px;
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #10b981;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      border: 2px solid #ffffff;
+      transition: transform 0.1s;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    /* Floating Inaccessible Warning Toast */
+    .water-toast {
+      position: fixed; top: 82px; left: 50%; transform: translateX(-50%);
+      z-index: 1500; background: rgba(220, 38, 38, 0.95); color: #ffffff;
+      padding: 10px 18px; border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4);
+      display: flex; align-items: center; gap: 12px; font-size: 13px; font-weight: 600;
+      backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.3);
+      animation: slideDownToast 0.3s ease-out;
+    }
+    .water-toast.water-toast-success {
+      background: rgba(16, 185, 129, 0.95) !important;
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4) !important;
+    }
+    .water-toast button.btn-relocate {
+      background: #ffffff; color: #b91c1c; border: none; padding: 5px 12px;
+      border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; gap: 5px; transition: all 0.2s;
+    }
+    .water-toast button.btn-relocate:hover {
+      background: #fef2f2; transform: scale(1.05);
+    }
+    @keyframes slideDownToast {
+      from { transform: translateX(-50%) translateY(-25px); opacity: 0; }
+      to { transform: translateX(-50%) translateY(0); opacity: 1; }
+    }
+
+    .marker-incident-inner {
+      width: 34px; height: 34px; background: #f59e0b; border: 3px solid #ffffff;
+      border-radius: 8px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.5);
+      display: flex; align-items: center; justify-content: center; color: #ffffff;
+      font-size: 15px; animation: bounce-incident 1.5s infinite;
+    }
+    @keyframes bounce-incident { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+    .marker-truck-wrap {
+      position: relative;
+      cursor: grab;
+      user-select: none;
+    }
+    .marker-truck-wrap:active {
+      cursor: grabbing;
+    }
+    .marker-truck-inner {
+      width: 38px; height: 38px; background: #0f172a; border: 3px solid #ffffff;
+      border-radius: 50%; box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+      display: flex; align-items: center; justify-content: center; color: #ffffff;
+      font-size: 16px; transition: transform 0.1s linear;
+    }
+    .truck-label-badge {
+      position: absolute; top: -6px; right: -6px;
+      padding: 1px 5px; font-size: 9.5px; font-weight: 800;
+      color: #ffffff; border-radius: 10px; border: 1.5px solid #ffffff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.35); line-height: 1.2;
+      pointer-events: none;
+    }
+
+    /* Stop number badges on route */
+    .stop-badge-inner {
+      width: 20px; height: 20px; background: rgba(15, 23, 42, 0.9);
+      border: 1.5px solid #ffffff; border-radius: 50%; color: #ffffff;
+      font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    /* Modal Dialog for Human Decision */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px);
+      z-index: 2000; display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: all 0.25s ease;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: auto; }
+    .modal-card {
+      background: #ffffff; border-radius: 16px; width: 520px; max-width: 90%;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.25); overflow: hidden;
+      transform: translateY(20px); transition: transform 0.25s ease;
+    }
+    .modal-overlay.open .modal-card { transform: translateY(0); }
+    .modal-header {
+      background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+      color: #ffffff; padding: 18px 24px; display: flex; align-items: center; gap: 12px;
+    }
+    .modal-header h3 { font-size: 16px; font-weight: 700; }
+    .modal-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+    .modal-incident-desc {
+      background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px;
+      padding: 12px; font-size: 13.5px; color: #991b1b; line-height: 1.5;
+    }
+    .modal-options { display: flex; flex-direction: column; gap: 10px; }
+    .btn-human-option {
+      background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 10px;
+      padding: 12px 16px; text-align: left; font-size: 13.5px; font-weight: 600;
+      color: #1e293b; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 10px;
+    }
+    .btn-human-option:hover {
+      background: #eff6ff; border-color: #3b82f6; transform: translateX(3px);
+    }
+
+    /* AI Auto-Resolution Toast */
+    .ai-toast {
+      position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(120px);
+      background: #ffffff; border: 1.5px solid #10b981; border-radius: 12px;
+      padding: 12px 18px; display: flex; align-items: center; gap: 12px;
+      box-shadow: 0 12px 36px rgba(16, 185, 129, 0.25), 0 4px 12px rgba(0,0,0,0.08);
+      z-index: 2000; opacity: 0; pointer-events: none;
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      max-width: 650px;
+    }
+    .ai-toast.open {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1; pointer-events: auto;
+    }
+    .ai-toast-icon {
+      width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #10b981, #059669);
+      color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
+    }
+    .ai-toast-title { font-size: 12px; font-weight: 700; color: #065f46; text-transform: uppercase; letter-spacing: 0.5px; }
+    .ai-toast-msg { font-size: 13px; color: #1e293b; line-height: 1.4; margin-top: 2px; }
+    .ai-toast-close {
+      background: transparent; border: none; font-size: 16px; color: #94a3b8; cursor: pointer; padding: 4px; border-radius: 6px;
+    }
+    .ai-toast-close:hover { color: #0f172a; background: #f1f5f9; }
+
+    /* Solver Segmented Toggle */
+    .solver-toggle-group {
+      display: flex; background: #0f172a; border-radius: 8px; padding: 3px; gap: 2px;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .btn-solver-sel {
+      border: none; background: transparent; padding: 6px 12px;
+      border-radius: 6px; font-size: 12px; font-weight: 700; color: #94a3b8;
+      cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;
+    }
+    .btn-solver-sel:hover { color: #f8fafc; }
+    .btn-solver-sel.active {
+      background: #1e293b; color: #ffffff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    }
+    .btn-solver-sel.active-paco { color: #34d399; }
+    .btn-solver-sel.active-ortools { color: #60a5fa; }
+    .btn-solver-sel.active-baseline { color: #cbd5e1; }
+
+    /* Battle & IoT Buttons */
+    .btn-battle {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+      color: #ffffff !important; box-shadow: 0 4px 14px rgba(217, 119, 6, 0.35) !important;
+      font-weight: 700 !important;
+    }
+    .btn-battle:hover {
+      background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+      transform: translateY(-1px);
+    }
+    .btn-iot {
+      background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%) !important;
+      color: #ffffff !important; box-shadow: 0 4px 14px rgba(8, 145, 178, 0.35) !important;
+      font-weight: 700 !important;
+      transition: all 0.25s ease !important;
+    }
+    .btn-iot:hover {
+      background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%) !important;
+      transform: translateY(-1px);
+    }
+    .btn-iot.active {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+      color: #ffffff !important;
+      box-shadow: 0 4px 16px rgba(239, 68, 68, 0.45) !important;
+      animation: iot-pulse 1.8s infinite ease-in-out !important;
+    }
+    .btn-iot.active:hover {
+      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+    }
+    @keyframes iot-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5), 0 4px 14px rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0), 0 4px 18px rgba(239, 68, 68, 0.6); }
+    }
+    .btn-preset {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+      color: #ffffff !important; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4) !important;
+      font-weight: 700 !important;
+      transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+    .btn-preset:hover {
+      filter: brightness(1.12);
+      transform: translateY(-1px) scale(1.03);
+    }
+
+    .text-green { color: #4ade80; }
+    .text-emerald { color: #34d399; }
+    .text-blue { color: #60a5fa; }
+    .text-amber { color: #fbbf24; }
+
+    /* Battle Modal Styles */
+    .modal-card-wide {
+      width: 950px !important; max-width: 96% !important;
+    }
+    .battle-header {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 2px solid #f59e0b; padding: 16px 20px;
+    }
+    .btn-modal-close {
+      background: transparent; border: none; font-size: 20px; color: #94a3b8;
+      cursor: pointer; padding: 6px; border-radius: 6px; transition: all 0.2s;
+    }
+    .btn-modal-close:hover { color: #ffffff; background: rgba(255, 255, 255, 0.1); }
+    .battle-body {
+      padding: 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;
+      background: #f8fafc;
+    }
+    .battle-col {
+      background: #ffffff; border-radius: 12px; border: 1.5px solid #e2e8f0;
+      padding: 16px; display: flex; flex-direction: column; gap: 10px;
+      position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+      transition: all 0.2s;
+    }
+    .battle-col-highlight {
+      border-color: #10b981; box-shadow: 0 8px 24px rgba(16, 185, 129, 0.18);
+      background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 35%);
+    }
+    .battle-col-title {
+      font-size: 13.5px; font-weight: 800; display: flex; align-items: center; justify-content: space-between;
+      color: #0f172a; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;
+    }
+    .battle-winner-badge {
+      font-size: 9.5px; font-weight: 800; color: #ffffff; background: #10b981;
+      padding: 2px 7px; border-radius: 12px; text-transform: uppercase;
+    }
+    .battle-metric-row {
+      display: flex; justify-content: space-between; align-items: baseline;
+      padding: 5px 0; border-bottom: 1px dashed #f1f5f9; font-size: 12px;
+    }
+    .battle-metric-label {
+      color: #64748b; font-weight: 600;
+    }
+    .battle-metric-val {
+      font-weight: 800; color: #0f172a;
+    }
+    .battle-btn-apply {
+      margin-top: auto; border: 1px solid #cbd5e1; background: #ffffff;
+      border-radius: 8px; padding: 7px 12px; font-size: 12px; font-weight: 700;
+      color: #334155; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      gap: 6px; transition: all 0.2s;
+    }
+    .battle-btn-apply:hover {
+      background: #0f172a; color: #ffffff; border-color: #0f172a;
+    }
+
+    /* Responsive Header & Widget Adjustments */
+    @media (max-width: 1560px) {
+      .split-subtitle { display: none; }
+      .split-pane-header { gap: 6px; padding: 4px 10px; }
+      .split-metrics-group { gap: 6px; }
+    }
+    @media (max-width: 1400px) {
+      .control-panel {
+        gap: 5px;
+        padding: 4px 8px;
+      }
+      .brand-sub { display: none; }
+      .brand-title { font-size: 12px; }
+      .stats-capsule { gap: 4px; padding: 2px 5px; font-size: 10px; }
+      .stat-pill-decision { font-size: 9.5px; }
+      .btn-mode { padding: 4px 5px; font-size: 10.5px; }
+      .btn-action { padding: 4px 7px; font-size: 10.5px; }
+    }
+    @media (max-width: 1240px) {
+      .brand-title { display: none; }
+      .btn-mode span { display: none; }
+      .btn-mode { padding: 5px 8px; }
+      #incident-btn-text { display: none; }
+      .stats-capsule .stat-pill-decision span { display: none; }
+      .btn-preset span { display: none; }
+
+      .split-metric-tag { display: none; }
+      .m-label { font-size: 9.5px; }
+    }
+    @media (max-width: 1080px) {
+      .control-panel {
+        overflow-x: auto;
+        justify-content: flex-start;
+      }
+      .nav-center {
+        justify-content: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Dual Map Container (3D-PACO vs Google OR-Tools) -->
+  <div id="maps-container">
+    <!-- Left Pane: 3D-PACO (Thuật toán của mình) -->
+    <div id="pane-paco" class="map-pane">
+      <div id="map"></div>
+      <div class="split-pane-header paco-pane-header">
+        <div class="split-pane-brand">
+          <span class="split-badge paco-badge"><i class="fa-solid fa-bolt"></i> 3D-PACO Engine</span>
+          <span class="split-subtitle">(C++ Parallel)</span>
+        </div>
+        <div class="split-metrics-group">
+          <div class="split-metric"><span class="m-label">Thời gian:</span> <span class="m-val text-green" id="split-paco-time">-- ms</span></div>
+          <div class="split-metric"><span class="m-label">Quãng đường:</span> <span class="m-val" id="split-paco-dist">-- km</span></div>
+          <div class="split-metric"><span class="m-label">CO2:</span> <span class="m-val text-emerald" id="split-paco-co2">-- kg</span></div>
+          <div class="split-metric-tag" id="split-paco-speedup">⚡ Nhanh x65</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center Splitter Divider / VS Badge -->
+    <div id="split-divider">
+      <div class="split-vs-badge" title="So sánh song song 3D-PACO vs Google OR-Tools">VS</div>
+    </div>
+
+    <!-- Right Pane: Google OR-Tools (Thuật toán Google) -->
+    <div id="pane-google" class="map-pane">
+      <div id="map-google"></div>
+      <div class="split-pane-header google-pane-header">
+        <div class="split-pane-brand">
+          <span class="split-badge google-badge"><i class="fa-brands fa-google"></i> Google OR-Tools</span>
+          <span class="split-subtitle">(Guided Local Search)</span>
+        </div>
+        <div class="split-metrics-group">
+          <div class="split-metric"><span class="m-label">Thời gian:</span> <span class="m-val text-blue" id="split-google-time">-- ms</span></div>
+          <div class="split-metric"><span class="m-label">Quãng đường:</span> <span class="m-val" id="split-google-dist">-- km</span></div>
+          <div class="split-metric"><span class="m-label">CO2:</span> <span class="m-val" id="split-google-co2">-- kg</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Floating Controls -->
+  <header class="control-panel">
+    <!-- Zone 1 (Left): Brand & Presets -->
+    <div class="nav-section nav-left">
+      <div class="brand" title="Hệ thống điều phối thu gom rác thông minh">
+        <div class="brand-icon"><i class="fa-solid fa-recycle"></i></div>
+        <div>
+          <div class="brand-title">Smart Waste Center</div>
+          <span class="brand-sub">3D-PACO Engine</span>
+        </div>
+      </div>
+      <div class="nav-divider"></div>
+      <div class="preset-group">
+        <button class="btn-action btn-preset" id="btn-preset" onclick="loadRandomPreset()" title="Ngẫu nhiên độ đầy thùng rác cố định (không đổi vị trí)">
+          <i class="fa-solid fa-dice"></i> <span id="btn-preset-text">Random Độ Đầy</span>
+        </button>
+        <button class="btn-action btn-secondary btn-icon-only" id="btn-cycle-preset" onclick="cycleNextPreset()" title="Chuyển kịch bản Quận 1 kế tiếp (Mẫu 1 -> 5)">
+          <i class="fa-solid fa-layer-group"></i>
+        </button>
+        <button class="btn-action btn-secondary btn-icon-only" id="btn-reset" onclick="resetAll()" title="Làm mới bản đồ (Xóa lộ trình)">
+          <i class="fa-solid fa-rotate-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Zone 2 (Center): Map Editor Toolbar + Primary Action CTAs -->
+    <div class="nav-section nav-center">
+      <!-- Placement Modes -->
+      <div class="mode-group">
+        <button class="btn-mode active" id="btn-mode-view" onclick="setMode('view')" title="Xem & Kéo thả các điểm">
+          <i class="fa-solid fa-hand"></i> <span>Xem</span>
+        </button>
+        <button class="btn-mode" id="btn-mode-bin" onclick="setMode('bin')" title="Thêm thùng rác mới trên bản đồ">
+          <i class="fa-solid fa-trash-can"></i> <span>+Thùng</span>
+        </button>
+        <button class="btn-mode" id="btn-mode-depot" onclick="setMode('depot')" title="Đặt lại vị trí bãi rác trung tâm">
+          <i class="fa-solid fa-warehouse"></i> <span>+Bãi</span>
+        </button>
+        <button class="btn-mode" id="btn-mode-truck" onclick="setMode('truck')" title="Thêm xe thu gom mới">
+          <i class="fa-solid fa-truck"></i> <span>+Xe</span>
+        </button>
+      </div>
+
+      <div class="nav-divider"></div>
+
+      <!-- Action Group -->
+      <div class="action-group">
+        <button class="btn-action btn-primary" id="btn-solve" onclick="solveRoutes()" title="Tối ưu song song 3D-PACO và Google OR-Tools">
+          <i class="fa-solid fa-route"></i> <span>Tối Ưu Tuyến</span>
+        </button>
+        <button class="btn-action btn-sim" id="btn-sim" onclick="toggleSimulation()" title="Mô phỏng xe di chuyển thu gom">
+          <i class="fa-solid fa-play"></i> <span>Mô Phỏng</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Zone 3 (Right): Status Capsule, Portal Links and Drawer Toggle -->
+    <div class="nav-section nav-right">
+      <!-- Unified Stats Capsule -->
+      <div class="stats-capsule">
+        <div class="stat-pill-item" title="Tổng số điểm thu gom">
+          <i class="fa-solid fa-trash-can" style="color:#10b981;"></i> <span id="stat-bins">28 điểm gom</span>
+        </div>
+        <div class="stat-pill-item" title="Đội xe thu gom trực tuyến">
+          <i class="fa-solid fa-truck" style="color:#3b82f6;"></i> <span id="stat-trucks">3 xe</span>
+        </div>
+        <span id="stat-dist" style="display:none;"></span>
+      </div>
+
+      <!-- Navigation to Driver Data & ML Portal -->
+      <a href="/driver-data" class="btn-action btn-secondary" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; color:#fff; font-weight:700; border:1px solid rgba(16,185,129,0.3); background:rgba(16,185,129,0.15);" title="Cổng Thu Thập Dữ Liệu Đường Đi Tài Xế & Học Máy Tuyến Đường">
+        <i class="fa-solid fa-satellite-dish" style="color:#34d399;"></i> <span>Thu Thập & ML</span>
+      </a>
+
+      <!-- Navigation to 3D-PACO Engine Lab -->
+      <a href="/engine" class="btn-action btn-secondary btn-icon-only" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center; color:#cbd5e1;" title="Phòng Thí Nghiệm Động Cơ 3D-PACO">
+        <i class="fa-solid fa-microchip"></i>
+      </a>
+
+      <!-- Toggle Drawer Button -->
+      <button class="btn-drawer-toggle" onclick="toggleDrawer()" title="Mở bảng nhật ký điều phối & Trạng thái đội xe">
+        <i class="fa-solid fa-clipboard-list"></i> <span>Nhật Ký</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Style Switcher (Basemap styles) - Bottom-Left Layer 1 (Google Maps: Không có đường lưỡi bò) -->
+  <div class="style-picker">
+    <button class="style-btn active" onclick="switchMapStyle('streets', this)" title="Bản đồ đường phố Google Maps (Không có đường lưỡi bò)">
+      <i class="fa-solid fa-map"></i> Đường Phố
+    </button>
+    <button class="style-btn" onclick="switchMapStyle('satellite', this)" title="Ảnh vệ tinh Google Maps">
+      <i class="fa-solid fa-satellite"></i> Vệ Tinh
+    </button>
+  </div>
+
+
+
+  <!-- Side Drawer (Live Timeline & Fleet Status) - Retracted by default -->
+  <div class="drawer closed" id="side-drawer">
+    <div class="drawer-header">
+      <span>🚚 Tình Trạng Đội Xe</span>
+      <button class="btn-mode" onclick="toggleDrawer()" style="padding: 2px 6px;"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="drawer-body">
+      <div id="fleet-container" style="display: flex; flex-direction: column; gap: 8px;">
+        <!-- Truck Cards Generated Here -->
+      </div>
+      <div style="font-weight: 700; font-size: 13px; color: #475569; margin-top: 8px;">
+        <i class="fa-solid fa-clock-rotate-left"></i> Nhật ký hoạt động & Điều hành:
+      </div>
+      <div id="timeline-container" style="display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto;">
+        <div class="timeline-item">
+          <span>🕒 Hệ thống sẵn sàng. Nhấn 'Tối Ưu Tuyến Đường' hoặc chọn điểm trên bản đồ.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- AI Toast Notification -->
+  <div id="ai-toast" class="ai-toast">
+    <div class="ai-toast-icon"><i class="fa-solid fa-bolt"></i></div>
+    <div class="ai-toast-content">
+      <div class="ai-toast-title"><i class="fa-solid fa-sparkles"></i> Tự Động Tái Định Tuyến</div>
+      <div id="ai-toast-msg" class="ai-toast-msg"></div>
+    </div>
+    <button class="ai-toast-close" onclick="dismissAiToast()"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+
+  <script>
+    // Leaflet Tile Layers (Optimized with Subdomains, KeepBuffer, and Idle Loading)
+    // Chế độ Chia Đôi Màn Hình (Split Screen Dual Map)
+    let isSplitMode = true;
+
+    // Helper tạo TileLayer cho từng bản đồ sử dụng Google Maps (Sạch, không có đường lưỡi bò)
+    function createTileLayer(key) {
+      const isSat = (key === 'satellite');
+      const url = isSat
+        ? 'https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'
+        : 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
+      return L.tileLayer(url, {
+        subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+        maxZoom: 20,
+        keepBuffer: 6,
+        updateWhenIdle: true,
+        updateWhenZooming: false,
+        attribution: isSat ? '&copy; Google Maps Vệ Tinh' : '&copy; Google Maps'
+      });
+    }
+
+    const ROUTE_COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899'];
+
+    // 1. Bản đồ Bên Trái: 3D-PACO AI (Thuật toán của mình)
+    const map = L.map('map', {
+      center: [10.7765, 106.7015],
+      zoom: 15,
+      zoomControl: false,
+      preferCanvas: true,
+      wheelDebounceTime: 40,
+      wheelPxPerZoomLevel: 100
+    });
+    L.control.zoom({ position: 'topright' }).addTo(map);
+    let tileLayerPaco = createTileLayer('liberty').addTo(map);
+
+    const routesGroup = L.layerGroup().addTo(map);
+    const walkingLinksGroup = L.layerGroup().addTo(map);
+    const badgesGroup = L.layerGroup().addTo(map);
+    const markersGroup = L.layerGroup().addTo(map);
+    const trucksGroup = L.layerGroup().addTo(map);
+
+    // 2. Bản đồ Bên Phải: Google OR-Tools (Thuật toán Google)
+    const mapGoogle = L.map('map-google', {
+      center: [10.7765, 106.7015],
+      zoom: 15,
+      zoomControl: false,
+      preferCanvas: true,
+      wheelDebounceTime: 40,
+      wheelPxPerZoomLevel: 100
+    });
+    L.control.zoom({ position: 'topright' }).addTo(mapGoogle);
+    let tileLayerGoogle = createTileLayer('liberty').addTo(mapGoogle);
+
+    const routesGroupGoogle = L.layerGroup().addTo(mapGoogle);
+    const walkingLinksGroupGoogle = L.layerGroup().addTo(mapGoogle);
+    const badgesGroupGoogle = L.layerGroup().addTo(mapGoogle);
+    const markersGroupGoogle = L.layerGroup().addTo(mapGoogle);
+    const trucksGroupGoogle = L.layerGroup().addTo(mapGoogle);
+
+    // Biến lưu trữ riêng cho Google OR-Tools map
+    let binMarkersGoogle = {};
+    let truckMarkersGoogle = [];
+    let truckSimStatesGoogle = [];
+    let computedRoutesGoogle = [];
+    let lastGoogleResult = null;
+    let lastPacoResult = null;
+    let lastWalkingLinks = [];
+    let lastDecisionSummary = null;
+
+    // 3. Đồng bộ hóa di chuyển (Sync Camera Pan & Zoom) giữa 2 bản đồ
+    let isSyncing = false;
+    map.on('move', () => {
+      if (isSyncing || !isSplitMode || !mapGoogle) return;
+      isSyncing = true;
+      mapGoogle.setView(map.getCenter(), map.getZoom(), { animate: false });
+      isSyncing = false;
+    });
+
+    mapGoogle.on('move', () => {
+      if (isSyncing || !isSplitMode || !map) return;
+      isSyncing = true;
+      map.setView(mapGoogle.getCenter(), mapGoogle.getZoom(), { animate: false });
+      isSyncing = false;
+    });
+
+    function toggleSplitMode() {
+      // Luôn luôn duy trì 2 màn hình đối chiếu song song 3D-PACO vs Google OR-Tools
+      isSplitMode = true;
+      const container = document.getElementById('maps-container');
+      if (container) container.classList.remove('single-mode');
+      setTimeout(() => {
+        if (map) map.invalidateSize();
+        if (mapGoogle) {
+          mapGoogle.invalidateSize();
+          mapGoogle.setView(map.getCenter(), map.getZoom(), { animate: false });
+        }
+      }, 150);
+      adjustSplitHeaderPosition();
+    }
+
+    function adjustSplitHeaderPosition() {
+      const cp = document.querySelector('.control-panel');
+      if (!cp) return;
+      const cpBottom = cp.offsetTop + cp.offsetHeight;
+      const newTop = (cpBottom + 12) + 'px';
+      document.querySelectorAll('.split-pane-header').forEach(el => {
+        el.style.top = newTop;
+      });
+      const vsBadge = document.querySelector('.split-vs-badge');
+      if (vsBadge) {
+        vsBadge.style.top = (cpBottom + 12) + 'px';
+      }
+      const drawer = document.getElementById('side-drawer');
+      const isDrawerOpen = drawer && !drawer.classList.contains('closed');
+      if (drawer) {
+        drawer.style.top = newTop;
+        drawer.style.maxHeight = `calc(100vh - ${cpBottom + 24}px)`;
+      }
+      const googleHeader = document.querySelector('.google-pane-header');
+      if (googleHeader) {
+        googleHeader.style.right = isDrawerOpen ? '408px' : '16px';
+      }
+    }
+    window.addEventListener('resize', adjustSplitHeaderPosition);
+    setTimeout(adjustSplitHeaderPosition, 300);
+
+    function updateSplitBanners(pacoRes, googleRes) {
+      if (pacoRes) {
+        const pTime = pacoRes.runtime_ms !== undefined ? pacoRes.runtime_ms : 15.2;
+        const pDist = pacoRes.total_distance_km || 0;
+        const pCo2 = pacoRes.co2_kg || (pDist * 0.28 * 2.68).toFixed(2);
+        const pElTime = document.getElementById('split-paco-time');
+        const pElDist = document.getElementById('split-paco-dist');
+        const pElCo2 = document.getElementById('split-paco-co2');
+        const pElSpeed = document.getElementById('split-paco-speedup');
+        if (pElTime) pElTime.textContent = `${pTime} ms`;
+        if (pElDist) pElDist.textContent = `${pDist} km`;
+        if (pElCo2) pElCo2.textContent = `${pCo2} kg`;
+
+        if (googleRes) {
+          const gTime = googleRes.runtime_ms !== undefined ? googleRes.runtime_ms : 520;
+          const speedup = Math.max(1, Math.round(gTime / Math.max(0.1, pTime)));
+          if (pElSpeed) pElSpeed.textContent = `⚡ Nhanh x${speedup}`;
+        }
+      }
+
+      if (googleRes) {
+        const gTime = googleRes.runtime_ms !== undefined ? googleRes.runtime_ms : 520;
+        const gDist = googleRes.total_distance_km || 0;
+        const gCo2 = googleRes.co2_kg || (gDist * 0.28 * 2.68).toFixed(2);
+        const gElTime = document.getElementById('split-google-time');
+        const gElDist = document.getElementById('split-google-dist');
+        const gElCo2 = document.getElementById('split-google-co2');
+        if (gElTime) gElTime.textContent = `${gTime} ms`;
+        if (gElDist) gElDist.textContent = `${gDist} km`;
+        if (gElCo2) gElCo2.textContent = `${gCo2} kg`;
+      }
+    }
+
+    // App State
+    let currentMode = 'view';
+    let depot = { id: 0, name: "Trạm tập kết rác Bến Nghé", lat: 10.7745, lon: 106.7042 };
+    let bins = [];
+    let binMarkers = {};
+    let incidents = [];
+    let vehicles = [
+      { id: 1, name: "Xe rác số 1 (Đội Bắc)", capacity: 450, currentLoad: 0, color: '#10b981', status: "Sẵn sàng" },
+      { id: 2, name: "Xe rác số 2 (Đội Trung Tâm)", capacity: 450, currentLoad: 0, color: '#3b82f6', status: "Sẵn sàng" },
+      { id: 3, name: "Xe rác số 3 (Đội Đông)", capacity: 450, currentLoad: 0, color: '#8b5cf6', status: "Sẵn sàng" }
+    ];
+    let computedRoutes = [];
+    let truckMarkers = [];
+    let truckSimStates = [];
+
+    // Simulation State
+    let isSimulating = false;
+    let simInterval = null;
+
+    // Mode Switcher
+    function setMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.btn-mode').forEach(b => {
+        b.classList.remove('active', 'active-bin', 'active-depot', 'active-truck');
+      });
+      const activeBtn = document.getElementById(`btn-mode-${mode}`);
+      if (activeBtn) activeBtn.classList.add('active', `active-${mode}`);
+    }
+
+    // Switch Basemap Style
+    function switchMapStyle(styleKey, btn) {
+      document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (tileLayerPaco) map.removeLayer(tileLayerPaco);
+      if (tileLayerGoogle && mapGoogle) mapGoogle.removeLayer(tileLayerGoogle);
+      tileLayerPaco = createTileLayer(styleKey).addTo(map);
+      if (mapGoogle) tileLayerGoogle = createTileLayer(styleKey).addTo(mapGoogle);
+    }
+
+    function toggleDrawer(forceOpen = false) {
+      const drawer = document.getElementById('side-drawer');
+      if (forceOpen) {
+        drawer.classList.remove('closed');
+      } else {
+        drawer.classList.toggle('closed');
+      }
+      adjustSplitHeaderPosition();
+    }
+
+    function toggleDecisionLegend() {
+      const leg = document.getElementById('decision-legend');
+      const icon = document.getElementById('legend-toggle-icon');
+      if (!leg) return;
+      leg.classList.toggle('collapsed');
+      if (icon) {
+        icon.className = leg.classList.contains('collapsed') ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down';
+      }
+    }
+
+    function logTimeline(msg, type = 'default') {
+      const container = document.getElementById('timeline-container');
+      const item = document.createElement('div');
+      item.className = `timeline-item timeline-${type}`;
+      const now = new Date();
+      const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+      item.innerHTML = `<span><b>[${timeStr}]</b> ${msg}</span>`;
+      container.prepend(item);
+      while (container.children.length > 70) {
+        container.lastElementChild.remove();
+      }
+    }
+
+    // Map Click Handler for placing elements on BOTH maps
+    function handleMapClick(e) {
+      const lat = e.latlng.lat;
+      const lng = e.latlng.lng;
+
+      if (currentMode === 'bin') {
+        if (computedRoutes.length > 0 || computedRoutesGoogle.length > 0) {
+          computedRoutes = [];
+          computedRoutesGoogle = [];
+          routesGroup.clearLayers();
+          badgesGroup.clearLayers();
+          routesGroupGoogle.clearLayers();
+          badgesGroupGoogle.clearLayers();
+          document.getElementById('stat-dist').textContent = '0 km';
+        }
+        const newId = bins.length > 0 ? Math.max(...bins.map(b => b.id)) + 1 : 1;
+        const fillLevel = Math.floor(Math.random() * 50) + 50; // 50 - 100%
+        const demand = Math.round(fillLevel * 0.5);
+        const newBin = {
+          id: newId,
+          name: `Thùng #${newId}`,
+          lat: lat, lon: lng,
+          fill_level: fillLevel,
+          demand: demand,
+          collected: false,
+          collectedGoogle: false,
+          inaccessible: false,
+          failedReported: false,
+          snappedLocation: null,
+          snappedDistance: 0,
+          snappedRoadName: "",
+          collection_type: 'flexible',
+          type: 3
+        };
+        bins.push(newBin);
+        logTimeline(`📍 Đã thêm Thùng rác #${newId} (${fillLevel}% đầy, ${demand}kg) trên cả 2 bản đồ`, 'collected');
+        updateAll();
+        checkBinAccessibility(newBin);
+      } else if (currentMode === 'depot') {
+        if (computedRoutes.length > 0 || computedRoutesGoogle.length > 0) {
+          computedRoutes = [];
+          computedRoutesGoogle = [];
+          routesGroup.clearLayers();
+          badgesGroup.clearLayers();
+          routesGroupGoogle.clearLayers();
+          badgesGroupGoogle.clearLayers();
+          document.getElementById('stat-dist').textContent = '0 km';
+        }
+        depot = { id: 0, name: "Bãi tập kết rác mới", lat: lat, lon: lng };
+        logTimeline(`🏢 Đã đổi vị trí Bãi rác trung tâm trên cả 2 bản đồ`, 'default');
+        updateAll();
+      } else if (currentMode === 'truck') {
+        addVehicle(lat, lng);
+      }
+    }
+
+    map.on('click', handleMapClick);
+    mapGoogle.on('click', handleMapClick);
+
+    // Fleet Management Functions
+    function addVehicle(lat, lon) {
+      const newId = vehicles.length > 0 ? Math.max(...vehicles.map(v => v.id)) + 1 : 1;
+      const color = ROUTE_COLORS[(vehicles.length) % ROUTE_COLORS.length];
+
+      let vLat = lat;
+      let vLon = lon;
+      if (vLat === undefined || vLon === undefined) {
+        if (depot) {
+          const angle = (vehicles.length * (2 * Math.PI / 4)) + 0.4;
+          vLat = depot.lat + 0.0004 * Math.sin(angle);
+          vLon = depot.lon + 0.0004 * Math.cos(angle);
+        } else {
+          const center = map.getCenter();
+          vLat = center.lat;
+          vLon = center.lng;
+        }
+      }
+
+      const newV = {
+        id: newId,
+        name: `Xe rác số ${newId}`,
+        capacity: 300,
+        currentLoad: 0,
+        color: color,
+        status: "Sẵn sàng",
+        lat: vLat,
+        lon: vLon
+      };
+      vehicles.push(newV);
+      logTimeline(`🚚 Đã thêm ${newV.name} (Tải trọng 300kg) tại [${vLat.toFixed(4)}, ${vLon.toFixed(4)}]`, 'ai');
+
+      if (computedRoutes.length > 0 || computedRoutesGoogle.length > 0) {
+        computedRoutes = [];
+        computedRoutesGoogle = [];
+        routesGroup.clearLayers();
+        badgesGroup.clearLayers();
+        routesGroupGoogle.clearLayers();
+        badgesGroupGoogle.clearLayers();
+        document.getElementById('stat-dist').textContent = '0 km';
+      }
+
+      updateAll();
+    }
+
+    function removeVehicle(id) {
+      if (vehicles.length <= 1) {
+        alert("Đội xe cần tối thiểu ít nhất 1 xe!");
+        return;
+      }
+      const v = vehicles.find(item => item.id === id);
+      const name = v ? v.name : `Xe #${id}`;
+      vehicles = vehicles.filter(item => item.id !== id);
+      logTimeline(`🗑️ Đã xóa ${name} khỏi đội xe`, 'default');
+
+      if (computedRoutes.length > 0 || computedRoutesGoogle.length > 0) {
+        computedRoutes = [];
+        computedRoutesGoogle = [];
+        routesGroup.clearLayers();
+        badgesGroup.clearLayers();
+        routesGroupGoogle.clearLayers();
+        badgesGroupGoogle.clearLayers();
+        document.getElementById('stat-dist').textContent = '0 km';
+      }
+
+      updateAll();
+    }
+
+    function changeCapacity(id, newCap) {
+      const cap = parseInt(newCap);
+      if (isNaN(cap) || cap <= 0) return;
+      const v = vehicles.find(item => item.id === id);
+      if (v) {
+        v.capacity = cap;
+        logTimeline(`⚙️ Đã chỉnh sức chứa ${v.name}: ${cap} kg`, 'default');
+        updateFleetCards();
+      }
+    }
+
+    function zoomToVehicle(id) {
+      const v = vehicles.find(item => item.id === id);
+      if (v && v.lat && v.lon) {
+        map.setView([v.lat, v.lon], 16, { animate: true });
+        const marker = truckMarkers.find(m => {
+          const ll = m.getLatLng();
+          return Math.abs(ll.lat - v.lat) < 0.0001 && Math.abs(ll.lng - v.lon) < 0.0001;
+        });
+        if (marker) marker.openPopup();
+      }
+    }
+
+    // High-Precision Water Body Polygons for Ho Chi Minh City Center
+    // Sông Sài Gòn (Saigon River) along District 1 (West bank) & Thu Thiem (East bank)
+    const SAIGON_RIVER_POLYGON = [
+      [10.7960, 106.7085],
+      [10.7880, 106.7072],
+      [10.7815, 106.7064],
+      [10.7745, 106.7066],
+      [10.7710, 106.7070],
+      [10.7675, 106.7075],
+      [10.7640, 106.7088],
+      [10.7580, 106.7120],
+      [10.7580, 106.7400],
+      [10.7960, 106.7400]
+    ];
+
+    // Kênh Bến Nghé / Tàu Hủ (between District 1 and District 4)
+    const BEN_NGHE_CANAL_POLYGON = [
+      [10.7680, 106.7072],
+      [10.7660, 106.7040],
+      [10.7640, 106.6990],
+      [10.7620, 106.6940],
+      [10.7590, 106.6880],
+      [10.7578, 106.6885],
+      [10.7605, 106.6945],
+      [10.7628, 106.6998],
+      [10.7650, 106.7048],
+      [10.7672, 106.7078]
+    ];
+
+    // Kênh Nhiêu Lộc - Thị Nghè (between District 1 and Binh Thanh)
+    const THI_NGHE_CANAL_POLYGON = [
+      [10.7870, 106.7070],
+      [10.7900, 106.7010],
+      [10.7925, 106.6950],
+      [10.7945, 106.6955],
+      [10.7915, 106.7015],
+      [10.7890, 106.7075]
+    ];
+
+    function isPointInPolygon(lat, lon, poly) {
+      let inside = false;
+      const n = poly.length;
+      let p1x = poly[0][1], p1y = poly[0][0];
+      for (let i = 0; i <= n; i++) {
+        const p2x = poly[i % n][1], p2y = poly[i % n][0];
+        if (Math.min(p1y, p2y) < lat && lat <= Math.max(p1y, p2y)) {
+          if (lon <= Math.max(p1x, p2x)) {
+            let xinters = p1x;
+            if (p1y !== p2y) {
+              xinters = (lat - p1y) * (p2x - p1x) / (p2y - p1y) + p1x;
+            }
+            if (p1x === p2x || lon <= xinters) {
+              inside = !inside;
+            }
+          }
+        }
+        p1x = p2x;
+        p1y = p2y;
+      }
+      return inside;
+    }
+
+    // Determine if coordinates are physically located inside a river or canal
+    function isPointInWater(lat, lon) {
+      if (isPointInPolygon(lat, lon, SAIGON_RIVER_POLYGON)) return true;
+      if (isPointInPolygon(lat, lon, BEN_NGHE_CANAL_POLYGON)) return true;
+      if (isPointInPolygon(lat, lon, THI_NGHE_CANAL_POLYGON)) return true;
+      if (lon >= 106.7088 && lat >= 10.760 && lat <= 10.795) return true;
+      return false;
+    }
+
+    let waterToastTimer = null;
+    const nearestRoadCache = new Map();
+
+    function dismissWaterToast() {
+      const toast = document.getElementById('water-toast');
+      if (toast) toast.remove();
+      if (waterToastTimer) {
+        clearTimeout(waterToastTimer);
+        waterToastTimer = null;
+      }
+    }
+
+    // Check if a bin is located in water/river or inaccessible off-road
+    async function checkBinAccessibility(bin) {
+      const cacheKey = `${bin.lat.toFixed(5)},${bin.lon.toFixed(5)}`;
+      try {
+        let wp = nearestRoadCache.get(cacheKey);
+
+        if (!wp) {
+          const mirrors = [
+            `https://routing.openstreetmap.de/routed-car/nearest/v1/driving/${bin.lon.toFixed(6)},${bin.lat.toFixed(6)}`,
+            `https://router.project-osrm.org/nearest/v1/driving/${bin.lon.toFixed(6)},${bin.lat.toFixed(6)}`
+          ];
+          for (const url of mirrors) {
+            try {
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 4000);
+              const resp = await fetch(url, { signal: controller.signal });
+              clearTimeout(timeoutId);
+              if (resp.ok) {
+                const data = await resp.json();
+                if (data.code === 'Ok' && data.waypoints && data.waypoints.length > 0) {
+                  wp = data.waypoints[0];
+                  nearestRoadCache.set(cacheKey, wp);
+                  break;
+                }
+              }
+            } catch (e) {}
+          }
+        }
+
+        if (wp) {
+          const dist = Math.round(wp.distance);
+          bin.snappedDistance = dist;
+          bin.snappedLocation = { lat: wp.location[1], lon: wp.location[0] };
+          bin.snappedRoadName = wp.name || "Mép bờ / Mặt đường gần nhất";
+
+          // ONLY BLOCK IF PHYSICALLY LOCATED IN WATER / RIVER!
+          const inWater = isPointInWater(bin.lat, bin.lon);
+          bin.inWater = inWater;
+
+          if (inWater) {
+            bin.inaccessible = true;
+            logTimeline(`🌊 [Cảnh Báo Vị Trí]: Thùng rác #${bin.id} được đặt dưới sông/lòng kênh (cách bờ ${bin.snappedDistance}m)! Xe rác đường bộ không thể xuống nước để lấy.`, 'incident');
+            showWaterWarningToast(bin);
+          } else {
+            // ON LAND: Whether by the curb or deep in an alley / park / pedestrian plaza, IT CAN BE COLLECTED!
+            const wasInaccessible = bin.inaccessible;
+            bin.inaccessible = false;
+
+            // Tắt cảnh báo toast nếu thùng này vừa được kéo lên bờ
+            const toast = document.getElementById('water-toast');
+            if (toast && (!toast.dataset.binId || toast.dataset.binId === String(bin.id))) {
+              dismissWaterToast();
+            }
+
+            if (wasInaccessible) {
+              logTimeline(`✅ [Vị Trí Hợp Lệ]: Thùng rác #${bin.id} đã ở trên bờ/mặt đất an toàn (${bin.snappedRoadName})! Đã tắt cảnh báo dưới sông.`, 'ai');
+              showWaterSuccessToast(bin);
+            } else if (dist > 35) {
+              logTimeline(`🚶 [Hẻm / Công Viên]: Thùng rác #${bin.id} cách đường xe ${dist}m (${bin.snappedRoadName}). Xe sẽ đỗ mép đường, công nhân đi bộ vào thu gom.`, 'default');
+            }
+          }
+          updateBinMarkerVisual(bin);
+          if (binMarkers[bin.id]) {
+            binMarkers[bin.id].setPopupContent(getBinPopupHtml(bin));
+          }
+          updateFleetCards();
+          updateStatsBar();
+        }
+      } catch (e) {
+        console.warn('Nearest road check timed out or failed:', e);
+      }
+    }
+
+    function showWaterWarningToast(bin) {
+      dismissWaterToast();
+
+      const toast = document.createElement('div');
+      toast.id = 'water-toast';
+      toast.className = 'water-toast';
+      toast.dataset.binId = String(bin.id);
+      toast.innerHTML = `
+        <i class="fa-solid fa-water" style="font-size: 18px;"></i>
+        <span><b>Cảnh báo:</b> Thùng #${bin.id} nằm dưới sông/xa đường (${bin.snappedDistance}m)! Xe không lấy được.</span>
+        ${bin.snappedLocation ? `<button class="btn-relocate" onclick="relocateBinToRoad(${bin.id})"><i class="fa-solid fa-anchor"></i> Kéo lên bờ</button>` : ''}
+        <button onclick="dismissWaterToast()" style="background:transparent; color:#fff; border:none; padding:2px 6px; cursor:pointer; font-size:14px;"><i class="fa-solid fa-xmark"></i></button>
+      `;
+      document.body.appendChild(toast);
+
+      waterToastTimer = setTimeout(() => {
+        dismissWaterToast();
+      }, 9000);
+    }
+
+    function showWaterSuccessToast(bin) {
+      dismissWaterToast();
+
+      const toast = document.createElement('div');
+      toast.id = 'water-toast';
+      toast.className = 'water-toast water-toast-success';
+      toast.dataset.binId = String(bin.id);
+      toast.innerHTML = `
+        <i class="fa-solid fa-circle-check" style="font-size: 18px; color: #fff;"></i>
+        <span><b>Đã khắc phục:</b> Thùng #${bin.id} đã ở trên bờ/gần đường (${bin.snappedRoadName || 'Mặt đường'})! Xe có thể thu gom.</span>
+        <button onclick="dismissWaterToast()" style="background:transparent; color:#fff; border:none; padding:2px 6px; cursor:pointer; font-size:14px;"><i class="fa-solid fa-xmark"></i></button>
+      `;
+      document.body.appendChild(toast);
+
+      waterToastTimer = setTimeout(() => {
+        dismissWaterToast();
+      }, 4500);
+    }
+
+    function relocateBinToRoad(binId) {
+      const b = bins.find(item => item.id === binId);
+      if (!b || !b.snappedLocation) return;
+      b.lat = b.snappedLocation.lat;
+      b.lon = b.snappedLocation.lon;
+      b.inaccessible = false;
+      b.collected = false;
+      b.failedReported = false;
+      b.snappedDistance = 0;
+
+      dismissWaterToast();
+      showWaterSuccessToast(b);
+
+      logTimeline(`⚓ [Khắc Phục]: Đã kéo/vớt Thùng #${b.id} từ dưới sông lên bờ kè (${b.snappedRoadName || 'Mặt đường'})!`, 'ai');
+
+      if (computedRoutes.length > 0 || computedRoutesGoogle.length > 0) {
+        computedRoutes = [];
+        computedRoutesGoogle = [];
+        routesGroup.clearLayers();
+        badgesGroup.clearLayers();
+        routesGroupGoogle.clearLayers();
+        badgesGroupGoogle.clearLayers();
+        document.getElementById('stat-dist').textContent = '0 km';
+      }
+
+      updateAll();
+      map.setView([b.lat, b.lon], 16, { animate: true });
+      if (binMarkers[b.id]) binMarkers[b.id].openPopup();
+    }
+
+    function removeBin(binId) {
+      bins = bins.filter(b => b.id !== binId);
+      const toast = document.getElementById('water-toast');
+      if (toast && toast.dataset.binId === String(binId)) {
+        dismissWaterToast();
+      }
+      logTimeline(`🗑️ Đã xóa Thùng rác #${binId}`, 'default');
+      if (computedRoutes.length > 0 || computedRoutesGoogle.length > 0) {
+        computedRoutes = [];
+        computedRoutesGoogle = [];
+        routesGroup.clearLayers();
+        badgesGroup.clearLayers();
+        routesGroupGoogle.clearLayers();
+        badgesGroupGoogle.clearLayers();
+        document.getElementById('stat-dist').textContent = '0 km';
+      }
+      updateAll();
+    }
+
+    let currentPresetId = 1;
+
+    // Random độ đầy của các thùng rác CỐ ĐỊNH (giữ nguyên vị trí các thùng rác, chỉ random độ đầy & cập nhật mùi hôi)
+    async function randomizeBinsFillLevel() {
+      if (!bins || bins.length === 0) {
+        await loadPresetData(currentPresetId || 1);
+        return;
+      }
+
+      if (isSimulating) {
+        isSimulating = false;
+        if (simInterval) clearInterval(simInterval);
+        const simBtn = document.getElementById('btn-sim');
+        if (simBtn) {
+          simBtn.innerHTML = '<i class="fa-solid fa-play"></i> Bắt Đầu Thu Gom';
+          simBtn.classList.remove('simulating');
+        }
+      }
+
+      // Giữ nguyên vị trí cố định của toàn bộ thùng rác hiện tại
+      // Chỉ random lại độ đầy (fill_level) và nhu cầu (demand)
+      let totalDemand = 0;
+      bins.forEach(b => {
+        // Random độ đầy từ 20% đến 100%
+        const fill = Math.floor(Math.random() * 81) + 20;
+        b.fill_level = fill;
+        b.demand = Math.round(fill * 0.5);
+        delete b.has_smell;
+        totalDemand += b.demand;
+        b.collected = false;
+        b.collectedGoogle = false;
+      });
+
+      // Reset tải trọng và trạng thái đội xe
+      vehicles.forEach(v => {
+        v.currentLoad = 0;
+        v.status = "Sẵn sàng";
+      });
+
+      updateAll();
+
+      logTimeline(`🎲 [Random độ đầy]: Giữ nguyên vị trí ${bins.length} thùng rác cố định, random độ đầy mới (Tổng rác: ${totalDemand} kg) & tối ưu lại lộ trình!`, 'ai');
+
+      // Tự động giải lại lộ trình tối ưu cho cả 3D-PACO AI và Google OR-Tools
+      solveRoutes();
+    }
+
+    // Đảm bảo khi nhấn nút Random / Xúc xắc thì chỉ random độ đầy thùng rác cố định
+    const loadRandomPreset = randomizeBinsFillLevel;
+
+    // Chuyển kịch bản Quận 1 kế tiếp (Mẫu 1 -> 5)
+    async function cycleNextPreset() {
+      let nextId = (currentPresetId % 5) + 1;
+      currentPresetId = nextId;
+      await loadPresetData(nextId);
+    }
+
+    // Load Preset Data (Hỗ trợ 5 kịch bản mẫu đa dạng, nhiều màu sắc)
+    async function loadPresetData(presetId = 1) {
+      stopIoTSimulation();
+      dismissWaterToast();
+      try {
+        const url = presetId ? `/api/waste/preset?id=${presetId}` : '/api/waste/preset';
+        const resp = await fetch(url);
+        const data = await resp.json();
+        currentPresetId = data.id || presetId || 1;
+        depot = data.depot;
+        bins = data.bins;
+        incidents = data.incidents || [];
+        vehicles = data.vehicles.map((v, i) => {
+          const defaultLat = depot ? depot.lat + (i === 0 ? 0.0003 : -0.0003) : 10.7745;
+          const defaultLon = depot ? depot.lon + (i === 0 ? 0.0004 : -0.0004) : 106.7042;
+          return {
+            ...v,
+            lat: v.lat !== undefined ? v.lat : defaultLat,
+            lon: v.lon !== undefined ? v.lon : defaultLon,
+            currentLoad: 0,
+            status: "Sẵn sàng"
+          };
+        });
+
+        // Cập nhật màu sắc nút Mẫu sinh động theo theme màu của từng kịch bản
+        const btnPreset = document.getElementById('btn-preset');
+        if (btnPreset && data.theme_gradient) {
+          btnPreset.style.background = data.theme_gradient;
+          btnPreset.style.boxShadow = `0 4px 14px ${data.theme_color || '#10b981'}77`;
+        }
+
+        const presetTitle = data.name || `Kịch bản #${data.id}`;
+        logTimeline(`🎲 [${presetTitle}]: Đã nạp ${bins.length} thùng rác, ${vehicles.length} xe gom!`, 'ai');
+        showAiToast(`🎲 [MẪU DỮ LIỆU: ${presetTitle}]: Nạp thành công ${bins.length} thùng & ${vehicles.length} xe gom.`);
+
+        // Di chuyển góc nhìn camera đến vị trí trạm tập kết mới
+        if (depot && map) {
+          map.setView([depot.lat, depot.lon], 15, { animate: true });
+        }
+
+        updateAll();
+        adjustSplitHeaderPosition();
+        solveRoutes(); // Tự động tối ưu song song cả 3D-PACO và Google OR-Tools
+      } catch (err) {
+        console.error('Error loading preset:', err);
+      }
+    }
+    let activeSolver = 'paco';
+
+    function switchActiveSolver(solverKey) {
+      activeSolver = solverKey || 'paco';
+      solveRoutes();
+    }
+
+    function stopIoTSimulation() {}
+    // Solve Waste VRP Routes
+    async function solveRoutes(overrideSolver) {
+      if (!depot || bins.length === 0) {
+        alert("Vui lòng đặt bãi rác và ít nhất 1 thùng rác!");
+        return;
+      }
+      if (vehicles.length === 0) {
+        alert("Vui lòng thêm ít nhất 1 xe rác vào đội xe!");
+        return;
+      }
+      const btn = document.getElementById('btn-solve');
+      btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Đang tối ưu...';
+
+      try {
+        const cleanDepot = { id: depot.id, name: depot.name, lat: depot.lat, lon: depot.lon };
+
+        // Kiểm tra xem có phải đang tái tối ưu giữa ca (xe đang chạy và đã gom được một số thùng)
+        const collectedCount = bins.filter(b => b.collected).length;
+        const isMidRun = (isSimulating || (truckSimStates.length > 0 && truckSimStates.some(ts => ts.currStep > 0))) && collectedCount > 0;
+
+        let targetBins = bins;
+        let cleanVehicles = vehicles.map(v => ({
+          id: v.id, name: v.name, capacity: v.capacity, color: v.color, lat: v.lat, lon: v.lon
+        }));
+
+        if (isMidRun) {
+          const uncollectedBins = bins.filter(b => isSplitMode ? (!b.collected || !b.collectedGoogle) : !b.collected);
+          if (uncollectedBins.length === 0) {
+            logTimeline("🎉 Toàn bộ thùng rác đã được thu gom hoàn tất! Bấm 'Chạy Lại' để bắt đầu ca mới.", "ai");
+            btn.innerHTML = '<i class="fa-solid fa-route"></i> <span>Tối Ưu Tuyến</span>';
+            return;
+          }
+          targetBins = uncollectedBins;
+          // Xuất phát từ vị trí thực tế hiện tại của các xe trên bản đồ
+          cleanVehicles = vehicles.map(v => {
+            const ts = truckSimStates.find(t => t.truckId === v.id);
+            if (ts && ts.coords && ts.currStep < ts.coords.length) {
+              const curPos = ts.coords[ts.currStep];
+              return {
+                id: v.id, name: v.name, capacity: v.capacity, color: v.color,
+                lat: curPos[0], lon: curPos[1]
+              };
+            }
+            return { id: v.id, name: v.name, capacity: v.capacity, color: v.color, lat: v.lat, lon: v.lon };
+          });
+          logTimeline(`⚡ [Tái Tối Ưu Giữa Ca]: Tiếp tục điều phối ${uncollectedBins.length} thùng chưa gom từ vị trí hiện tại của xe, không thu gom lại rác cũ!`, 'ai');
+        } else {
+          // Bắt đầu ca mới: đặt lại trạng thái thùng
+          bins.forEach(b => {
+            b.collected = false;
+            b.collectedGoogle = false;
+          });
+          renderMarkers();
+        }
+
+        const cleanBins = targetBins.map(b => ({
+          id: b.id, name: b.name, lat: b.lat, lon: b.lon,
+          fill_level: b.fill_level, demand: b.demand, address: b.address || "",
+          collection_type: b.collection_type || (b.type === 1 ? 'home' : (b.type === 2 ? 'centralized' : 'flexible')),
+          type: b.type || (b.collection_type === 'home' ? 1 : (b.collection_type === 'centralized' ? 2 : 3))
+        }));
+
+        if (isSplitMode) {
+          // Song song giải cả 3D-PACO và Google OR-Tools
+          const [respPaco, respGoogle] = await Promise.all([
+            fetch('/api/waste/solve', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ depot: cleanDepot, bins: cleanBins, vehicles: cleanVehicles })
+            }),
+            fetch('/api/waste/solve-ortools', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ depot: cleanDepot, bins: cleanBins, vehicles: cleanVehicles })
+            })
+          ]);
+
+          const resPaco = await respPaco.json();
+          const resGoogle = await respGoogle.json();
+
+          const pacoTask = (async () => {
+            if (resPaco.success) {
+              computedRoutes = resPaco.routes;
+              lastPacoResult = resPaco;
+              lastWalkingLinks = resPaco.walking_links || [];
+              lastDecisionSummary = resPaco.decision_summary || null;
+              document.getElementById('stat-dist').textContent = `${resPaco.total_distance_km} km`;
+              updateStatsBar();
+              await fetchRoadGeometries(computedRoutes);
+              renderRoutesOnMap();
+              renderWalkingLinks(lastWalkingLinks);
+
+              if (isMidRun && truckSimStates.length > 0) {
+                truckSimStates.forEach(ts => {
+                  const r = computedRoutes.find(cr => cr.truck_id === ts.truckId);
+                  if (r) {
+                    const rawCoords = r.streetGeometry || r.coordinates;
+                    const newDetour = interpolateCoords(rawCoords.map(c => [c[1], c[0]]));
+                    const pastCoords = ts.coords.slice(0, ts.currStep + 1);
+                    ts.coords = pastCoords.concat(newDetour.slice(1));
+                    ts.totalSteps = ts.coords.length;
+                    ts.stops = r.stops;
+                    ts.currentStopIndex = 1;
+                  }
+                });
+              }
+            }
+          })();
+
+          const googleTask = (async () => {
+            if (resGoogle.success) {
+              computedRoutesGoogle = resGoogle.routes;
+              lastGoogleResult = resGoogle;
+              await fetchRoadGeometries(computedRoutesGoogle);
+              renderRoutesGoogleOnMap();
+              renderWalkingLinksGoogle(resGoogle.walking_links || []);
+
+              if (isMidRun && truckSimStatesGoogle.length > 0) {
+                truckSimStatesGoogle.forEach(tsg => {
+                  const r = computedRoutesGoogle.find(cr => cr.truck_id === tsg.truckId);
+                  if (r) {
+                    const rawCoords = r.streetGeometry || r.coordinates;
+                    const newDetour = interpolateCoords(rawCoords.map(c => [c[1], c[0]]));
+                    const pastCoords = tsg.coords.slice(0, tsg.currStep + 1);
+                    tsg.coords = pastCoords.concat(newDetour.slice(1));
+                    tsg.totalSteps = tsg.coords.length;
+                    tsg.stops = r.stops;
+                    tsg.currentStopIndex = 1;
+                  }
+                });
+              }
+            }
+          })();
+
+          await Promise.all([pacoTask, googleTask]);
+
+          updateSplitBanners(resPaco, resGoogle);
+          const decNote = lastDecisionSummary ? ` [Đa Quyết Định: ${lastDecisionSummary.bundled_dropoffs_count || 0} điểm gom chung, ${lastDecisionSummary.home_collection_count || 0} tại nhà]` : '';
+          logTimeline(`⚔️ [Đối Chiếu Song Song]: 3D-PACO (${resPaco.runtime_ms}ms, ${resPaco.total_distance_km}km) vs Google OR-Tools (${resGoogle.runtime_ms}ms, ${resGoogle.total_distance_km}km)${decNote}`, 'ai');
+          updateFleetCards();
+
+        } else {
+          // Chế độ 1 solver đơn
+          const solverToUse = overrideSolver || activeSolver || 'paco';
+          let endpoint = '/api/waste/solve';
+          if (solverToUse === 'ortools') endpoint = '/api/waste/solve-ortools';
+          else if (solverToUse === 'baseline') endpoint = '/api/waste/solve-baseline';
+
+          const resp = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ depot: cleanDepot, bins: cleanBins, vehicles: cleanVehicles })
+          });
+          const res = await resp.json();
+          if (res.success) {
+            computedRoutes = res.routes;
+            lastWalkingLinks = res.walking_links || [];
+            lastDecisionSummary = res.decision_summary || null;
+            logTimeline(`⚡ [${res.name || '3D-PACO'}]: Tối ưu hoàn tất trong ${res.runtime_ms}ms! Quãng đường ${res.total_distance_km} km (CO2: ${res.co2_kg}kg)`, 'ai');
+            document.getElementById('stat-dist').textContent = `${res.total_distance_km} km`;
+            updateStatsBar();
+            await fetchRoadGeometries(computedRoutes);
+            renderRoutesOnMap();
+            renderWalkingLinks(lastWalkingLinks);
+            updateFleetCards();
+
+            if (isMidRun && truckSimStates.length > 0) {
+              truckSimStates.forEach(ts => {
+                const r = computedRoutes.find(cr => cr.truck_id === ts.truckId);
+                if (r) {
+                  const rawCoords = r.streetGeometry || r.coordinates;
+                  const newDetour = interpolateCoords(rawCoords.map(c => [c[1], c[0]]));
+                  const pastCoords = ts.coords.slice(0, ts.currStep + 1);
+                  ts.coords = pastCoords.concat(newDetour.slice(1));
+                  ts.totalSteps = ts.coords.length;
+                  ts.stops = r.stops;
+                  ts.currentStopIndex = 1;
+                }
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Solve error:', err);
+      } finally {
+        btn.innerHTML = '<i class="fa-solid fa-route"></i> <span>Tối Ưu Tuyến</span>';
+      }
+    }
+
+    // Fetch Turn-by-Turn Road Polylines from OSRM (Parallelized with Caching)
+    const routeGeomCache = new Map();
+
+    // High-speed Multi-Mirror Route Fetcher with LocalStorage + Server Proxy + Fallback
+    async function fetchFastRouteGeometry(coordsStr, waypoints) {
+      if (!coordsStr) return waypoints || [];
+
+      // 1. In-memory cache
+      let cached = routeGeomCache.get(coordsStr);
+      if (cached && cached.routes && cached.routes.length > 0) {
+        return cached.routes[0].geometry.coordinates;
+      }
+
+      // 2. Browser localStorage cache
+      try {
+        const localData = localStorage.getItem('osrm_' + coordsStr);
+        if (localData) {
+          const parsed = JSON.parse(localData);
+          if (parsed && parsed.routes && parsed.routes.length > 0) {
+            routeGeomCache.set(coordsStr, parsed);
+            return parsed.routes[0].geometry.coordinates;
+          }
+        }
+      } catch (e) {}
+
+      // 3. Backend Persistent Route Proxy (/api/waste/route-geometry)
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        const resp = await fetch(`/api/waste/route-geometry?coords=${encodeURIComponent(coordsStr)}`, {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+            routeGeomCache.set(coordsStr, data);
+            try { localStorage.setItem('osrm_' + coordsStr, JSON.stringify(data)); } catch (e) {}
+            return data.routes[0].geometry.coordinates;
+          }
+        }
+      } catch (e) {}
+
+      // 4. Fast Public Mirror 1: openstreetmap.de (high speed German OSM cluster)
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4500);
+        const url = `https://routing.openstreetmap.de/routed-car/route/v1/driving/${coordsStr}?overview=full&geometries=geojson`;
+        const resp = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+            routeGeomCache.set(coordsStr, data);
+            try { localStorage.setItem('osrm_' + coordsStr, JSON.stringify(data)); } catch (e) {}
+            return data.routes[0].geometry.coordinates;
+          }
+        }
+      } catch (e) {}
+
+      // 5. Fast Public Mirror 2: project-osrm.org
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const url = `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson`;
+        const resp = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+            routeGeomCache.set(coordsStr, data);
+            try { localStorage.setItem('osrm_' + coordsStr, JSON.stringify(data)); } catch (e) {}
+            return data.routes[0].geometry.coordinates;
+          }
+        }
+      } catch (e) {}
+
+      return waypoints;
+    }
+
+    async function fetchRoadGeometries(routesList) {
+      const targetRoutes = routesList || computedRoutes;
+      if (!targetRoutes || targetRoutes.length === 0) return;
+
+      await Promise.all(targetRoutes.map(async (route) => {
+        try {
+          const coordsStr = route.coordinates.map(c => `${c[0].toFixed(5)},${c[1].toFixed(5)}`).join(';');
+          let roadCoordinates = null;
+          if (route.street_geometry && route.street_geometry.length > 2) {
+            roadCoordinates = route.street_geometry;
+          } else {
+            roadCoordinates = await fetchFastRouteGeometry(coordsStr, route.coordinates);
+          }
+          route.streetGeometry = roadCoordinates || route.street_geometry || route.coordinates;
+        } catch (e) {
+          console.warn('Error applying road geometry:', e);
+          route.streetGeometry = route.street_geometry || route.coordinates;
+        }
+      }));
+    }
+
+    // Render Routes on Left Leaflet Map (3D-PACO)
+    function renderRoutesOnMap() {
+      routesGroup.clearLayers();
+      badgesGroup.clearLayers();
+
+      if (!computedRoutes || computedRoutes.length === 0) return;
+
+      computedRoutes.forEach((r, idx) => {
+        const vRef = vehicles.find(v => v.id === r.truck_id) || vehicles[idx];
+        const color = vRef ? vRef.color : (r.color || ROUTE_COLORS[idx % ROUTE_COLORS.length]);
+        const rawCoords = r.streetGeometry || r.coordinates;
+        // OSRM provides [lon, lat], Leaflet polyline expects [lat, lon]
+        const latLngs = rawCoords.map(c => [c[1], c[0]]);
+
+        // Casing border
+        L.polyline(latLngs, {
+          color: '#ffffff',
+          weight: 7,
+          opacity: 0.85,
+          lineJoin: 'round',
+          lineCap: 'round'
+        }).addTo(routesGroup);
+
+        // Colored route line
+        L.polyline(latLngs, {
+          color: color,
+          weight: 4.5,
+          opacity: 0.95,
+          lineJoin: 'round',
+          lineCap: 'round'
+        }).addTo(routesGroup);
+
+        // Add stop badges
+        r.stops.slice(1, -1).forEach((stop, sIdx) => {
+          const badgeIcon = L.divIcon({
+            html: `<div class="stop-badge-wrap"><div class="stop-badge-inner" style="background-color: ${color};">${sIdx + 1}</div></div>`,
+            className: '',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+          });
+          L.marker([stop.lat, stop.lon], { icon: badgeIcon, interactive: false }).addTo(badgesGroup);
+        });
+      });
+    }
+
+    // Render Routes on Right Leaflet Map (Google OR-Tools)
+    function renderRoutesGoogleOnMap() {
+      routesGroupGoogle.clearLayers();
+      badgesGroupGoogle.clearLayers();
+
+      if (!computedRoutesGoogle || computedRoutesGoogle.length === 0) return;
+
+      computedRoutesGoogle.forEach((r, idx) => {
+        const vRef = vehicles.find(v => v.id === r.truck_id) || vehicles[idx];
+        const color = vRef ? vRef.color : (r.color || ROUTE_COLORS[idx % ROUTE_COLORS.length]);
+        const rawCoords = r.streetGeometry || r.coordinates;
+        const latLngs = rawCoords.map(c => [c[1], c[0]]);
+
+        // Casing border
+        L.polyline(latLngs, {
+          color: '#ffffff',
+          weight: 7,
+          opacity: 0.85,
+          lineJoin: 'round',
+          lineCap: 'round'
+        }).addTo(routesGroupGoogle);
+
+        // Colored route line
+        L.polyline(latLngs, {
+          color: color,
+          weight: 4.5,
+          opacity: 0.95,
+          lineJoin: 'round',
+          lineCap: 'round'
+        }).addTo(routesGroupGoogle);
+
+        // Add stop badges
+        r.stops.slice(1, -1).forEach((stop, sIdx) => {
+          const badgeIcon = L.divIcon({
+            html: `<div class="stop-badge-wrap"><div class="stop-badge-inner" style="background-color: ${color};">${sIdx + 1}</div></div>`,
+            className: '',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+          });
+          L.marker([stop.lat, stop.lon], { icon: badgeIcon, interactive: false }).addTo(badgesGroupGoogle);
+        });
+      });
+    }
+
+    // Render Walking Links (Multi-decision resident drop-offs to communal hubs)
+    function renderWalkingLinks(links) {
+      walkingLinksGroup.clearLayers();
+      const linksToDraw = links || lastWalkingLinks || [];
+      if (!linksToDraw || linksToDraw.length === 0) return;
+
+      linksToDraw.forEach(link => {
+        const fromLat = link.from_lat !== undefined ? link.from_lat : link.lat;
+        const fromLon = link.from_lon !== undefined ? link.from_lon : link.lon;
+        const toLat = link.to_lat;
+        const toLon = link.to_lon;
+        if (fromLat === undefined || toLat === undefined) return;
+
+        const latLngs = [[fromLat, fromLon], [toLat, toLon]];
+
+        // Glow polyline
+        L.polyline(latLngs, {
+          color: '#a855f7',
+          weight: 4.5,
+          opacity: 0.35,
+          dashArray: '3, 6',
+          interactive: false
+        }).addTo(walkingLinksGroup);
+
+        // Core walking dash line
+        const walkLine = L.polyline(latLngs, {
+          color: '#8b5cf6',
+          weight: 2.5,
+          opacity: 0.95,
+          dashArray: '5, 8',
+          interactive: true
+        }).addTo(walkingLinksGroup);
+
+        const distM = Math.round(link.walking_dist_m || link.walk_distance_m || 0);
+        walkLine.bindTooltip(`
+          <div style="font-family:'Inter',sans-serif; font-size:11px; line-height:1.5;">
+            <b style="color:#7c3aed;"><i class="fa-solid fa-person-walking"></i> Mang rác ra trạm (${distM}m)</b><br/>
+            <span>Từ: <b>${link.from_name || 'Điểm dân cư'}</b></span><br/>
+            <span>Đến trạm gom: <b>${link.to_hub_name || link.to_name || 'Trạm tập trung'}</b></span><br/>
+            <span style="color:#10b981; font-weight:700;">🌱 Tiết kiệm xe vào ngõ hẹp!</span>
+          </div>
+        `, { sticky: true, opacity: 0.95 });
+      });
+    }
+
+    function renderWalkingLinksGoogle(links) {
+      walkingLinksGroupGoogle.clearLayers();
+      const linksToDraw = links || [];
+      if (!linksToDraw || linksToDraw.length === 0) return;
+
+      linksToDraw.forEach(link => {
+        const fromLat = link.from_lat !== undefined ? link.from_lat : link.lat;
+        const fromLon = link.from_lon !== undefined ? link.from_lon : link.lon;
+        const toLat = link.to_lat;
+        const toLon = link.to_lon;
+        if (fromLat === undefined || toLat === undefined) return;
+
+        const latLngs = [[fromLat, fromLon], [toLat, toLon]];
+
+        const walkLine = L.polyline(latLngs, {
+          color: '#8b5cf6',
+          weight: 2.5,
+          opacity: 0.9,
+          dashArray: '5, 8',
+          interactive: true
+        }).addTo(walkingLinksGroupGoogle);
+
+        const distM = Math.round(link.walk_distance_m || link.walking_dist_m || 0);
+        walkLine.bindTooltip(`
+          <div style="font-family:'Inter',sans-serif; font-size:11px;">
+            <b style="color:#7c3aed;"><i class="fa-solid fa-person-walking"></i> Cư dân mang rác ra trạm (${distM}m)</b>
+          </div>
+        `, { sticky: true, opacity: 0.95 });
+      });
+    }
+
+    // Render Markers (Depot, Bins, Incidents, and Vehicles) Synchronized on BOTH Maps
+    function renderMarkers() {
+      markersGroup.clearLayers();
+      markersGroupGoogle.clearLayers();
+      binMarkers = {};
+      binMarkersGoogle = {};
+      const allBounds = [];
+
+      // 1. Depot (Bãi rác)
+      if (depot) {
+        allBounds.push([depot.lat, depot.lon]);
+        const dIcon = L.divIcon({
+          html: `<div class="marker-depot-wrap"><div class="marker-depot-inner"><i class="fa-solid fa-warehouse"></i></div></div>`,
+          className: '',
+          iconSize: [38, 38],
+          iconAnchor: [19, 19],
+          popupAnchor: [0, -19]
+        });
+        const depotPopup = `
+          <div style="font-weight:700; color:#dc2626; margin-bottom:4px;"><i class="fa-solid fa-warehouse"></i> ${depot.name}</div>
+          <div style="font-size:12px; color:#475569;">Trạm tập kết rác trung tâm & xuất phát xe (Đồng bộ)</div>
+        `;
+        const dMarker1 = L.marker([depot.lat, depot.lon], { icon: dIcon }).addTo(markersGroup);
+        dMarker1.bindPopup(depotPopup);
+        const dMarker2 = L.marker([depot.lat, depot.lon], { icon: dIcon }).addTo(markersGroupGoogle);
+        dMarker2.bindPopup(depotPopup);
+      }
+
+      // 2. Bins (Thùng rác)
+      bins.forEach(b => {
+        allBounds.push([b.lat, b.lon]);
+        let fillClass = b.collected ? 'bin-collected' : (b.fill_level >= 85 ? 'bin-full' : (b.fill_level >= 60 ? 'bin-medium' : 'bin-empty'));
+        let iconContent = b.collected ? '<i class="fa-solid fa-check"></i>' : b.id;
+
+        if (b.inaccessible) {
+          fillClass = 'bin-inaccessible';
+          iconContent = '<i class="fa-solid fa-water"></i>';
+        }
+
+        const bIcon = L.divIcon({
+          html: `<div class="marker-bin-wrap" id="bin-marker-wrap-${b.id}">
+                   <div class="marker-bin-inner ${fillClass}">${iconContent}</div>
+                 </div>`,
+          className: '',
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+          popupAnchor: [0, -16]
+        });
+
+        // Marker trên Left Map (3D-PACO)
+        const bMarker = L.marker([b.lat, b.lon], { icon: bIcon, draggable: true }).addTo(markersGroup);
+        binMarkers[b.id] = bMarker;
+
+        // Marker trên Right Map (Google OR-Tools)
+        let fillClassG = b.collectedGoogle ? 'bin-collected' : fillClass;
+        let iconContentG = b.collectedGoogle ? '<i class="fa-solid fa-check"></i>' : iconContent;
+        const bIconG = L.divIcon({
+          html: `<div class="marker-bin-wrap" id="bin-marker-wrap-g-${b.id}">
+                   <div class="marker-bin-inner ${fillClassG}">${iconContentG}</div>
+                 </div>`,
+          className: '',
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+          popupAnchor: [0, -16]
+        });
+        const bMarkerGoogle = L.marker([b.lat, b.lon], { icon: bIconG, draggable: true }).addTo(markersGroupGoogle);
+        binMarkersGoogle[b.id] = bMarkerGoogle;
+
+        // Đồng bộ kéo thả marker trên 2 bản đồ
+        bMarker.on('drag', (e) => {
+          if (binMarkersGoogle[b.id]) binMarkersGoogle[b.id].setLatLng(e.latlng);
+        });
+        bMarkerGoogle.on('drag', (e) => {
+          if (binMarkers[b.id]) binMarkers[b.id].setLatLng(e.latlng);
+        });
+
+        bMarker.on('dragstart', () => {
+          const toast = document.getElementById('water-toast');
+          if (toast && (!toast.dataset.binId || toast.dataset.binId === String(b.id))) {
+            dismissWaterToast();
+          }
+        });
+        bMarkerGoogle.on('dragstart', () => {
+          const toast = document.getElementById('water-toast');
+          if (toast && (!toast.dataset.binId || toast.dataset.binId === String(b.id))) {
+            dismissWaterToast();
+          }
+        });
+
+        const onDragEndHandler = async (e) => {
+          const pos = (e && e.target) ? e.target.getLatLng() : bMarker.getLatLng();
+          b.lat = pos.lat;
+          b.lon = pos.lng;
+          b.collected = false;
+          b.collectedGoogle = false;
+          b.failedReported = false;
+
+          if (binMarkers[b.id]) binMarkers[b.id].setLatLng(pos);
+          if (binMarkersGoogle[b.id]) binMarkersGoogle[b.id].setLatLng(pos);
+
+          const toast = document.getElementById('water-toast');
+          if (toast && (!toast.dataset.binId || toast.dataset.binId === String(b.id))) {
+            dismissWaterToast();
+          }
+
+          logTimeline(`📍 Đã dời Thùng #${b.id} đến [${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)}]`, 'default');
+
+          if (computedRoutes.length > 0 || computedRoutesGoogle.length > 0) {
+            computedRoutes = [];
+            computedRoutesGoogle = [];
+            routesGroup.clearLayers();
+            walkingLinksGroup.clearLayers();
+            badgesGroup.clearLayers();
+            routesGroupGoogle.clearLayers();
+            walkingLinksGroupGoogle.clearLayers();
+            badgesGroupGoogle.clearLayers();
+            document.getElementById('stat-dist').textContent = '0 km';
+          }
+
+          await checkBinAccessibility(b);
+          if (binMarkers[b.id]) binMarkers[b.id].setPopupContent(getBinPopupHtml(b));
+          if (binMarkersGoogle[b.id]) binMarkersGoogle[b.id].setPopupContent(getBinPopupHtml(b));
+        };
+
+        bMarker.on('dragend', onDragEndHandler);
+        bMarkerGoogle.on('dragend', onDragEndHandler);
+
+        bMarker.bindPopup(getBinPopupHtml(b), { maxWidth: 320 });
+        bMarkerGoogle.bindPopup(getBinPopupHtml(b), { maxWidth: 320 });
+      });
+
+
+
+      // 4. Vehicles (Xe rác lúc nghỉ / chưa mô phỏng)
+      if (!isSimulating) {
+        trucksGroup.clearLayers();
+        trucksGroupGoogle.clearLayers();
+        truckMarkers = [];
+        truckMarkersGoogle = [];
+        vehicles.forEach((v, idx) => {
+          let vLat = v.lat;
+          let vLon = v.lon;
+          if (vLat === undefined || vLon === undefined) {
+            if (depot) {
+              const angle = (idx * (2 * Math.PI / Math.max(vehicles.length, 1))) + 0.5;
+              const offsetDist = vehicles.length > 1 ? 0.0003 : 0;
+              vLat = depot.lat + offsetDist * Math.sin(angle);
+              vLon = depot.lon + offsetDist * Math.cos(angle);
+              v.lat = vLat;
+              v.lon = vLon;
+            } else {
+              vLat = 10.7745;
+              vLon = 106.7042;
+            }
+          }
+          allBounds.push([vLat, vLon]);
+
+          const shortLabel = v.name.replace(/Xe\s*(rác)?\s*(số)?\s*/i, '#');
+          const tIcon = L.divIcon({
+            html: `
+              <div class="marker-truck-wrap" title="${v.name}">
+                <div class="marker-truck-inner" style="background-color: ${v.color || '#3b82f6'};">
+                  <i class="fa-solid fa-truck"></i>
+                </div>
+                <div class="truck-label-badge" style="background:${v.color || '#3b82f6'};">${shortLabel}</div>
+              </div>
+            `,
+            className: '',
+            iconSize: [38, 38],
+            iconAnchor: [19, 19],
+            popupAnchor: [0, -19]
+          });
+
+          const vPopupHtml = `
+            <div style="font-weight:700; color:#0f172a; margin-bottom:4px;"><i class="fa-solid fa-truck"></i> ${v.name}</div>
+            <div style="font-size:12px; color:#475569; display:flex; justify-content:space-between; margin-bottom:2px;"><span>Tải trọng tối đa:</span><b>${v.capacity} kg</b></div>
+            <div style="font-size:12px; color:#475569; display:flex; justify-content:space-between; margin-bottom:2px;"><span>Tải hiện tại:</span><b>${v.currentLoad} kg</b></div>
+            <div style="font-size:12px; color:#475569; display:flex; justify-content:space-between; margin-bottom:6px;"><span>Trạng thái:</span><b style="color:#10b981;">${v.status}</b></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #f1f5f9; padding-top:6px;">
+              <span style="font-size:11px; color:#94a3b8;">💡 Kéo thả xe để dời chỗ</span>
+              ${vehicles.length > 1 ? `<button onclick="removeVehicle(${v.id})" style="background:#fee2e2; color:#ef4444; border:none; padding:3px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;"><i class="fa-solid fa-trash"></i> Xóa xe</button>` : ''}
+            </div>
+          `;
+
+          const tMarker1 = L.marker([vLat, vLon], { icon: tIcon, draggable: true, zIndexOffset: 600 }).addTo(trucksGroup);
+          truckMarkers.push(tMarker1);
+          tMarker1.bindPopup(vPopupHtml);
+
+          const tMarker2 = L.marker([vLat, vLon], { icon: tIcon, draggable: true, zIndexOffset: 600 }).addTo(trucksGroupGoogle);
+          truckMarkersGoogle.push(tMarker2);
+          tMarker2.bindPopup(vPopupHtml);
+
+          // Drag sync
+          tMarker1.on('drag', (e) => tMarker2.setLatLng(e.latlng));
+          tMarker2.on('drag', (e) => tMarker1.setLatLng(e.latlng));
+
+          const onTruckDragEnd = (e) => {
+            const pos = (e && e.target) ? e.target.getLatLng() : tMarker1.getLatLng();
+            v.lat = pos.lat;
+            v.lon = pos.lng;
+            tMarker1.setLatLng(pos);
+            tMarker2.setLatLng(pos);
+            logTimeline(`🚚 Đã dời vị trí ${v.name} đến [${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)}]`, 'default');
+            updateFleetCards();
+            if (computedRoutes.length > 0 || computedRoutesGoogle.length > 0) {
+              computedRoutes = [];
+              computedRoutesGoogle = [];
+              routesGroup.clearLayers();
+              walkingLinksGroup.clearLayers();
+              badgesGroup.clearLayers();
+              routesGroupGoogle.clearLayers();
+              walkingLinksGroupGoogle.clearLayers();
+              badgesGroupGoogle.clearLayers();
+              document.getElementById('stat-dist').textContent = '0 km';
+              logTimeline(`⚠️ Lộ trình cũ đã được đặt lại do xe dời vị trí. Bấm 'Tối Ưu Tuyến Đường' để tính lại.`, 'incident');
+            }
+          };
+
+          tMarker1.on('dragend', onTruckDragEnd);
+          tMarker2.on('dragend', onTruckDragEnd);
+        });
+      }
+
+      if (allBounds.length > 1) {
+        map.fitBounds(L.latLngBounds(allBounds), { padding: [60, 60], maxZoom: 16 });
+      }
+    }
+
+    // Live Fleet Cards in Side Drawer
+    function updateFleetCards() {
+      const container = document.getElementById('fleet-container');
+      container.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <span style="font-size:12px; font-weight:700; color:#334155;">Đội xe thu gom (${vehicles.length} xe)</span>
+          <button class="btn-action btn-primary" onclick="addVehicle()" style="padding:4px 9px; font-size:11.5px; border-radius:6px;">
+            <i class="fa-solid fa-plus"></i> Thêm xe
+          </button>
+        </div>
+      `;
+
+      vehicles.forEach(v => {
+        const pct = Math.min(100, Math.round((v.currentLoad / v.capacity) * 100));
+        const card = document.createElement('div');
+        card.className = 'truck-card';
+        card.innerHTML = `
+          <div class="truck-card-header">
+            <span style="color:${v.color}; font-weight:700;"><i class="fa-solid fa-truck"></i> ${v.name}</span>
+            <div style="display:flex; align-items:center; gap:5px;">
+              <button title="Định vị xe trên bản đồ" onclick="zoomToVehicle(${v.id})" style="border:none; background:#f1f5f9; border-radius:4px; padding:3px 7px; cursor:pointer; color:#475569; font-size:11px;">
+                <i class="fa-solid fa-location-crosshairs"></i>
+              </button>
+              ${vehicles.length > 1 ? `
+              <button title="Xóa xe này" onclick="removeVehicle(${v.id})" style="border:none; background:#fee2e2; border-radius:4px; padding:3px 7px; cursor:pointer; color:#ef4444; font-size:11px;">
+                <i class="fa-solid fa-trash"></i>
+              </button>` : ''}
+            </div>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:#64748b; margin-bottom:5px;">
+            <span>Tải: <b>${v.currentLoad}</b> kg</span>
+            <span style="display:flex; align-items:center; gap:4px;">
+              Sức chứa: 
+              <input type="number" min="50" max="2000" step="50" value="${v.capacity}" onchange="changeCapacity(${v.id}, this.value)" style="width:56px; padding:2px 4px; font-size:11.5px; border:1px solid #cbd5e1; border-radius:4px; text-align:right;"> kg
+            </span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:${pct}%; background:${v.color};"></div>
+          </div>
+          <div style="font-size:11px; color:#64748b; margin-top:5px; display:flex; justify-content:space-between;">
+            <span>Vị trí: <b>${v.lat ? `${v.lat.toFixed(4)}, ${v.lon.toFixed(4)}` : 'Bãi rác'}</b></span>
+            <span>Trạng thái: <b style="color:${v.status === 'Sẵn sàng' ? '#10b981' : '#2563eb'};">${v.status}</b></span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function getBinPopupHtml(b) {
+      const warningHtml = b.inaccessible ? `
+        <div style="background:#fef2f2; border:1px solid #fecaca; padding:6px 8px; border-radius:6px; margin:6px 0; font-size:11.5px; color:#b91c1c;">
+          <i class="fa-solid fa-water"></i> <b>Dưới sông / Vùng nước:</b> Cách mép bờ <b>${b.snappedDistance || '>90'}m</b>. Xe rác đường bộ không thể xuống nước để lấy!
+        </div>
+        ${b.snappedLocation ? `
+        <button onclick="relocateBinToRoad(${b.id})" style="width:100%; background:#10b981; color:#fff; border:none; padding:5px; border-radius:5px; font-weight:700; font-size:11.5px; cursor:pointer; margin-bottom:5px;">
+          <i class="fa-solid fa-anchor"></i> Kéo lên bờ (${b.snappedRoadName || 'Mặt đường'})
+        </button>` : ''}
+      ` : (b.snappedDistance > 35 ? `
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:6px 8px; border-radius:6px; margin:6px 0; font-size:11.5px; color:#166534;">
+          <i class="fa-solid fa-person-walking"></i> <b>Vị trí xa đường (${b.snappedDistance}m):</b> Nằm trong hẻm/công viên. Xe đỗ mép đường (${b.snappedRoadName || 'Mặt đường'}), công nhân đi bộ vào thu gom bình thường!
+        </div>
+      ` : '');
+
+      const bType = b.collection_type || (b.type === 1 ? 'home' : (b.type === 2 ? 'centralized' : 'flexible'));
+      const walkingLink = (lastWalkingLinks || []).find(w => w.from_id === b.id);
+      const walkDistM = walkingLink ? Math.round(walkingLink.walking_dist_m || walkingLink.walk_distance_m || 0) : 0;
+      const walkHubName = walkingLink ? (walkingLink.to_hub_name || walkingLink.to_name || 'Trạm gom') : '';
+      const bundledHtml = walkingLink ? `
+        <div style="background:#f5f3ff; border:1px solid #ddd6fe; padding:6px 8px; border-radius:6px; margin:6px 0; font-size:11px; color:#6d28d9; line-height:1.4;">
+          <i class="fa-solid fa-person-walking"></i> <b>Đa Quyết Định:</b> Cư dân đi bộ <b>${walkDistM}m</b> mang rác ra <b>${walkHubName}</b>. Xe rác không cần chạy vào hẻm!
+        </div>
+      ` : '';
+
+      const collectionModeSelector = `
+        <!-- Mô hình Thu Gom & Đa Quyết Định -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:7px 9px; margin-bottom:8px;" onmousedown="event.stopPropagation()">
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; font-weight:700; color:#334155; margin-bottom:5px;">
+            <span><i class="fa-solid fa-code-branch"></i> Mô hình thu gom:</span>
+            <span style="font-size:11px; font-weight:700; color:${bType === 'centralized' ? '#7c3aed' : (bType === 'home' ? '#2563eb' : '#d97706')};">
+              ${bType === 'centralized' ? '🏢 Trạm Hub' : (bType === 'home' ? '🏠 Tại nhà' : '🔄 Đa Q.Định')}
+            </span>
+          </div>
+          <div style="display:flex; gap:4px;">
+            <button type="button" onclick="setBinCollectionType(${b.id}, 'home')" style="flex:1; font-size:10px; padding:4px 2px; border:1px solid ${bType === 'home' ? '#3b82f6' : '#cbd5e1'}; background:${bType === 'home' ? '#eff6ff' : '#fff'}; border-radius:4px; cursor:pointer; font-weight:700; color:${bType === 'home' ? '#1d4ed8' : '#64748b'};" title="Xe bắt buộc vào tận nơi lấy rác">
+              🏠 Tại nhà
+            </button>
+            <button type="button" onclick="setBinCollectionType(${b.id}, 'centralized')" style="flex:1; font-size:10px; padding:4px 2px; border:1px solid ${bType === 'centralized' ? '#8b5cf6' : '#cbd5e1'}; background:${bType === 'centralized' ? '#f5f3ff' : '#fff'}; border-radius:4px; cursor:pointer; font-weight:700; color:${bType === 'centralized' ? '#6d28d9' : '#64748b'};" title="Trạm gom lớn, tiếp nhận cư dân mang rác ra">
+              🏢 Trạm Hub
+            </button>
+            <button type="button" onclick="setBinCollectionType(${b.id}, 'flexible')" style="flex:1; font-size:10px; padding:4px 2px; border:1px solid ${bType === 'flexible' ? '#f59e0b' : '#cbd5e1'}; background:${bType === 'flexible' ? '#fffbeb' : '#fff'}; border-radius:4px; cursor:pointer; font-weight:700; color:${bType === 'flexible' ? '#b45309' : '#64748b'};" title="Thuật toán tự quyết định gom tại nhà hay gom tập trung">
+              🔄 Đa Q.Định
+            </button>
+          </div>
+        </div>
+      `;
+
+      const fillPercent = b.fill_level || 0;
+      const demandKg = b.demand || Math.round(fillPercent * 0.5);
+
+      return `
+        <div class="bin-popup-card" style="min-width: 255px; font-family: 'Inter', sans-serif;">
+          <!-- Header -->
+          <div style="font-weight:700; color:${b.inaccessible ? '#dc2626' : '#0f172a'}; margin-bottom:6px; display:flex; align-items:center; justify-content:space-between;">
+            <span style="font-size:13px;">
+              <i class="fa-solid ${b.inaccessible ? 'fa-water' : 'fa-trash-can'}"></i>
+              Thùng rác #${b.id} ${b.inaccessible ? '(Dưới Sông)' : ''}
+            </span>
+          </div>
+
+          ${warningHtml}
+          ${bundledHtml}
+
+          <!-- Độ đầy rác (Fullness Slider & Quick Buttons) -->
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 10px; margin-bottom:8px;" onmousedown="event.stopPropagation()">
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:600; color:#334155; margin-bottom:4px;">
+              <span><i class="fa-solid fa-gauge-high"></i> Độ đầy:</span>
+              <b id="fill-val-${b.id}" style="color:${fillPercent >= 85 ? '#ea580c' : (fillPercent >= 60 ? '#d97706' : '#10b981')}; font-size:12.5px;">
+                ${fillPercent}% (${demandKg} kg)
+              </b>
+            </div>
+            <input type="range" min="0" max="100" step="5" value="${fillPercent}" id="fill-slider-${b.id}"
+              oninput="onBinFillChange(${b.id}, this.value)"
+              onchange="onBinFillCommit(${b.id}, this.value)"
+              style="width:100%; cursor:pointer; accent-color:#10b981; margin:4px 0;" />
+
+            <div style="display:flex; gap:4px; margin-top:4px;">
+              <button type="button" onclick="setBinFillLevel(${b.id}, 20)" style="flex:1; font-size:10.5px; padding:3px 0; border:1px solid #cbd5e1; background:#fff; border-radius:4px; cursor:pointer; font-weight:600; color:#475569;">20%</button>
+              <button type="button" onclick="setBinFillLevel(${b.id}, 50)" style="flex:1; font-size:10.5px; padding:3px 0; border:1px solid #cbd5e1; background:#fff; border-radius:4px; cursor:pointer; font-weight:600; color:#475569;">50%</button>
+              <button type="button" onclick="setBinFillLevel(${b.id}, 80)" style="flex:1; font-size:10.5px; padding:3px 0; border:1px solid #cbd5e1; background:#fff; border-radius:4px; cursor:pointer; font-weight:600; color:#475569;">80%</button>
+              <button type="button" onclick="setBinFillLevel(${b.id}, 100)" style="flex:1; font-size:10.5px; padding:3px 0; border:1px solid #fecaca; background:#fef2f2; border-radius:4px; cursor:pointer; font-weight:700; color:#dc2626;">100%</button>
+            </div>
+          </div>
+
+          <!-- Trạng thái & Xóa -->
+          <div style="font-size:11.5px; color:#475569; display:flex; justify-content:space-between; margin-bottom:6px;">
+            <span>Trạng thái:</span>
+            <b id="status-val-${b.id}" style="color:${b.inaccessible ? '#dc2626' : (b.collected ? '#10b981' : '#f59e0b')};">
+              ${b.inaccessible ? 'Dưới sông (Không thể lấy)' : (b.collected ? '✅ Đã thu gom' : (b.snappedDistance > 35 ? '⏳ Chờ gom bộ qua hẻm' : '⏳ Chờ xe đến'))}
+            </b>
+          </div>
+
+          <div style="border-top:1px solid #f1f5f9; padding-top:6px; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:11px; color:#94a3b8;"><i class="fa-solid fa-arrows-up-down-left-right"></i> Kéo thả để dời</span>
+            <button onclick="removeBin(${b.id})" style="background:#fee2e2; color:#ef4444; border:none; padding:3px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">
+              <i class="fa-solid fa-trash"></i> Xóa
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function updateBinMarkerVisual(b) {
+      const marker = binMarkers[b.id];
+      const markerGoogle = binMarkersGoogle[b.id];
+      if (!marker && !markerGoogle) return;
+
+      // 1. Cập nhật biểu tượng trên Left Map (3D-PACO)
+      if (marker) {
+        let fillClass = b.collected ? 'bin-collected' : (b.fill_level >= 85 ? 'bin-full' : (b.fill_level >= 60 ? 'bin-medium' : 'bin-empty'));
+        let iconContent = b.collected ? '<i class="fa-solid fa-check"></i>' : b.id;
+
+        if (b.inaccessible) {
+          fillClass = 'bin-inaccessible';
+          iconContent = '<i class="fa-solid fa-water"></i>';
+        }
+
+        const newIcon = L.divIcon({
+          html: `<div class="marker-bin-wrap" id="bin-marker-wrap-${b.id}">
+                   <div class="marker-bin-inner ${fillClass}">${iconContent}</div>
+                 </div>`,
+          className: '',
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+          popupAnchor: [0, -16]
+        });
+        marker.setIcon(newIcon);
+      }
+
+      // 2. Cập nhật biểu tượng trên Right Map (Google OR-Tools)
+      if (markerGoogle) {
+        let fillClassG = b.collectedGoogle ? 'bin-collected' : (b.fill_level >= 85 ? 'bin-full' : (b.fill_level >= 60 ? 'bin-medium' : 'bin-empty'));
+        let iconContentG = b.collectedGoogle ? '<i class="fa-solid fa-check"></i>' : b.id;
+
+        if (b.inaccessible) {
+          fillClassG = 'bin-inaccessible';
+          iconContentG = '<i class="fa-solid fa-water"></i>';
+        }
+
+        const newIconG = L.divIcon({
+          html: `<div class="marker-bin-wrap" id="bin-marker-wrap-g-${b.id}">
+                   <div class="marker-bin-inner ${fillClassG}">${iconContentG}</div>
+                 </div>`,
+          className: '',
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+          popupAnchor: [0, -16]
+        });
+        markerGoogle.setIcon(newIconG);
+      }
+    }
+
+    function setBinCollectionType(binId, newType) {
+      const b = bins.find(item => item.id === binId);
+      if (!b) return;
+      b.collection_type = newType;
+      b.type = (newType === 'home' ? 1 : (newType === 'centralized' ? 2 : 3));
+      updateBinMarkerVisual(b);
+      updateStatsBar();
+      if (binMarkers[b.id]) binMarkers[b.id].setPopupContent(getBinPopupHtml(b));
+      if (binMarkersGoogle[b.id]) binMarkersGoogle[b.id].setPopupContent(getBinPopupHtml(b));
+      const typeLabel = newType === 'home' ? '🏠 Thu tại nhà' : (newType === 'centralized' ? '🏢 Trạm gom tập trung' : '🔄 Đa quyết định');
+      logTimeline(`🔄 Thùng #${b.id} chuyển sang: <b>${typeLabel}</b>`, 'ai');
+      solveRoutes();
+    }
+
+    function onBinFillChange(binId, val) {
+      const b = bins.find(item => item.id === binId);
+      if (!b) return;
+      const numVal = parseInt(val, 10);
+      b.fill_level = numVal;
+      b.demand = Math.round(numVal * 0.5);
+
+      if (numVal > 0 && b.collected) {
+        b.collected = false;
+        const statusEl = document.getElementById(`status-val-${binId}`);
+        if (statusEl) {
+          statusEl.textContent = '⏳ Chờ xe đến';
+          statusEl.style.color = '#f59e0b';
+        }
+      }
+
+      const valEl = document.getElementById(`fill-val-${binId}`);
+      if (valEl) {
+        valEl.textContent = `${b.fill_level}% (${b.demand} kg)`;
+        valEl.style.color = b.fill_level >= 85 ? '#ea580c' : (b.fill_level >= 60 ? '#d97706' : '#10b981');
+      }
+
+      updateBinMarkerVisual(b);
+      updateStatsBar();
+    }
+
+    function onBinFillCommit(binId, val) {
+      const b = bins.find(item => item.id === binId);
+      if (!b) return;
+      logTimeline(`📊 Đã chỉnh Thùng #${b.id}: độ đầy ${b.fill_level}% (${b.demand} kg)`, 'default');
+      if (computedRoutes.length > 0 || computedRoutesGoogle.length > 0) {
+        computedRoutes = [];
+        computedRoutesGoogle = [];
+        routesGroup.clearLayers();
+        walkingLinksGroup.clearLayers();
+        badgesGroup.clearLayers();
+        routesGroupGoogle.clearLayers();
+        walkingLinksGroupGoogle.clearLayers();
+        badgesGroupGoogle.clearLayers();
+        document.getElementById('stat-dist').textContent = '0 km (Cần tính lại)';
+      }
+    }
+
+    function setBinFillLevel(binId, val) {
+      const slider = document.getElementById(`fill-slider-${binId}`);
+      if (slider) {
+        slider.value = val;
+      }
+      onBinFillChange(binId, val);
+      onBinFillCommit(binId, val);
+    }
+
+    function updateStatsBar() {
+      const statBins = document.getElementById('stat-bins');
+      if (statBins) statBins.textContent = `${bins.length} điểm gom`;
+      const statTrucks = document.getElementById('stat-trucks');
+      if (statTrucks) statTrucks.textContent = `${vehicles.length} xe`;
+    }
+
+    function updateAll() {
+      updateStatsBar();
+      renderMarkers();
+      updateFleetCards();
+    }
+
+    function resetAll() {
+      stopSimulation();
+      stopIoTSimulation();
+      dismissWaterToast();
+      bins = [];
+      incidents = [];
+      computedRoutes = [];
+      computedRoutesGoogle = [];
+      lastWalkingLinks = [];
+      lastDecisionSummary = null;
+      routesGroup.clearLayers();
+      walkingLinksGroup.clearLayers();
+      badgesGroup.clearLayers();
+      trucksGroup.clearLayers();
+      routesGroupGoogle.clearLayers();
+      walkingLinksGroupGoogle.clearLayers();
+      badgesGroupGoogle.clearLayers();
+      trucksGroupGoogle.clearLayers();
+      vehicles.forEach(v => {
+        v.currentLoad = 0;
+        v.status = "Sẵn sàng";
+        if (depot) {
+          v.lat = depot.lat;
+          v.lon = depot.lon;
+        }
+      });
+      document.getElementById('stat-dist').textContent = '0 km';
+      const pDist = document.getElementById('split-paco-dist');
+      const gDist = document.getElementById('split-google-dist');
+      if (pDist) pDist.textContent = '0 km';
+      if (gDist) gDist.textContent = '0 km';
+      logTimeline('🔄 Đã làm mới toàn bộ 2 bản đồ.', 'default');
+      updateAll();
+    }
+
+    // Smooth Coordinate Interpolator for visible and silky truck movement
+    function interpolateCoords(coords, minTotalPoints = 300) {
+      if (!coords || coords.length < 2) return coords || [];
+
+      // Calculate total Euclidean distance
+      let totalDist = 0;
+      for (let i = 0; i < coords.length - 1; i++) {
+        totalDist += Math.hypot(coords[i+1][0] - coords[i][0], coords[i+1][1] - coords[i][1]);
+      }
+      if (totalDist === 0) return coords;
+
+      // Target at least minTotalPoints (smooth movement at 45ms) or 10-12 points per segment
+      const targetPoints = Math.max(minTotalPoints, coords.length * 10);
+      const result = [coords[0]];
+
+      for (let i = 0; i < coords.length - 1; i++) {
+        const p1 = coords[i];
+        const p2 = coords[i+1];
+        const segDist = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
+        const segSteps = Math.max(1, Math.round((segDist / totalDist) * targetPoints));
+
+        for (let s = 1; s <= segSteps; s++) {
+          const t = s / segSteps;
+          result.push([
+            p1[0] + (p2[0] - p1[0]) * t,
+            p1[1] + (p2[1] - p1[1]) * t
+          ]);
+        }
+      }
+
+      return result;
+    }
+
+    // Toggle Simulation
+    async function toggleSimulation() {
+      if (computedRoutes.length === 0 || (isSplitMode && computedRoutesGoogle.length === 0)) {
+        logTimeline("🤖 [Tự Động]: Chưa có lộ trình tối ưu, đang tự động tính toán cả 2 thuật toán...", "ai");
+        await solveRoutes();
+        if (computedRoutes.length === 0) {
+          alert("Không thể tối ưu lộ trình! Vui lòng đảm bảo đã đặt bãi rác, thùng rác và ít nhất 1 xe.");
+          return;
+        }
+      }
+
+      if (isSimulating) {
+        pauseSimulation();
+      } else {
+        const hasUnfinished = truckSimStates.length > 0 && truckSimStates.some(ts => ts.active && ts.currStep > 0 && ts.currStep < ts.totalSteps - 1);
+        if (hasUnfinished) {
+          resumeSimulation();
+        } else {
+          startSimulation();
+        }
+      }
+    }
+
+    function pauseSimulation() {
+      isSimulating = false;
+      if (simInterval) clearInterval(simInterval);
+      document.getElementById('btn-sim').innerHTML = '<i class="fa-solid fa-play"></i> Tiếp Tục';
+      document.getElementById('btn-sim').classList.remove('simulating');
+      logTimeline("⏸️ Tạm dừng ca mô phỏng trên cả 2 bản đồ.", "default");
+    }
+
+    function resumeSimulation() {
+      isSimulating = true;
+      document.getElementById('btn-sim').innerHTML = '<i class="fa-solid fa-pause"></i> Tạm Dừng';
+      document.getElementById('btn-sim').classList.add('simulating');
+      logTimeline("▶️ Tiếp tục di chuyển các xe rác...", "default");
+      if (simInterval) clearInterval(simInterval);
+      simInterval = setInterval(simulationStep, 45);
+    }
+
+    function stopSimulation() {
+      isSimulating = false;
+      if (simInterval) clearInterval(simInterval);
+      document.getElementById('btn-sim').innerHTML = '<i class="fa-solid fa-play"></i> Mô Phỏng Thu Gom';
+      document.getElementById('btn-sim').classList.remove('simulating');
+      trucksGroup.clearLayers();
+      trucksGroupGoogle.clearLayers();
+      truckMarkers = [];
+      truckMarkersGoogle = [];
+      truckSimStates = [];
+      truckSimStatesGoogle = [];
+      bins.forEach(b => {
+        b.collected = false;
+        b.collectedGoogle = false;
+      });
+      renderMarkers();
+    }
+
+    function startSimulation() {
+      // Reset bins collected state
+      bins.forEach(b => {
+        b.collected = false;
+        b.collectedGoogle = false;
+      });
+      renderMarkers();
+
+      vehicles.forEach(v => {
+        v.currentLoad = 0;
+        v.status = "Đang di chuyển thu gom";
+      });
+
+      // 1. Khởi tạo xe trên Left Map (3D-PACO)
+      trucksGroup.clearLayers();
+      truckMarkers = [];
+      truckSimStates = computedRoutes.map((r, i) => {
+        const rawCoords = r.streetGeometry || r.coordinates;
+        let leafletCoords = interpolateCoords(rawCoords.map(c => [c[1], c[0]]));
+
+        const vRef = vehicles.find(v => v.id === r.truck_id) || vehicles[i] || vehicles[0];
+        const color = vRef.color || ROUTE_COLORS[i % ROUTE_COLORS.length];
+        const shortLabel = vRef.name.replace(/Xe\s*(rác)?\s*(số)?\s*/i, '#');
+
+        const tIcon = L.divIcon({
+          html: `<div class="marker-truck-wrap"><div class="marker-truck-inner" style="background-color: ${color};"><i class="fa-solid fa-truck"></i></div><div class="truck-label-badge" style="background:${color};">${shortLabel}</div></div>`,
+          className: '',
+          iconSize: [38, 38],
+          iconAnchor: [19, 19]
+        });
+
+        const marker = L.marker(leafletCoords[0], { icon: tIcon, zIndexOffset: 1000 }).addTo(trucksGroup);
+        truckMarkers.push(marker);
+
+        return {
+          truckId: r.truck_id,
+          coords: leafletCoords, // [lat, lon]
+          marker: marker,
+          currStep: 0,
+          totalSteps: leafletCoords.length,
+          vehicleRef: vRef,
+          stops: r.stops,
+          currentStopIndex: 1,
+          active: true,
+          solverType: 'paco'
+        };
+      });
+
+      // 2. Khởi tạo xe trên Right Map (Google OR-Tools) nếu ở chế độ chia đôi
+      trucksGroupGoogle.clearLayers();
+      truckMarkersGoogle = [];
+      if (isSplitMode && computedRoutesGoogle.length > 0) {
+        truckSimStatesGoogle = computedRoutesGoogle.map((r, i) => {
+          const rawCoords = r.streetGeometry || r.coordinates;
+          let leafletCoords = interpolateCoords(rawCoords.map(c => [c[1], c[0]]));
+
+          const vRef = vehicles.find(v => v.id === r.truck_id) || vehicles[i] || vehicles[0];
+          const color = vRef.color || ROUTE_COLORS[i % ROUTE_COLORS.length];
+          const shortLabel = vRef.name.replace(/Xe\s*(rác)?\s*(số)?\s*/i, '#');
+
+          const tIcon = L.divIcon({
+            html: `<div class="marker-truck-wrap"><div class="marker-truck-inner" style="background-color: ${color};"><i class="fa-solid fa-truck"></i></div><div class="truck-label-badge" style="background:${color};">${shortLabel}</div></div>`,
+            className: '',
+            iconSize: [38, 38],
+            iconAnchor: [19, 19]
+          });
+
+          const marker = L.marker(leafletCoords[0], { icon: tIcon, zIndexOffset: 1000 }).addTo(trucksGroupGoogle);
+          truckMarkersGoogle.push(marker);
+
+          return {
+            truckId: r.truck_id,
+            coords: leafletCoords,
+            marker: marker,
+            currStep: 0,
+            totalSteps: leafletCoords.length,
+            vehicleRef: { ...vRef, currentLoad: 0 },
+            stops: r.stops,
+            currentStopIndex: 1,
+            active: true,
+            solverType: 'google'
+          };
+        });
+      } else {
+        truckSimStatesGoogle = [];
+      }
+
+      isSimulating = true;
+      document.getElementById('btn-sim').innerHTML = '<i class="fa-solid fa-pause"></i> Tạm Dừng';
+      document.getElementById('btn-sim').classList.add('simulating');
+      logTimeline(`🚀 Bắt đầu ca mô phỏng thu gom độc lập song song (3D-PACO vs Google OR-Tools)...`, "default");
+
+      if (simInterval) clearInterval(simInterval);
+      simInterval = setInterval(simulationStep, 45);
+      updateFleetCards();
+    }
+
+    function simulationStep() {
+      let anyActive = false;
+
+      // 1. Di chuyển các xe bên Left Map (3D-PACO)
+      truckSimStates.forEach(ts => {
+        if (!ts.active) return;
+        anyActive = true;
+
+        if (ts.currStep < ts.totalSteps - 1) {
+          ts.currStep++;
+          const currentPos = ts.coords[ts.currStep]; // [lat, lon]
+          if (ts.marker) {
+            ts.marker.setLatLng(currentPos);
+          }
+          ts.vehicleRef.status = "Đang di chuyển thu gom";
+
+          // Kiểm tra tiếp cận thùng rác (Left Map)
+          bins.forEach(b => {
+            if (!b.collected) {
+              // Thùng phải thuộc lộ trình phân công của xe này (hoặc được gom bộ tới điểm dừng của xe)
+              const isAssigned = (ts.stops || []).some(s => s.id === b.id);
+              const isBundled = (lastWalkingLinks || []).some(wl => wl.from_bin === b.id && (ts.stops || []).some(s => s.id === wl.to_bin));
+              if (!isAssigned && !isBundled) return;
+
+              const d = Math.hypot(currentPos[0] - b.lat, currentPos[1] - b.lon);
+              let dSnapped = Infinity;
+              if (b.snappedLocation) {
+                dSnapped = Math.hypot(currentPos[0] - b.snappedLocation.lat, currentPos[1] - b.snappedLocation.lon);
+              }
+
+              const canCollect = !b.inaccessible && (d < 0.00085 || dSnapped < 0.00085);
+
+              if (canCollect) {
+                b.collected = true;
+                b.inaccessible = false;
+                b.fill_level = 0;
+                b.demand = 0;
+                updateBinMarkerVisual(b);
+
+                // Nếu đây là trạm gom tập trung, đánh dấu hoàn thành tất cả các thùng gom bộ liên kết
+                const bundledLinks = (lastWalkingLinks || []).filter(wl => wl.to_bin === b.id);
+                bundledLinks.forEach(bl => {
+                  const bb = bins.find(item => item.id === bl.from_bin);
+                  if (bb && !bb.collected) {
+                    bb.collected = true;
+                    bb.inaccessible = false;
+                    bb.fill_level = 0;
+                    bb.demand = 0;
+                    updateBinMarkerVisual(bb);
+                  }
+                });
+
+                // Cập nhật tiến độ điểm dừng (để không bao giờ quay lại thùng cũ)
+                if (ts.stops) {
+                  const sIdx = ts.stops.findIndex(s => s.id === b.id);
+                  if (sIdx >= 0 && (!ts.currentStopIndex || sIdx >= ts.currentStopIndex)) {
+                    ts.currentStopIndex = sIdx + 1;
+                  }
+                }
+
+                ts.vehicleRef.currentLoad += b.demand;
+                if (dSnapped < 0.00085 && d >= 0.00085) {
+                  logTimeline(`🚶 [3D-PACO • ${ts.vehicleRef.name} - Đi Bộ Vào Hẻm]: Xe đỗ tại mép đường, công nhân đi bộ vào gom Thùng #${b.id}!`, 'collected');
+                } else {
+                  logTimeline(`✅ [3D-PACO • ${ts.vehicleRef.name}] Gom xong Thùng #${b.id}`, 'collected');
+                }
+                updateFleetCards();
+                updateStatsBar();
+              } else if (b.inaccessible && !b.failedReported && (d < 0.0022 || dSnapped < 0.0022)) {
+                b.failedReported = true;
+                logTimeline(`🚫 [3D-PACO • ${ts.vehicleRef.name} - Bỏ Qua]: Thùng #${b.id} dưới lòng sông/kênh!`, 'incident');
+                showWaterWarningToast(b);
+              }
+            }
+          });
+
+        } else {
+          ts.active = false;
+          ts.vehicleRef.status = "Đã hoàn thành lộ trình";
+          logTimeline(`🎉 [3D-PACO • ${ts.vehicleRef.name}] Đã về đến Bãi tập kết rác!`, 'collected');
+          updateFleetCards();
+        }
+      });
+
+      // 2. Di chuyển các xe bên Right Map (Google OR-Tools) nếu ở chế độ chia đôi
+      if (isSplitMode && truckSimStatesGoogle.length > 0) {
+        truckSimStatesGoogle.forEach(tsg => {
+          if (!tsg.active) return;
+          anyActive = true;
+
+          if (tsg.currStep < tsg.totalSteps - 1) {
+            tsg.currStep++;
+            const currentPos = tsg.coords[tsg.currStep];
+            if (tsg.marker) {
+              tsg.marker.setLatLng(currentPos);
+            }
+            tsg.vehicleRef.status = "Đang di chuyển thu gom";
+
+            // Kiểm tra tiếp cận thùng rác (Right Map)
+            bins.forEach(b => {
+              if (!b.collectedGoogle) {
+                const googleLinks = (lastGoogleResult && lastGoogleResult.walking_links) || [];
+                const isAssignedG = (tsg.stops || []).some(s => s.id === b.id);
+                const isBundledG = googleLinks.some(wl => wl.from_bin === b.id && (tsg.stops || []).some(s => s.id === wl.to_bin));
+                if (!isAssignedG && !isBundledG) return;
+
+                const d = Math.hypot(currentPos[0] - b.lat, currentPos[1] - b.lon);
+                let dSnapped = Infinity;
+                if (b.snappedLocation) {
+                  dSnapped = Math.hypot(currentPos[0] - b.snappedLocation.lat, currentPos[1] - b.snappedLocation.lon);
+                }
+                const canCollect = !b.inaccessible && (d < 0.00085 || dSnapped < 0.00085);
+                if (canCollect) {
+                  b.collectedGoogle = true;
+                  b.fill_level = 0;
+                  b.demand = 0;
+                  updateBinMarkerVisual(b);
+
+                  const bundledLinksG = googleLinks.filter(wl => wl.to_bin === b.id);
+                  bundledLinksG.forEach(bl => {
+                    const bb = bins.find(item => item.id === bl.from_bin);
+                    if (bb && !bb.collectedGoogle) {
+                      bb.collectedGoogle = true;
+                      bb.fill_level = 0;
+                      bb.demand = 0;
+                      updateBinMarkerVisual(bb);
+                    }
+                  });
+
+                  if (tsg.stops) {
+                    const sIdx = tsg.stops.findIndex(s => s.id === b.id);
+                    if (sIdx >= 0 && (!tsg.currentStopIndex || sIdx >= tsg.currentStopIndex)) {
+                      tsg.currentStopIndex = sIdx + 1;
+                    }
+                  }
+
+                  logTimeline(`📍 [Google OR-Tools • ${tsg.vehicleRef.name}] Đã gom Thùng #${b.id}`, 'default');
+                }
+              }
+            });
+
+          } else {
+            tsg.active = false;
+            tsg.vehicleRef.status = "Đã hoàn thành lộ trình";
+            logTimeline(`🏁 [Google OR-Tools • ${tsg.vehicleRef.name}] Đã về đến Bãi tập kết!`, 'default');
+          }
+        });
+      }
+
+      if (!anyActive) {
+        isSimulating = false;
+        if (simInterval) clearInterval(simInterval);
+        document.getElementById('btn-sim').innerHTML = '<i class="fa-solid fa-rotate-right"></i> Chạy Lại';
+        document.getElementById('btn-sim').classList.remove('simulating');
+
+        const uncollected = bins.filter(b => !b.collected);
+        if (uncollected.length > 0) {
+          const waterBins = uncollected.filter(b => b.inaccessible);
+          if (waterBins.length > 0) {
+            logTimeline(`⚠️ [Tổng Kết Ca]: Đã gom ${bins.length - uncollected.length}/${bins.length} thùng. CÒN ${waterBins.length} THÙNG DƯỚI SÔNG (${waterBins.map(b => '#' + b.id).join(', ')})!`, 'incident');
+            showWaterWarningToast(waterBins[0]);
+          } else {
+            logTimeline(`⚠️ [Tổng Kết Ca]: Đã hoàn thành ca, thu gom được ${bins.length - uncollected.length}/${bins.length} thùng.`, 'default');
+          }
+        } else {
+          logTimeline("🏁 Toàn bộ đội xe trên cả 2 bản đồ đã hoàn thành ca thu gom!", "ai");
+        }
+      }
+    }
+
+    let toastTimer = null;
+    function showAiToast(msg) {
+      const toast = document.getElementById('ai-toast');
+      document.getElementById('ai-toast-msg').textContent = msg;
+      toast.classList.add('open');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove('open');
+      }, 5000);
+    }
+
+    function dismissAiToast() {
+      document.getElementById('ai-toast').classList.remove('open');
+    }
+
+    // Initial Load
+    const initPresetId = new URLSearchParams(window.location.search).get('preset');
+    loadPresetData(initPresetId ? parseInt(initPresetId) : 1);
+  </script>
+</body>
+</html>

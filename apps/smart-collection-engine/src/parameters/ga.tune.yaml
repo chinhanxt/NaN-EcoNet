@@ -1,0 +1,26 @@
+parameters:
+  population_size:
+    type: int
+    range: [20, 200]
+    default: 50
+    step: 10
+  generations:
+    type: int
+    range: [50, 1000]
+    default: 200
+    step: 50
+  crossover_rate:
+    type: float
+    range: [0.5, 1.0]
+    default: 0.8
+    step: 0.05
+  mutation_rate:
+    type: float
+    range: [0.01, 0.2]
+    default: 0.05
+    step: 0.01
+  p:
+    type: float
+    range: [0.01, 0.5]
+    default: 0.1
+    step: 0.01

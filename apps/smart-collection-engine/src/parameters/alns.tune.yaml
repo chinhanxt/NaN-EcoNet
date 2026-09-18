@@ -1,0 +1,99 @@
+small:
+  iterations:
+    type: int
+    range: [50, 100, 200, 300, 400, 500, 600]
+    default: 100
+  w_decay:
+    type: float
+    range: [0.3, 0.5, 0.7, 0.9, 0.95]
+    default: 0.7
+  init_temp:
+    type: float
+    range: [10, 50, 100, 200]
+    default: 100.0
+  cooling:
+    type: float
+    range: [0.99, 0.995, 0.999]
+    default: 0.995
+  enable_locker_grouping:
+    type: categorical
+    range: []
+    default: true
+  enable_sa_moves:
+    type: categorical
+    range: []
+    default: true
+  local_search_frequency:
+    type: int
+    range: [1, 5, 10]
+    default: 1
+  min_local_moves:
+    type: int
+    range: [500, 1000, 2000, 3000, 5000]
+    default: 1000
+medium:
+  iterations:
+    type: int
+    range: [100, 200, 500, 700]
+    default: 500
+  w_decay:
+    type: float
+    range: [0.3, 0.5, 0.7, 0.9, 0.95]
+    default: 0.7
+  init_temp:
+    type: float
+    range: [10, 50, 100, 200, 300]
+    default: 100.0
+  cooling:
+    type: float
+    range: [0.99, 0.995, 0.999]
+    default: 0.995
+  enable_locker_grouping:
+    type: categorical
+    range: []
+    default: true
+  enable_sa_moves:
+    type: categorical
+    range: []
+    default: true
+  local_search_frequency:
+    type: int
+    range: [1, 2, 5, 10, 20, 50]
+    default: 1
+  min_local_moves:
+    type: int
+    range: [2000, 3000, 5000, 10000, 15000, 20000, 25000]
+    default: 5000
+large:
+  iterations:
+    type: int
+    range: [100, 200, 500, 700, 1000, 1200, 1500]
+    default: 500
+  w_decay:
+    type: float
+    range: [0.3, 0.5, 0.7, 0.9, 0.95]
+    default: 0.7
+  init_temp:
+    type: float
+    range: [10, 50, 100, 200, 500]
+    default: 100.0
+  cooling:
+    type: float
+    range: [0.99, 0.995, 0.999]
+    default: 0.995
+  enable_locker_grouping:
+    type: categorical
+    range: []
+    default: true
+  enable_sa_moves:
+    type: categorical
+    range: []
+    default: true
+  local_search_frequency:
+    type: int
+    range: [1, 2, 5, 10, 20, 50]
+    default: 1
+  min_local_moves:
+    type: int
+    range: [20000, 30000, 50000, 100000, 150000, 200000, 250000]
+    default: 100000

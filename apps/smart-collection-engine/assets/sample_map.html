@@ -1,0 +1,2179 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_592d3f4e7d7865b03d2a04b1b6ffbd89 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.fullscreen@3.0.0/Control.FullScreen.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.fullscreen@3.0.0/Control.FullScreen.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-minimap/3.6.1/Control.MiniMap.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-minimap/3.6.1/Control.MiniMap.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet-ant-path@1.1.2/dist/leaflet-ant-path.min.js"></script>
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_592d3f4e7d7865b03d2a04b1b6ffbd89" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_592d3f4e7d7865b03d2a04b1b6ffbd89 = L.map(
+                "map_592d3f4e7d7865b03d2a04b1b6ffbd89",
+                {
+                    center: [10.7769, 106.7009],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 13,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+            L.control.scale().addTo(map_592d3f4e7d7865b03d2a04b1b6ffbd89);
+
+            
+
+        
+    
+            var tile_layer_91e07cef934287cf03b069db3e220e8c = L.tileLayer(
+                "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+                {
+  "minZoom": 0,
+  "maxZoom": 20,
+  "maxNativeZoom": 20,
+  "noWrap": false,
+  "attribution": "\u0026copy; Google Maps",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_91e07cef934287cf03b069db3e220e8c.addTo(map_592d3f4e7d7865b03d2a04b1b6ffbd89);
+        
+    
+            var tile_layer_03827b929641295ce3e5236471eca911 = L.tileLayer(
+                "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+                {
+  "minZoom": 0,
+  "maxZoom": 20,
+  "maxNativeZoom": 20,
+  "noWrap": false,
+  "attribution": "Google Maps Satellite",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_03827b929641295ce3e5236471eca911.addTo(map_592d3f4e7d7865b03d2a04b1b6ffbd89);
+        
+    
+            var tile_layer_5fdd4fd0935f285acae55041ee6e96b8 = L.tileLayer(
+                "https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}",
+                {
+  "minZoom": 0,
+  "maxZoom": 20,
+  "maxNativeZoom": 20,
+  "noWrap": false,
+  "attribution": "Google Maps Terrain",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_5fdd4fd0935f285acae55041ee6e96b8.addTo(map_592d3f4e7d7865b03d2a04b1b6ffbd89);
+        
+    
+            var tile_layer_febbdb3c5c580d199a3d18ce18a7e86d = L.tileLayer(
+                "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+                {
+  "minZoom": 0,
+  "maxZoom": 20,
+  "maxNativeZoom": 20,
+  "noWrap": false,
+  "attribution": "\u0026copy; Google Maps",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_febbdb3c5c580d199a3d18ce18a7e86d.addTo(map_592d3f4e7d7865b03d2a04b1b6ffbd89);
+        
+    
+            L.control.fullscreen(
+                {
+  "position": "topright",
+  "title": "To\u00e0n m\u00e0n h\u00ecnh",
+  "titleCancel": "Tho\u00e1t to\u00e0n m\u00e0n h\u00ecnh",
+  "forceSeparateButton": true,
+}
+            ).addTo(map_592d3f4e7d7865b03d2a04b1b6ffbd89);
+        
+    
+            var tile_layer_90ea68145f606da5a58b2dc685dd2fce = L.tileLayer(
+                "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+                {"attribution": "\u0026copy; Google Maps", "detect_retina": false, "max_native_zoom": 20, "max_zoom": 20, "min_zoom": 0, "no_wrap": false, "opacity": 1, "subdomains": "abc", "tms": false}
+            );
+            var mini_map_5cd47cc946762a9c0233be272d59ebee = new L.Control.MiniMap(
+                tile_layer_90ea68145f606da5a58b2dc685dd2fce,
+                {
+  "position": "bottomright",
+  "width": 150,
+  "height": 150,
+  "collapsedWidth": 25,
+  "collapsedHeight": 25,
+  "zoomLevelOffset": -5,
+  "centerFixed": false,
+  "zoomAnimation": false,
+  "toggleDisplay": true,
+  "autoToggleDisplay": false,
+  "minimized": false,
+}
+            );
+            map_592d3f4e7d7865b03d2a04b1b6ffbd89.addControl(mini_map_5cd47cc946762a9c0233be272d59ebee);
+        
+    
+            var feature_group_e693d3c8d3c2de3b7b300deacf22b646 = L.featureGroup(
+                {
+}
+            );
+        
+    
+            var poly_line_ec6a4ee9cb702ca122ca4e2060c74b65 = L.polyline(
+                [[10.7769, 106.7009], [10.791272978799856, 106.7009], [10.79396791232483, 106.69632780299536], [10.808340891124685, 106.68261121198142], [10.808340891124685, 106.68718340898607], [10.808340891124685, 106.68718340898607], [10.808340891124685, 106.68718340898607], [10.808340891124685, 106.68718340898607], [10.808340891124685, 106.68718340898607], [10.808340891124685, 106.68718340898607], [10.7769, 106.7009]],
+                {"bubblingMouseEvents": true, "color": "#E6194B", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "#E6194B", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.85, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+        var popup_db7fbcc89735526d39ebae8000aea757 = L.popup({
+  "maxWidth": 320,
+});
+
+        
+            
+                var html_3e16558dfcb9400fe1cf9ee492fa0779 = $(`<div id="html_3e16558dfcb9400fe1cf9ee492fa0779" style="width: 100.0%; height: 100.0%;">                 <div style="font-family: sans-serif; min-width: 200px;">                     <h4 style="margin: 0 0 6px 0; color: #E6194B;">🚚 Tuyến #1</h4>                     <b>Số điểm dừng:</b> 9<br>                     <b>Lộ trình:</b><br>                     <div style="max-height: 120px; overflow-y: auto; font-size: 12px; background: #f5f5f5; padding: 4px; border-radius: 4px; margin-top: 4px;">                         0 &rarr; 7 &rarr; 11 &rarr; 16 &rarr; 26 &rarr; 26 &rarr; 26 &rarr; 26 &rarr; 26 &rarr; 12 &rarr; 0                     </div>                 </div>                 </div>`)[0];
+                popup_db7fbcc89735526d39ebae8000aea757.setContent(html_3e16558dfcb9400fe1cf9ee492fa0779);
+            
+        
+
+        poly_line_ec6a4ee9cb702ca122ca4e2060c74b65.bindPopup(popup_db7fbcc89735526d39ebae8000aea757)
+        ;
+
+        
+    
+    
+            poly_line_ec6a4ee9cb702ca122ca4e2060c74b65.bindTooltip(
+                `<div>
+                     Tuyến #1 (9 điểm dừng)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            ant_path_6d6354e916b6cc0b0395e11736f89505 = L.polyline.antPath(
+              [[10.7769, 106.7009], [10.791272978799856, 106.7009], [10.79396791232483, 106.69632780299536], [10.808340891124685, 106.68261121198142], [10.808340891124685, 106.68718340898607], [10.808340891124685, 106.68718340898607], [10.808340891124685, 106.68718340898607], [10.808340891124685, 106.68718340898607], [10.808340891124685, 106.68718340898607], [10.808340891124685, 106.68718340898607], [10.7769, 106.7009]],
+              {
+  "stroke": true,
+  "color": "#E6194B",
+  "weight": 4,
+  "opacity": 0.9,
+  "lineCap": "round",
+  "lineJoin": "round",
+  "dashArray": [
+10,
+20,
+],
+  "dashOffset": null,
+  "fill": false,
+  "fillColor": "#E6194B",
+  "fillOpacity": 0.2,
+  "fillRule": "evenodd",
+  "bubblingMouseEvents": true,
+  "smoothFactor": 1.0,
+  "noClip": false,
+  "paused": false,
+  "reverse": false,
+  "hardwareAcceleration": false,
+  "delay": 1000,
+  "pulseColor": "#FFFFFF",
+}
+        ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            ant_path_6d6354e916b6cc0b0395e11736f89505.bindTooltip(
+                `<div>
+                     Tuyến #1 (Luồng di chuyển)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_60e506d9749bc501fdcf32973c873a2f = L.marker(
+                [10.791272978799856, 106.7009],
+                {
+}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            var div_icon_54388fc130388228e50684269ef4423e = L.divIcon({
+  "html": "\n                            \u003cdiv style=\"\n                                background-color: #E6194B;\n                                color: white;\n                                border: 2px solid white;\n                                border-radius: 50%;\n                                width: 20px;\n                                height: 20px;\n                                font-size: 10px;\n                                font-weight: bold;\n                                text-align: center;\n                                line-height: 18px;\n                                box-shadow: 0 1px 4px rgba(0,0,0,0.5);\n                            \"\u003e1\u003c/div\u003e\n                            ",
+  "iconSize": [20, 20],
+  "iconAnchor": [10, 10],
+  "className": "empty",
+});
+        
+    
+            marker_60e506d9749bc501fdcf32973c873a2f.bindTooltip(
+                `<div>
+                     Tuyến #1 - Điểm dừng #1 (Node 7)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_60e506d9749bc501fdcf32973c873a2f.setIcon(div_icon_54388fc130388228e50684269ef4423e);
+            
+    
+            var marker_1715f8f1358e53a702646460c2c18aef = L.marker(
+                [10.79396791232483, 106.69632780299536],
+                {
+}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            var div_icon_2b33d3e6311e00338250ab44b31c22e1 = L.divIcon({
+  "html": "\n                            \u003cdiv style=\"\n                                background-color: #E6194B;\n                                color: white;\n                                border: 2px solid white;\n                                border-radius: 50%;\n                                width: 20px;\n                                height: 20px;\n                                font-size: 10px;\n                                font-weight: bold;\n                                text-align: center;\n                                line-height: 18px;\n                                box-shadow: 0 1px 4px rgba(0,0,0,0.5);\n                            \"\u003e2\u003c/div\u003e\n                            ",
+  "iconSize": [20, 20],
+  "iconAnchor": [10, 10],
+  "className": "empty",
+});
+        
+    
+            marker_1715f8f1358e53a702646460c2c18aef.bindTooltip(
+                `<div>
+                     Tuyến #1 - Điểm dừng #2 (Node 11)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_1715f8f1358e53a702646460c2c18aef.setIcon(div_icon_2b33d3e6311e00338250ab44b31c22e1);
+            
+    
+            var marker_33155f39d3d938a7c57403a519bd4b7b = L.marker(
+                [10.808340891124685, 106.68261121198142],
+                {
+}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            var div_icon_8ca2ba5e91796de37d5a60d1f4684d3b = L.divIcon({
+  "html": "\n                            \u003cdiv style=\"\n                                background-color: #E6194B;\n                                color: white;\n                                border: 2px solid white;\n                                border-radius: 50%;\n                                width: 20px;\n                                height: 20px;\n                                font-size: 10px;\n                                font-weight: bold;\n                                text-align: center;\n                                line-height: 18px;\n                                box-shadow: 0 1px 4px rgba(0,0,0,0.5);\n                            \"\u003e3\u003c/div\u003e\n                            ",
+  "iconSize": [20, 20],
+  "iconAnchor": [10, 10],
+  "className": "empty",
+});
+        
+    
+            marker_33155f39d3d938a7c57403a519bd4b7b.bindTooltip(
+                `<div>
+                     Tuyến #1 - Điểm dừng #3 (Node 16)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_33155f39d3d938a7c57403a519bd4b7b.setIcon(div_icon_8ca2ba5e91796de37d5a60d1f4684d3b);
+            
+    
+            var marker_dd2707c110c0858cd337b4450983e264 = L.marker(
+                [10.808340891124685, 106.68718340898607],
+                {
+}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            var div_icon_caf07904cf1e54075e59b5bd585e47e1 = L.divIcon({
+  "html": "\n                            \u003cdiv style=\"\n                                background-color: #E6194B;\n                                color: white;\n                                border: 2px solid white;\n                                border-radius: 50%;\n                                width: 20px;\n                                height: 20px;\n                                font-size: 10px;\n                                font-weight: bold;\n                                text-align: center;\n                                line-height: 18px;\n                                box-shadow: 0 1px 4px rgba(0,0,0,0.5);\n                            \"\u003e4\u003c/div\u003e\n                            ",
+  "iconSize": [20, 20],
+  "iconAnchor": [10, 10],
+  "className": "empty",
+});
+        
+    
+            marker_dd2707c110c0858cd337b4450983e264.bindTooltip(
+                `<div>
+                     Tuyến #1 - Điểm dừng #4 (Node 26)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_dd2707c110c0858cd337b4450983e264.setIcon(div_icon_caf07904cf1e54075e59b5bd585e47e1);
+            
+    
+            var marker_fec93b0bf65cc2a1cf21119a8d9cdaaf = L.marker(
+                [10.808340891124685, 106.68718340898607],
+                {
+}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            var div_icon_9ba198d91c77d9bbbbebfddb23da849d = L.divIcon({
+  "html": "\n                            \u003cdiv style=\"\n                                background-color: #E6194B;\n                                color: white;\n                                border: 2px solid white;\n                                border-radius: 50%;\n                                width: 20px;\n                                height: 20px;\n                                font-size: 10px;\n                                font-weight: bold;\n                                text-align: center;\n                                line-height: 18px;\n                                box-shadow: 0 1px 4px rgba(0,0,0,0.5);\n                            \"\u003e5\u003c/div\u003e\n                            ",
+  "iconSize": [20, 20],
+  "iconAnchor": [10, 10],
+  "className": "empty",
+});
+        
+    
+            marker_fec93b0bf65cc2a1cf21119a8d9cdaaf.bindTooltip(
+                `<div>
+                     Tuyến #1 - Điểm dừng #5 (Node 26)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_fec93b0bf65cc2a1cf21119a8d9cdaaf.setIcon(div_icon_9ba198d91c77d9bbbbebfddb23da849d);
+            
+    
+            var marker_e2df56c002540a1242f041834158e826 = L.marker(
+                [10.808340891124685, 106.68718340898607],
+                {
+}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            var div_icon_d09774e9a24cca2da6285937738ed414 = L.divIcon({
+  "html": "\n                            \u003cdiv style=\"\n                                background-color: #E6194B;\n                                color: white;\n                                border: 2px solid white;\n                                border-radius: 50%;\n                                width: 20px;\n                                height: 20px;\n                                font-size: 10px;\n                                font-weight: bold;\n                                text-align: center;\n                                line-height: 18px;\n                                box-shadow: 0 1px 4px rgba(0,0,0,0.5);\n                            \"\u003e6\u003c/div\u003e\n                            ",
+  "iconSize": [20, 20],
+  "iconAnchor": [10, 10],
+  "className": "empty",
+});
+        
+    
+            marker_e2df56c002540a1242f041834158e826.bindTooltip(
+                `<div>
+                     Tuyến #1 - Điểm dừng #6 (Node 26)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_e2df56c002540a1242f041834158e826.setIcon(div_icon_d09774e9a24cca2da6285937738ed414);
+            
+    
+            var marker_587956d34187a52f01189f5542643f6f = L.marker(
+                [10.808340891124685, 106.68718340898607],
+                {
+}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            var div_icon_3fe55058eb2f2903f813abf523fb4ab1 = L.divIcon({
+  "html": "\n                            \u003cdiv style=\"\n                                background-color: #E6194B;\n                                color: white;\n                                border: 2px solid white;\n                                border-radius: 50%;\n                                width: 20px;\n                                height: 20px;\n                                font-size: 10px;\n                                font-weight: bold;\n                                text-align: center;\n                                line-height: 18px;\n                                box-shadow: 0 1px 4px rgba(0,0,0,0.5);\n                            \"\u003e7\u003c/div\u003e\n                            ",
+  "iconSize": [20, 20],
+  "iconAnchor": [10, 10],
+  "className": "empty",
+});
+        
+    
+            marker_587956d34187a52f01189f5542643f6f.bindTooltip(
+                `<div>
+                     Tuyến #1 - Điểm dừng #7 (Node 26)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_587956d34187a52f01189f5542643f6f.setIcon(div_icon_3fe55058eb2f2903f813abf523fb4ab1);
+            
+    
+            var marker_b5eb166d9fb9afb7bdcc1ea72201a42f = L.marker(
+                [10.808340891124685, 106.68718340898607],
+                {
+}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            var div_icon_46934d7ac9001a504229e979251fa7e1 = L.divIcon({
+  "html": "\n                            \u003cdiv style=\"\n                                background-color: #E6194B;\n                                color: white;\n                                border: 2px solid white;\n                                border-radius: 50%;\n                                width: 20px;\n                                height: 20px;\n                                font-size: 10px;\n                                font-weight: bold;\n                                text-align: center;\n                                line-height: 18px;\n                                box-shadow: 0 1px 4px rgba(0,0,0,0.5);\n                            \"\u003e8\u003c/div\u003e\n                            ",
+  "iconSize": [20, 20],
+  "iconAnchor": [10, 10],
+  "className": "empty",
+});
+        
+    
+            marker_b5eb166d9fb9afb7bdcc1ea72201a42f.bindTooltip(
+                `<div>
+                     Tuyến #1 - Điểm dừng #8 (Node 26)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_b5eb166d9fb9afb7bdcc1ea72201a42f.setIcon(div_icon_46934d7ac9001a504229e979251fa7e1);
+            
+    
+            var marker_ed9a555e576baf616cbb35f484406acb = L.marker(
+                [10.808340891124685, 106.68718340898607],
+                {
+}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            var div_icon_ed8bbdb453336dda4d05b9c345433112 = L.divIcon({
+  "html": "\n                            \u003cdiv style=\"\n                                background-color: #E6194B;\n                                color: white;\n                                border: 2px solid white;\n                                border-radius: 50%;\n                                width: 20px;\n                                height: 20px;\n                                font-size: 10px;\n                                font-weight: bold;\n                                text-align: center;\n                                line-height: 18px;\n                                box-shadow: 0 1px 4px rgba(0,0,0,0.5);\n                            \"\u003e9\u003c/div\u003e\n                            ",
+  "iconSize": [20, 20],
+  "iconAnchor": [10, 10],
+  "className": "empty",
+});
+        
+    
+            marker_ed9a555e576baf616cbb35f484406acb.bindTooltip(
+                `<div>
+                     Tuyến #1 - Điểm dừng #9 (Node 12)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_ed9a555e576baf616cbb35f484406acb.setIcon(div_icon_ed8bbdb453336dda4d05b9c345433112);
+            
+    
+            var poly_line_f7f42bbf1d73832460123bb60aa17c7a = L.polyline(
+                [[10.7769, 106.7009], [10.7769, 106.69175560599072], [10.780493244699963, 106.68718340898607], [10.780493244699963, 106.68718340898607], [10.780493244699963, 106.68718340898607], [10.780493244699963, 106.68718340898607], [10.780493244699963, 106.68718340898607], [10.780493244699963, 106.68718340898607], [10.780493244699963, 106.68718340898607], [10.780493244699963, 106.68718340898607], [10.780493244699963, 106.68718340898607], [10.780493244699963, 106.68718340898607], [10.780493244699963, 106.68718340898607], [10.778696622349981, 106.69175560599072], [10.7769, 106.7009]],
+                {"bubblingMouseEvents": true, "color": "#3CB44B", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "#3CB44B", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.85, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+        var popup_cf2d47eb727a27628b794509af9f658d = L.popup({
+  "maxWidth": 320,
+});
+
+        
+            
+                var html_9a8a9c6cef096515b32b18ffaf6324aa = $(`<div id="html_9a8a9c6cef096515b32b18ffaf6324aa" style="width: 100.0%; height: 100.0%;">                 <div style="font-family: sans-serif; min-width: 200px;">                     <h4 style="margin: 0 0 6px 0; color: #3CB44B;">🚚 Tuyến #2</h4>                     <b>Số điểm dừng:</b> 13<br>                     <b>Lộ trình:</b><br>                     <div style="max-height: 120px; overflow-y: auto; font-size: 12px; background: #f5f5f5; padding: 4px; border-radius: 4px; margin-top: 4px;">                         0 &rarr; 20 &rarr; 27 &rarr; 27 &rarr; 27 &rarr; 27 &rarr; 27 &rarr; 27 &rarr; 27 &rarr; 27 &rarr; 27 &rarr; 27 &rarr; 27 &rarr; 21 &rarr; 0                     </div>                 </div>                 </div>`)[0];
+                popup_cf2d47eb727a27628b794509af9f658d.setContent(html_9a8a9c6cef096515b32b18ffaf6324aa);
+            
+        
+
+        poly_line_f7f42bbf1d73832460123bb60aa17c7a.bindPopup(popup_cf2d47eb727a27628b794509af9f658d)
+        ;
+
+        
+    
+    
+            poly_line_f7f42bbf1d73832460123bb60aa17c7a.bindTooltip(
+                `<div>
+                     Tuyến #2 (13 điểm dừng)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            ant_path_eebb0672269cb67a9008c86d3b28ce65 = L.polyline.antPath(
+              [[10.7769, 106.7009], [10.7769, 106.69175560599072], [10.780493244699963, 106.68718340898607], [10.780493244699963, 106.68718340898607], [10.780493244699963, 106.68718340898607], [10.780493244699963, 106.68718340898607], [10.780493244699963, 106.68718340898607], [10.780493244699963, 106.68718340898607], [10.780493244699963, 106.68718340898607], [10.780493244699963, 106.68718340898607], [10.780493244699963, 106.68718340898607], [10.780493244699963, 106.68718340898607], [10.780493244699963, 106.68718340898607], [10.778696622349981, 106.69175560599072], [10.7769, 106.7009]],
+              {
+  "stroke": true,
+  "color": "#3CB44B",
+  "weight": 4,
+  "opacity": 0.9,
+  "lineCap": "round",
+  "lineJoin": "round",
+  "dashArray": [
+10,
+20,
+],
+  "dashOffset": null,
+  "fill": false,
+  "fillColor": "#3CB44B",
+  "fillOpacity": 0.2,
+  "fillRule": "evenodd",
+  "bubblingMouseEvents": true,
+  "smoothFactor": 1.0,
+  "noClip": false,
+  "paused": false,
+  "reverse": false,
+  "hardwareAcceleration": false,
+  "delay": 1000,
+  "pulseColor": "#FFFFFF",
+}
+        ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            ant_path_eebb0672269cb67a9008c86d3b28ce65.bindTooltip(
+                `<div>
+                     Tuyến #2 (Luồng di chuyển)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_eaefe75cace475b0e9768772096b3b6b = L.marker(
+                [10.7769, 106.69175560599072],
+                {
+}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            var div_icon_e36ec5645945c5b68243f362704bcd23 = L.divIcon({
+  "html": "\n                            \u003cdiv style=\"\n                                background-color: #3CB44B;\n                                color: white;\n                                border: 2px solid white;\n                                border-radius: 50%;\n                                width: 20px;\n                                height: 20px;\n                                font-size: 10px;\n                                font-weight: bold;\n                                text-align: center;\n                                line-height: 18px;\n                                box-shadow: 0 1px 4px rgba(0,0,0,0.5);\n                            \"\u003e1\u003c/div\u003e\n                            ",
+  "iconSize": [20, 20],
+  "iconAnchor": [10, 10],
+  "className": "empty",
+});
+        
+    
+            marker_eaefe75cace475b0e9768772096b3b6b.bindTooltip(
+                `<div>
+                     Tuyến #2 - Điểm dừng #1 (Node 20)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_eaefe75cace475b0e9768772096b3b6b.setIcon(div_icon_e36ec5645945c5b68243f362704bcd23);
+            
+    
+            var marker_e7394bebf15b477ed77304527b6619c3 = L.marker(
+                [10.780493244699963, 106.68718340898607],
+                {
+}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            var div_icon_df1e17967a1d9ae43d52d49fa196123c = L.divIcon({
+  "html": "\n                            \u003cdiv style=\"\n                                background-color: #3CB44B;\n                                color: white;\n                                border: 2px solid white;\n                                border-radius: 50%;\n                                width: 20px;\n                                height: 20px;\n                                font-size: 10px;\n                                font-weight: bold;\n                                text-align: center;\n                                line-height: 18px;\n                                box-shadow: 0 1px 4px rgba(0,0,0,0.5);\n                            \"\u003e2\u003c/div\u003e\n                            ",
+  "iconSize": [20, 20],
+  "iconAnchor": [10, 10],
+  "className": "empty",
+});
+        
+    
+            marker_e7394bebf15b477ed77304527b6619c3.bindTooltip(
+                `<div>
+                     Tuyến #2 - Điểm dừng #2 (Node 27)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_e7394bebf15b477ed77304527b6619c3.setIcon(div_icon_df1e17967a1d9ae43d52d49fa196123c);
+            
+    
+            var marker_1e6fb3114aca2af75ae5994ab107d3a3 = L.marker(
+                [10.780493244699963, 106.68718340898607],
+                {
+}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            var div_icon_b4e51f12d84e9120461f306730590bc4 = L.divIcon({
+  "html": "\n                            \u003cdiv style=\"\n                                background-color: #3CB44B;\n                                color: white;\n                                border: 2px solid white;\n                                border-radius: 50%;\n                                width: 20px;\n                                height: 20px;\n                                font-size: 10px;\n                                font-weight: bold;\n                                text-align: center;\n                                line-height: 18px;\n                                box-shadow: 0 1px 4px rgba(0,0,0,0.5);\n                            \"\u003e3\u003c/div\u003e\n                            ",
+  "iconSize": [20, 20],
+  "iconAnchor": [10, 10],
+  "className": "empty",
+});
+        
+    
+            marker_1e6fb3114aca2af75ae5994ab107d3a3.bindTooltip(
+                `<div>
+                     Tuyến #2 - Điểm dừng #3 (Node 27)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_1e6fb3114aca2af75ae5994ab107d3a3.setIcon(div_icon_b4e51f12d84e9120461f306730590bc4);
+            
+    
+            var marker_00bbc6d7fc0fa300daa5407628ea5e60 = L.marker(
+                [10.780493244699963, 106.68718340898607],
+                {
+}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            var div_icon_50d8ea2871cd3f002e5e0f0cbe78fbf7 = L.divIcon({
+  "html": "\n                            \u003cdiv style=\"\n                                background-color: #3CB44B;\n                                color: white;\n                                border: 2px solid white;\n                                border-radius: 50%;\n                                width: 20px;\n                                height: 20px;\n                                font-size: 10px;\n                                font-weight: bold;\n                                text-align: center;\n                                line-height: 18px;\n                                box-shadow: 0 1px 4px rgba(0,0,0,0.5);\n                            \"\u003e4\u003c/div\u003e\n                            ",
+  "iconSize": [20, 20],
+  "iconAnchor": [10, 10],
+  "className": "empty",
+});
+        
+    
+            marker_00bbc6d7fc0fa300daa5407628ea5e60.bindTooltip(
+                `<div>
+                     Tuyến #2 - Điểm dừng #4 (Node 27)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_00bbc6d7fc0fa300daa5407628ea5e60.setIcon(div_icon_50d8ea2871cd3f002e5e0f0cbe78fbf7);
+            
+    
+            var marker_7a8fb54680514fa16392e142f71464e6 = L.marker(
+                [10.780493244699963, 106.68718340898607],
+                {
+}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            var div_icon_cf743b87f9a2239ef17d2a44a2c02428 = L.divIcon({
+  "html": "\n                            \u003cdiv style=\"\n                                background-color: #3CB44B;\n                                color: white;\n                                border: 2px solid white;\n                                border-radius: 50%;\n                                width: 20px;\n                                height: 20px;\n                                font-size: 10px;\n                                font-weight: bold;\n                                text-align: center;\n                                line-height: 18px;\n                                box-shadow: 0 1px 4px rgba(0,0,0,0.5);\n                            \"\u003e5\u003c/div\u003e\n                            ",
+  "iconSize": [20, 20],
+  "iconAnchor": [10, 10],
+  "className": "empty",
+});
+        
+    
+            marker_7a8fb54680514fa16392e142f71464e6.bindTooltip(
+                `<div>
+                     Tuyến #2 - Điểm dừng #5 (Node 27)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_7a8fb54680514fa16392e142f71464e6.setIcon(div_icon_cf743b87f9a2239ef17d2a44a2c02428);
+            
+    
+            var marker_f2de714a828f77b58bea1cb3bbbca694 = L.marker(
+                [10.780493244699963, 106.68718340898607],
+                {
+}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            var div_icon_572956b350eb5791446d233b0d9962dd = L.divIcon({
+  "html": "\n                            \u003cdiv style=\"\n                                background-color: #3CB44B;\n                                color: white;\n                                border: 2px solid white;\n                                border-radius: 50%;\n                                width: 20px;\n                                height: 20px;\n                                font-size: 10px;\n                                font-weight: bold;\n                                text-align: center;\n                                line-height: 18px;\n                                box-shadow: 0 1px 4px rgba(0,0,0,0.5);\n                            \"\u003e6\u003c/div\u003e\n                            ",
+  "iconSize": [20, 20],
+  "iconAnchor": [10, 10],
+  "className": "empty",
+});
+        
+    
+            marker_f2de714a828f77b58bea1cb3bbbca694.bindTooltip(
+                `<div>
+                     Tuyến #2 - Điểm dừng #6 (Node 27)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_f2de714a828f77b58bea1cb3bbbca694.setIcon(div_icon_572956b350eb5791446d233b0d9962dd);
+            
+    
+            var marker_20d88837474c317383ef1b0c1d9d7306 = L.marker(
+                [10.780493244699963, 106.68718340898607],
+                {
+}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            var div_icon_b657cb4eb994c01bf999c942167f9661 = L.divIcon({
+  "html": "\n                            \u003cdiv style=\"\n                                background-color: #3CB44B;\n                                color: white;\n                                border: 2px solid white;\n                                border-radius: 50%;\n                                width: 20px;\n                                height: 20px;\n                                font-size: 10px;\n                                font-weight: bold;\n                                text-align: center;\n                                line-height: 18px;\n                                box-shadow: 0 1px 4px rgba(0,0,0,0.5);\n                            \"\u003e7\u003c/div\u003e\n                            ",
+  "iconSize": [20, 20],
+  "iconAnchor": [10, 10],
+  "className": "empty",
+});
+        
+    
+            marker_20d88837474c317383ef1b0c1d9d7306.bindTooltip(
+                `<div>
+                     Tuyến #2 - Điểm dừng #7 (Node 27)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_20d88837474c317383ef1b0c1d9d7306.setIcon(div_icon_b657cb4eb994c01bf999c942167f9661);
+            
+    
+            var marker_117b58d804e03991f89c3a040fc2e05f = L.marker(
+                [10.780493244699963, 106.68718340898607],
+                {
+}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            var div_icon_faf796eda9430cc34cddba67a4db659c = L.divIcon({
+  "html": "\n                            \u003cdiv style=\"\n                                background-color: #3CB44B;\n                                color: white;\n                                border: 2px solid white;\n                                border-radius: 50%;\n                                width: 20px;\n                                height: 20px;\n                                font-size: 10px;\n                                font-weight: bold;\n                                text-align: center;\n                                line-height: 18px;\n                                box-shadow: 0 1px 4px rgba(0,0,0,0.5);\n                            \"\u003e8\u003c/div\u003e\n                            ",
+  "iconSize": [20, 20],
+  "iconAnchor": [10, 10],
+  "className": "empty",
+});
+        
+    
+            marker_117b58d804e03991f89c3a040fc2e05f.bindTooltip(
+                `<div>
+                     Tuyến #2 - Điểm dừng #8 (Node 27)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_117b58d804e03991f89c3a040fc2e05f.setIcon(div_icon_faf796eda9430cc34cddba67a4db659c);
+            
+    
+            var marker_0c136bf66201a3b170b5cb2a24ca88ef = L.marker(
+                [10.780493244699963, 106.68718340898607],
+                {
+}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            var div_icon_0751150b1108a8e9af4687a617ad683e = L.divIcon({
+  "html": "\n                            \u003cdiv style=\"\n                                background-color: #3CB44B;\n                                color: white;\n                                border: 2px solid white;\n                                border-radius: 50%;\n                                width: 20px;\n                                height: 20px;\n                                font-size: 10px;\n                                font-weight: bold;\n                                text-align: center;\n                                line-height: 18px;\n                                box-shadow: 0 1px 4px rgba(0,0,0,0.5);\n                            \"\u003e9\u003c/div\u003e\n                            ",
+  "iconSize": [20, 20],
+  "iconAnchor": [10, 10],
+  "className": "empty",
+});
+        
+    
+            marker_0c136bf66201a3b170b5cb2a24ca88ef.bindTooltip(
+                `<div>
+                     Tuyến #2 - Điểm dừng #9 (Node 27)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_0c136bf66201a3b170b5cb2a24ca88ef.setIcon(div_icon_0751150b1108a8e9af4687a617ad683e);
+            
+    
+            var marker_a3ab8466473256ac0229f0552c843d1d = L.marker(
+                [10.780493244699963, 106.68718340898607],
+                {
+}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            var div_icon_56c17ccd2fc283a78e93722321fb8a7d = L.divIcon({
+  "html": "\n                            \u003cdiv style=\"\n                                background-color: #3CB44B;\n                                color: white;\n                                border: 2px solid white;\n                                border-radius: 50%;\n                                width: 20px;\n                                height: 20px;\n                                font-size: 10px;\n                                font-weight: bold;\n                                text-align: center;\n                                line-height: 18px;\n                                box-shadow: 0 1px 4px rgba(0,0,0,0.5);\n                            \"\u003e10\u003c/div\u003e\n                            ",
+  "iconSize": [20, 20],
+  "iconAnchor": [10, 10],
+  "className": "empty",
+});
+        
+    
+            marker_a3ab8466473256ac0229f0552c843d1d.bindTooltip(
+                `<div>
+                     Tuyến #2 - Điểm dừng #10 (Node 27)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_a3ab8466473256ac0229f0552c843d1d.setIcon(div_icon_56c17ccd2fc283a78e93722321fb8a7d);
+            
+    
+            var marker_a436090b146d904e6b4f57e04dfa1365 = L.marker(
+                [10.780493244699963, 106.68718340898607],
+                {
+}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            var div_icon_9727c8cebfb85156160c0475ea13f355 = L.divIcon({
+  "html": "\n                            \u003cdiv style=\"\n                                background-color: #3CB44B;\n                                color: white;\n                                border: 2px solid white;\n                                border-radius: 50%;\n                                width: 20px;\n                                height: 20px;\n                                font-size: 10px;\n                                font-weight: bold;\n                                text-align: center;\n                                line-height: 18px;\n                                box-shadow: 0 1px 4px rgba(0,0,0,0.5);\n                            \"\u003e11\u003c/div\u003e\n                            ",
+  "iconSize": [20, 20],
+  "iconAnchor": [10, 10],
+  "className": "empty",
+});
+        
+    
+            marker_a436090b146d904e6b4f57e04dfa1365.bindTooltip(
+                `<div>
+                     Tuyến #2 - Điểm dừng #11 (Node 27)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_a436090b146d904e6b4f57e04dfa1365.setIcon(div_icon_9727c8cebfb85156160c0475ea13f355);
+            
+    
+            var marker_0db08d4c8046343db73fe22112c782df = L.marker(
+                [10.780493244699963, 106.68718340898607],
+                {
+}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            var div_icon_a4ec1d8098c3d15c12212998e3e5fd9b = L.divIcon({
+  "html": "\n                            \u003cdiv style=\"\n                                background-color: #3CB44B;\n                                color: white;\n                                border: 2px solid white;\n                                border-radius: 50%;\n                                width: 20px;\n                                height: 20px;\n                                font-size: 10px;\n                                font-weight: bold;\n                                text-align: center;\n                                line-height: 18px;\n                                box-shadow: 0 1px 4px rgba(0,0,0,0.5);\n                            \"\u003e12\u003c/div\u003e\n                            ",
+  "iconSize": [20, 20],
+  "iconAnchor": [10, 10],
+  "className": "empty",
+});
+        
+    
+            marker_0db08d4c8046343db73fe22112c782df.bindTooltip(
+                `<div>
+                     Tuyến #2 - Điểm dừng #12 (Node 27)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_0db08d4c8046343db73fe22112c782df.setIcon(div_icon_a4ec1d8098c3d15c12212998e3e5fd9b);
+            
+    
+            var marker_f5f7c3ca21c075c9f9d270ce4527e7cd = L.marker(
+                [10.778696622349981, 106.69175560599072],
+                {
+}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            var div_icon_ee0ccf358d0d683a660d0994ea244df8 = L.divIcon({
+  "html": "\n                            \u003cdiv style=\"\n                                background-color: #3CB44B;\n                                color: white;\n                                border: 2px solid white;\n                                border-radius: 50%;\n                                width: 20px;\n                                height: 20px;\n                                font-size: 10px;\n                                font-weight: bold;\n                                text-align: center;\n                                line-height: 18px;\n                                box-shadow: 0 1px 4px rgba(0,0,0,0.5);\n                            \"\u003e13\u003c/div\u003e\n                            ",
+  "iconSize": [20, 20],
+  "iconAnchor": [10, 10],
+  "className": "empty",
+});
+        
+    
+            marker_f5f7c3ca21c075c9f9d270ce4527e7cd.bindTooltip(
+                `<div>
+                     Tuyến #2 - Điểm dừng #13 (Node 21)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_f5f7c3ca21c075c9f9d270ce4527e7cd.setIcon(div_icon_ee0ccf358d0d683a660d0994ea244df8);
+            
+    
+            var poly_line_f7dd78fd50606759adf339ddfd9176f9 = L.polyline(
+                [[10.7769, 106.7009], [10.799357779374775, 106.68444009078328], [10.80384933524973, 106.67803901497679], [10.80384933524973, 106.68261121198142], [10.7769, 106.7009]],
+                {"bubblingMouseEvents": true, "color": "#4363D8", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "#4363D8", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.85, "smoothFactor": 1.0, "stroke": true, "weight": 4}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+        var popup_f9b628c7781865a8357b5d924ccc7240 = L.popup({
+  "maxWidth": 320,
+});
+
+        
+            
+                var html_ce4f3fee4e2cdf5174231f746ec61d13 = $(`<div id="html_ce4f3fee4e2cdf5174231f746ec61d13" style="width: 100.0%; height: 100.0%;">                 <div style="font-family: sans-serif; min-width: 200px;">                     <h4 style="margin: 0 0 6px 0; color: #4363D8;">🚚 Tuyến #3</h4>                     <b>Số điểm dừng:</b> 3<br>                     <b>Lộ trình:</b><br>                     <div style="max-height: 120px; overflow-y: auto; font-size: 12px; background: #f5f5f5; padding: 4px; border-radius: 4px; margin-top: 4px;">                         0 &rarr; 13 &rarr; 19 &rarr; 15 &rarr; 0                     </div>                 </div>                 </div>`)[0];
+                popup_f9b628c7781865a8357b5d924ccc7240.setContent(html_ce4f3fee4e2cdf5174231f746ec61d13);
+            
+        
+
+        poly_line_f7dd78fd50606759adf339ddfd9176f9.bindPopup(popup_f9b628c7781865a8357b5d924ccc7240)
+        ;
+
+        
+    
+    
+            poly_line_f7dd78fd50606759adf339ddfd9176f9.bindTooltip(
+                `<div>
+                     Tuyến #3 (3 điểm dừng)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            ant_path_180f51bd0c29257f70226e46a559f90f = L.polyline.antPath(
+              [[10.7769, 106.7009], [10.799357779374775, 106.68444009078328], [10.80384933524973, 106.67803901497679], [10.80384933524973, 106.68261121198142], [10.7769, 106.7009]],
+              {
+  "stroke": true,
+  "color": "#4363D8",
+  "weight": 4,
+  "opacity": 0.9,
+  "lineCap": "round",
+  "lineJoin": "round",
+  "dashArray": [
+10,
+20,
+],
+  "dashOffset": null,
+  "fill": false,
+  "fillColor": "#4363D8",
+  "fillOpacity": 0.2,
+  "fillRule": "evenodd",
+  "bubblingMouseEvents": true,
+  "smoothFactor": 1.0,
+  "noClip": false,
+  "paused": false,
+  "reverse": false,
+  "hardwareAcceleration": false,
+  "delay": 1000,
+  "pulseColor": "#FFFFFF",
+}
+        ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            ant_path_180f51bd0c29257f70226e46a559f90f.bindTooltip(
+                `<div>
+                     Tuyến #3 (Luồng di chuyển)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var marker_faa28b2ab47902c0c126ae9c991925f1 = L.marker(
+                [10.799357779374775, 106.68444009078328],
+                {
+}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            var div_icon_cdf6ebf6a450c9cd2cb20871a1fe20a7 = L.divIcon({
+  "html": "\n                            \u003cdiv style=\"\n                                background-color: #4363D8;\n                                color: white;\n                                border: 2px solid white;\n                                border-radius: 50%;\n                                width: 20px;\n                                height: 20px;\n                                font-size: 10px;\n                                font-weight: bold;\n                                text-align: center;\n                                line-height: 18px;\n                                box-shadow: 0 1px 4px rgba(0,0,0,0.5);\n                            \"\u003e1\u003c/div\u003e\n                            ",
+  "iconSize": [20, 20],
+  "iconAnchor": [10, 10],
+  "className": "empty",
+});
+        
+    
+            marker_faa28b2ab47902c0c126ae9c991925f1.bindTooltip(
+                `<div>
+                     Tuyến #3 - Điểm dừng #1 (Node 13)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_faa28b2ab47902c0c126ae9c991925f1.setIcon(div_icon_cdf6ebf6a450c9cd2cb20871a1fe20a7);
+            
+    
+            var marker_f3cd19466d4af2ecde4a48b20401314e = L.marker(
+                [10.80384933524973, 106.67803901497679],
+                {
+}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            var div_icon_a4b95e3155c99d7c143f5e66e9723efa = L.divIcon({
+  "html": "\n                            \u003cdiv style=\"\n                                background-color: #4363D8;\n                                color: white;\n                                border: 2px solid white;\n                                border-radius: 50%;\n                                width: 20px;\n                                height: 20px;\n                                font-size: 10px;\n                                font-weight: bold;\n                                text-align: center;\n                                line-height: 18px;\n                                box-shadow: 0 1px 4px rgba(0,0,0,0.5);\n                            \"\u003e2\u003c/div\u003e\n                            ",
+  "iconSize": [20, 20],
+  "iconAnchor": [10, 10],
+  "className": "empty",
+});
+        
+    
+            marker_f3cd19466d4af2ecde4a48b20401314e.bindTooltip(
+                `<div>
+                     Tuyến #3 - Điểm dừng #2 (Node 19)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_f3cd19466d4af2ecde4a48b20401314e.setIcon(div_icon_a4b95e3155c99d7c143f5e66e9723efa);
+            
+    
+            var marker_3d0148b8839c3c4bb3b21854910c20d8 = L.marker(
+                [10.80384933524973, 106.68261121198142],
+                {
+}
+            ).addTo(feature_group_e693d3c8d3c2de3b7b300deacf22b646);
+        
+    
+            var div_icon_2cdb8ce7b91430743db67b8a8341f9d7 = L.divIcon({
+  "html": "\n                            \u003cdiv style=\"\n                                background-color: #4363D8;\n                                color: white;\n                                border: 2px solid white;\n                                border-radius: 50%;\n                                width: 20px;\n                                height: 20px;\n                                font-size: 10px;\n                                font-weight: bold;\n                                text-align: center;\n                                line-height: 18px;\n                                box-shadow: 0 1px 4px rgba(0,0,0,0.5);\n                            \"\u003e3\u003c/div\u003e\n                            ",
+  "iconSize": [20, 20],
+  "iconAnchor": [10, 10],
+  "className": "empty",
+});
+        
+    
+            marker_3d0148b8839c3c4bb3b21854910c20d8.bindTooltip(
+                `<div>
+                     Tuyến #3 - Điểm dừng #3 (Node 15)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_3d0148b8839c3c4bb3b21854910c20d8.setIcon(div_icon_2cdb8ce7b91430743db67b8a8341f9d7);
+            
+    
+            feature_group_e693d3c8d3c2de3b7b300deacf22b646.addTo(map_592d3f4e7d7865b03d2a04b1b6ffbd89);
+        
+    
+            var feature_group_438e2d2a9ad7d350137dc94b0dc83482 = L.featureGroup(
+                {
+}
+            );
+        
+    
+            var circle_marker_a0e2b1ded020e23fd888fe1638024160 = L.circleMarker(
+                [10.791272978799856, 106.7009],
+                {"bubblingMouseEvents": true, "color": "#1E88E5", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#1E88E5", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(feature_group_438e2d2a9ad7d350137dc94b0dc83482);
+        
+    
+        var popup_302e3aa6a2150410209d9d087b9afd19 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_58496c840a28e5f360b365b30f39da9a = $(`<div id="html_58496c840a28e5f360b365b30f39da9a" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #1E88E5;">👤 Khách hàng #7</h4>             <b>Loại:</b> Home-only<br>             <b>Nhu cầu (Demand):</b> 20<br>             <b>Khung giờ giao:</b> [170 - 225]<br>             <b>Thời gian phục vụ:</b> 90.0<br>             <b>Tọa độ gốc:</b> (40.0, 66.0)<br>             <b>GPS:</b> 10.79127, 106.70090         </div>         </div>`)[0];
+                popup_302e3aa6a2150410209d9d087b9afd19.setContent(html_58496c840a28e5f360b365b30f39da9a);
+            
+        
+
+        circle_marker_a0e2b1ded020e23fd888fe1638024160.bindPopup(popup_302e3aa6a2150410209d9d087b9afd19)
+        ;
+
+        
+    
+    
+            circle_marker_a0e2b1ded020e23fd888fe1638024160.bindTooltip(
+                `<div>
+                     Khách hàng #7 (Home-only) - Nhu cầu: 20
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_9a7a9d5567a925d6038ab6df6b7c6178 = L.circleMarker(
+                [10.79396791232483, 106.69632780299536],
+                {"bubblingMouseEvents": true, "color": "#1E88E5", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#1E88E5", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(feature_group_438e2d2a9ad7d350137dc94b0dc83482);
+        
+    
+        var popup_40a51c266a6d97c002fa1bc8ad32dcc3 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_67ce84427b1c59f234f5695a13d82a74 = $(`<div id="html_67ce84427b1c59f234f5695a13d82a74" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #1E88E5;">👤 Khách hàng #11</h4>             <b>Loại:</b> Home-only<br>             <b>Nhu cầu (Demand):</b> 10<br>             <b>Khung giờ giao:</b> [448 - 505]<br>             <b>Thời gian phục vụ:</b> 90.0<br>             <b>Tọa độ gốc:</b> (35.0, 69.0)<br>             <b>GPS:</b> 10.79397, 106.69633         </div>         </div>`)[0];
+                popup_40a51c266a6d97c002fa1bc8ad32dcc3.setContent(html_67ce84427b1c59f234f5695a13d82a74);
+            
+        
+
+        circle_marker_9a7a9d5567a925d6038ab6df6b7c6178.bindPopup(popup_40a51c266a6d97c002fa1bc8ad32dcc3)
+        ;
+
+        
+    
+    
+            circle_marker_9a7a9d5567a925d6038ab6df6b7c6178.bindTooltip(
+                `<div>
+                     Khách hàng #11 (Home-only) - Nhu cầu: 10
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_05c53e4de6dde99e8576af7f83b978fe = L.circleMarker(
+                [10.808340891124685, 106.68718340898607],
+                {"bubblingMouseEvents": true, "color": "#1E88E5", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#1E88E5", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(feature_group_438e2d2a9ad7d350137dc94b0dc83482);
+        
+    
+        var popup_f003c5ec0034251ed8e7a12e38548653 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_7b777ec44315d5e0ef59a36df3347f78 = $(`<div id="html_7b777ec44315d5e0ef59a36df3347f78" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #1E88E5;">👤 Khách hàng #12</h4>             <b>Loại:</b> Home-only<br>             <b>Nhu cầu (Demand):</b> 20<br>             <b>Khung giờ giao:</b> [652 - 721]<br>             <b>Thời gian phục vụ:</b> 90.0<br>             <b>Tọa độ gốc:</b> (25.0, 85.0)<br>             <b>GPS:</b> 10.80834, 106.68718         </div>         </div>`)[0];
+                popup_f003c5ec0034251ed8e7a12e38548653.setContent(html_7b777ec44315d5e0ef59a36df3347f78);
+            
+        
+
+        circle_marker_05c53e4de6dde99e8576af7f83b978fe.bindPopup(popup_f003c5ec0034251ed8e7a12e38548653)
+        ;
+
+        
+    
+    
+            circle_marker_05c53e4de6dde99e8576af7f83b978fe.bindTooltip(
+                `<div>
+                     Khách hàng #12 (Home-only) - Nhu cầu: 20
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_c5ed567eec105fea732807ad8a1c044a = L.circleMarker(
+                [10.799357779374775, 106.68444009078328],
+                {"bubblingMouseEvents": true, "color": "#1E88E5", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#1E88E5", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(feature_group_438e2d2a9ad7d350137dc94b0dc83482);
+        
+    
+        var popup_8efdc596b3fa3b04d397388e4a6ff17f = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_765efc986f2402d9d147161087792a46 = $(`<div id="html_765efc986f2402d9d147161087792a46" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #1E88E5;">👤 Khách hàng #13</h4>             <b>Loại:</b> Home-only<br>             <b>Nhu cầu (Demand):</b> 30<br>             <b>Khung giờ giao:</b> [30 - 92]<br>             <b>Thời gian phục vụ:</b> 90.0<br>             <b>Tọa độ gốc:</b> (22.0, 75.0)<br>             <b>GPS:</b> 10.79936, 106.68444         </div>         </div>`)[0];
+                popup_8efdc596b3fa3b04d397388e4a6ff17f.setContent(html_765efc986f2402d9d147161087792a46);
+            
+        
+
+        circle_marker_c5ed567eec105fea732807ad8a1c044a.bindPopup(popup_8efdc596b3fa3b04d397388e4a6ff17f)
+        ;
+
+        
+    
+    
+            circle_marker_c5ed567eec105fea732807ad8a1c044a.bindTooltip(
+                `<div>
+                     Khách hàng #13 (Home-only) - Nhu cầu: 30
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_bb282bf5ef84e26d4697090b95534c53 = L.circleMarker(
+                [10.80384933524973, 106.68261121198142],
+                {"bubblingMouseEvents": true, "color": "#1E88E5", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#1E88E5", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(feature_group_438e2d2a9ad7d350137dc94b0dc83482);
+        
+    
+        var popup_8e7153306091d9bb97eb5c5a8d5652f5 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_92ee0a1ba1af1fab29bd8c1daa32b5d2 = $(`<div id="html_92ee0a1ba1af1fab29bd8c1daa32b5d2" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #1E88E5;">👤 Khách hàng #15</h4>             <b>Loại:</b> Home-only<br>             <b>Nhu cầu (Demand):</b> 40<br>             <b>Khung giờ giao:</b> [384 - 429]<br>             <b>Thời gian phục vụ:</b> 90.0<br>             <b>Tọa độ gốc:</b> (20.0, 80.0)<br>             <b>GPS:</b> 10.80385, 106.68261         </div>         </div>`)[0];
+                popup_8e7153306091d9bb97eb5c5a8d5652f5.setContent(html_92ee0a1ba1af1fab29bd8c1daa32b5d2);
+            
+        
+
+        circle_marker_bb282bf5ef84e26d4697090b95534c53.bindPopup(popup_8e7153306091d9bb97eb5c5a8d5652f5)
+        ;
+
+        
+    
+    
+            circle_marker_bb282bf5ef84e26d4697090b95534c53.bindTooltip(
+                `<div>
+                     Khách hàng #15 (Home-only) - Nhu cầu: 40
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_e31b2a8ed716670c3327e90aef3a74ba = L.circleMarker(
+                [10.808340891124685, 106.68261121198142],
+                {"bubblingMouseEvents": true, "color": "#1E88E5", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#1E88E5", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(feature_group_438e2d2a9ad7d350137dc94b0dc83482);
+        
+    
+        var popup_4e77cbc845e18572075ef12838c312cd = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_ea12881b7e82c2055530d4ba3bfc2a37 = $(`<div id="html_ea12881b7e82c2055530d4ba3bfc2a37" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #1E88E5;">👤 Khách hàng #16</h4>             <b>Loại:</b> Home-only<br>             <b>Nhu cầu (Demand):</b> 40<br>             <b>Khung giờ giao:</b> [475 - 528]<br>             <b>Thời gian phục vụ:</b> 90.0<br>             <b>Tọa độ gốc:</b> (20.0, 85.0)<br>             <b>GPS:</b> 10.80834, 106.68261         </div>         </div>`)[0];
+                popup_4e77cbc845e18572075ef12838c312cd.setContent(html_ea12881b7e82c2055530d4ba3bfc2a37);
+            
+        
+
+        circle_marker_e31b2a8ed716670c3327e90aef3a74ba.bindPopup(popup_4e77cbc845e18572075ef12838c312cd)
+        ;
+
+        
+    
+    
+            circle_marker_e31b2a8ed716670c3327e90aef3a74ba.bindTooltip(
+                `<div>
+                     Khách hàng #16 (Home-only) - Nhu cầu: 40
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_acc024c6dfab009c20db36ef3541fec0 = L.circleMarker(
+                [10.80384933524973, 106.67803901497679],
+                {"bubblingMouseEvents": true, "color": "#1E88E5", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#1E88E5", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(feature_group_438e2d2a9ad7d350137dc94b0dc83482);
+        
+    
+        var popup_ed600ecf7f1df3f6f37266d0dc988219 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_c10627abcf441aec1a940cee3128e37b = $(`<div id="html_c10627abcf441aec1a940cee3128e37b" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #1E88E5;">👤 Khách hàng #19</h4>             <b>Loại:</b> Home-only<br>             <b>Nhu cầu (Demand):</b> 10<br>             <b>Khung giờ giao:</b> [278 - 345]<br>             <b>Thời gian phục vụ:</b> 90.0<br>             <b>Tọa độ gốc:</b> (15.0, 80.0)<br>             <b>GPS:</b> 10.80385, 106.67804         </div>         </div>`)[0];
+                popup_ed600ecf7f1df3f6f37266d0dc988219.setContent(html_c10627abcf441aec1a940cee3128e37b);
+            
+        
+
+        circle_marker_acc024c6dfab009c20db36ef3541fec0.bindPopup(popup_ed600ecf7f1df3f6f37266d0dc988219)
+        ;
+
+        
+    
+    
+            circle_marker_acc024c6dfab009c20db36ef3541fec0.bindTooltip(
+                `<div>
+                     Khách hàng #19 (Home-only) - Nhu cầu: 10
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_97e72a3b3fddaa9cd67df5784121751b = L.circleMarker(
+                [10.7769, 106.69175560599072],
+                {"bubblingMouseEvents": true, "color": "#1E88E5", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#1E88E5", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(feature_group_438e2d2a9ad7d350137dc94b0dc83482);
+        
+    
+        var popup_96aa63d7ba53c7e5ecfa5f5d6202a12d = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_4d16099fcda69ffde0a46454b89676a1 = $(`<div id="html_4d16099fcda69ffde0a46454b89676a1" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #1E88E5;">👤 Khách hàng #20</h4>             <b>Loại:</b> Home-only<br>             <b>Nhu cầu (Demand):</b> 10<br>             <b>Khung giờ giao:</b> [10 - 73]<br>             <b>Thời gian phục vụ:</b> 90.0<br>             <b>Tọa độ gốc:</b> (30.0, 50.0)<br>             <b>GPS:</b> 10.77690, 106.69176         </div>         </div>`)[0];
+                popup_96aa63d7ba53c7e5ecfa5f5d6202a12d.setContent(html_4d16099fcda69ffde0a46454b89676a1);
+            
+        
+
+        circle_marker_97e72a3b3fddaa9cd67df5784121751b.bindPopup(popup_96aa63d7ba53c7e5ecfa5f5d6202a12d)
+        ;
+
+        
+    
+    
+            circle_marker_97e72a3b3fddaa9cd67df5784121751b.bindTooltip(
+                `<div>
+                     Khách hàng #20 (Home-only) - Nhu cầu: 10
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_ff096889c8e471cd6bc36e04f88cd12b = L.circleMarker(
+                [10.778696622349981, 106.69175560599072],
+                {"bubblingMouseEvents": true, "color": "#1E88E5", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#1E88E5", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(feature_group_438e2d2a9ad7d350137dc94b0dc83482);
+        
+    
+        var popup_5fa93900baa52ab097a7bc711964dbd0 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_905e976153f999edb936bacc283735fd = $(`<div id="html_905e976153f999edb936bacc283735fd" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #1E88E5;">👤 Khách hàng #21</h4>             <b>Loại:</b> Home-only<br>             <b>Nhu cầu (Demand):</b> 20<br>             <b>Khung giờ giao:</b> [914 - 965]<br>             <b>Thời gian phục vụ:</b> 90.0<br>             <b>Tọa độ gốc:</b> (30.0, 52.0)<br>             <b>GPS:</b> 10.77870, 106.69176         </div>         </div>`)[0];
+                popup_5fa93900baa52ab097a7bc711964dbd0.setContent(html_905e976153f999edb936bacc283735fd);
+            
+        
+
+        circle_marker_ff096889c8e471cd6bc36e04f88cd12b.bindPopup(popup_5fa93900baa52ab097a7bc711964dbd0)
+        ;
+
+        
+    
+    
+            circle_marker_ff096889c8e471cd6bc36e04f88cd12b.bindTooltip(
+                `<div>
+                     Khách hàng #21 (Home-only) - Nhu cầu: 20
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            feature_group_438e2d2a9ad7d350137dc94b0dc83482.addTo(map_592d3f4e7d7865b03d2a04b1b6ffbd89);
+        
+    
+            var feature_group_6d12b276ea03cb5cb2ca22e1878d1b76 = L.featureGroup(
+                {
+}
+            );
+        
+    
+            var circle_marker_28820cd18583d370ed90c866bd8d6693 = L.circleMarker(
+                [10.793069601149838, 106.70547219700465],
+                {"bubblingMouseEvents": true, "color": "#43A047", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#43A047", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(feature_group_6d12b276ea03cb5cb2ca22e1878d1b76);
+        
+    
+        var popup_e67f1f055180093e72670d27f783c5cd = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_8a5c90b9655edc55cdde04a3822d26b0 = $(`<div id="html_8a5c90b9655edc55cdde04a3822d26b0" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #43A047;">👤 Khách hàng #1</h4>             <b>Loại:</b> Locker-only<br>             <b>Nhu cầu (Demand):</b> 10<br>             <b>Khung giờ giao:</b> [912 - 967]<br>             <b>Thời gian phục vụ:</b> 90.0<br>             <b>Tọa độ gốc:</b> (45.0, 68.0)<br>             <b>GPS:</b> 10.79307, 106.70547         </div>         </div>`)[0];
+                popup_e67f1f055180093e72670d27f783c5cd.setContent(html_8a5c90b9655edc55cdde04a3822d26b0);
+            
+        
+
+        circle_marker_28820cd18583d370ed90c866bd8d6693.bindPopup(popup_e67f1f055180093e72670d27f783c5cd)
+        ;
+
+        
+    
+    
+            circle_marker_28820cd18583d370ed90c866bd8d6693.bindTooltip(
+                `<div>
+                     Khách hàng #1 (Locker-only) - Nhu cầu: 10
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_5eca72ceaa3211b2291dc6d4c8911081 = L.circleMarker(
+                [10.79486622349982, 106.70547219700465],
+                {"bubblingMouseEvents": true, "color": "#43A047", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#43A047", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(feature_group_6d12b276ea03cb5cb2ca22e1878d1b76);
+        
+    
+        var popup_0c0a1df0586cddaf487b2ca6fd457f2e = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_ed3f25a3c714cc3c907a7c6a609b4f3d = $(`<div id="html_ed3f25a3c714cc3c907a7c6a609b4f3d" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #43A047;">👤 Khách hàng #2</h4>             <b>Loại:</b> Locker-only<br>             <b>Nhu cầu (Demand):</b> 30<br>             <b>Khung giờ giao:</b> [825 - 870]<br>             <b>Thời gian phục vụ:</b> 90.0<br>             <b>Tọa độ gốc:</b> (45.0, 70.0)<br>             <b>GPS:</b> 10.79487, 106.70547         </div>         </div>`)[0];
+                popup_0c0a1df0586cddaf487b2ca6fd457f2e.setContent(html_ed3f25a3c714cc3c907a7c6a609b4f3d);
+            
+        
+
+        circle_marker_5eca72ceaa3211b2291dc6d4c8911081.bindPopup(popup_0c0a1df0586cddaf487b2ca6fd457f2e)
+        ;
+
+        
+    
+    
+            circle_marker_5eca72ceaa3211b2291dc6d4c8911081.bindTooltip(
+                `<div>
+                     Khách hàng #2 (Locker-only) - Nhu cầu: 30
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_394d063127d969af9d2e3e4e2061e94f = L.circleMarker(
+                [10.791272978799856, 106.70272887880186],
+                {"bubblingMouseEvents": true, "color": "#43A047", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#43A047", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(feature_group_6d12b276ea03cb5cb2ca22e1878d1b76);
+        
+    
+        var popup_cdcd9ea8d7c16fd5d3d45e08e0902981 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_e6d184d7f343c0d6b9c0d05885ec23f5 = $(`<div id="html_e6d184d7f343c0d6b9c0d05885ec23f5" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #43A047;">👤 Khách hàng #3</h4>             <b>Loại:</b> Locker-only<br>             <b>Nhu cầu (Demand):</b> 10<br>             <b>Khung giờ giao:</b> [65 - 146]<br>             <b>Thời gian phục vụ:</b> 90.0<br>             <b>Tọa độ gốc:</b> (42.0, 66.0)<br>             <b>GPS:</b> 10.79127, 106.70273         </div>         </div>`)[0];
+                popup_cdcd9ea8d7c16fd5d3d45e08e0902981.setContent(html_e6d184d7f343c0d6b9c0d05885ec23f5);
+            
+        
+
+        circle_marker_394d063127d969af9d2e3e4e2061e94f.bindPopup(popup_cdcd9ea8d7c16fd5d3d45e08e0902981)
+        ;
+
+        
+    
+    
+            circle_marker_394d063127d969af9d2e3e4e2061e94f.bindTooltip(
+                `<div>
+                     Khách hàng #3 (Locker-only) - Nhu cầu: 10
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_8b3a260a5cddf6a53f088451fcd23d07 = L.circleMarker(
+                [10.791272978799856, 106.69632780299536],
+                {"bubblingMouseEvents": true, "color": "#43A047", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#43A047", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(feature_group_6d12b276ea03cb5cb2ca22e1878d1b76);
+        
+    
+        var popup_11e4b2a1e30f237754327d3bb86465cb = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_b20ffcad5ba03f57727e4b2e365e8502 = $(`<div id="html_b20ffcad5ba03f57727e4b2e365e8502" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #43A047;">👤 Khách hàng #10</h4>             <b>Loại:</b> Locker-only<br>             <b>Nhu cầu (Demand):</b> 10<br>             <b>Khung giờ giao:</b> [357 - 410]<br>             <b>Thời gian phục vụ:</b> 90.0<br>             <b>Tọa độ gốc:</b> (35.0, 66.0)<br>             <b>GPS:</b> 10.79127, 106.69633         </div>         </div>`)[0];
+                popup_11e4b2a1e30f237754327d3bb86465cb.setContent(html_b20ffcad5ba03f57727e4b2e365e8502);
+            
+        
+
+        circle_marker_8b3a260a5cddf6a53f088451fcd23d07.bindPopup(popup_11e4b2a1e30f237754327d3bb86465cb)
+        ;
+
+        
+    
+    
+            circle_marker_8b3a260a5cddf6a53f088451fcd23d07.bindTooltip(
+                `<div>
+                     Khách hàng #10 (Locker-only) - Nhu cầu: 10
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_dd2900f1e3a1ac9b3048a3e96438dc29 = L.circleMarker(
+                [10.808340891124685, 106.68444009078328],
+                {"bubblingMouseEvents": true, "color": "#43A047", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#43A047", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(feature_group_6d12b276ea03cb5cb2ca22e1878d1b76);
+        
+    
+        var popup_9e2fe0a1108be2b552d6acd13ba33cf6 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_145038aaa908d5a77a4fab67045c309a = $(`<div id="html_145038aaa908d5a77a4fab67045c309a" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #43A047;">👤 Khách hàng #14</h4>             <b>Loại:</b> Locker-only<br>             <b>Nhu cầu (Demand):</b> 10<br>             <b>Khung giờ giao:</b> [567 - 620]<br>             <b>Thời gian phục vụ:</b> 90.0<br>             <b>Tọa độ gốc:</b> (22.0, 85.0)<br>             <b>GPS:</b> 10.80834, 106.68444         </div>         </div>`)[0];
+                popup_9e2fe0a1108be2b552d6acd13ba33cf6.setContent(html_145038aaa908d5a77a4fab67045c309a);
+            
+        
+
+        circle_marker_dd2900f1e3a1ac9b3048a3e96438dc29.bindPopup(popup_9e2fe0a1108be2b552d6acd13ba33cf6)
+        ;
+
+        
+    
+    
+            circle_marker_dd2900f1e3a1ac9b3048a3e96438dc29.bindTooltip(
+                `<div>
+                     Khách hàng #14 (Locker-only) - Nhu cầu: 10
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_c51750a885c33226ba3e8680a3777059 = L.circleMarker(
+                [10.799357779374775, 106.67803901497679],
+                {"bubblingMouseEvents": true, "color": "#43A047", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#43A047", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(feature_group_6d12b276ea03cb5cb2ca22e1878d1b76);
+        
+    
+        var popup_b1db4ff1a2a21647f4ddea0a79b21e1b = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_e24bf93d2149ce0e5f7e8a0ff9e5b399 = $(`<div id="html_e24bf93d2149ce0e5f7e8a0ff9e5b399" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #43A047;">👤 Khách hàng #18</h4>             <b>Loại:</b> Locker-only<br>             <b>Nhu cầu (Demand):</b> 20<br>             <b>Khung giờ giao:</b> [179 - 254]<br>             <b>Thời gian phục vụ:</b> 90.0<br>             <b>Tọa độ gốc:</b> (15.0, 75.0)<br>             <b>GPS:</b> 10.79936, 106.67804         </div>         </div>`)[0];
+                popup_b1db4ff1a2a21647f4ddea0a79b21e1b.setContent(html_e24bf93d2149ce0e5f7e8a0ff9e5b399);
+            
+        
+
+        circle_marker_c51750a885c33226ba3e8680a3777059.bindPopup(popup_b1db4ff1a2a21647f4ddea0a79b21e1b)
+        ;
+
+        
+    
+    
+            circle_marker_c51750a885c33226ba3e8680a3777059.bindTooltip(
+                `<div>
+                     Khách hàng #18 (Locker-only) - Nhu cầu: 20
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_331c9d5004e9b1e83e62c06fbe9f3df1 = L.circleMarker(
+                [10.778696622349981, 106.68992672718886],
+                {"bubblingMouseEvents": true, "color": "#43A047", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#43A047", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(feature_group_6d12b276ea03cb5cb2ca22e1878d1b76);
+        
+    
+        var popup_f97cdc247e0cbaaa9e8eea7b720b0265 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_a691ec489cb645b1d73fe3160df152a9 = $(`<div id="html_a691ec489cb645b1d73fe3160df152a9" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #43A047;">👤 Khách hàng #22</h4>             <b>Loại:</b> Locker-only<br>             <b>Nhu cầu (Demand):</b> 20<br>             <b>Khung giờ giao:</b> [812 - 883]<br>             <b>Thời gian phục vụ:</b> 90.0<br>             <b>Tọa độ gốc:</b> (28.0, 52.0)<br>             <b>GPS:</b> 10.77870, 106.68993         </div>         </div>`)[0];
+                popup_f97cdc247e0cbaaa9e8eea7b720b0265.setContent(html_a691ec489cb645b1d73fe3160df152a9);
+            
+        
+
+        circle_marker_331c9d5004e9b1e83e62c06fbe9f3df1.bindPopup(popup_f97cdc247e0cbaaa9e8eea7b720b0265)
+        ;
+
+        
+    
+    
+            circle_marker_331c9d5004e9b1e83e62c06fbe9f3df1.bindTooltip(
+                `<div>
+                     Khách hàng #22 (Locker-only) - Nhu cầu: 20
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_9343f8fe161522d2c359fe9e2f46992b = L.circleMarker(
+                [10.781391555874954, 106.68992672718886],
+                {"bubblingMouseEvents": true, "color": "#43A047", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#43A047", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(feature_group_6d12b276ea03cb5cb2ca22e1878d1b76);
+        
+    
+        var popup_41bf9ae238f99731ad5b8a88cc9eaee1 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_1bada5e11be12dcb5925120f7462451c = $(`<div id="html_1bada5e11be12dcb5925120f7462451c" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #43A047;">👤 Khách hàng #23</h4>             <b>Loại:</b> Locker-only<br>             <b>Nhu cầu (Demand):</b> 10<br>             <b>Khung giờ giao:</b> [732 - 777]<br>             <b>Thời gian phục vụ:</b> 90.0<br>             <b>Tọa độ gốc:</b> (28.0, 55.0)<br>             <b>GPS:</b> 10.78139, 106.68993         </div>         </div>`)[0];
+                popup_41bf9ae238f99731ad5b8a88cc9eaee1.setContent(html_1bada5e11be12dcb5925120f7462451c);
+            
+        
+
+        circle_marker_9343f8fe161522d2c359fe9e2f46992b.bindPopup(popup_41bf9ae238f99731ad5b8a88cc9eaee1)
+        ;
+
+        
+    
+    
+            circle_marker_9343f8fe161522d2c359fe9e2f46992b.bindTooltip(
+                `<div>
+                     Khách hàng #23 (Locker-only) - Nhu cầu: 10
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_82de17fadfec1588d4bc72a9837807fa = L.circleMarker(
+                [10.7769, 106.68718340898607],
+                {"bubblingMouseEvents": true, "color": "#43A047", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#43A047", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(feature_group_6d12b276ea03cb5cb2ca22e1878d1b76);
+        
+    
+        var popup_b9ce34db9d9e27e4ea9518c51320f0a4 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_81532af2702a11f71cee0de49e819e86 = $(`<div id="html_81532af2702a11f71cee0de49e819e86" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #43A047;">👤 Khách hàng #24</h4>             <b>Loại:</b> Locker-only<br>             <b>Nhu cầu (Demand):</b> 10<br>             <b>Khung giờ giao:</b> [65 - 144]<br>             <b>Thời gian phục vụ:</b> 90.0<br>             <b>Tọa độ gốc:</b> (25.0, 50.0)<br>             <b>GPS:</b> 10.77690, 106.68718         </div>         </div>`)[0];
+                popup_b9ce34db9d9e27e4ea9518c51320f0a4.setContent(html_81532af2702a11f71cee0de49e819e86);
+            
+        
+
+        circle_marker_82de17fadfec1588d4bc72a9837807fa.bindPopup(popup_b9ce34db9d9e27e4ea9518c51320f0a4)
+        ;
+
+        
+    
+    
+            circle_marker_82de17fadfec1588d4bc72a9837807fa.bindTooltip(
+                `<div>
+                     Khách hàng #24 (Locker-only) - Nhu cầu: 10
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_62061618253a08b10467dd5cbf8576a1 = L.circleMarker(
+                [10.778696622349981, 106.68718340898607],
+                {"bubblingMouseEvents": true, "color": "#43A047", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#43A047", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(feature_group_6d12b276ea03cb5cb2ca22e1878d1b76);
+        
+    
+        var popup_7ce8067051378a05de6d49c62dbf50aa = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_4edd4d74972f0050513d19baa054153e = $(`<div id="html_4edd4d74972f0050513d19baa054153e" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #43A047;">👤 Khách hàng #25</h4>             <b>Loại:</b> Locker-only<br>             <b>Nhu cầu (Demand):</b> 40<br>             <b>Khung giờ giao:</b> [169 - 224]<br>             <b>Thời gian phục vụ:</b> 90.0<br>             <b>Tọa độ gốc:</b> (25.0, 52.0)<br>             <b>GPS:</b> 10.77870, 106.68718         </div>         </div>`)[0];
+                popup_7ce8067051378a05de6d49c62dbf50aa.setContent(html_4edd4d74972f0050513d19baa054153e);
+            
+        
+
+        circle_marker_62061618253a08b10467dd5cbf8576a1.bindPopup(popup_7ce8067051378a05de6d49c62dbf50aa)
+        ;
+
+        
+    
+    
+            circle_marker_62061618253a08b10467dd5cbf8576a1.bindTooltip(
+                `<div>
+                     Khách hàng #25 (Locker-only) - Nhu cầu: 40
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            feature_group_6d12b276ea03cb5cb2ca22e1878d1b76.addTo(map_592d3f4e7d7865b03d2a04b1b6ffbd89);
+        
+    
+            var feature_group_a6cd20c648cf7208dad0019942aa9f4c = L.featureGroup(
+                {
+}
+            );
+        
+    
+            var circle_marker_1d8b550793993d36de8bade518be4de6 = L.circleMarker(
+                [10.793069601149838, 106.70272887880186],
+                {"bubblingMouseEvents": true, "color": "#FB8C00", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#FB8C00", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(feature_group_a6cd20c648cf7208dad0019942aa9f4c);
+        
+    
+        var popup_a6dbb406057f64a9bf38cc6614983e43 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_cd82023f382108aa0df6e81fedca5f7c = $(`<div id="html_cd82023f382108aa0df6e81fedca5f7c" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #FB8C00;">👤 Khách hàng #4</h4>             <b>Loại:</b> Flexible<br>             <b>Nhu cầu (Demand):</b> 10<br>             <b>Khung giờ giao:</b> [727 - 782]<br>             <b>Thời gian phục vụ:</b> 90.0<br>             <b>Tọa độ gốc:</b> (42.0, 68.0)<br>             <b>GPS:</b> 10.79307, 106.70273         </div>         </div>`)[0];
+                popup_a6dbb406057f64a9bf38cc6614983e43.setContent(html_cd82023f382108aa0df6e81fedca5f7c);
+            
+        
+
+        circle_marker_1d8b550793993d36de8bade518be4de6.bindPopup(popup_a6dbb406057f64a9bf38cc6614983e43)
+        ;
+
+        
+    
+    
+            circle_marker_1d8b550793993d36de8bade518be4de6.bindTooltip(
+                `<div>
+                     Khách hàng #4 (Flexible) - Nhu cầu: 10
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_0aa3de78c1401e28fbe6724530c2e510 = L.circleMarker(
+                [10.790374667624866, 106.70272887880186],
+                {"bubblingMouseEvents": true, "color": "#FB8C00", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#FB8C00", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(feature_group_a6cd20c648cf7208dad0019942aa9f4c);
+        
+    
+        var popup_973e99f1358c4d1032e447c797ad3015 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_fe75ab0e4b8e59eb2d6e3b8963c1e15a = $(`<div id="html_fe75ab0e4b8e59eb2d6e3b8963c1e15a" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #FB8C00;">👤 Khách hàng #5</h4>             <b>Loại:</b> Flexible<br>             <b>Nhu cầu (Demand):</b> 10<br>             <b>Khung giờ giao:</b> [15 - 67]<br>             <b>Thời gian phục vụ:</b> 90.0<br>             <b>Tọa độ gốc:</b> (42.0, 65.0)<br>             <b>GPS:</b> 10.79037, 106.70273         </div>         </div>`)[0];
+                popup_973e99f1358c4d1032e447c797ad3015.setContent(html_fe75ab0e4b8e59eb2d6e3b8963c1e15a);
+            
+        
+
+        circle_marker_0aa3de78c1401e28fbe6724530c2e510.bindPopup(popup_973e99f1358c4d1032e447c797ad3015)
+        ;
+
+        
+    
+    
+            circle_marker_0aa3de78c1401e28fbe6724530c2e510.bindTooltip(
+                `<div>
+                     Khách hàng #5 (Flexible) - Nhu cầu: 10
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_d3435b5c08e84f48b46e85d322d8c47b = L.circleMarker(
+                [10.79396791232483, 106.7009],
+                {"bubblingMouseEvents": true, "color": "#FB8C00", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#FB8C00", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(feature_group_a6cd20c648cf7208dad0019942aa9f4c);
+        
+    
+        var popup_5ce315593ca471293944bb45a1a62562 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_e71e849e099e8542a2bba9369221d12f = $(`<div id="html_e71e849e099e8542a2bba9369221d12f" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #FB8C00;">👤 Khách hàng #6</h4>             <b>Loại:</b> Flexible<br>             <b>Nhu cầu (Demand):</b> 20<br>             <b>Khung giờ giao:</b> [621 - 702]<br>             <b>Thời gian phục vụ:</b> 90.0<br>             <b>Tọa độ gốc:</b> (40.0, 69.0)<br>             <b>GPS:</b> 10.79397, 106.70090         </div>         </div>`)[0];
+                popup_5ce315593ca471293944bb45a1a62562.setContent(html_e71e849e099e8542a2bba9369221d12f);
+            
+        
+
+        circle_marker_d3435b5c08e84f48b46e85d322d8c47b.bindPopup(popup_5ce315593ca471293944bb45a1a62562)
+        ;
+
+        
+    
+    
+            circle_marker_d3435b5c08e84f48b46e85d322d8c47b.bindTooltip(
+                `<div>
+                     Khách hàng #6 (Flexible) - Nhu cầu: 20
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_d26cc7e9f56892158f337c8648d23cc3 = L.circleMarker(
+                [10.793069601149838, 106.69907112119814],
+                {"bubblingMouseEvents": true, "color": "#FB8C00", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#FB8C00", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(feature_group_a6cd20c648cf7208dad0019942aa9f4c);
+        
+    
+        var popup_52482f4a400cf392f41e6a706c7cbb41 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_42f180a23171a13765779406f1c456e3 = $(`<div id="html_42f180a23171a13765779406f1c456e3" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #FB8C00;">👤 Khách hàng #8</h4>             <b>Loại:</b> Flexible<br>             <b>Nhu cầu (Demand):</b> 20<br>             <b>Khung giờ giao:</b> [255 - 324]<br>             <b>Thời gian phục vụ:</b> 90.0<br>             <b>Tọa độ gốc:</b> (38.0, 68.0)<br>             <b>GPS:</b> 10.79307, 106.69907         </div>         </div>`)[0];
+                popup_52482f4a400cf392f41e6a706c7cbb41.setContent(html_42f180a23171a13765779406f1c456e3);
+            
+        
+
+        circle_marker_d26cc7e9f56892158f337c8648d23cc3.bindPopup(popup_52482f4a400cf392f41e6a706c7cbb41)
+        ;
+
+        
+    
+    
+            circle_marker_d26cc7e9f56892158f337c8648d23cc3.bindTooltip(
+                `<div>
+                     Khách hàng #8 (Flexible) - Nhu cầu: 20
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_87ee8672a69cea159d23b745c5c9ac67 = L.circleMarker(
+                [10.79486622349982, 106.69907112119814],
+                {"bubblingMouseEvents": true, "color": "#FB8C00", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#FB8C00", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(feature_group_a6cd20c648cf7208dad0019942aa9f4c);
+        
+    
+        var popup_125e2b035eb5c4f1ea01ff7a7835d560 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_4904280c0fa85ad6cdbda65bdaafeb81 = $(`<div id="html_4904280c0fa85ad6cdbda65bdaafeb81" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #FB8C00;">👤 Khách hàng #9</h4>             <b>Loại:</b> Flexible<br>             <b>Nhu cầu (Demand):</b> 10<br>             <b>Khung giờ giao:</b> [534 - 605]<br>             <b>Thời gian phục vụ:</b> 90.0<br>             <b>Tọa độ gốc:</b> (38.0, 70.0)<br>             <b>GPS:</b> 10.79487, 106.69907         </div>         </div>`)[0];
+                popup_125e2b035eb5c4f1ea01ff7a7835d560.setContent(html_4904280c0fa85ad6cdbda65bdaafeb81);
+            
+        
+
+        circle_marker_87ee8672a69cea159d23b745c5c9ac67.bindPopup(popup_125e2b035eb5c4f1ea01ff7a7835d560)
+        ;
+
+        
+    
+    
+            circle_marker_87ee8672a69cea159d23b745c5c9ac67.bindTooltip(
+                `<div>
+                     Khách hàng #9 (Flexible) - Nhu cầu: 10
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_5b4052f2a133ca68c91febbd7cd42d2e = L.circleMarker(
+                [10.799357779374775, 106.68078233317958],
+                {"bubblingMouseEvents": true, "color": "#FB8C00", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#FB8C00", "fillOpacity": 0.85, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 7, "stroke": true, "weight": 2}
+            ).addTo(feature_group_a6cd20c648cf7208dad0019942aa9f4c);
+        
+    
+        var popup_146a1f40e6edbe68bc59b19e7753d394 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_8b1390609116cb3200099c35bd033a44 = $(`<div id="html_8b1390609116cb3200099c35bd033a44" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #FB8C00;">👤 Khách hàng #17</h4>             <b>Loại:</b> Flexible<br>             <b>Nhu cầu (Demand):</b> 20<br>             <b>Khung giờ giao:</b> [99 - 148]<br>             <b>Thời gian phục vụ:</b> 90.0<br>             <b>Tọa độ gốc:</b> (18.0, 75.0)<br>             <b>GPS:</b> 10.79936, 106.68078         </div>         </div>`)[0];
+                popup_146a1f40e6edbe68bc59b19e7753d394.setContent(html_8b1390609116cb3200099c35bd033a44);
+            
+        
+
+        circle_marker_5b4052f2a133ca68c91febbd7cd42d2e.bindPopup(popup_146a1f40e6edbe68bc59b19e7753d394)
+        ;
+
+        
+    
+    
+            circle_marker_5b4052f2a133ca68c91febbd7cd42d2e.bindTooltip(
+                `<div>
+                     Khách hàng #17 (Flexible) - Nhu cầu: 20
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            feature_group_a6cd20c648cf7208dad0019942aa9f4c.addTo(map_592d3f4e7d7865b03d2a04b1b6ffbd89);
+        
+    
+            var feature_group_1425ccc33d584baa703f3db36e119c6e = L.featureGroup(
+                {
+}
+            );
+        
+    
+            var marker_c748898febc05363f4c46a2096bad112 = L.marker(
+                [10.808340891124685, 106.68718340898607],
+                {
+  "zIndexOffset": 800,
+}
+            ).addTo(feature_group_1425ccc33d584baa703f3db36e119c6e);
+        
+    
+            var icon_4904695b5c307807a9dc8cba1e076ea5 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "lock",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_855a9dbecfeed6396199292ef684379c = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_81a6dfe6d07a78d1e312d6b578e21b91 = $(`<div id="html_81a6dfe6d07a78d1e312d6b578e21b91" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #7B1FA2;">🗄️ Tủ Parcel Locker #26</h4>             <b>Tọa độ gốc:</b> (25.0, 85.0)<br>             <b>GPS:</b> 10.80834, 106.68718<br>             <b>Khung giờ mở:</b> [0 - 1236]<br>             <b>Thời gian phục vụ:</b> 45.0         </div>         </div>`)[0];
+                popup_855a9dbecfeed6396199292ef684379c.setContent(html_81a6dfe6d07a78d1e312d6b578e21b91);
+            
+        
+
+        marker_c748898febc05363f4c46a2096bad112.bindPopup(popup_855a9dbecfeed6396199292ef684379c)
+        ;
+
+        
+    
+    
+            marker_c748898febc05363f4c46a2096bad112.bindTooltip(
+                `<div>
+                     🗄️ Locker #26
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_c748898febc05363f4c46a2096bad112.setIcon(icon_4904695b5c307807a9dc8cba1e076ea5);
+            
+    
+            var marker_551f219021f594a4df48db7ede065602 = L.marker(
+                [10.780493244699963, 106.68718340898607],
+                {
+  "zIndexOffset": 800,
+}
+            ).addTo(feature_group_1425ccc33d584baa703f3db36e119c6e);
+        
+    
+            var icon_ab505d543dc326f30676a2994d9838dd = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "purple",
+  "iconColor": "white",
+  "icon": "lock",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_80b06877da76106534d9ac88f9136a56 = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_2ffcdc554bf29445404d50760bc7932a = $(`<div id="html_2ffcdc554bf29445404d50760bc7932a" style="width: 100.0%; height: 100.0%;">         <div style="font-family: sans-serif; min-width: 180px;">             <h4 style="margin: 0 0 6px 0; color: #7B1FA2;">🗄️ Tủ Parcel Locker #27</h4>             <b>Tọa độ gốc:</b> (25.0, 54.0)<br>             <b>GPS:</b> 10.78049, 106.68718<br>             <b>Khung giờ mở:</b> [0 - 1236]<br>             <b>Thời gian phục vụ:</b> 45.0         </div>         </div>`)[0];
+                popup_80b06877da76106534d9ac88f9136a56.setContent(html_2ffcdc554bf29445404d50760bc7932a);
+            
+        
+
+        marker_551f219021f594a4df48db7ede065602.bindPopup(popup_80b06877da76106534d9ac88f9136a56)
+        ;
+
+        
+    
+    
+            marker_551f219021f594a4df48db7ede065602.bindTooltip(
+                `<div>
+                     🗄️ Locker #27
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_551f219021f594a4df48db7ede065602.setIcon(icon_ab505d543dc326f30676a2994d9838dd);
+            
+    
+            feature_group_1425ccc33d584baa703f3db36e119c6e.addTo(map_592d3f4e7d7865b03d2a04b1b6ffbd89);
+        
+    
+            var feature_group_6d415bc7b5429f30de3c7d4f8cfae22a = L.featureGroup(
+                {
+}
+            );
+        
+    
+            var marker_523a4c756f30723ef2e84605d75bdea7 = L.marker(
+                [10.7769, 106.7009],
+                {
+  "zIndexOffset": 1000,
+}
+            ).addTo(feature_group_6d415bc7b5429f30de3c7d4f8cfae22a);
+        
+    
+            var icon_8adf9b51e1bb8e1b0a3ae30d05a9212e = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "warehouse",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_9a94e1b36ed7ba43e89f0d3afd4391ff = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_a3cd2634c1a1cbceee0fca4a38ff6046 = $(`<div id="html_a3cd2634c1a1cbceee0fca4a38ff6046" style="width: 100.0%; height: 100.0%;">     <div style="font-family: sans-serif; min-width: 180px;">         <h4 style="margin: 0 0 6px 0; color: #D32F2F;">🏢 Kho trung tâm (Depot)</h4>         <b>ID:</b> 0<br>         <b>Tọa độ gốc:</b> (40.0, 50.0)<br>         <b>GPS:</b> 10.77690, 106.70090<br>         <b>Khung giờ:</b> [0 - 1236]<br>         <b>Số xe khả dụng:</b> 25<br>         <b>Sức chứa mỗi xe:</b> 200     </div>     </div>`)[0];
+                popup_9a94e1b36ed7ba43e89f0d3afd4391ff.setContent(html_a3cd2634c1a1cbceee0fca4a38ff6046);
+            
+        
+
+        marker_523a4c756f30723ef2e84605d75bdea7.bindPopup(popup_9a94e1b36ed7ba43e89f0d3afd4391ff)
+        ;
+
+        
+    
+    
+            marker_523a4c756f30723ef2e84605d75bdea7.bindTooltip(
+                `<div>
+                     🏢 Kho Trung Tâm (Depot 0)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_523a4c756f30723ef2e84605d75bdea7.setIcon(icon_8adf9b51e1bb8e1b0a3ae30d05a9212e);
+            
+    
+            feature_group_6d415bc7b5429f30de3c7d4f8cfae22a.addTo(map_592d3f4e7d7865b03d2a04b1b6ffbd89);
+        
+    
+            var layer_control_a8a27a83d13185585553faef06f5e71b_layers = {
+                base_layers : {
+                    "openstreetmap" : tile_layer_91e07cef934287cf03b069db3e220e8c,
+                    "\ud83d\udef0\ufe0f V\u1ec7 tinh (Esri Satellite)" : tile_layer_03827b929641295ce3e5236471eca911,
+                    "\ud83c\udfd4\ufe0f \u0110\u1ecba h\u00ecnh (Esri Topo)" : tile_layer_5fdd4fd0935f285acae55041ee6e96b8,
+                    "\ud83c\udfe5 \u0110\u01b0\u1eddng ph\u1ed1 HOT (OSM Humanitarian)" : tile_layer_febbdb3c5c580d199a3d18ce18a7e86d,
+                },
+                overlays :  {
+                    "\ud83d\ude9a Tuy\u1ebfn \u0111\u01b0\u1eddng xe (Routes)" : feature_group_e693d3c8d3c2de3b7b300deacf22b646,
+                    "\ud83c\udfe0 Kh\u00e1ch nh\u1eadn t\u1ea1i nh\u00e0 (Type 1)" : feature_group_438e2d2a9ad7d350137dc94b0dc83482,
+                    "\ud83d\udce6 Kh\u00e1ch nh\u1eadn t\u1ea1i Locker (Type 2)" : feature_group_6d12b276ea03cb5cb2ca22e1878d1b76,
+                    "\ud83d\udd04 Kh\u00e1ch h\u00e0ng linh ho\u1ea1t (Type 3)" : feature_group_a6cd20c648cf7208dad0019942aa9f4c,
+                    "\ud83d\uddc4\ufe0f T\u1ee7 Parcel Lockers" : feature_group_1425ccc33d584baa703f3db36e119c6e,
+                    "\ud83c\udfe2 Kho trung t\u00e2m (Depot)" : feature_group_6d415bc7b5429f30de3c7d4f8cfae22a,
+                },
+            };
+            let layer_control_a8a27a83d13185585553faef06f5e71b = L.control.layers(
+                layer_control_a8a27a83d13185585553faef06f5e71b_layers.base_layers,
+                layer_control_a8a27a83d13185585553faef06f5e71b_layers.overlays,
+                {
+  "position": "topright",
+  "collapsed": false,
+  "autoZIndex": true,
+}
+            ).addTo(map_592d3f4e7d7865b03d2a04b1b6ffbd89);
+
+        
+    
+            map_592d3f4e7d7865b03d2a04b1b6ffbd89.fitBounds(
+                [[10.771899999999999, 106.6730390149768], [10.813340891124685, 106.71047219700465]],
+                {}
+            );
+        
+</script>
+</html>

@@ -1,0 +1,36 @@
+large:
+  data_dir: data/100
+  num_runs: 1
+  output_csv: /tmp/bao_temp_output.csv
+  params:
+    max_iter: 200
+    population_size: 3400
+    beta: 2.14
+    learning_rate: 0.00081
+    lower_bound: 0.4734
+    upper_bound: 0.7826
+    p: 0.1
+medium:
+  data_dir: data/50
+  num_runs: 1
+  output_csv: /tmp/bao_temp_output.csv
+  params:
+    max_iter: 300
+    population_size: 500
+    beta: 2.5
+    learning_rate: 0.01
+    lower_bound: 0.5
+    p: 0.1
+    upper_bound: 0.5
+small:
+  data_dir: data/25
+  num_runs: 1
+  output_csv: /tmp/bao_temp_output.csv
+  params:
+    max_iter: 100
+    beta: 2.5
+    learning_rate: 0.0001
+    lower_bound: 0.5
+    p: 0.1
+    population_size: 50
+    upper_bound: 0.5

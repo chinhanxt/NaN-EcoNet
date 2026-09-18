@@ -1,0 +1,11 @@
+{
+  "best_params": {
+    "iterations": 500,
+    "w_decay": 0.6995993636001141,
+    "init_temp": 103.41473936144082,
+    "cooling": 0.9949331684820442,
+    "local_search_frequency": 5,
+    "min_local_moves": 1000
+  },
+  "best_objective": 207.27173
+}

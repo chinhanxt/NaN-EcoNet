@@ -1,0 +1,32 @@
+small:
+  data_dir: data/25
+  params:
+    population_size: 100
+    generations: 6000
+    crossover_rate: 0.8
+    mutation_rate: 0.2
+    p: 0.1
+  num_runs: 1
+  output_csv: output/solutions/small.csv
+
+medium:
+  data_dir: data/50
+  params:
+    population_size: 100
+    generations: 1200
+    crossover_rate: 0.8
+    mutation_rate: 0.2
+    p: 0.3
+  num_runs: 1
+  output_csv: output/solutions/medium.csv
+
+large:
+  data_dir: data/100
+  params:
+    population_size: 200
+    generations: 2000
+    crossover_rate: 0.8
+    mutation_rate: 0.2
+    p: 0.1
+  num_runs: 1
+  output_csv: output/solutions/large.csv

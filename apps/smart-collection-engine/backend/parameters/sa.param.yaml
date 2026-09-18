@@ -1,0 +1,38 @@
+small:
+  data_dir: ../data/25
+  params:
+    max_iter: 10000
+    T0: 10.0
+    Tf: 0.1
+    alpha: 0.97
+    beta: 1.0
+    patience: 100
+    p: 0.5
+  num_runs: 5
+  output_csv: ../output/solutions/small.csv
+
+medium:
+  data_dir: ../data/50
+  params:
+    max_iter: 32000
+    T0: 20.0
+    Tf: 0.05
+    alpha: 0.98
+    beta: 0.333
+    patience: 100
+    p: 0.3
+  num_runs: 5
+  output_csv: output/solutions/medium.csv
+
+large:
+  data_dir: ../data/100
+  params:
+    max_iter: 100000
+    T0: 30.0
+    Tf: 0.01
+    alpha: 0.99
+    beta: 0.2
+    patience: 150
+    p: 0.1
+  num_runs: 5
+  output_csv: output/solutions/large.csv

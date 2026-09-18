@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bản Đồ Thu Gom Rác & Đối Soát Lộ Trình (Máy Tính vs Thực Tế)</title>
+
+  <!-- Google Fonts & FontAwesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --canvas-bg: #f8fafc;
+      --panel: #ffffff;
+      --panel-border: #e2e8f0;
+      --card: #ffffff;
+      --card-border: #e2e8f0;
+      --card-hover: #f1f5f9;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --cyan: #0284c7;
+      --green: #10b981;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body.dark {
+      --bg: #06080e;
+      --canvas-bg: #06080e;
+      --panel: #0b0f19;
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --card: #0f1422;
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-hover: #161c2e;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --cyan: #38bdf8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* Top Header Strip */
+    header {
+      height: 48px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--panel-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      flex-shrink: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 13px;
+    }
+    .brand-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-counts {
+      font-size: 11px;
+      font-family: var(--mono);
+      font-weight: 600;
+      color: #0284c7;
+      background: rgba(14, 165, 233, 0.1);
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(14, 165, 233, 0.25);
+    }
+    body.dark .brand-counts {
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
+      border-color: rgba(56, 189, 248, 0.3);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn {
+      background: var(--card);
+      border: 1px solid var(--panel-border);
+      color: var(--text);
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+    .btn:hover {
+      background: var(--card-hover);
+      border-color: #cbd5e1;
+    }
+    body.dark .btn:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Strict 2-Pane Side-by-Side Layout */
+    .main-view {
+      flex: 1;
+      display: flex;
+      height: calc(100vh - 48px);
+      overflow: hidden;
+    }
+
+    /* LEFT PANE (52%): Real Leaflet Map */
+    .col-graph {
+      flex: 52;
+      position: relative;
+      height: 100%;
+      background: var(--canvas-bg);
+      border-right: 1px solid var(--panel-border);
+      overflow: hidden;
+    }
+
+    #driver-map {
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      background: var(--canvas-bg);
+    }
+
+    /* Search Input on Top-Left */
+    .canvas-search-box {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      width: 220px;
+    }
+    body.dark .canvas-search-box {
+      background: rgba(15, 20, 34, 0.95);
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+    .canvas-search-box input {
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 11px;
+      font-family: var(--mono);
+      color: var(--text);
+      width: 100%;
+    }
+    .canvas-search-box .clear-btn {
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 11px;
+    }
+
+    /* Floating Route Comparison Banner on Top Center */
+    .map-comparison-bar {
+      position: absolute;
+      top: 14px;
+      left: 245px;
+      right: 220px;
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 8px 14px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      z-index: 1000;
+      backdrop-filter: blur(10px);
+      transition: all 0.2s;
+    }
+    body.dark .map-comparison-bar {
+      background: rgba(15, 20, 34, 0.94);
+      border-color: rgba(56, 189, 248, 0.3);
+    }
+    body.dark .map-comparison-bar {
+      background: rgba(15, 20, 34, 0.94);
+      border-color: rgba(56, 189, 248, 0.3);
+    }
+    .comp-col {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .comp-col.plan .comp-label {
+      color: #8b5cf6;
+      font-weight: 700;
+      font-size: 9.5px;
+      font-family: var(--mono);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .comp-col.actual .comp-label {
+      color: #0284c7;
+      font-weight: 700;
+      font-size: 9.5px;
+      font-family: var(--mono);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    body.dark .comp-col.actual .comp-label {
+      color: #38bdf8;
+    }
+    .comp-val {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .comp-diff {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .comp-diff.danger {
+      background: rgba(239, 68, 68, 0.14);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .comp-diff.success {
+      background: rgba(16, 185, 129, 0.14);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .comp-reason {
+      font-size: 10px;
+      color: var(--text-muted);
+      max-width: 170px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Route & Node Legend on Top-Right */
+    .map-route-legend-card {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      z-index: 1000;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 190px;
+      backdrop-filter: blur(8px);
+    }
+    body.dark .map-route-legend-card {
+      background: rgba(15, 20, 34, 0.94);
+      border-color: rgba(56, 189, 248, 0.25);
+    }
+    .legend-title {
+      font-size: 9.5px;
+      font-family: var(--mono);
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .route-toggle-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 11px;
+      font-family: var(--mono);
+      color: var(--text);
+      cursor: pointer;
+      padding: 3px 6px;
+      border-radius: 4px;
+      transition: background 0.12s;
+    }
+    .route-toggle-item:hover {
+      background: var(--card-hover);
+    }
+    .route-toggle-item.active {
+      font-weight: 700;
+      background: rgba(14, 165, 233, 0.12);
+    }
+    .route-line-icon {
+      width: 20px;
+      height: 4px;
+      border-radius: 2px;
+    }
+    .route-line-icon.plan {
+      background: #8b5cf6;
+      border-top: 2px dashed #ffffff;
+    }
+    .route-line-icon.actual {
+      background: #0284c7;
+      box-shadow: 0 0 5px #0284c7;
+    }
+
+    .legend-dot-bin {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #10b981;
+      display: inline-block;
+      box-shadow: 0 0 5px rgba(16, 185, 129, 0.6);
+    }
+    .legend-badge-l {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      background: #f43f5e;
+      color: #fff;
+      font-size: 9.5px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+    .legend-badge-r {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      background: #3b82f6;
+      color: #fff;
+      font-size: 9.5px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+    .legend-dot-depot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #f59e0b;
+      display: inline-block;
+      box-shadow: 0 0 6px rgba(245, 158, 11, 0.7);
+    }
+    .legend-count {
+      margin-left: auto;
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* Custom Leaflet Marker HTML */
+    .marker-turn-left {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #f43f5e;
+      color: #ffffff;
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 6px rgba(244, 63, 94, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .marker-turn-left:hover {
+      transform: scale(1.3);
+    }
+
+    .marker-turn-right {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #3b82f6;
+      color: #ffffff;
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 6px rgba(59, 130, 246, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .marker-turn-right:hover {
+      transform: scale(1.3);
+    }
+
+    .marker-bin {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #10b981;
+      color: #ffffff;
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 5px rgba(16, 185, 129, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8px;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .marker-bin:hover {
+      transform: scale(1.35);
+    }
+
+    .marker-depot {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #f59e0b;
+      color: #ffffff;
+      border: 2.5px solid #ffffff;
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .marker-step-badge {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #0284c7;
+      color: #ffffff;
+      border: 2px solid #ffffff;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+    }
+
+    /* RIGHT PANE (48%): Trips List */
+    .col-data {
+      flex: 48;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: var(--panel);
+      overflow: hidden;
+    }
+
+    .pane-header-strip {
+      height: 42px;
+      background: var(--card);
+      border-bottom: 1px solid var(--panel-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      flex-shrink: 0;
+    }
+    .phs-title {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .phs-tabs {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .p-tab-btn {
+      background: transparent;
+      border: none;
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.12s ease;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .p-tab-btn:hover {
+      background: var(--card-hover);
+      color: var(--text);
+    }
+    .p-tab-btn.active {
+      background: rgba(14, 165, 233, 0.12);
+      color: #0284c7;
+    }
+    body.dark .p-tab-btn.active {
+      background: rgba(56, 189, 248, 0.16);
+      color: #38bdf8;
+    }
+
+    .pane-content-area {
+      flex: 1;
+      padding: 12px 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* Horizontal Trip Cards */
+    .trip-card-row {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 7px;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .trip-card-row:hover {
+      background: var(--card-hover);
+      border-color: #cbd5e1;
+      transform: translateY(-1px);
+    }
+    body.dark .trip-card-row:hover {
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+    .trip-card-row.active {
+      border-color: #0284c7;
+      background: rgba(14, 165, 233, 0.05);
+      box-shadow: 0 2px 8px rgba(14, 165, 233, 0.12);
+    }
+    body.dark .trip-card-row.active {
+      border-color: #38bdf8;
+      background: rgba(56, 189, 248, 0.08);
+    }
+    .trip-card-row.ml {
+      border-left: 3px solid #10b981;
+    }
+
+    .tcr-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .tcr-title-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tcr-badge-id {
+      background: var(--bg);
+      border: 1px solid var(--card-border);
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: var(--text-muted);
+    }
+    .trip-card-row.active .tcr-badge-id {
+      background: #0284c7;
+      color: #fff;
+      border-color: #0284c7;
+    }
+    body.dark .trip-card-row.active .tcr-badge-id {
+      background: #38bdf8;
+      color: #000;
+      border-color: #38bdf8;
+    }
+    .tcr-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .tcr-delay-pill {
+      font-size: 10px;
+      font-family: var(--mono);
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+    .tcr-delay-pill.ok {
+      background: rgba(16, 185, 129, 0.12);
+      color: #10b981;
+    }
+    .tcr-delay-pill.warning {
+      background: rgba(245, 158, 11, 0.12);
+      color: #f59e0b;
+    }
+    .tcr-delay-pill.danger {
+      background: rgba(239, 68, 68, 0.12);
+      color: #ef4444;
+    }
+
+    .tcr-mid {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .tcr-pill {
+      background: var(--bg);
+      border: 1px solid var(--card-border);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+    .tcr-route-summary {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tcr-compare-strip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 8px;
+      background: var(--bg);
+      border-radius: 5px;
+      border: 1px solid var(--card-border);
+      font-family: var(--mono);
+      font-size: 10px;
+    }
+
+    .tcr-btn-json {
+      background: var(--bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      font-size: 10px;
+      font-family: var(--mono);
+      padding: 2px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .tcr-btn-json:hover {
+      color: #0284c7;
+      border-color: #38bdf8;
+    }
+    .tcr-inline-json {
+      display: none;
+      background: var(--bg);
+      border: 1px solid var(--card-border);
+      border-radius: 5px;
+      padding: 7px 10px;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 180px;
+      overflow-y: auto;
+      margin-top: 4px;
+    }
+    .tcr-inline-json.open {
+      display: block;
+    }
+
+    .trip-filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .trip-filter-pill {
+      font-size: 10px;
+      font-family: var(--mono);
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--card-border);
+      background: var(--card);
+      color: var(--text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .trip-filter-pill:hover {
+      background: var(--card-hover);
+      color: var(--text);
+    }
+    .trip-filter-pill.active {
+      background: rgba(14, 165, 233, 0.12);
+      border-color: #0284c7;
+      color: #0284c7;
+      font-weight: 700;
+    }
+    body.dark .trip-filter-pill.active {
+      background: rgba(56, 189, 248, 0.16);
+      border-color: #38bdf8;
+      color: #38bdf8;
+    }
+
+    /* Full JSON Pane */
+    .full-json-panel {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+      background: var(--bg);
+    }
+    .full-json-panel.active {
+      display: flex;
+    }
+    .json-nav-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 14px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--panel-border);
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+    .json-code-view {
+      flex: 1;
+      padding: 10px 14px;
+      overflow: auto;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      line-height: 1.45;
+      color: var(--text);
+      background: var(--bg);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header Strip -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon"><i class="fa-solid fa-map-location-dot"></i></div>
+      <div class="brand-title">
+        <span>BẢN ĐỒ THU GOM RÁC & ĐỐI SOÁT LỘ TRÌNH</span>
+        <span class="brand-counts" id="tag-counts">84 THÙNG RÁC • 112 KHÚC CUA (56 TRÁI / 56 PHẢI) • 1 BÃI XE</span>
+      </div>
+    </div>
+
+    <!-- Header Actions -->
+    <div class="header-actions">
+      <button class="btn" onclick="toggleTheme()" id="btn-theme">
+        <i class="fa-solid fa-moon"></i> <span>Dark Mode</span>
+      </button>
+      <a href="/" class="btn" title="Map">
+        <i class="fa-solid fa-map"></i> <span>Bản Đồ 2D</span>
+      </a>
+      <a href="/engine" class="btn" title="3D Engine">
+        <i class="fa-solid fa-cube"></i> <span>3D Lab</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Side-by-Side View -->
+  <div class="main-view">
+
+    <!-- LEFT PANE: Real Leaflet Map -->
+    <div class="col-graph">
+
+      <!-- Search Input on Top-Left -->
+      <div class="canvas-search-box">
+        <i class="fa-solid fa-magnifying-glass" style="color:#94a3b8; font-size:10px;"></i>
+        <input type="text" placeholder="Tìm kiếm đường, góc cua, thùng rác..." id="map-search-input" oninput="onSearchMap(this.value)">
+        <span class="clear-btn" onclick="clearMapSearch()">✕</span>
+      </div>
+
+      <!-- Floating Route Comparison Banner on Top Center -->
+      <div class="map-comparison-bar" id="map-comparison-bar" style="display:none;">
+        <div class="comp-col plan">
+          <span class="comp-label"><i class="fa-solid fa-robot"></i> MÁY TÍNH TÍNH TOÁN</span>
+          <span class="comp-val" id="cmp-plan-val">32.9p • 8.0 km</span>
+        </div>
+        <div style="color:var(--text-muted); font-size:12px;">➔</div>
+        <div class="comp-col actual">
+          <span class="comp-label"><i class="fa-solid fa-truck"></i> CHẠY THỰC TẾ</span>
+          <span class="comp-val" id="cmp-actual-val">37.6p • 9.7 km</span>
+        </div>
+        <div class="comp-diff danger" id="cmp-diff-badge">+4.7p trễ</div>
+        <div class="comp-reason" id="cmp-reason" title="">Xe tránh chợ sáng</div>
+      </div>
+
+      <!-- Route & Node Legend on Top-Right -->
+      <div class="map-route-legend-card">
+        <div class="legend-title">LỘ TRÌNH ĐỐI SOÁT</div>
+        <div class="route-toggle-item active" id="toggle-comp-route" onclick="toggleRouteLayer('computer')">
+          <span class="route-line-icon plan"></span>
+          <span>🤖 Đoạn Máy Tính</span>
+          <input type="checkbox" id="chk-comp" checked style="margin-left:auto; pointer-events:none;">
+        </div>
+        <div class="route-toggle-item active" id="toggle-act-route" onclick="toggleRouteLayer('actual')">
+          <span class="route-line-icon actual"></span>
+          <span>🚚 Đoạn Thực Tế</span>
+          <input type="checkbox" id="chk-act" checked style="margin-left:auto; pointer-events:none;">
+        </div>
+        
+        <div class="legend-title" style="margin-top:6px;">PHÂN LOẠI NODE</div>
+        <div class="route-toggle-item active" id="toggle-bins" onclick="toggleNodeLayer('waste_bin')">
+          <span class="legend-dot-bin"></span>
+          <span>Thùng Rác</span>
+          <span class="legend-count" id="leg-cnt-bin">84</span>
+        </div>
+        <div class="route-toggle-item active" id="toggle-left" onclick="toggleNodeLayer('turn_left')">
+          <span class="legend-badge-l">↰</span>
+          <span>Khúc Cua Trái</span>
+          <span class="legend-count" id="leg-cnt-l">56</span>
+        </div>
+        <div class="route-toggle-item active" id="toggle-right" onclick="toggleNodeLayer('turn_right')">
+          <span class="legend-badge-r">↱</span>
+          <span>Khúc Cua Phải</span>
+          <span class="legend-count" id="leg-cnt-r">56</span>
+        </div>
+        <div class="route-toggle-item active" id="toggle-depot" onclick="toggleNodeLayer('depot')">
+          <span class="legend-dot-depot"></span>
+          <span>Bãi Xe Depot</span>
+          <span class="legend-count">1</span>
+        </div>
+      </div>
+
+      <!-- Real Interactive Leaflet Map Container -->
+      <div id="driver-map"></div>
+
+    </div>
+
+    <!-- RIGHT PANE: Trips List -->
+    <div class="col-data">
+
+      <!-- Pane Header Strip -->
+      <div class="pane-header-strip">
+        <div class="phs-title">
+          <i class="fa-solid fa-route" style="color:#0284c7;"></i>
+          <span>DANH SÁCH CHUYẾN XE (TRIPS)</span>
+        </div>
+        <div class="phs-tabs">
+          <button class="p-tab-btn active" id="ptab-trips" onclick="switchRightTab('trips')">
+            <i class="fa-solid fa-truck"></i> <span>Trips (<span id="count-trips">22</span>)</span>
+          </button>
+          <button class="p-tab-btn" id="ptab-nodes" onclick="switchRightTab('nodes')">
+            <i class="fa-solid fa-circle-nodes"></i> <span>All Nodes</span>
+          </button>
+          <button class="p-tab-btn" id="ptab-json" onclick="switchRightTab('json')">
+            <i class="fa-solid fa-code"></i> <span>Raw JSON</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Scrollable Trips Content -->
+      <div class="pane-content-area" id="pane-content-area"></div>
+
+      <!-- Full JSON Panel -->
+      <div class="full-json-panel" id="full-json-panel">
+        <div class="json-nav-bar">
+          <span style="color:#64748b;" id="json-file-title">chuyen_01.json</span>
+          <div style="display:flex; gap:6px;">
+            <button class="btn" onclick="copyFullJson()"><i class="fa-regular fa-copy"></i> Copy</button>
+            <button class="btn" onclick="downloadFullJson()"><i class="fa-solid fa-download"></i> Download</button>
+          </div>
+        </div>
+        <div class="json-code-view" id="json-code-view"></div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // Global State
+    let networkGraph = null;
+    let presetTrips = [];
+    let currentTrip = null;
+    let currentRightTab = 'trips';
+    let nodeMap = {};
+    let isDarkTheme = false;
+    let activeShiftFilter = 'all';
+    let tripSearchQuery = '';
+
+    // Leaflet Map & Layer Groups
+    let map = null;
+    let tileLayerLight = null;
+    let tileLayerDark = null;
+    let markersLayer = null;
+    let computerRouteLayer = null;
+    let actualRouteLayer = null;
+    let stepMarkersLayer = null;
+
+    // Layer Visibility Flags
+    const layerVisibility = {
+      computer: true,
+      actual: true,
+      waste_bin: true,
+      turn_left: true,
+      turn_right: true,
+      depot: true
+    };
+
+    // -------------------------------------------------------------
+    // 1. Initialize Map
+    // -------------------------------------------------------------
+    function initMap() {
+      map = L.map('driver-map', {
+        zoomControl: false,
+        attributionControl: false
+      }).setView([10.7760, 106.6965], 14);
+
+      L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+      // Esri World Street Map (Light - Crisp, Real Streets, Zero Watermark)
+      tileLayerLight = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
+        attribution: '&copy; Esri &copy; OpenStreetMap'
+      });
+
+      // Esri World Dark Gray Base (Dark - High-Tech, Zero Watermark)
+      tileLayerDark = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
+        attribution: '&copy; Esri &copy; OpenStreetMap'
+      });
+
+      if (isDarkTheme) {
+        tileLayerDark.addTo(map);
+      } else {
+        tileLayerLight.addTo(map);
+      }
+
+      markersLayer = L.layerGroup().addTo(map);
+      computerRouteLayer = L.layerGroup().addTo(map);
+      actualRouteLayer = L.layerGroup().addTo(map);
+      stepMarkersLayer = L.layerGroup().addTo(map);
+    }
+
+    // -------------------------------------------------------------
+    // 2. Data Fetching
+    // -------------------------------------------------------------
+    async function loadData() {
+      try {
+        const resp = await fetch('/api/driver-telemetry/rag-spec');
+        const data = await resp.json();
+
+        networkGraph = data.graph;
+        presetTrips = data.trips;
+
+        // Build node lookup map
+        nodeMap = {};
+        networkGraph.nodes.forEach(n => { nodeMap[n.id] = n; });
+
+        const totalBins = networkGraph.total_bins || networkGraph.nodes.filter(n => n.type === 'waste_bin').length;
+        const totalLeft = networkGraph.total_turn_left || networkGraph.nodes.filter(n => n.type === 'turn_left').length;
+        const totalRight = networkGraph.total_turn_right || networkGraph.nodes.filter(n => n.type === 'turn_right').length;
+        const totalDepot = networkGraph.total_depot || networkGraph.nodes.filter(n => n.type === 'depot').length;
+
+        document.getElementById('tag-counts').textContent = `${totalBins} THÙNG RÁC • ${totalLeft + totalRight} KHÚC CUA (${totalLeft} TRÁI / ${totalRight} PHẢI) • ${totalDepot} BÃI XE`;
+        document.getElementById('count-trips').textContent = presetTrips.length;
+        document.getElementById('leg-cnt-bin').textContent = totalBins;
+        document.getElementById('leg-cnt-l').textContent = totalLeft;
+        document.getElementById('leg-cnt-r').textContent = totalRight;
+
+        renderMapMarkers();
+        renderRightTabContent();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const paramTrip = urlParams.get('trip');
+        if (paramTrip && presetTrips.some(t => t.id === paramTrip)) {
+          selectTrip(paramTrip);
+        } else if (presetTrips.length > 0) {
+          selectTrip(presetTrips[0].id);
+        }
+      } catch (err) {
+        console.error('Error loading map telemetry data:', err);
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 3. Render Markers on Leaflet Map
+    // -------------------------------------------------------------
+    function renderMapMarkers() {
+      if (!map || !markersLayer || !networkGraph) return;
+      markersLayer.clearLayers();
+
+      networkGraph.nodes.forEach(n => {
+        if (!n.lat || !n.lon) return;
+        if (!layerVisibility[n.type]) return;
+
+        let iconHtml = '';
+        let iconSize = [18, 18];
+        let iconAnchor = [9, 9];
+
+        if (n.type === 'depot') {
+          iconHtml = '<div class="marker-depot" title="' + n.name + '"><i class="fa-solid fa-building"></i></div>';
+          iconSize = [30, 30];
+          iconAnchor = [15, 15];
+        } else if (n.type === 'turn_left') {
+          iconHtml = '<div class="marker-turn-left" title="' + n.name + '">↰</div>';
+          iconSize = [22, 22];
+          iconAnchor = [11, 11];
+        } else if (n.type === 'turn_right') {
+          iconHtml = '<div class="marker-turn-right" title="' + n.name + '">↱</div>';
+          iconSize = [22, 22];
+          iconAnchor = [11, 11];
+        } else {
+          iconHtml = '<div class="marker-bin" title="' + n.name + '"><i class="fa-solid fa-trash-can"></i></div>';
+          iconSize = [16, 16];
+          iconAnchor = [8, 8];
+        }
+
+        const customIcon = L.divIcon({
+          className: 'custom-node-icon',
+          html: iconHtml,
+          iconSize: iconSize,
+          iconAnchor: iconAnchor
+        });
+
+        const popupContent = `
+          <div style="font-family:var(--sans); font-size:12px; line-height:1.4;">
+            <div style="font-weight:700; color:${n.color}; margin-bottom:2px;">${n.type_label || n.type}</div>
+            <div style="font-weight:700; color:var(--text);">${n.name}</div>
+            <div style="color:#64748b; font-size:11px; font-family:var(--mono);">Mã: ${n.id}</div>
+            <div style="color:#64748b; font-size:10.5px; font-family:var(--mono); margin-top:2px;">Tọa độ: ${n.lat.toFixed(5)}, ${n.lon.toFixed(5)}</div>
+            <div style="color:#0284c7; font-size:11px; margin-top:4px;">Khu vực: ${n.zone || 'Quận 1'}</div>
+          </div>
+        `;
+
+        const marker = L.marker([n.lat, n.lon], { icon: customIcon });
+        marker.bindPopup(popupContent);
+        markersLayer.addLayer(marker);
+      });
+    }
+
+    // -------------------------------------------------------------
+    // 4. Draw Both Routes: Computer vs Actual
+    // -------------------------------------------------------------
+    function renderTripRoutes() {
+      if (!map || !computerRouteLayer || !actualRouteLayer || !stepMarkersLayer) return;
+      computerRouteLayer.clearLayers();
+      actualRouteLayer.clearLayers();
+      stepMarkersLayer.clearLayers();
+
+      const compBar = document.getElementById('map-comparison-bar');
+
+      if (!currentTrip) {
+        if (compBar) compBar.style.display = 'none';
+        return;
+      }
+
+      if (compBar) {
+        compBar.style.display = 'flex';
+        const cRoute = currentTrip.computer_route;
+        const aRoute = currentTrip.actual_route;
+
+        document.getElementById('cmp-plan-val').textContent = `${cRoute.total_time_min}p • ${cRoute.total_distance_km} km`;
+        document.getElementById('cmp-actual-val').textContent = `${aRoute.total_time_min}p • ${aRoute.total_distance_km} km`;
+
+        const diffMin = aRoute.delay_min;
+        const diffBadge = document.getElementById('cmp-diff-badge');
+        if (diffMin > 0) {
+          diffBadge.textContent = `+${diffMin}p trễ`;
+          diffBadge.className = 'comp-diff danger';
+        } else {
+          diffBadge.textContent = `Đúng giờ`;
+          diffBadge.className = 'comp-diff success';
+        }
+
+        const reasonEl = document.getElementById('cmp-reason');
+        reasonEl.textContent = currentTrip.deviation_reason || currentTrip.route_summary;
+        reasonEl.title = currentTrip.deviation_reason || currentTrip.route_summary;
+      }
+
+      const allBoundsCoords = [];
+
+      // 1. Draw Computer Planned Route (Đoạn Máy Tính - Dashed High-Contrast Purple Line)
+      if (layerVisibility.computer && currentTrip.computer_route && currentTrip.computer_route.waypoints) {
+        const compCoords = currentTrip.computer_route.waypoints;
+        if (compCoords.length > 1) {
+          // Background soft casing for computer route
+          const compCasing = L.polyline(compCoords, {
+            color: '#ffffff',
+            weight: 7,
+            opacity: 0.6,
+            lineJoin: 'round'
+          });
+          computerRouteLayer.addLayer(compCasing);
+
+          const compPolyline = L.polyline(compCoords, {
+            color: '#9333ea',
+            weight: 4.5,
+            opacity: 0.95,
+            dashArray: '10, 9',
+            lineJoin: 'round'
+          });
+
+          compPolyline.bindPopup(`
+            <div style="font-family:var(--sans); font-size:12px;">
+              <b style="color:#8b5cf6;"><i class="fa-solid fa-robot"></i> Lộ Trình Máy Tính Tính Toán (Kế hoạch AI)</b><br>
+              Thời gian dự tính: <b>${currentTrip.computer_route.total_time_min} phút</b><br>
+              Quãng đường lý thuyết: <b>${currentTrip.computer_route.total_distance_km} km</b><br>
+              Số điểm dừng kế hoạch: <b>${currentTrip.computer_route.node_ids.length} điểm</b>
+            </div>
+          `);
+          computerRouteLayer.addLayer(compPolyline);
+          compCoords.forEach(c => allBoundsCoords.push(c));
+        }
+      }
+
+      // 2. Draw Actual Route (Đoạn Tài Xế Chạy Thực Tế - Solid Line)
+      if (layerVisibility.actual && currentTrip.actual_route && currentTrip.actual_route.waypoints) {
+        const actCoords = currentTrip.actual_route.waypoints;
+        if (actCoords.length > 1) {
+          // Outer glow line
+          const glowPolyline = L.polyline(actCoords, {
+            color: '#0284c7',
+            weight: 8,
+            opacity: 0.35,
+            lineJoin: 'round'
+          });
+          actualRouteLayer.addLayer(glowPolyline);
+
+          // Inner solid line
+          const actPolyline = L.polyline(actCoords, {
+            color: '#0284c7',
+            weight: 4.5,
+            opacity: 0.95,
+            lineJoin: 'round'
+          });
+
+          actPolyline.bindPopup(`
+            <div style="font-family:var(--sans); font-size:12px;">
+              <b style="color:#0284c7;"><i class="fa-solid fa-truck"></i> Lộ Trình Tài Xế Chạy Thực Tế (Empirical GPS)</b><br>
+              Thời gian chạy thực tế: <b>${currentTrip.actual_route.total_time_min} phút</b><br>
+              Quãng đường thực tế: <b>${currentTrip.actual_route.total_distance_km} km</b><br>
+              Độ trễ: <b style="color:#ef4444;">+${currentTrip.actual_route.delay_min} phút</b><br>
+              Lý do sai lệch: <i>${currentTrip.deviation_reason}</i>
+            </div>
+          `);
+          actualRouteLayer.addLayer(actPolyline);
+          actCoords.forEach(c => allBoundsCoords.push(c));
+        }
+      }
+
+      // 3. Step Number Badges along Actual Route
+      if (currentTrip.turns_telemetry && currentTrip.turns_telemetry.length > 0) {
+        currentTrip.turns_telemetry.forEach(step => {
+          if (!step.lat || !step.lon) return;
+
+          const stepIcon = L.divIcon({
+            className: 'custom-step-marker',
+            html: `<div class="marker-step-badge">${step.step}</div>`,
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+          });
+
+          const stepMarker = L.marker([step.lat, step.lon], { icon: stepIcon });
+          stepMarker.bindPopup(`
+            <div style="font-family:var(--sans); font-size:12px;">
+              <b style="color:#0284c7;">Bước ${step.step}: ${step.action}</b><br>
+              Địa điểm: <b>${step.corner_name}</b><br>
+              Loại: <b>${step.target_type}</b><br>
+              Máy tính dự kiến: <b>${step.theoretical_sec}s</b><br>
+              Thực tế tài xế: <b>${step.actual_sec}s</b> (trễ +${step.turn_delay_sec}s)
+            </div>
+          `);
+          stepMarkersLayer.addLayer(stepMarker);
+        });
+      }
+
+      // Fit map bounds to show route smoothly
+      if (allBoundsCoords.length > 1) {
+        map.fitBounds(allBoundsCoords, { padding: [60, 60], maxZoom: 16 });
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 5. Toggle Route & Node Visibility Layers
+    // -------------------------------------------------------------
+    function toggleRouteLayer(type) {
+      layerVisibility[type] = !layerVisibility[type];
+      document.getElementById(`chk-${type === 'computer' ? 'comp' : 'act'}`).checked = layerVisibility[type];
+      document.getElementById(`toggle-${type === 'computer' ? 'comp' : 'act'}-route`).classList.toggle('active', layerVisibility[type]);
+      renderTripRoutes();
+    }
+
+    function toggleNodeLayer(type) {
+      layerVisibility[type] = !layerVisibility[type];
+      const el = document.getElementById(`toggle-${type === 'waste_bin' ? 'bins' : (type === 'turn_left' ? 'left' : (type === 'turn_right' ? 'right' : 'depot'))}`);
+      if (el) el.classList.toggle('active', layerVisibility[type]);
+      renderMapMarkers();
+    }
+
+    // -------------------------------------------------------------
+    // 6. Trip Selection ("Bấm vào Trip hiện hết step trên sơ đồ")
+    // -------------------------------------------------------------
+    function selectTrip(tripId) {
+      if (currentTrip && currentTrip.id === tripId) {
+        // Toggle or reselect
+      } else {
+        currentTrip = presetTrips.find(t => t.id === tripId) || null;
+      }
+      renderTripRoutes();
+      renderRightTabContent();
+    }
+
+    // -------------------------------------------------------------
+    // 7. Right Pane Tabs & Renderers
+    // -------------------------------------------------------------
+    function switchRightTab(tab) {
+      currentRightTab = tab;
+      document.querySelectorAll('.p-tab-btn').forEach(b => b.classList.remove('active'));
+      const btn = document.getElementById(`ptab-${tab}`);
+      if (btn) btn.classList.add('active');
+
+      const contentArea = document.getElementById('pane-content-area');
+      const jsonPanel = document.getElementById('full-json-panel');
+
+      if (tab === 'json') {
+        contentArea.style.display = 'none';
+        jsonPanel.classList.add('active');
+        renderFullJson();
+      } else {
+        contentArea.style.display = 'flex';
+        jsonPanel.classList.remove('active');
+        renderRightTabContent();
+      }
+    }
+
+    function renderRightTabContent() {
+      const container = document.getElementById('pane-content-area');
+      if (!container) return;
+
+      if (currentRightTab === 'trips') {
+        renderTripsList(container);
+      } else if (currentRightTab === 'nodes') {
+        renderNodesList(container);
+      }
+    }
+
+    function setShiftFilter(filter) {
+      activeShiftFilter = filter;
+      renderRightTabContent();
+    }
+
+    function onTripSearchInput(val) {
+      tripSearchQuery = val.trim();
+      renderRightTabContent();
+      const input = document.getElementById('trip-search-input');
+      if (input) {
+        input.focus();
+        input.selectionStart = input.selectionEnd = input.value.length;
+      }
+    }
+
+    function clearTripSearch() {
+      tripSearchQuery = '';
+      renderRightTabContent();
+    }
+
+    // Render Trips List with Comparison Metrics
+    function renderTripsList(container) {
+      if (!presetTrips || presetTrips.length === 0) return;
+
+      const morningCount = presetTrips.filter(t => ['early_morning', 'morning'].includes(t.shift_category)).length;
+      const noonCount = presetTrips.filter(t => t.shift_category === 'noon').length;
+      const afternoonCount = presetTrips.filter(t => t.shift_category === 'afternoon_rush').length;
+      const nightCount = presetTrips.filter(t => t.shift_category === 'night').length;
+      const mlCount = presetTrips.filter(t => t.shift_category === 'ml_optimal').length;
+
+      const filteredTrips = presetTrips.filter(t => {
+        if (activeShiftFilter !== 'all') {
+          if (activeShiftFilter === 'morning' && !['early_morning', 'morning'].includes(t.shift_category)) return false;
+          if (activeShiftFilter === 'noon' && t.shift_category !== 'noon') return false;
+          if (activeShiftFilter === 'afternoon' && t.shift_category !== 'afternoon_rush') return false;
+          if (activeShiftFilter === 'night' && t.shift_category !== 'night') return false;
+          if (activeShiftFilter === 'ml_optimal' && t.shift_category !== 'ml_optimal') return false;
+        }
+        if (tripSearchQuery) {
+          const q = tripSearchQuery.toLowerCase();
+          const matchTitle = (t.title || '').toLowerCase().includes(q);
+          const matchDriver = (t.driver_name || '').toLowerCase().includes(q);
+          const matchPlate = (t.vehicle_plate || '').toLowerCase().includes(q);
+          const matchRoute = (t.route_summary || '').toLowerCase().includes(q);
+          if (!matchTitle && !matchDriver && !matchPlate && !matchRoute) return false;
+        }
+        return true;
+      });
+
+      const filterHtml = `
+        <div class="trip-controls-bar" style="margin-bottom:10px; display:flex; flex-direction:column; gap:6px;">
+          <div class="trip-search-row" style="display:flex; gap:6px; align-items:center;">
+            <input type="text" 
+                   id="trip-search-input" 
+                   value="${tripSearchQuery}" 
+                   placeholder="Tìm kiếm chuyến xe, tài xế, biển số, lộ trình..." 
+                   oninput="onTripSearchInput(this.value)" 
+                   style="flex:1; padding:6px 10px; border-radius:5px; border:1px solid var(--card-border); background:var(--card); font-family:var(--mono); font-size:11px; color:var(--text); outline:none;">
+            ${tripSearchQuery ? `<button class="btn" onclick="clearTripSearch()" style="padding:5px 9px;">✕</button>` : ''}
+          </div>
+          <div class="trip-filter-bar">
+            <span class="trip-filter-pill ${activeShiftFilter === 'all' ? 'active' : ''}" onclick="setShiftFilter('all')">Tất cả (${presetTrips.length})</span>
+            <span class="trip-filter-pill ${activeShiftFilter === 'morning' ? 'active' : ''}" onclick="setShiftFilter('morning')">🌅 Sáng (${morningCount})</span>
+            <span class="trip-filter-pill ${activeShiftFilter === 'noon' ? 'active' : ''}" onclick="setShiftFilter('noon')">☀️ Trưa (${noonCount})</span>
+            <span class="trip-filter-pill ${activeShiftFilter === 'afternoon' ? 'active' : ''}" onclick="setShiftFilter('afternoon')">🌇 Chiều (${afternoonCount})</span>
+            <span class="trip-filter-pill ${activeShiftFilter === 'night' ? 'active' : ''}" onclick="setShiftFilter('night')">🌙 Đêm (${nightCount})</span>
+            <span class="trip-filter-pill ${activeShiftFilter === 'ml_optimal' ? 'active' : ''}" onclick="setShiftFilter('ml_optimal')">⚡ ML Tối ưu (${mlCount})</span>
+          </div>
+        </div>
+      `;
+
+      const listHtml = filteredTrips.map((t, idx) => {
+        const isActive = (currentTrip && currentTrip.id === t.id);
+        const isMl = t.id.includes('ml');
+        const badgeClass = isMl ? 'ok' : (t.delay_min > 20 ? 'danger' : (t.delay_min > 5 ? 'warning' : 'ok'));
+        const badgeText = t.status_label || (t.delay_min > 0 ? '+' + t.delay_min + 'm delay' : 'ĐÚNG GIỜ');
+
+        const stepCount = t.turns_telemetry ? t.turns_telemetry.length : 0;
+        const inlineJson = JSON.stringify(t, null, 2);
+
+        const originalIdx = presetTrips.findIndex(item => item.id === t.id);
+        const tripNum = (originalIdx >= 0 ? originalIdx + 1 : idx + 1);
+        const tripNumStr = tripNum < 10 ? `0${tripNum}` : `${tripNum}`;
+
+        const compMin = t.computer_route ? t.computer_route.total_time_min : t.theoretical_min;
+        const compKm = t.computer_route ? t.computer_route.total_distance_km : 7.5;
+        const actMin = t.actual_route ? t.actual_route.total_time_min : t.total_actual_min;
+        const actKm = t.actual_route ? t.actual_route.total_distance_km : 9.0;
+
+        return `
+          <div class="trip-card-row ${isMl ? 'ml' : ''} ${isActive ? 'active' : ''}" 
+               data-trip-id="${t.id}" 
+               onclick="selectTrip('${t.id}')">
+            
+            <div class="tcr-top">
+              <div class="tcr-title-left">
+                <span class="tcr-badge-id">${isMl ? `⚡ TRIP ${tripNumStr}` : `TRIP ${tripNumStr}`}</span>
+                <span class="tcr-name">${t.shift_label || t.title}</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span class="tcr-delay-pill ${badgeClass}">${badgeText}</span>
+                <button class="tcr-btn-json" 
+                        onclick="event.stopPropagation(); toggleTripJson('${t.id}')" 
+                        title="Toggle JSON">{ }</button>
+              </div>
+            </div>
+
+            <!-- Comparison Strip: Máy tính vs Thực tế -->
+            <div class="tcr-compare-strip">
+              <span style="color:#8b5cf6;"><i class="fa-solid fa-robot"></i> Máy tính: <b>${compMin}p</b> (${compKm}km)</span>
+              <span style="color:var(--text-muted);">➔</span>
+              <span style="color:#0284c7;"><i class="fa-solid fa-truck"></i> Thực tế: <b>${actMin}p</b> (${actKm}km)</span>
+            </div>
+
+            <div class="tcr-mid">
+              <span class="tcr-pill"><i class="fa-solid fa-list-ol" style="color:#0284c7; margin-right:3px;"></i>${stepCount} steps</span>
+              <span class="tcr-pill"><i class="fa-solid fa-trash-can" style="color:#10b981; margin-right:3px;"></i>${t.total_bins_collected || 10} thùng</span>
+              <span class="tcr-pill"><i class="fa-regular fa-user" style="margin-right:3px;"></i>${t.driver_name}</span>
+              <span class="tcr-pill"><i class="fa-solid fa-truck" style="margin-right:3px; font-size:9px;"></i>${t.vehicle_plate}</span>
+            </div>
+
+            <div class="tcr-route-summary">
+              <i class="fa-solid fa-route" style="font-size:9px; color:#0284c7;"></i>
+              <span>${t.route_summary || ''}</span>
+            </div>
+
+            ${t.deviation_reason ? `
+              <div style="font-size:10px; color:#f59e0b; background:rgba(245,158,11,0.08); padding:3px 8px; border-radius:4px; border:1px dashed rgba(245,158,11,0.25);">
+                <i class="fa-solid fa-triangle-exclamation" style="margin-right:4px;"></i> ${t.deviation_reason}
+              </div>
+            ` : ''}
+
+            <pre class="tcr-inline-json" id="tcr-json-${t.id}">${inlineJson}</pre>
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = filterHtml + listHtml;
+    }
+
+    function toggleTripJson(tripId) {
+      const el = document.getElementById(`tcr-json-${tripId}`);
+      if (el) el.classList.toggle('open');
+    }
+
+    function renderNodesList(container) {
+      if (!networkGraph || !networkGraph.nodes) return;
+      const bins = networkGraph.nodes.filter(n => n.type === 'waste_bin');
+      const leftTurns = networkGraph.nodes.filter(n => n.type === 'turn_left');
+      const rightTurns = networkGraph.nodes.filter(n => n.type === 'turn_right');
+      const depot = networkGraph.nodes.filter(n => n.type === 'depot');
+
+      container.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:10px;">
+          <div style="display:flex; gap:6px; flex-wrap:wrap; font-size:11px; font-family:var(--mono);">
+            <span class="tcr-pill" style="font-weight:700;">Tổng: ${networkGraph.nodes.length} nodes</span>
+            <span class="tcr-pill" style="color:#10b981;">🗑️ ${bins.length} thùng rác</span>
+            <span class="tcr-pill" style="color:#f43f5e;">↰ ${leftTurns.length} cua trái</span>
+            <span class="tcr-pill" style="color:#3b82f6;">↱ ${rightTurns.length} cua phải</span>
+            <span class="tcr-pill" style="color:#f59e0b;">🏢 ${depot.length} bãi xe</span>
+          </div>
+        </div>
+      ` + networkGraph.nodes.map(n => {
+        let typeBadge = '';
+        if (n.type === 'depot') typeBadge = '<span style="color:#f59e0b; font-weight:700;">🏢 BÃI XE</span>';
+        else if (n.type === 'turn_left') typeBadge = '<span style="color:#f43f5e; font-weight:700;">↰ CUA TRÁI</span>';
+        else if (n.type === 'turn_right') typeBadge = '<span style="color:#3b82f6; font-weight:700;">↱ CUA PHẢI</span>';
+        else typeBadge = '<span style="color:#10b981; font-weight:700;">🗑️ THÙNG RÁC</span>';
+
+        return `
+          <div style="background:var(--card); border:1px solid var(--card-border); padding:6px 10px; border-radius:5px; font-family:var(--mono); font-size:10.5px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="panToNode('${n.id}')">
+            <div style="display:flex; align-items:center; gap:8px;">
+              ${typeBadge}
+              <span style="font-weight:600;">${n.id}</span>
+              <span style="color:var(--text-muted); font-size:10px;">${n.name}</span>
+            </div>
+            <span style="color:var(--text-muted); font-size:9.5px;">(${n.lat.toFixed(4)}, ${n.lon.toFixed(4)})</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderFullJson() {
+      const view = document.getElementById('json-code-view');
+      document.getElementById('json-file-title').textContent = currentTrip ? `${currentTrip.id}.json` : 'telemetry.json';
+      if (!currentTrip || !view) return;
+      view.textContent = JSON.stringify(currentTrip, null, 2);
+    }
+
+    function copyFullJson() {
+      if (!currentTrip) return;
+      navigator.clipboard.writeText(JSON.stringify(currentTrip, null, 2)).then(() => alert('Copied JSON!'));
+    }
+
+    function downloadFullJson() {
+      if (!currentTrip) return;
+      const blob = new Blob([JSON.stringify(currentTrip, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${currentTrip.id}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function panToNode(nodeId) {
+      const n = nodeMap[nodeId];
+      if (!n || !n.lat || !n.lon) return;
+      map.flyTo([n.lat, n.lon], 17, { duration: 1.0 });
+    }
+
+    function onSearchMap(val) {
+      const q = val.trim().toLowerCase();
+      if (!q || !networkGraph) return;
+      const hit = networkGraph.nodes.find(n => n.id.toLowerCase().includes(q) || n.name.toLowerCase().includes(q) || (n.zone && n.zone.toLowerCase().includes(q)));
+      if (hit && hit.lat && hit.lon) {
+        map.flyTo([hit.lat, hit.lon], 16, { duration: 1.0 });
+      }
+    }
+
+    function clearMapSearch() {
+      document.getElementById('map-search-input').value = '';
+    }
+
+    function toggleTheme() {
+      isDarkTheme = !isDarkTheme;
+      document.body.classList.toggle('dark', isDarkTheme);
+      document.getElementById('btn-theme').innerHTML = isDarkTheme ? 
+        '<i class="fa-solid fa-sun"></i> <span>Light Mode</span>' : 
+        '<i class="fa-solid fa-moon"></i> <span>Dark Mode</span>';
+
+      if (map) {
+        if (isDarkTheme) {
+          map.removeLayer(tileLayerLight);
+          tileLayerDark.addTo(map);
+        } else {
+          map.removeLayer(tileLayerDark);
+          tileLayerLight.addTo(map);
+        }
+      }
+    }
+
+    // Initial Load
+    window.addEventListener('DOMContentLoaded', () => {
+      initMap();
+      loadData();
+    });
+  </script>
+</body>
+</html>

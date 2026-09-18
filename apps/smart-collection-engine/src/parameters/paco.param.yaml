@@ -1,0 +1,42 @@
+large:
+  data_dir: ../data/100
+  num_runs: 10
+  output_csv: ../output/solutions/large_paco.csv
+  params:
+    I: 15
+    m: 500
+    LS: 100
+    Q: 2.0
+    alpha: 1.25
+    p: 64
+    beta: 1.0
+    rho: 0.3
+    t: 100
+medium:
+  data_dir: ../data/50
+  num_runs: 1
+  output_csv: /tmp/bao_temp_output.csv
+  params:
+    m: 200
+    I: 15
+    LS: 30
+    alpha: 1.1644079306735833
+    beta: 1.231355790111825
+    rho: 0.31243381926810376
+    Q: 1.3630971346491676
+    t: 70
+    p: 64
+small:
+  data_dir: ../data/25
+  num_runs: 1
+  output_csv: /tmp/bao_temp_output.csv
+  params:
+    I: 5
+    LS: 50
+    Q: 1.56
+    alpha: 1.12
+    beta: 1.43
+    m: 50
+    p: 32
+    rho: 0.79
+    t: 50

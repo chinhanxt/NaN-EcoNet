@@ -1,0 +1,16 @@
+ga:
+  - population_size: 50
+    generations: 100
+    crossover_rate: 0.8
+    mutation_rate: 0.1
+    p: 0.2
+  - population_size: 100
+    generations: 200
+    crossover_rate: 0.9
+    mutation_rate: 0.05
+    p: 0.3
+  - population_size: 150
+    generations: 150
+    crossover_rate: 0.85
+    mutation_rate: 0.08
+    p: 0.25

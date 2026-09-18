@@ -1,0 +1,56 @@
+large:
+  data_dir: data/100
+  num_runs: 1
+  output_csv: /tmp/bao_temp_output.csv
+  params:
+    cooling: 0.9967911520470151
+    destroy_ops: 0
+    enable_locker_grouping: true
+    enable_sa_moves: true
+    init_temp: 293.6730567698092
+    iterations: 1000
+    local_search_frequency: 10
+    min_local_moves: 50000
+    p: 0.1
+    repair_ops: 0
+    reward_1: 5.0
+    reward_2: 2.0
+    reward_3: 1.0
+    w_decay: 0.423908853978267
+medium:
+  data_dir: data/50
+  num_runs: 1
+  output_csv: /tmp/bao_temp_output.csv
+  p: 0.3
+  params:
+    cooling: 0.9988490779722611
+    destroy_ops: 0
+    enable_locker_grouping: true
+    enable_sa_moves: true
+    init_temp: 120.91397746747722
+    iterations: 500
+    local_search_frequency: 5
+    min_local_moves: 25000
+    repair_ops: 0
+    reward_1: 5.0
+    reward_2: 2.0
+    reward_3: 1.0
+    w_decay: 0.3194246315352895
+small:
+  data_dir: data/25
+  num_runs: 1
+  output_csv: /tmp/bao_temp_output.csv
+  params:
+    cooling: 0.999
+    enable_locker_grouping: true
+    enable_sa_moves: true
+    init_temp: 116.68273898191065
+    iterations: 500
+    local_search_frequency: 1
+    min_local_moves: 500
+    min_temp: 0.01
+    p: 0.5
+    reward_1: 5.0
+    reward_2: 3.0
+    reward_3: 1.0
+    w_decay: 0.3
