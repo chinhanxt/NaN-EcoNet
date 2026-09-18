@@ -98,3 +98,8 @@
 - Nhiem vu: feat(deploy): viet docker-compose.yml tong the ket noi ca 3 phan he monorepo
 - Ky su thuc hien: chinhan (NaN-Team)
 - Ket qua: Tich hop lien phan he dat chuan.
+
+#### [Sprint Checkpoint 071] 2026-09-18 22:00
+- Nhiem vu: chore(config): phan bo dai cong mang khong trung lap 8000, 8501, 8502, 3006, 3010, 3011, 5002
+- Ky su thuc hien: chinhan (NaN-Team)
+- Ket qua: Tich hop lien phan he dat chuan.
