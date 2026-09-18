@@ -78,3 +78,8 @@
 - Nhiem vu: feat(social): viet script xuat ban video YouTube Shorts tu dong
 - Ky su thuc hien: chinhan (NaN-Team)
 - Ket qua: Tich hop lien phan he dat chuan.
+
+#### [Sprint Checkpoint 067] 2026-09-18 13:34
+- Nhiem vu: feat(social): tich hop Exponential Backoff with Jitter chong khoa tai khoan
+- Ky su thuc hien: chinhan (NaN-Team)
+- Ket qua: Tich hop lien phan he dat chuan.
