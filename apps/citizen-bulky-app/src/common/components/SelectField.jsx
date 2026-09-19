@@ -1,0 +1,151 @@
+import { useEffect, useState } from 'react';
+import { Autocomplete, TextField, Chip } from '@mui/material';
+import { makeStyles } from 'tss-react/mui';
+import { useAsyncTask } from '../../reactHelper';
+import fetchOrThrow from '../util/fetchOrThrow';
+
+const useStyles = makeStyles()(() => ({
+  autocompleteMultiple: {
+    '& .MuiAutocomplete-inputRoot': {
+      flexWrap: 'nowrap',
+      overflow: 'hidden',
+    },
+    '& .MuiAutocomplete-input': {
+      minWidth: '1px !important',
+    },
+    '& .MuiAutocomplete-tag .MuiChip-label': {
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+    },
+  },
+}));
+
+const SelectField = ({
+  label,
+  fullWidth,
+  multiple,
+  value = null,
+  emptyValue = null,
+  emptyTitle = '',
+  onChange,
+  endpoint,
+  data,
+  keyGetter = (item) => item.id,
+  titleGetter = (item) => item.name,
+  helperText,
+  placeholder,
+  singleLine,
+  allValue,
+}) => {
+  const { classes } = useStyles();
+  const [items, setItems] = useState();
+
+  const findOption = (option) => {
+    if (typeof option === 'object') {
+      return option;
+    }
+    return items.find((obj) => keyGetter(obj) === option);
+  };
+
+  const getOptionLabel = (option) => {
+    option = findOption(option);
+    return option ? titleGetter(option) : emptyTitle;
+  };
+
+  useEffect(() => setItems(data), [data]);
+
+  useAsyncTask(
+    async ({ signal }) => {
+      if (endpoint) {
+        const response = await fetchOrThrow(endpoint, { signal });
+        setItems(await response.json());
+      }
+    },
+    [endpoint],
+  );
+
+  if (items) {
+    const autocompleteValue = multiple
+      ? (value || []).map((it) => findOption(it)).filter((it) => it != null)
+      : findOption(value) || null;
+
+    return (
+      <Autocomplete
+        size={singleLine ? 'small' : 'medium'}
+        multiple={multiple}
+        className={multiple && singleLine ? classes.autocompleteMultiple : undefined}
+        options={items}
+        getOptionLabel={getOptionLabel}
+        renderOption={({ key, ...props }, option) => (
+          <li key={keyGetter(option) || key} {...props}>
+            {titleGetter(option)}
+          </li>
+        )}
+        isOptionEqualToValue={(option, selectedOption) =>
+          keyGetter(option) === keyGetter(selectedOption)
+        }
+        value={autocompleteValue}
+        onChange={(_, selectedValue) => {
+          if (multiple) {
+            let nextValue = selectedValue.map((item) => keyGetter(item));
+            if (allValue && nextValue.length > 1) {
+              const previousHadAll = (value || []).includes(allValue);
+              if (nextValue.includes(allValue)) {
+                nextValue = previousHadAll ? nextValue.filter((it) => it !== allValue) : [allValue];
+              }
+            }
+            onChange({ target: { value: nextValue } });
+          } else {
+            onChange({ target: { value: selectedValue ? keyGetter(selectedValue) : emptyValue } });
+          }
+        }}
+        renderValue={
+          multiple && singleLine
+            ? (tagValue, getItemProps) => {
+                if (!tagValue.length) {
+                  return null;
+                }
+                return (
+                  <>
+                    <Chip
+                      key={keyGetter(tagValue[0])}
+                      {...getItemProps({ index: 0 })}
+                      label={titleGetter(tagValue[0])}
+                      size="small"
+                      sx={{ minWidth: 0 }}
+                    />
+                    {tagValue.length > 1 && (
+                      <Chip label={`${tagValue.length - 1}`} size="small" sx={{ flexShrink: 0 }} />
+                    )}
+                  </>
+                );
+              }
+            : undefined
+        }
+        fullWidth={fullWidth}
+        disableCloseOnSelect={multiple}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            label={label}
+            helperText={helperText}
+            placeholder={multiple && !autocompleteValue.length ? placeholder : undefined}
+            slotProps={{
+              ...params.slotProps,
+              inputLabel: {
+                ...params.slotProps?.inputLabel,
+                shrink:
+                  (multiple && !autocompleteValue.length && Boolean(placeholder)) ||
+                  params.slotProps?.inputLabel?.shrink,
+              },
+            }}
+          />
+        )}
+      />
+    );
+  }
+  return null;
+};
+
+export default SelectField;

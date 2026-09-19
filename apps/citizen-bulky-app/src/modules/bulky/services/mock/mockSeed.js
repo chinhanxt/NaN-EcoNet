@@ -1,0 +1,366 @@
+export const DEFAULT_REPOSITORY_VERSION = 'smartbin:bulky:v3';
+
+export const DEFAULT_PRICE_BOOK = Object.freeze({
+  version: '2026.2-item-size-demo',
+  pricingBasis: 'ITEM_SIZE',
+  isDemo: true,
+  sizePrices: {
+    SOFA: { SMALL: 150000, MEDIUM: 200000, LARGE: 250000 },
+    MATTRESS: { SMALL: 100000, MEDIUM: 130000, LARGE: 160000 },
+    CABINET: { SMALL: 120000, MEDIUM: 180000, LARGE: 240000 },
+    TABLE: { SMALL: 80000, MEDIUM: 120000, LARGE: 160000 },
+  },
+  items: {
+    SOFA: 150000,
+    MATTRESS: 100000,
+    CABINET: 120000,
+    TABLE: 80000,
+    OTHER: 60000,
+  },
+  floorFee: 20000,
+  disassemblyFee: 30000,
+  serviceAreaFees: {
+    D1: 25000,
+    D2: 30000,
+    D5: 25000,
+  },
+  vehicleFees: {
+    STANDARD_VAN: 50000,
+    HEAVY_TRUCK: 100000,
+  },
+  scope: ['Thu gom tận nơi', 'Bốc xếp và vận chuyển rác cồng kềnh'],
+  exclusions: ['Chất thải nguy hại', 'Rác thải y tế', 'Phế thải xây dựng, xà bần'],
+  cancellationPolicyVersion: '2026.1',
+});
+
+export const DEFAULT_ACCEPTED_ITEMS = Object.freeze([
+  {
+    code: 'SOFA',
+    displayName: 'Ghế sofa / Đi-văng',
+    category: 'FURNITURE',
+    maxQuantity: 3,
+    defaultDimensionsCm: { length: 200, width: 90, height: 85 },
+    notes: 'Sofa đơn, sofa đôi, sofa băng bọc vải hoặc da',
+  },
+  {
+    code: 'MATTRESS',
+    displayName: 'Nệm giường (Cao su, Lò xo, Mút)',
+    category: 'FURNITURE',
+    maxQuantity: 4,
+    defaultDimensionsCm: { length: 200, width: 160, height: 25 },
+    notes: 'Nệm đơn, nệm đôi các loại',
+  },
+  {
+    code: 'CABINET',
+    displayName: 'Tủ quần áo / Tủ kệ lớn',
+    category: 'FURNITURE',
+    maxQuantity: 2,
+    defaultDimensionsCm: { length: 180, width: 60, height: 200 },
+    notes: 'Tủ gỗ công nghiệp, tủ nhôm kính cồng kềnh',
+  },
+  {
+    code: 'TABLE',
+    displayName: 'Bàn ăn / Bàn làm việc lớn',
+    category: 'FURNITURE',
+    maxQuantity: 5,
+    defaultDimensionsCm: { length: 140, width: 80, height: 75 },
+    notes: 'Bàn ăn gia đình, bàn làm việc gỗ khối',
+  },
+  {
+    code: 'OTHER',
+    displayName: 'Đồ cồng kềnh khác (Ván gỗ, Cánh cửa, Gương kính...)',
+    category: 'FURNITURE',
+    maxQuantity: 10,
+    defaultDimensionsCm: { length: 150, width: 80, height: 30 },
+    notes: 'Tấm ván gỗ, cánh cửa, đồ gỗ sinh hoạt lớn khác',
+  },
+]);
+
+export function createDefaultSeed() {
+  return {
+    version: DEFAULT_REPOSITORY_VERSION,
+    priceBook: JSON.parse(JSON.stringify(DEFAULT_PRICE_BOOK)),
+    acceptedItems: JSON.parse(JSON.stringify(DEFAULT_ACCEPTED_ITEMS)),
+    households: {
+      'hh-demo-1': {
+        id: 'hh-demo-1',
+        name: 'Hộ gia đình Lê Quốc Anh',
+        serviceLocations: [
+          {
+            id: 'loc-1',
+            address: '123 Nguyen Trai, Phuong 3, Quan 5, TP.HCM',
+            latitude: 10.756,
+            longitude: 106.678,
+            serviceArea: { code: 'D5' },
+          },
+        ],
+      },
+      'hh-1': {
+        id: 'hh-1',
+        name: 'Hộ gia đình Nguyễn Văn A',
+        serviceLocations: [
+          {
+            id: 'loc-1',
+            address: '123 Nguyen Trai, Phuong 3, Quan 5, TP.HCM',
+            latitude: 10.756,
+            longitude: 106.678,
+            serviceArea: { code: 'D5' },
+          },
+        ],
+      },
+      'hh-2': {
+        id: 'hh-2',
+        name: 'Hộ gia đình Trần Thị B',
+        serviceLocations: [
+          {
+            id: 'loc-2',
+            address: '456 Tran Hung Dao, Quan 1, TP.HCM',
+            latitude: 10.762,
+            longitude: 106.685,
+            serviceArea: { code: 'D1' },
+          },
+        ],
+      },
+    },
+    orders: {
+      'BK-2026-001': {
+        orderId: 'BK-2026-001',
+        householdId: 'hh-1',
+        confirmationVersion: 1,
+        orderStatus: 'CONFIRMED',
+        paymentStatus: 'SUCCESS',
+        requestedDate: '2026-09-22',
+        confirmedServiceWindow: { date: '2026-09-22' },
+        serviceLocation: {
+          id: 'loc-1',
+          address: '123 Nguyen Trai, Phuong 3, Quan 5, TP.HCM',
+          latitude: 10.756,
+          longitude: 106.678,
+          serviceArea: { code: 'D5' },
+        },
+        acceptedQuote: {
+          quoteId: 'q-001',
+          totalVnd: 225000,
+          subtotalVnd: 225000,
+          lineItems: [
+            { label: 'Sofa da 3 chỗ', amountVnd: 150000, quantity: 1 },
+            { label: 'Phí vận chuyển khu vực (Quận 5)', amountVnd: 25000, quantity: 1 },
+            { label: 'Phí xe thu gom tiêu chuẩn', amountVnd: 50000, quantity: 1 },
+          ],
+        },
+        acceptedPayment: {
+          transactionReference: 'VNP-2026-90812',
+          status: 'SUCCESS',
+          amountVnd: 225000,
+          occurredAt: '2026-09-17T08:00:00.000Z',
+        },
+        confirmedItems: [
+          {
+            catalogItemCode: 'SOFA',
+            displayName: 'Sofa da 3 chỗ phòng khách',
+            quantity: 1,
+            dimensionsCm: { length: 200, width: 90, height: 85 },
+          },
+        ],
+        handlingConditions: {
+          placement: 'GROUND_FLOOR',
+          floorNumber: 0,
+          hasLift: true,
+          requiresDisassembly: false,
+        },
+        lastDispatchEvent: {
+          eventId: 'BK-2026-001:1:UPSERT',
+          type: 'UPSERT',
+          confirmationVersion: 1,
+          occurredAt: '2026-09-17T08:05:00.000Z',
+        },
+        timeline: [
+          { event: 'DRAFT_CREATED', occurredAt: '2026-09-17T07:55:00.000Z' },
+          { event: 'ITEMS_CONFIRMED', occurredAt: '2026-09-17T07:57:00.000Z' },
+          { event: 'ORDER_CONFIRMED_PAID', occurredAt: '2026-09-17T08:00:00.000Z' },
+        ],
+        createdAt: '2026-09-17T07:55:00.000Z',
+        updatedAt: '2026-09-17T08:05:00.000Z',
+      },
+      'BK-2026-002': {
+        orderId: 'BK-2026-002',
+        householdId: 'hh-1',
+        confirmationVersion: 1,
+        orderStatus: 'CONFIRMED',
+        paymentStatus: 'SUCCESS',
+        requestedDate: '2026-09-17',
+        confirmedServiceWindow: { date: '2026-09-17' },
+        serviceLocation: {
+          id: 'loc-1',
+          address: '123 Nguyen Trai, Phuong 3, Quan 5, TP.HCM',
+          latitude: 10.756,
+          longitude: 106.678,
+          serviceArea: { code: 'D5' },
+        },
+        acceptedQuote: {
+          quoteId: 'q-002',
+          totalVnd: 175000,
+          subtotalVnd: 175000,
+          lineItems: [
+            { label: 'Nệm lò xo đôi 1m8', amountVnd: 100000, quantity: 1 },
+            { label: 'Phí vận chuyển khu vực (Quận 5)', amountVnd: 25000, quantity: 1 },
+            { label: 'Phí xe thu gom tiêu chuẩn', amountVnd: 50000, quantity: 1 },
+          ],
+        },
+        confirmedItems: [
+          {
+            catalogItemCode: 'MATTRESS',
+            displayName: 'Nệm lò xo đôi 1m8',
+            quantity: 1,
+            dimensionsCm: { length: 200, width: 180, height: 25 },
+          },
+        ],
+        handlingConditions: {
+          placement: 'GROUND_FLOOR',
+          floorNumber: 0,
+          hasLift: true,
+          requiresDisassembly: false,
+        },
+        changeRequest: {
+          changeRequestId: 'cr-002',
+          orderId: 'BK-2026-002',
+          type: 'RESCHEDULE',
+          status: 'UNDER_REVIEW',
+          requestedDate: '2026-09-24',
+          reason: 'Gia đình bận đột xuất muốn dời sang tuần sau',
+          submittedAt: '2026-09-17T07:00:00.000Z',
+        },
+        lastDispatchEvent: {
+          eventId: 'BK-2026-002:1:UPSERT',
+          type: 'UPSERT',
+          confirmationVersion: 1,
+          occurredAt: '2026-09-16T14:00:00.000Z',
+        },
+        timeline: [
+          { event: 'DRAFT_CREATED', occurredAt: '2026-09-16T13:50:00.000Z' },
+          { event: 'ORDER_CONFIRMED_PAID', occurredAt: '2026-09-16T14:00:00.000Z' },
+          {
+            event: 'RESCHEDULE_REQUESTED',
+            occurredAt: '2026-09-17T07:00:00.000Z',
+            requestedDate: '2026-09-24',
+            reason: 'Gia đình bận đột xuất muốn dời sang tuần sau',
+          },
+        ],
+        createdAt: '2026-09-16T13:50:00.000Z',
+        updatedAt: '2026-09-17T07:00:00.000Z',
+      },
+      'BK-2026-003': {
+        orderId: 'BK-2026-003',
+        householdId: 'hh-1',
+        confirmationVersion: 2,
+        orderStatus: 'CANCELLED',
+        paymentStatus: 'SUCCESS',
+        refundStatus: 'REQUESTED',
+        requestedDate: '2026-09-21',
+        confirmedServiceWindow: { date: '2026-09-21' },
+        serviceLocation: {
+          id: 'loc-1',
+          address: '123 Nguyen Trai, Phuong 3, Quan 5, TP.HCM',
+          latitude: 10.756,
+          longitude: 106.678,
+          serviceArea: { code: 'D5' },
+        },
+        acceptedQuote: {
+          quoteId: 'q-003',
+          totalVnd: 195000,
+          subtotalVnd: 195000,
+          lineItems: [
+            { label: 'Tủ quần áo gỗ 3 cánh', amountVnd: 120000, quantity: 1 },
+            { label: 'Phí vận chuyển khu vực (Quận 5)', amountVnd: 25000, quantity: 1 },
+            { label: 'Phí xe thu gom tiêu chuẩn', amountVnd: 50000, quantity: 1 },
+          ],
+        },
+        confirmedItems: [
+          {
+            catalogItemCode: 'CABINET',
+            displayName: 'Tủ quần áo gỗ 3 cánh',
+            quantity: 1,
+            dimensionsCm: { length: 180, width: 60, height: 200 },
+          },
+        ],
+        handlingConditions: {
+          placement: 'GROUND_FLOOR',
+          floorNumber: 0,
+          hasLift: true,
+          requiresDisassembly: false,
+        },
+        lastDispatchEvent: {
+          eventId: 'BK-2026-003:2:CANCEL',
+          type: 'CANCEL',
+          confirmationVersion: 2,
+          occurredAt: '2026-09-17T08:20:00.000Z',
+        },
+        timeline: [
+          { event: 'DRAFT_CREATED', occurredAt: '2026-09-17T06:30:00.000Z' },
+          { event: 'ORDER_CONFIRMED_PAID', occurredAt: '2026-09-17T06:40:00.000Z' },
+          {
+            event: 'ORDER_CANCELLED',
+            occurredAt: '2026-09-17T08:20:00.000Z',
+            reason: 'Người dân đã tặng lại đồ cũ cho người quen',
+          },
+        ],
+        createdAt: '2026-09-17T06:30:00.000Z',
+        updatedAt: '2026-09-17T08:20:00.000Z',
+      },
+    },
+    quotes: {},
+    holds: {},
+    payments: {},
+    refunds: {
+      'ref-003': {
+        refundId: 'ref-003',
+        orderId: 'BK-2026-003',
+        amountVnd: 195000,
+        status: 'REQUESTED',
+        reason: 'Hủy trước thời hạn cắt 24h - Hoàn 100% về tài khoản',
+        requestedAt: '2026-09-17T08:20:00.000Z',
+      },
+    },
+    changeRequests: {
+      'cr-002': {
+        changeRequestId: 'cr-002',
+        orderId: 'BK-2026-002',
+        type: 'RESCHEDULE',
+        status: 'UNDER_REVIEW',
+        requestedDate: '2026-09-24',
+        reason: 'Gia đình bận đột xuất muốn dời sang tuần sau',
+        submittedAt: '2026-09-17T07:00:00.000Z',
+      },
+    },
+    latePaymentResolutions: {},
+    dispatchOutbox: [
+      {
+        eventId: 'BK-2026-001:1:UPSERT',
+        type: 'UPSERT',
+        order: { orderId: 'BK-2026-001', pickupDate: '2026-09-22', status: 'PAID_CONFIRMED' },
+        occurredAt: '2026-09-17T08:05:00.000Z',
+      },
+      {
+        eventId: 'BK-2026-003:2:CANCEL',
+        type: 'CANCEL',
+        order: { orderId: 'BK-2026-003', status: 'CANCELLED' },
+        occurredAt: '2026-09-17T08:20:00.000Z',
+      },
+    ],
+    idempotencyLedger: {},
+    notifications: {
+      'notif-001': {
+        id: 'notif-001',
+        targetRole: 'DISPATCHER',
+        targetUserId: 'dispatcher-demo-user',
+        type: 'RESCHEDULE_REQUESTED',
+        title: '⚡ Yêu cầu dời ngày mới cần phê duyệt',
+        message: 'Đơn #BK-2026-002: Hộ dân Lê Quốc Anh đề nghị dời ngày thu gom sang 24/09/2026.',
+        orderId: 'BK-2026-002',
+        changeRequestId: 'cr-002',
+        createdAt: '2026-09-17T07:00:00.000Z',
+        read: false,
+      },
+    },
+  };
+}

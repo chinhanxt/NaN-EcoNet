@@ -1,0 +1,18 @@
+services:
+  smartbin-bulky-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: smartbin-bulky-service:latest
+    container_name: smartbin-bulky-microservice
+    restart: unless-stopped
+    ports:
+      - "3006:80"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1/health"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
