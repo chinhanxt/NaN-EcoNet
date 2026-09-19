@@ -108,3 +108,8 @@
 - Nhiem vu: feat(citizen): xay dung Web Portal React Vite cho cu dan tra cuu tien do don
 - Ky su thuc hien: chinhan (NaN-Team)
 - Ket qua: Tich hop lien phan he dat chuan.
+
+#### [Sprint Checkpoint 073] 2026-09-19 16:19
+- Nhiem vu: test(integration): kiem thu luong du lieu khep kin tu Flutter den VRP C++ Solver
+- Ky su thuc hien: chinhan (NaN-Team)
+- Ket qua: Tich hop lien phan he dat chuan.
