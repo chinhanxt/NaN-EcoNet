@@ -103,3 +103,8 @@
 - Nhiem vu: chore(config): phan bo dai cong mang khong trung lap 8000, 8501, 8502, 3006, 3010, 3011, 5002
 - Ky su thuc hien: chinhan (NaN-Team)
 - Ket qua: Tich hop lien phan he dat chuan.
+
+#### [Sprint Checkpoint 072] 2026-09-19 14:36
+- Nhiem vu: feat(citizen): xay dung Web Portal React Vite cho cu dan tra cuu tien do don
+- Ky su thuc hien: chinhan (NaN-Team)
+- Ket qua: Tich hop lien phan he dat chuan.
