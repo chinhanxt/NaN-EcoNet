@@ -118,3 +118,8 @@
 - Nhiem vu: docs(adr): khoi thao quyet dinh kien truc ADR-001 ve bo giai thuat toan 3D-PACO
 - Ky su thuc hien: chinhan (NaN-Team)
 - Ket qua: Tich hop lien phan he dat chuan.
+
+#### [Sprint Checkpoint 075] 2026-09-20 18:08
+- Nhiem vu: docs(adr): khoi thao quyet dinh kien truc ADR-002 ve camera scanner Gemini Flash
+- Ky su thuc hien: chinhan (NaN-Team)
+- Ket qua: Tich hop lien phan he dat chuan.
