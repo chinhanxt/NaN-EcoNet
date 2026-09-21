@@ -1,0 +1,166 @@
+{
+  "404": {
+    "error404": "Błąd 404.",
+    "pagedoesnotexist": "Ta strona nie istnieje.",
+    "message": "Sprawdź naszą {statuspage} albo nasz profil w sieci {mastodon} aby dowiedzieć się o aktualnych problemach.",
+    "statuspage": "stronę statusu"
+  },
+  "Nav": {
+    "title": "Czy to wegańskie? – Veganify",
+    "description": "Masz wątpliwości czy produkt jest na pewno wegański? Za pomocą Veganify możesz zeskanować kod kreskowy produktu w trakcie zakupów i sprawdzić czy jest on wegański czy nie - a to wszystko bez natłoku zbędnych informacji. Wypróbuj teraz!",
+    "home": "Strona główna",
+    "ingredientcheck": "Sprawdź składniki",
+    "more": "Więcej",
+    "navigation": "Główna nawigacja"
+  },
+  "Footer": {
+    "credit": "Stworzone z <heart>♥</heart> przez <philipLink>Philipa Brembecka</philipLink> i <jokeLink>FrontEndNet.work</jokeLink>",
+    "sponsor": "Sponsorowane przez UptimeRobot",
+    "opensource": "Otwarte źródło",
+    "carbonneutral": "Neutralność węglowa"
+  },
+  "Check": {
+    "enterbarcode": "Wprowadź kod kreskowy",
+    "submit": "Wyślij",
+    "vegan": "Wegańskie",
+    "vegetarian": "Wegetariańskie",
+    "palmoil": "Olej palmowy",
+    "palmoil_desc": "Olej palmowy jest ekstremalnie szkodliwy dla planety. Stanowi główną przyczynę wylesiania wielu najbardziej różnorodnych biologicznie lasów, niszcząc przy tym naturalne siedliska już zagrożonych gatunków zwierząt. Z tego powodu odradzamy kupowanie produktów zawierających olej palmowy. Niestety, wciąż dostępnych jest wiele produktów, które go zawierają.",
+    "crueltyfree": "Wolne od okrucieństwa",
+    "nutriscore_desc": "NutriScore przedstawia profil żywieniowy produktu w formie świateł. NutriScore nie jest jednak uznawany za dokładny i nie powinien być używany jako punkt odniesienia. Więcej informacji o NutriScore znajdziesz na <algorithmwatch>Algorithmwatch</algorithmwatch> (po angielsku).",
+    "grades_desc": "Mylisz się w gąszczu wegańskich/eko/bio certyfikatów? Z łatwymi do zrozumienia ocenami Veganify już nie! Veganify Grades to system oceny produktów wegańskich, który przydziela produktowi jedną z sześciu ocen (A+ – Niekwalifikujący). Jeśli chcesz dowiedzieć się więcej o ocenach Veganify lub poprosić o ocenę produktu, możesz to zrobić na <grades>Veganify Grades</grades>.",
+    "source": "Źródło danych",
+    "licenses": "Licencje",
+    "licenses_desc": "Veganify korzysta z różnych baz danych i API do zbierania informacji o produktach. Informacje są objęte następującymi licencjami:",
+    "notindb": "Ten produkt nie istnieje jeszcze w naszej bazie.",
+    "notindb_add": "Chcesz go dodać?",
+    "add_food": "Dodaj produkt żywnościowy",
+    "or": "lub",
+    "add_cosmetic": "dodaj kosmetyk",
+    "wrongbarcode": "Ten kod kreskowy jest niepoprawny.",
+    "timeout1": "To trwa dłużej niż zwykle",
+    "timeout2": "Zapytanie trwało zbyt długo. Spróbuj jeszcze raz.",
+    "unknown_error": "Wystąpił nieoczekiwany błąd. Spróbuj ponownie.",
+    "share": "Udostępnij",
+    "sharemessage": "{name}, sprawdzone w Veganify",
+    "copy": "Skopiuj",
+    "on": "na",
+    "notvegan": "Niewegańskie",
+    "yes": "Tak",
+    "no": "Nie",
+    "unknown": "Nieznane",
+    "grades": "Ocena Veganify",
+    "searching": "Wyszukiwanie…",
+    "barcodeexample": "np. 4000417025005",
+    "barcodehint": "Wpisz kod kreskowy lub zeskanuj go aparatem.",
+    "clearbarcode": "Wyczyść kod kreskowy",
+    "wrongbarcode_desc": "Kody kreskowe mają od 8 do 13 cyfr. Sprawdź numer pod kodem kreskowym i spróbuj ponownie.",
+    "checkconnection": "Sprawdź połączenie i spróbuj ponownie.",
+    "copied": "Skopiowano!",
+    "viamessage": "przez wiadomość",
+    "viaemail": "przez e-mail",
+    "whatis": "Co to jest {title}?",
+    "isitvegan": "Czy jest wegańskie?",
+    "tryexample": "Wypróbuj przykładowe skanowanie",
+    "recent": "Ostatnio sprawdzane",
+    "clearrecent": "Wyczyść",
+    "tagline": "Zeskanuj produkt i sprawdź, czy jest wegański.",
+    "howitworks": "Jak to działa",
+    "step1t": "Skanuj lub wpisz",
+    "step1d": "Wskaż kod kreskowy aparatem lub wpisz cyfry.",
+    "step2t": "Zobacz werdykt",
+    "step2d": "Wegański, wegetariański i olej palmowy jednym rzutem oka.",
+    "step3t": "Sprawdź szczegóły",
+    "step3d": "Z NutriScore, statusem cruelty-free i oceną Veganify."
+  },
+  "More": {
+    "buyusacoffee": "Postaw nam kawę",
+    "followus": "Obserwuj nas",
+    "tos": "Warunki użytkowania",
+    "privacypolicy": "Polityka prywatności",
+    "apidocumentation": "Dokumentacja API",
+    "imprint": "Imprint",
+    "onceviapaypal": "Jednorazowo przez PayPal",
+    "onceviakofi": "Jednorazowo przez Ko-Fi",
+    "monthlyviagithub": "Comiesięcznie przez GitHub",
+    "month": "miesiąc",
+    "redirect": "Nastąpi przekierowanie do serwisu",
+    "thissetsacookie": "Zostanie ustawione ciasteczko.",
+    "activatedarkmode": "Ustaw najpierw tryb ciemny na swoim urządzeniu!",
+    "language": "Język",
+    "english": "angielski",
+    "german": "niemiecki",
+    "spanish": "hiszpański",
+    "french": "francuski",
+    "polish": "polski",
+    "cursed": "przeklęty",
+    "memeculture": "Niech żyje kultura memów!",
+    "czech": "czeski",
+    "portuguese-br": "portugalski (Brazylia)",
+    "currentlanguage": "(bieżący)"
+  },
+  "TOS": {
+    "englishgermanonly": "Ta strona jest dostępna tylko w języku angielskim i niemieckim.",
+    "tos": "Warunki użytkowania",
+    "tos_content": "<p><b>Use of \"Veganify\"</b></p><p>The use of the site \"Veganify.app\" is free of charge. The distribution of the contents or our services against payment is strictly prohibited. Automated queries are also prohibited and may only be performed using the <a href=\"https://jokenetwork.de/veganify-api\">API</a>.<br> We reserve the right to change, reduce, expand or disable our services at any time.</p><p><b>Processing of entered texts and numbers</b></p><p>On our website, barcodes or ingredients of a product can be entered in text fields. This is necessary to provide our service in its entirety. The data entry is completely voluntary.<br>Only barcodes or ingredients may be entered in the named text fields; the entry or transmission of personal data of any kind is strictly prohibited.</p><p>Personal data is any information that relates to an identified or identifiable living individual. Different pieces of information, which collected together can lead to the identification of a particular person, also constitute personal data.<sup><a href=\"https://ec.europa.eu/info/law/law-topic/data-protection/reform/what-personal-data_en\">?</a></sup></p><p><b>Disclaimer</b></p><p>We assume no liability for the accuracy of the product information and ingredient lists offered and for the availability of our service.</p>"
+  },
+  "Privacy": {
+    "germanonly": "Ta strona jest dostępna tylko w języku niemieckim."
+  },
+  "Fallback": {
+    "yourareoffline": "Brak połączenia z siecią.",
+    "needinternet": "Aby użyć Veganify połącz się z internetem.",
+    "tryagain": "Spróbuj ponownie"
+  },
+  "InstallPrompt": {
+    "subheading": "Czy To Wegańskie? - Veganify",
+    "install": "Zainstaluj Veganify",
+    "get": "Pobierz",
+    "howtoinstall": "Dotknij <share>Udostępnij</share>, a następnie „Dodaj do ekranu głównego\".",
+    "dismiss": "Zamknij"
+  },
+  "ShortcutPrompt": {
+    "Shortcuts": "Skróty",
+    "openinapp": "Otwórz w aplikacji Skróty",
+    "open": "Otwórz"
+  },
+  "PromptStack": {
+    "show": "Pokaż"
+  },
+  "Ingredients": {
+    "ingredientcheck": "Sprawdź składniki",
+    "ingredientcheck_desc": "Sprawdź, czy składniki produktu są wegańskie! Wprowadź składniki oddzielając je przecinkiem",
+    "entercommaseperated": "Wprowadź składniki oddzielone przecinkiem",
+    "submit": "Wyślij",
+    "vegan": "Wegańskie",
+    "source": "Źródło danych",
+    "cannotbeempty": "Wpisz co najmniej jeden składnik. Oddziel kolejne składniki przecinkami.",
+    "unknown_error": "Wystąpił nieoczekiwany błąd. Spróbuj ponownie.",
+    "licenses": "Licencje",
+    "licenses_desc": "Veganify uses different databases and APIs to gather information about a product. The information is licensed under the following licenses:",
+    "languagewarning": "Wyniki mogą być nieprawidłowe z powodu błędów tłumaczenia lub brakujących informacji. Wyniki zostały przetłumaczone za pomocą <deepl>DeepL</deepl>.",
+    "maybe_vegan": "Ten składnik może zawierać produkty pochodzenia zwierzęcego.",
+    "unknown_vegan": "Nie mamy informacji o tym składniku.",
+    "searching": "Sprawdzanie…",
+    "ingredientsexample": "Cukier, masło kakaowe, lecytyna sojowa…",
+    "scanlabel": "Skanuj lub prześlij listę składników",
+    "scanning": "Rozpoznawanie tekstu…",
+    "ocrerror": "Nie udało się odczytać obrazu. Wpisz składniki ręcznie.",
+    "yes": "Tak",
+    "no": "Nie"
+  },
+  "Layout": {
+    "skiptomain": "Przejdź do treści głównej",
+    "back": "Wróć"
+  },
+  "Dialog": {
+    "close": "Zamknij"
+  },
+  "Scanner": {
+    "open": "Skanuj kod kreskowy aparatem",
+    "close": "Zamknij skaner",
+    "switchcamera": "Przełącz aparat",
+    "hint": "Wyrównaj kod kreskowy w ramce",
+    "cameraerror": "Aparat niedostępny. Sprawdź uprawnienia przeglądarki lub wpisz kod kreskowy."
+  }
+}

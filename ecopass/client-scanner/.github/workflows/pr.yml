@@ -1,0 +1,13 @@
+name: Build and Lint PRs
+on: [pull_request]
+jobs:
+  regular_build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: oven-sh/setup-bun@v2.2.0
+      - run: bun install
+      - run: bun run lint
+      - run: bun run type-check
+      - run: bun test src/components
+      - run: bun run build
