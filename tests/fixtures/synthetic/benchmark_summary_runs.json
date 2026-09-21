@@ -2,3 +2,4 @@
 {"run_id": 77, "date": "2026-09-20", "task": "test(benchmarks): thu thap du lieu 100 diem dung thuc te tai Quan 1 va Quan 3", "passed": true}
 {"run_id": 78, "date": "2026-09-20", "task": "test(benchmarks): chay thuc nghiem doi sanh 50 lan lap giua Greedy, OR-Tools va 3D-PACO", "passed": true}
 {"run_id": 79, "date": "2026-09-21", "task": "docs(benchmarks): ghi nhan ket qua giam 28.4% quang duong va 22.0% nhien lieu Diesel", "passed": true}
+{"run_id": 80, "date": "2026-09-21", "task": "docs(benchmarks): tinh toan luong cat giam 10.37 kg CO2 moi ca chay theo chuan IPCC", "passed": true}
