@@ -1,0 +1,633 @@
+import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
+import { Role, ShortLinkPreference, SubscriptionTier } from '@prisma/client';
+import { Injectable } from '@nestjs/common';
+import { AuthService } from '@gitroom/helpers/auth/auth.service';
+import { CreateOrgUserDto } from '@gitroom/nestjs-libraries/dtos/auth/create.org.user.dto';
+import { makeId } from '@gitroom/nestjs-libraries/services/make.is';
+
+@Injectable()
+export class OrganizationRepository {
+  constructor(
+    private _organization: PrismaRepository<'organization'>,
+    private _userOrg: PrismaRepository<'userOrganization'>,
+    private _user: PrismaRepository<'user'>
+  ) {}
+
+  createMaxUser(id: string, name: string, saasName: string, email: string) {
+    return this._organization.model.organization.create({
+      select: {
+        id: true,
+        apiKey: true,
+      },
+      data: {
+        name: name ? `${name}###${id}` : `Unnamed User###${id}`,
+        apiKey: AuthService.fixedEncryption(makeId(20)),
+        isTrailing: false,
+        subscription: {
+          create: {
+            totalChannels: 1000000,
+            subscriptionTier: 'ULTIMATE',
+            isLifetime: true,
+            period: 'YEARLY',
+          },
+        },
+        users: {
+          create: {
+            role: Role.SUPERADMIN,
+            user: {
+              create: {
+                activated: true,
+                email: email
+                  ? email.split('@').join(`+${saasName}@`)
+                  : `${saasName}+` + makeId(10) + '@postiz.com',
+                name: name ? `${name}###${id}` : `Unnamed User###${id}`,
+                providerName: 'LOCAL',
+                password: AuthService.hashPassword(makeId(500)),
+                timezone: 0,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  getOrgByApiKey(api: string) {
+    return this._organization.model.organization.findFirst({
+      where: {
+        apiKey: api,
+        deletedAt: null,
+      },
+      include: {
+        subscription: {
+          select: {
+            subscriptionTier: true,
+            totalChannels: true,
+            isLifetime: true,
+          },
+        },
+      },
+    });
+  }
+
+  getCount() {
+    return this._organization.model.organization.count();
+  }
+
+  getSuperAdminUser(orgId: string) {
+    return this._userOrg.model.userOrganization.findFirst({
+      where: {
+        organizationId: orgId,
+        disabled: false,
+        user: {
+          isSuperAdmin: true,
+          deletedAt: null,
+        },
+      },
+    });
+  }
+
+  getPrivilegedNonSuperAdminUser(orgId: string) {
+    return this._userOrg.model.userOrganization.findFirst({
+      where: {
+        organizationId: orgId,
+        disabled: false,
+        role: {
+          in: [Role.SUPERADMIN, Role.ADMIN],
+        },
+        user: {
+          isSuperAdmin: false,
+          deletedAt: null,
+        },
+      },
+    });
+  }
+
+  getUserOrg(id: string) {
+    return this._userOrg.model.userOrganization.findFirst({
+      where: {
+        id,
+      },
+      select: {
+        user: true,
+        organization: {
+          include: {
+            users: {
+              select: {
+                id: true,
+                disabled: true,
+                role: true,
+                userId: true,
+              },
+            },
+            subscription: {
+              select: {
+                subscriptionTier: true,
+                totalChannels: true,
+                isLifetime: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  getImpersonateUser(name: string) {
+    return this._userOrg.model.userOrganization.findMany({
+      where: {
+        OR: [
+          {
+            organizationId: {
+              contains: name,
+            },
+          },
+          {
+            organization: {
+              OR: [
+                {
+                  paymentId: {
+                    equals: name,
+                  },
+                },
+                {
+                  subscription: {
+                    identifier: {
+                      equals: name,
+                    },
+                  },
+                },
+                {
+                  Integration: {
+                    some: {
+                      id: name,
+                    },
+                  },
+                },
+                {
+                  post: {
+                    some: {
+                      id: name,
+                    },
+                  },
+                },
+              ],
+            },
+          },
+          {
+            user: {
+              OR: [
+                {
+                  name: {
+                    contains: name,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  email: {
+                    contains: name,
+                    mode: 'insensitive',
+                  },
+                },
+                {
+                  id: {
+                    contains: name,
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+      select: {
+        id: true,
+        role: true,
+        disabled: true,
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            paymentId: true,
+            deletedAt: true,
+            subscription: {
+              select: {
+                subscriptionTier: true,
+                identifier: true,
+                isLifetime: true,
+                period: true,
+                cancelAt: true,
+              },
+            },
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            activated: true,
+            providerName: true,
+            deletedAt: true,
+          },
+        },
+      },
+    });
+  }
+
+  updateApiKey(orgId: string) {
+    return this._organization.model.organization.update({
+      where: {
+        id: orgId,
+      },
+      data: {
+        apiKey: AuthService.fixedEncryption(makeId(20)),
+      },
+    });
+  }
+
+  async getOrgsByUserId(userId: string) {
+    return this._organization.model.organization.findMany({
+      where: {
+        deletedAt: null,
+        users: {
+          some: {
+            userId,
+          },
+        },
+      },
+      include: {
+        users: {
+          where: {
+            userId,
+          },
+          select: {
+            disabled: true,
+            role: true,
+          },
+        },
+        subscription: {
+          select: {
+            subscriptionTier: true,
+            totalChannels: true,
+            isLifetime: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getOrgById(id: string) {
+    return this._organization.model.organization.findUnique({
+      where: {
+        id,
+      },
+    });
+  }
+
+  getOrgByIdWithSubscription(id: string) {
+    return this._organization.model.organization.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        subscription: {
+          select: {
+            subscriptionTier: true,
+            totalChannels: true,
+            isLifetime: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getAccountOverview(orgId: string) {
+    const [organization, members] = await Promise.all([
+      this._organization.model.organization.findUnique({
+        where: {
+          id: orgId,
+        },
+        select: {
+          id: true,
+          name: true,
+          createdAt: true,
+          deletedAt: true,
+          allowTrial: true,
+          isTrailing: true,
+          subscription: {
+            select: {
+              subscriptionTier: true,
+              period: true,
+              identifier: true,
+              totalChannels: true,
+              isLifetime: true,
+              cancelAt: true,
+              createdAt: true,
+              updatedAt: true,
+              deletedAt: true,
+            },
+          },
+        },
+      }),
+      this._userOrg.model.userOrganization.findMany({
+        where: {
+          organizationId: orgId,
+        },
+        orderBy: {
+          createdAt: 'asc',
+        },
+        select: {
+          role: true,
+          disabled: true,
+          createdAt: true,
+          user: {
+            select: {
+              id: true,
+              email: true,
+              activated: true,
+              providerName: true,
+              lastOnline: true,
+              createdAt: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    if (!organization) {
+      return null;
+    }
+
+    const owner = members.find((member) => member.role === Role.SUPERADMIN);
+    const lastOnlineMax = members.reduce<Date | null>(
+      (latest, member) =>
+        !latest || member.user.lastOnline > latest
+          ? member.user.lastOnline
+          : latest,
+      null
+    );
+
+    return {
+      organization: {
+        id: organization.id,
+        name: organization.name,
+        createdAt: organization.createdAt,
+        deletedAt: organization.deletedAt,
+        allowTrial: organization.allowTrial,
+        isTrailing: organization.isTrailing,
+      },
+      subscription: organization.subscription || null,
+      owner: owner
+        ? {
+            ...owner.user,
+            role: owner.role,
+            memberSince: owner.createdAt,
+          }
+        : null,
+      users: {
+        total: members.length,
+        activated: members.filter((member) => member.user.activated).length,
+        disabled: members.filter((member) => member.disabled).length,
+        lastOnlineMax,
+      },
+    };
+  }
+
+  getUsersByEmail(email: string) {
+    return this._user.model.user.findMany({
+      where: {
+        email,
+      },
+    });
+  }
+
+  async addUserToOrg(
+    userId: string,
+    id: string,
+    orgId: string,
+    role: 'USER' | 'ADMIN'
+  ) {
+    const checkIfInviteExists = await this._user.model.user.findFirst({
+      where: {
+        inviteId: id,
+      },
+    });
+
+    if (checkIfInviteExists) {
+      return false;
+    }
+
+    const checkForSubscription =
+      await this._organization.model.organization.findFirst({
+        where: {
+          id: orgId,
+        },
+        select: {
+          subscription: true,
+        },
+      });
+
+    if (
+      process.env.STRIPE_PUBLISHABLE_KEY &&
+      checkForSubscription?.subscription?.subscriptionTier ===
+        SubscriptionTier.STANDARD
+    ) {
+      return false;
+    }
+
+    const create = await this._userOrg.model.userOrganization.create({
+      data: {
+        role,
+        userId,
+        organizationId: orgId,
+      },
+    });
+
+    await this._user.model.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        inviteId: id,
+      },
+    });
+
+    return create;
+  }
+
+  async createOrgAndUser(
+    body: Omit<CreateOrgUserDto, 'providerToken'> & { providerId?: string },
+    hasEmail: boolean,
+    ip: string,
+    userAgent: string
+  ) {
+    return this._organization.model.organization.create({
+      data: {
+        name: body.company,
+        apiKey: AuthService.fixedEncryption(makeId(20)),
+        allowTrial: true,
+        isTrailing: true,
+        users: {
+          create: {
+            role: Role.SUPERADMIN,
+            user: {
+              create: {
+                activated: body.provider !== 'LOCAL' || !hasEmail,
+                email: body.email,
+                password: body.password
+                  ? AuthService.hashPassword(body.password)
+                  : '',
+                providerName: body.provider,
+                providerId: body.providerId || '',
+                timezone: 0,
+                ip,
+                agent: userAgent,
+              },
+            },
+          },
+        },
+      },
+      select: {
+        id: true,
+        users: {
+          select: {
+            user: true,
+          },
+        },
+      },
+    });
+  }
+
+  getOrgByCustomerId(customerId: string) {
+    return this._organization.model.organization.findFirst({
+      where: {
+        paymentId: customerId,
+      },
+    });
+  }
+
+  async setStreak(organizationId: string, type: 'start' | 'end') {
+    try {
+      await this._organization.model.organization.update({
+        where: {
+          id: organizationId,
+          ...(type === 'start'
+            ? {
+                streakSince: null,
+              }
+            : {}),
+        },
+        data: {
+          ...(type === 'end' ? { streakSince: null } : {}),
+          ...(type === 'start' ? { streakSince: new Date() } : {}),
+        },
+      });
+    } catch (err) {}
+  }
+
+  async getTeam(orgId: string) {
+    return this._organization.model.organization.findUnique({
+      where: {
+        id: orgId,
+      },
+      select: {
+        users: {
+          select: {
+            role: true,
+            user: {
+              select: {
+                email: true,
+                id: true,
+                sendSuccessEmails: true,
+                sendFailureEmails: true,
+                sendStreakEmails: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  getAllUsersOrgs(orgId: string) {
+    return this._organization.model.organization.findUnique({
+      where: {
+        id: orgId,
+      },
+      select: {
+        users: {
+          select: {
+            user: {
+              select: {
+                email: true,
+                id: true,
+                sendSuccessEmails: true,
+                sendFailureEmails: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  deleteOrganization(orgId: string) {
+    return this._organization.model.organization.update({
+      where: {
+        id: orgId,
+      },
+      data: {
+        deletedAt: new Date(),
+      },
+    });
+  }
+
+  async deleteTeamMember(orgId: string, userId: string) {
+    return this._userOrg.model.userOrganization.delete({
+      where: {
+        userId_organizationId: {
+          userId,
+          organizationId: orgId,
+        },
+      },
+    });
+  }
+
+  disableOrEnableNonSuperAdminUsers(orgId: string, disable: boolean) {
+    return this._userOrg.model.userOrganization.updateMany({
+      where: {
+        organizationId: orgId,
+        role: {
+          not: Role.SUPERADMIN,
+        },
+      },
+      data: {
+        disabled: disable,
+      },
+    });
+  }
+
+  getShortlinkPreference(orgId: string) {
+    return this._organization.model.organization.findUnique({
+      where: {
+        id: orgId,
+      },
+      select: {
+        shortlink: true,
+      },
+    });
+  }
+
+  updateShortlinkPreference(orgId: string, shortlink: ShortLinkPreference) {
+    return this._organization.model.organization.update({
+      where: {
+        id: orgId,
+      },
+      data: {
+        shortlink,
+      },
+    });
+  }
+}

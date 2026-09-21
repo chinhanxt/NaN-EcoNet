@@ -1,0 +1,98 @@
+import { AgentToolInterface } from '@gitroom/nestjs-libraries/chat/agent.tool.interface';
+import { createTool } from '@mastra/core/tools';
+import { z } from 'zod';
+import { HttpException, Injectable } from '@nestjs/common';
+import {
+  IntegrationManager,
+  socialIntegrationList,
+} from '@gitroom/nestjs-libraries/integrations/integration.manager';
+import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
+import { RefreshToken } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import { timer } from '@gitroom/helpers/utils/timer';
+import { MediaService } from '@gitroom/nestjs-libraries/database/prisma/media/media.service';
+import { OrganizationService } from '@gitroom/nestjs-libraries/database/prisma/organizations/organization.service';
+import { VideoManager } from '@gitroom/nestjs-libraries/videos/video.manager';
+import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
+
+@Injectable()
+export class GenerateVideoTool implements AgentToolInterface {
+  constructor(
+    private _mediaService: MediaService,
+    private _videoManager: VideoManager
+  ) {}
+  name = 'generateVideoTool';
+
+  run() {
+    return createTool({
+      id: 'generateVideoTool',
+      mcp: {
+        annotations: {
+          title: 'Generate Video',
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: false,
+          openWorldHint: true,
+        },
+      },
+      description: `Generate video to use in a post,
+                    in case the user specified a platform that requires attachment and attachment was not provided,
+                    ask if they want to generate a picture of a video.
+                    In many cases 'videoFunctionTool' will need to be called first, to get things like voice id
+                    Generating takes a few minutes, so this only starts the generation and returns a jobId:
+                    poll 'videoStatusTool' with it until the status is "completed" to get the video url.
+                    Here are the type of video that can be generated:
+                    ${this._videoManager
+                      .getAllVideos()
+                      .map((p) => "-" + p.title)
+                      .join('\n')}
+      `,
+      inputSchema: z.object({
+        identifier: z.string(),
+        output: z.enum(['vertical', 'horizontal']),
+        customParams: z.array(
+          z.object({
+            key: z.string().describe('Name of the settings key to pass'),
+            value: z.any().describe('Value of the key'),
+          })
+        ),
+      }),
+      outputSchema: z.object({
+        jobId: z.string().optional(),
+        error: z.string().optional(),
+      }),
+      execute: async (inputData, context) => {
+        checkAuth(inputData, context);
+        const org = JSON.parse((context?.requestContext as any)?.get('organization') as string);
+        try {
+          const value = await this._mediaService.startGenerateVideo(org, {
+            type: inputData.identifier,
+            output: inputData.output,
+            customParams: inputData.customParams.reduce(
+              (all: Record<string, any>, current: { key: string; value: any }) => ({
+                ...all,
+                [current.key]: current.value,
+              }),
+              {} as Record<string, any>
+            ),
+          });
+
+          return {
+            jobId: value.jobId,
+          };
+        } catch (err) {
+          // SubscriptionException (402) carries { section, action } and its
+          // message is just "Subscription Exception", so translate it
+          const message =
+            err instanceof HttpException && err.getStatus() === 402
+              ? 'No AI video credits are available on this account.'
+              : err instanceof Error
+              ? err.message
+              : String(err);
+          return {
+            error: `Video generation failed: ${message}. The user's video credit was not used.`,
+          };
+        }
+      },
+    });
+  }
+}
