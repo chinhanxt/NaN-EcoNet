@@ -3,3 +3,4 @@
 {"run_id": 78, "date": "2026-09-20", "task": "test(benchmarks): chay thuc nghiem doi sanh 50 lan lap giua Greedy, OR-Tools va 3D-PACO", "passed": true}
 {"run_id": 79, "date": "2026-09-21", "task": "docs(benchmarks): ghi nhan ket qua giam 28.4% quang duong va 22.0% nhien lieu Diesel", "passed": true}
 {"run_id": 80, "date": "2026-09-21", "task": "docs(benchmarks): tinh toan luong cat giam 10.37 kg CO2 moi ca chay theo chuan IPCC", "passed": true}
+{"run_id": 81, "date": "2026-09-22", "task": "test(engine): kiem thu kich ban chia se diem gom khi xe tai bi hong hoc dot xuat", "passed": true}
