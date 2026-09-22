@@ -1,0 +1,1 @@
+/home/chinhan/MMO/postiz/scripts/youtube-studio-upload.js
