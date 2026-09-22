@@ -1,0 +1,657 @@
+/* ==========================================================
+   THEME GREEN & PREMIUM DESIGN SYSTEM
+   - Emerald Palette (#10B981)
+   - Harmonious Light & Dark Modes
+   - Buttery Smooth 0.28s Transitions
+   - Hyper-rounded, Wider Sidebar
+   - Anti-flicker Skeleton
+   ========================================================== */
+
+/* --- Primary Emerald Brand Colors --- */
+:root, .dark, .light {
+  --new-btn-primary: #10b981 !important;
+  --color-forth: #10b981 !important;
+  --color-seventh: #059669 !important;
+  --color-custom4: #059669 !important;
+  --color-custom7: #047857 !important;
+  --new-boxFocused: #d1fae5 !important;
+  --new-textItemFocused: #059669 !important;
+  --new-table-text-focused: #34d399 !important;
+  --new-back-drop: #064e3b !important;
+  --popup-color: rgba(16, 185, 129, 0.15) !important;
+}
+
+/* --- LIGHT THEME VARIABLES --- */
+html.light,
+body.light,
+.light {
+  --color-primary: #f0f2f4 !important;
+  --color-secondary: #ffffff !important;
+  --color-text: #0e0e0e !important;
+  --new-bgColor: #f0f2f4 !important;
+  --new-bgColorInner: #ffffff !important;
+  --new-bgLineColor: #e7e9eb !important;
+  --new-border: #eaecee !important;
+  --new-table-header: #f5f7f9 !important;
+  --new-table-border: #e7e9eb !important;
+  --new-table-text: #777b7f !important;
+  --new-big-strips: #f5f7f9 !important;
+  --new-box-hover: #f4f6f8 !important;
+  --new-textColor: 14 14 14 !important;
+  --new-btn-simple: #eceef1 !important;
+  --new-btn-text: #0e0e0e !important;
+  --color-input: #f5f7f9 !important;
+  --color-gray: #777b7f !important;
+  --new-settings: #eceef1 !important;
+  --new-sep: #d5d9dd !important;
+  --menu-shadow: 0 8px 30px 0 rgba(0, 0, 0, 0.06) !important;
+}
+
+/* --- DARK THEME VARIABLES --- */
+html.dark,
+body.dark,
+.dark {
+  --color-primary: #0e0e0e !important;
+  --color-secondary: #090b13 !important;
+  --color-text: #ffffff !important;
+  --new-bgColor: #0e0e0e !important;
+  --new-bgColorInner: #1a1919 !important;
+  --new-bgLineColor: #212121 !important;
+  --new-border: #252525 !important;
+  --new-table-header: #1e1d1d !important;
+  --new-table-border: #2b2b2b !important;
+  --new-table-text: #9c9c9c !important;
+  --new-big-strips: #161515 !important;
+  --new-box-hover: #201f1f !important;
+  --new-textColor: 255 255 255 !important;
+  --new-btn-simple: #313030 !important;
+  --new-btn-text: #ffffff !important;
+  --color-input: #1e1d1d !important;
+  --color-gray: #8c8c8c !important;
+  --new-settings: #242323 !important;
+  --new-sep: #454444 !important;
+  --menu-shadow: 0 8px 30px 0 rgba(0, 0, 0, 0.5) !important;
+}
+
+/* ==========================================================
+   GLOBAL BUTTERY-SMOOTH THEME TRANSITIONS
+   ========================================================== */
+html,
+body,
+#left-menu,
+div:has(> #left-menu),
+.bg-newBgColorInner,
+.bg-newBgLineColor,
+.bg-newTableHeader,
+div:has(> #left-menu) + div.flex-1 {
+  transition: background-color 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* ==========================================================
+   WIDER, SMOOTHER & HYPER-ROUNDED SIDEBAR MENU
+   ========================================================== */
+
+/* Outer Sidebar Container */
+div:has(> #left-menu),
+.bg-newBgColorInner:has(#left-menu),
+div.flex.flex-col.bg-newBgColorInner.w-\[80px\] {
+  width: 98px !important;
+  border-radius: 26px !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Fixed Inner Left Menu */
+#left-menu {
+  width: 82px !important;
+  left: 20px !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+[dir="rtl"] #left-menu {
+  right: 20px !important;
+  left: auto !important;
+}
+
+/* Harmonize Adjacent Main Panel (Enterprise Disciplined 12px radius) */
+div:has(> #left-menu) + div.flex-1,
+div.flex.flex-col.bg-newBgColorInner.w-\[80px\] + div.flex-1,
+div.flex-1.bg-newBgLineColor {
+  border-radius: 12px !important;
+  overflow: hidden !important;
+}
+
+/* Menu Items - Rounded, Generous Padding, Silky Transitions */
+#left-menu a,
+#left-menu button {
+  width: 100% !important;
+  min-height: 58px !important;
+  padding: 9px 6px !important;
+  gap: 5px !important;
+  border-radius: 18px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+              background-color 0.25s ease,
+              color 0.25s ease,
+              box-shadow 0.25s ease,
+              border-color 0.25s ease !important;
+  will-change: transform, box-shadow !important;
+}
+
+/* Hover State */
+#left-menu a:hover,
+#left-menu button:hover {
+  transform: translateY(-2px) scale(1.04) !important;
+  background-color: rgba(16, 185, 129, 0.1) !important;
+  color: #10b981 !important;
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.18) !important;
+}
+
+/* Active Press / Touch State */
+#left-menu a:active,
+#left-menu button:active {
+  transform: translateY(0) scale(0.96) !important;
+  transition-duration: 0.1s !important;
+}
+
+/* Icon Animation Inside Menu Items */
+#left-menu a svg,
+#left-menu button svg,
+#left-menu a .custom\:scale-90,
+#left-menu button .custom\:scale-90 {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+#left-menu a:hover svg,
+#left-menu button:hover svg,
+#left-menu a:hover .custom\:scale-90,
+#left-menu button:hover .custom\:scale-90 {
+  transform: scale(1.15) !important;
+}
+
+/* Selected Active Menu Item (e.g. Lịch) */
+#left-menu a.bg-boxFocused,
+#left-menu button.bg-boxFocused {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.12) 100%) !important;
+  color: #10b981 !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  box-shadow: 0 4px 18px rgba(16, 185, 129, 0.22) !important;
+  font-weight: 700 !important;
+}
+
+.light #left-menu a.bg-boxFocused,
+.light #left-menu button.bg-boxFocused {
+  background: #d1fae5 !important;
+  color: #059669 !important;
+  border: 1px solid rgba(5, 150, 105, 0.25) !important;
+}
+
+/* Sidebar Logo Container (No black card) */
+#left-menu .logo-badge-container {
+  width: 48px !important;
+  height: 48px !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+#left-menu .logo-badge-container:hover {
+  transform: scale(1.12) rotate(6deg) !important;
+  box-shadow: none !important;
+}
+
+/* Theme Toggle Button Micro-interaction */
+div.select-none.cursor-pointer:has(svg path[d*="M10.75"]),
+div.select-none.cursor-pointer:has(svg path[d*="M21.625"]) {
+  border-radius: 12px !important;
+  padding: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease, color 0.2s ease !important;
+}
+
+div.select-none.cursor-pointer:has(svg path[d*="M10.75"]):hover,
+div.select-none.cursor-pointer:has(svg path[d*="M21.625"]):hover {
+  transform: scale(1.15) rotate(18deg) !important;
+  background-color: rgba(16, 185, 129, 0.12) !important;
+  color: #10b981 !important;
+}
+
+div.select-none.cursor-pointer:has(svg path[d*="M10.75"]):active,
+div.select-none.cursor-pointer:has(svg path[d*="M21.625"]):active {
+  transform: scale(0.9) rotate(-18deg) !important;
+}
+
+/* ==========================================================
+   COLOR BRANDING (Emerald Green Theme)
+   ========================================================== */
+
+/* Backgrounds - Purple to Green */
+.bg-forth,
+.bg-\[\#612BD3\],
+.bg-\[\#612bd3\],
+.bg-\[\#612ad5\],
+.bg-\[\#7236f1\],
+[class*="bg-[#612BD3]"],
+[class*="bg-[#612bd3]"],
+[class*="bg-[#612ad5]"],
+[class*="bg-[#7236f1]"] {
+  background-color: #10b981 !important;
+}
+
+/* Hover Backgrounds */
+.hover\:bg-forth:hover,
+.hover\:bg-\[\#612BD3\]:hover,
+.hover\:bg-\[\#5022b3\]:hover,
+.hover\:bg-\[\#5421be\]:hover {
+  background-color: #059669 !important;
+}
+
+/* Text Colors */
+.text-forth,
+.text-\[\#612BD3\],
+.text-\[\#612bd3\],
+.text-\[\#612ad5\],
+.text-\[\#7236f1\],
+[class*="text-[#612BD3]"],
+[class*="text-[#612bd3]"] {
+  color: #10b981 !important;
+}
+
+/* Border Colors */
+.border-forth,
+.border-\[\#612BD3\],
+.border-\[\#612bd3\],
+.border-\[\#612ad5\],
+.focus\:border-\[\#612BD3\]:focus {
+  border-color: #10b981 !important;
+}
+
+/* SVGs */
+svg path[fill="#612BD3"],
+svg path[fill="#612bd3"],
+svg path[fill="#612ad5"],
+svg path[fill="#7236f1"] {
+  fill: #10b981 !important;
+}
+
+/* ==========================================================
+   THEME STYLES (Light & Dark Symmetrical Specificity)
+   ========================================================== */
+
+/* --- LIGHT THEME STYLES --- */
+body.light {
+  background-color: #f0f2f4 !important;
+  color: #0e0e0e !important;
+}
+
+body.light .bg-newBgColorInner {
+  background-color: #ffffff !important;
+}
+
+body.light .bg-newBgLineColor {
+  background-color: #e7e9eb !important;
+}
+
+body.light .text-newTextColor {
+  color: #0e0e0e !important;
+}
+
+body.light div:has(> #left-menu) {
+  background-color: #ffffff !important;
+  border: 1px solid rgba(234, 236, 238, 0.9) !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04) !important;
+}
+
+body.light #left-menu a {
+  color: #55595f !important;
+}
+
+body.light #left-menu a:hover {
+  background-color: #f3f4f6 !important;
+  color: #059669 !important;
+}
+
+body.light #left-menu a.bg-fifth {
+  background-color: #d1fae5 !important;
+  color: #059669 !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+body.light .bg-newTableHeader {
+  background-color: #f5f7f9 !important;
+  color: #374151 !important;
+}
+
+body.light .repeated-strip {
+  background: repeating-linear-gradient(
+    135deg,
+    #ffffff,
+    #ffffff 4px,
+    #f5f7f9 4px,
+    #f5f7f9 8px
+  ) !important;
+}
+
+body.light .border-newBorder\/40,
+body.light .border-newTableBorder {
+  border-color: rgba(234, 236, 238, 0.9) !important;
+}
+
+/* --- DARK THEME STYLES --- */
+body.dark {
+  background-color: #0e0e0e !important;
+  color: #ffffff !important;
+}
+
+body.dark .bg-newBgColorInner {
+  background-color: #1a1919 !important;
+}
+
+body.dark .bg-newBgLineColor {
+  background-color: #212121 !important;
+}
+
+body.dark .text-newTextColor {
+  color: #ffffff !important;
+}
+
+body.dark div:has(> #left-menu) {
+  background-color: #1a1919 !important;
+  border: 1px solid rgba(37, 37, 37, 0.7) !important;
+  box-shadow: 0 10px 32px -5px rgba(0, 0, 0, 0.25) !important;
+}
+
+body.dark #left-menu a {
+  color: #999999 !important;
+}
+
+body.dark #left-menu a:hover {
+  background-color: #201f1f !important;
+  color: #ffffff !important;
+}
+
+body.dark #left-menu a.bg-fifth {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  color: #10b981 !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+}
+
+body.dark .bg-newTableHeader {
+  background-color: #1e1d1d !important;
+  color: #ffffff !important;
+}
+
+body.dark .repeated-strip {
+  background: repeating-linear-gradient(
+    135deg,
+    #1a1919,
+    #1a1919 4px,
+    #161515 4px,
+    #161515 8px
+  ) !important;
+}
+
+body.dark .border-newBorder\/40,
+body.dark .border-newTableBorder {
+  border-color: rgba(37, 37, 37, 0.7) !important;
+}
+
+/* Skeleton Loading Shimmer */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+.animate-pulse {
+  animation: skeleton-pulse 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+}
+
+/* Light mode skeleton placeholder colors */
+body.light .bg-newBorder\/60 {
+  background-color: rgba(210, 215, 222, 0.8) !important;
+}
+
+body.light .bg-newBorder\/50 {
+  background-color: rgba(224, 228, 235, 0.8) !important;
+}
+
+body.light .bg-newBorder\/40 {
+  background-color: rgba(234, 238, 243, 0.85) !important;
+}
+
+body.light .bg-newBorder\/30,
+body.light .bg-newBorder\/20,
+body.light .bg-newBorder\/10 {
+  background-color: rgba(243, 245, 248, 0.9) !important;
+}
+
+/* Dark mode skeleton placeholder colors */
+body.dark .bg-newBorder\/60 {
+  background-color: rgba(45, 45, 45, 0.85) !important;
+}
+
+body.dark .bg-newBorder\/50 {
+  background-color: rgba(38, 38, 38, 0.85) !important;
+}
+
+body.dark .bg-newBorder\/40 {
+  background-color: rgba(32, 32, 32, 0.85) !important;
+}
+
+body.dark .bg-newBorder\/30,
+body.dark .bg-newBorder\/20,
+body.dark .bg-newBorder\/10 {
+  background-color: rgba(26, 26, 26, 0.85) !important;
+}
+
+/* Spinner emerald style */
+div[style*="animation: spin"] {
+  border-top-color: #10b981 !important;
+}
+
+/* ==========================================================
+   ENTERPRISE CRISP CARD RADIUS (Non-Menu Cards Reduction)
+   - Menu stays curved/pill (26px outer, 18px inner)
+   - All other cards, panels, modals, tables reduced to 8px-12px
+   ========================================================== */
+
+/* Main content cards, widgets, settings sections */
+.blurMe .rounded-\[24px\],
+.blurMe .rounded-\[22px\],
+.blurMe .rounded-\[20px\],
+.blurMe .rounded-\[18px\],
+.blurMe .rounded-2xl,
+.blurMe .rounded-3xl,
+.blurMe .rounded-xl {
+  border-radius: 10px !important;
+}
+
+/* Inner panels, table containers, analytics cards */
+.blurMe .bg-secondary,
+.blurMe .bg-newBgColorInner:not(:has(#left-menu)),
+.blurMe .bg-sixth,
+.blurMe [class*="rounded-[18px]"]:not(#left-menu *):not(.logo-badge-container *),
+.blurMe [class*="rounded-[20px]"]:not(#left-menu *):not(.logo-badge-container *),
+.blurMe [class*="rounded-[24px]"]:not(#left-menu *):not(.logo-badge-container *) {
+  border-radius: 10px !important;
+}
+
+/* Modals, Dialogs, Popups */
+.bg-popup [class*="rounded-"],
+.bg-popup .rounded-\[24px\],
+.bg-popup .rounded-\[20px\],
+.bg-popup .rounded-2xl,
+.bg-popup .rounded-3xl,
+.bg-popup .rounded-xl,
+.mantine-Modal-modal {
+  border-radius: 12px !important;
+}
+
+/* Calendar Day Headers & Table Header Blocks */
+.blurMe .bg-newTableHeader {
+  border-radius: 6px !important;
+}
+
+/* Post Cards & Feed items in Calendar */
+.blurMe div[class*="min-h-[70px]"],
+.blurMe div[class*="rounded-tr-[10px]"],
+.blurMe div[class*="rounded-br-[10px]"] {
+  border-radius: 8px !important;
+}
+
+/* Small Buttons, Badges, Tags, Input Fields */
+.blurMe .rounded-\[8px\],
+.blurMe .rounded-\[6px\],
+.blurMe .rounded-\[4px\],
+.blurMe input,
+.blurMe select,
+.blurMe textarea {
+  border-radius: 6px !important;
+}
+
+/* ==========================================================
+   ENTERPRISE BOLD TYPOGRAPHY & HIGH CONTRAST
+   - Authoritative weights (700-800)
+   - High legibility, tight tracking
+   ========================================================== */
+
+h1, h2, h3, h4,
+.text-\[24px\],
+.text-\[20px\],
+.text-\[18px\],
+.font-\[600\],
+.font-semibold {
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+}
+
+/* Header Page Title */
+.blurMe h1,
+.blurMe .text-\[24px\].font-\[600\],
+.blurMe .text-\[24px\] {
+  font-weight: 800 !important;
+  letter-spacing: -0.025em !important;
+  font-size: 22px !important;
+}
+
+/* Key Metrics & Statistics Numbers */
+.text-\[50px\],
+.text-\[40px\],
+.text-\[36px\],
+.text-\[32px\] {
+  font-weight: 800 !important;
+  letter-spacing: -0.035em !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+/* Button & Action Typography */
+button:not(#left-menu *),
+.btn,
+.bg-btnPrimary,
+.bg-forth {
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* Table Headers & Column Days */
+.bg-newTableHeader span,
+.bg-newTableHeader div,
+.table1 thead th {
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* Dark Mode Typography Contrast */
+body.dark {
+  --color-text: #f8fafc !important;
+}
+body.dark h1,
+body.dark h2,
+body.dark h3,
+body.dark strong,
+body.dark b {
+  color: #ffffff !important;
+}
+body.dark .text-textItemBlur {
+  color: #94a3b8 !important;
+}
+
+/* Light Mode Typography Contrast */
+body.light {
+  --color-text: #0f172a !important;
+}
+body.light h1,
+body.light h2,
+body.light h3,
+body.light strong,
+body.light b {
+  color: #0f172a !important;
+}
+body.light .text-textItemBlur {
+  color: #64748b !important;
+}
+
+/* ==========================================================
+   MINIMALIST DATA DENSITY (STYLE ÍT CHỮ)
+   - High signal-to-noise ratio
+   - Crisp borders & refined subtle shadows
+   ========================================================== */
+
+/* Crisp card borders */
+body.dark .border-newBorder\/40,
+body.dark .border-newBorder\/30,
+body.dark .border-newBorder\/20 {
+  border-color: rgba(38, 41, 46, 0.85) !important;
+}
+
+body.light .border-newBorder\/40,
+body.light .border-newBorder\/30,
+body.light .border-newBorder\/20 {
+  border-color: rgba(226, 232, 240, 0.95) !important;
+}
+
+
+
+/* Clean, crisp card shadows */
+body.dark .blurMe .bg-secondary,
+body.dark .blurMe .bg-newBgColorInner:not(:has(#left-menu)) {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px -1px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.light .blurMe .bg-secondary,
+body.light .blurMe .bg-newBgColorInner:not(:has(#left-menu)) {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02) !important;
+}
+
+/* ==========================================================
+   ENTERPRISE FLUID PAGE TRANSITIONS (Zero-Flicker Navigation)
+   ========================================================== */
+
+@keyframes enterprisePageIn {
+  0% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.enterprise-page-enter {
+  animation: enterprisePageIn 0.18s ease-out;
+}
+
+/* Subtle, responsive hover states on interactive cards */
+.blurMe .bg-secondary:hover,
+.blurMe div:has(> .bg-newTableHeader):hover {
+  border-color: rgba(16, 185, 129, 0.25) !important;
+}
+
