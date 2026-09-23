@@ -1,0 +1,35 @@
+import { Module } from '@nestjs/common';
+import { PostActivity } from '@gitroom/orchestrator/activities/post.activity';
+import { getTemporalModule } from '@gitroom/nestjs-libraries/temporal/temporal.module';
+import { DatabaseModule } from '@gitroom/nestjs-libraries/database/prisma/database.module';
+import { AutopostService } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.service';
+import { EmailActivity } from '@gitroom/orchestrator/activities/email.activity';
+import { IntegrationsActivity } from '@gitroom/orchestrator/activities/integrations.activity';
+import { VideoActivity } from '@gitroom/orchestrator/activities/video.activity';
+import { MediaActivity } from '@gitroom/orchestrator/activities/media.activity';
+import { ClippingActivity } from '@gitroom/orchestrator/activities/clipping.activity';
+import { VideoModule } from '@gitroom/nestjs-libraries/videos/video.module';
+import { HealthController } from '@gitroom/orchestrator/health.controller';
+
+const activities = [
+  PostActivity,
+  AutopostService,
+  EmailActivity,
+  IntegrationsActivity,
+  VideoActivity,
+  MediaActivity,
+  ClippingActivity,
+];
+@Module({
+  imports: [
+    DatabaseModule,
+    VideoModule,
+    getTemporalModule(true, require.resolve('./workflows'), activities),
+  ],
+  controllers: [HealthController],
+  providers: [...activities],
+  get exports() {
+    return [...this.providers, ...this.imports];
+  },
+})
+export class AppModule {}
