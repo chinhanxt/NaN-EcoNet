@@ -1,0 +1,2560 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Waste Collection & AI Incident Resolution</title>
+
+  <!-- Leaflet Map Engine (100% Bulletproof 2D Rendering, No WebGL GPU Crashes) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body, html {
+      width: 100%; height: 100%; overflow: hidden;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0f172a; color: #1e293b;
+    }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; height: 100%; background: #e2e8f0; }
+
+    /* Clean Leaflet default icon styles */
+    .leaflet-div-icon {
+      background: transparent !important;
+      border: none !important;
+    }
+    .leaflet-popup-content-wrapper {
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+      font-family: 'Inter', sans-serif;
+    }
+    .leaflet-popup-content {
+      margin: 12px 16px;
+      line-height: 1.45;
+    }
+    .leaflet-container {
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Top Floating Control Bar */
+    .control-panel {
+      position: absolute;
+      top: 14px; left: 16px; right: 16px;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      border-radius: 12px;
+      padding: 10px 16px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex; align-items: center; gap: 8px;
+      font-weight: 800; font-size: 15px; color: #0f172a;
+      letter-spacing: -0.3px; margin-right: 4px;
+    }
+    .brand i { color: #10b981; font-size: 18px; }
+
+    /* Mode Buttons (Add bin, depot, incident) */
+    .mode-group {
+      display: flex; background: #f1f5f9; border-radius: 8px; padding: 3px; gap: 2px;
+    }
+    .btn-mode {
+      border: none; background: transparent; padding: 6px 12px;
+      border-radius: 6px; font-size: 12.5px; font-weight: 600; color: #475569;
+      cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.18s;
+    }
+    .btn-mode:hover { color: #0f172a; }
+    .btn-mode.active {
+      background: #ffffff; color: #0f172a;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .btn-mode.active-bin { color: #059669; }
+    .btn-mode.active-depot { color: #dc2626; }
+    .btn-mode.active-truck { color: #2563eb; }
+    .btn-mode.active-incident { color: #d97706; }
+
+    /* Incident Dropdown Split Button */
+    .incident-dropdown-container {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      border-radius: 6px;
+      transition: all 0.18s;
+    }
+    .incident-dropdown-container.active {
+      background: #ffffff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    .incident-dropdown-container.active .btn-incident-toggle {
+      color: #d97706;
+      background: transparent;
+      box-shadow: none;
+    }
+    .incident-dropdown-container.active .btn-incident-arrow {
+      color: #d97706;
+    }
+    .btn-incident-toggle {
+      border: none;
+      background: transparent;
+      padding: 6px 6px 6px 10px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.18s;
+    }
+    .btn-incident-arrow {
+      border: none;
+      border-left: 1px solid rgba(203, 213, 225, 0.6);
+      background: transparent;
+      padding: 6px 7px;
+      font-size: 10px;
+      color: #64748b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.18s;
+      border-radius: 0 6px 6px 0;
+    }
+    .btn-incident-arrow:hover {
+      background: rgba(0, 0, 0, 0.05);
+      color: #0f172a;
+    }
+    .incident-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      width: 330px;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
+      padding: 6px;
+      z-index: 2100;
+      display: none;
+      animation: fadeInDropdown 0.15s ease-out;
+    }
+    .incident-menu.show {
+      display: block;
+    }
+    @keyframes fadeInDropdown {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .incident-menu-header {
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 6px 8px 6px;
+      border-bottom: 1px solid #f1f5f9;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .incident-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: 1px solid transparent;
+      margin-bottom: 3px;
+    }
+    .incident-menu-item:hover {
+      background: #f8fafc;
+      border-color: #e2e8f0;
+    }
+    .incident-menu-item.selected {
+      background: #fffbeb;
+      border-color: #fde68a;
+    }
+    .incident-item-icon {
+      font-size: 18px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      flex-shrink: 0;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .incident-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .incident-item-title {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .incident-item-sub {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 2px;
+      line-height: 1.3;
+    }
+    .incident-badge-ai {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #059669;
+      background: #ecfdf5;
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid #a7f3d0;
+      white-space: nowrap;
+    }
+    .incident-badge-human {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #dc2626;
+      background: #fef2f2;
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid #fecaca;
+      white-space: nowrap;
+    }
+    .incident-badge-mixed {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #d97706;
+      background: #fffbeb;
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid #fde68a;
+      white-space: nowrap;
+    }
+
+    /* Action Buttons */
+    .btn-action {
+      border: none; border-radius: 8px; padding: 7px 14px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+      transition: all 0.2s; white-space: nowrap;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #ffffff; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      transform: translateY(-1px);
+    }
+    .btn-secondary {
+      background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;
+    }
+    .btn-secondary:hover { background: #e2e8f0; }
+
+    .btn-sim {
+      background: #3b82f6; color: #ffffff; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    .btn-sim:hover { background: #2563eb; }
+    .btn-sim.simulating { background: #f59e0b; }
+
+    /* Live Stats */
+    .stats-bar {
+      margin-left: auto; display: flex; align-items: center; gap: 14px;
+      font-size: 12.5px; font-weight: 600; color: #334155;
+    }
+    .stat-badge {
+      display: flex; align-items: center; gap: 5px; background: #f8fafc;
+      padding: 5px 10px; border-radius: 6px; border: 1px solid #e2e8f0;
+    }
+    .stat-badge-clickable {
+      cursor: pointer; transition: all 0.2s;
+    }
+    .stat-badge-clickable:hover {
+      background: #eff6ff; border-color: #93c5fd; color: #1d4ed8;
+    }
+    .stat-badge i { color: #10b981; }
+
+    /* Log Drawer / Panel */
+    .btn-drawer-toggle {
+      border: 1px solid #cbd5e1; background: #ffffff; border-radius: 8px;
+      padding: 6px 12px; font-size: 12.5px; font-weight: 600; color: #334155;
+      cursor: pointer; display: flex; align-items: center; gap: 6px;
+    }
+    .drawer {
+      position: absolute; top: 76px; right: 16px; width: 380px; max-height: calc(100vh - 120px);
+      z-index: 1000; background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(14px);
+      border: 1px solid rgba(226, 232, 240, 0.9); border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.15); display: flex; flex-direction: column;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .drawer.closed { transform: translateX(410px); opacity: 0; pointer-events: none; }
+    .drawer-header {
+      padding: 12px 16px; border-bottom: 1px solid #e2e8f0;
+      font-weight: 700; font-size: 13.5px; display: flex; align-items: center;
+      justify-content: space-between;
+    }
+    .drawer-body { padding: 12px 16px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+
+    /* Timeline Items */
+    .timeline-item {
+      display: flex; gap: 10px; font-size: 12px; line-height: 1.4;
+      padding: 8px 10px; border-radius: 8px; background: #f8fafc; border-left: 3px solid #cbd5e1;
+    }
+    .timeline-ai { border-left-color: #3b82f6; background: #eff6ff; color: #1e40af; }
+    .timeline-incident { border-left-color: #f59e0b; background: #fefce8; color: #854d0e; }
+    .timeline-human { border-left-color: #ec4899; background: #fdf2f8; color: #9d174d; }
+    .timeline-collected { border-left-color: #10b981; background: #ecfdf5; color: #065f46; }
+
+    /* Truck Status Card in Drawer */
+    .truck-card {
+      background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;
+    }
+    .truck-card-header { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 700; margin-bottom: 6px; }
+    .progress-bar { width: 100%; height: 7px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; background: #10b981; transition: width 0.3s; }
+
+    /* Style Switcher (Basemap styles) */
+    .style-picker {
+      position: absolute; bottom: 24px; left: 20px; z-index: 1000;
+      background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(12px);
+      border: 1px solid rgba(226, 232, 240, 0.8); border-radius: 10px;
+      padding: 4px; display: flex; gap: 4px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    }
+    .style-btn {
+      border: none; background: transparent; padding: 6px 12px; border-radius: 6px;
+      font-size: 12px; font-weight: 600; color: #64748b; cursor: pointer;
+      display: flex; align-items: center; gap: 6px; transition: all 0.2s;
+    }
+    .style-btn:hover { background: #f1f5f9; color: #0f172a; }
+    .style-btn.active { background: #10b981; color: #ffffff; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3); }
+
+    /* Custom Map Markers */
+    .marker-depot-wrap,
+    .marker-bin-wrap,
+    .marker-incident-wrap,
+    .marker-truck-wrap,
+    .stop-badge-wrap {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .marker-depot-inner {
+      width: 38px; height: 38px; background: #dc2626; border: 3px solid #ffffff;
+      border-radius: 50%; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+      display: flex; align-items: center; justify-content: center; color: #ffffff;
+      font-size: 16px; position: relative;
+    }
+    .marker-depot-inner::after {
+      content: ''; position: absolute; width: 100%; height: 100%; border-radius: 50%;
+      border: 2px solid #dc2626; animation: pulse-ring 2s infinite ease-out;
+    }
+    @keyframes pulse-ring { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(1.8); opacity: 0; } }
+
+    .marker-bin-inner {
+      width: 32px; height: 32px; border-radius: 50%; border: 2.5px solid #ffffff;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.25); display: flex; align-items: center;
+      justify-content: center; color: #ffffff; font-size: 12px; font-weight: 700;
+      transition: transform 0.15s ease-out;
+    }
+    .marker-bin-wrap:hover .marker-bin-inner { transform: scale(1.25); }
+    .bin-empty { background: #94a3b8; }
+    .bin-medium { background: #f59e0b; }
+    .bin-full { background: #ea580c; }
+    .bin-collected { background: #10b981 !important; }
+    .bin-inaccessible {
+      background: #dc2626 !important;
+      border-color: #fef08a !important;
+      animation: pulse-danger 1.5s infinite;
+      will-change: transform;
+    }
+    @keyframes pulse-danger {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+      50% { transform: scale(1.15); box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
+    }
+
+    /* Smelly bin indicator & noxious vapor aura */
+    .bin-smelly-badge {
+      position: absolute;
+      top: -12px;
+      right: -10px;
+      font-size: 15px;
+      line-height: 1;
+      animation: stink-wobble 1.3s infinite ease-in-out;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35));
+      pointer-events: none;
+      z-index: 10;
+      will-change: transform;
+    }
+    @keyframes stink-wobble {
+      0%, 100% { transform: rotate(-8deg) scale(1); }
+      50% { transform: rotate(12deg) scale(1.25); }
+    }
+    .bin-smelly-aura {
+      position: absolute;
+      top: -8px; left: -8px; right: -8px; bottom: -8px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(132, 204, 22, 0.5) 0%, rgba(34, 197, 94, 0.2) 60%, transparent 80%);
+      animation: stink-pulse 2s infinite ease-in-out;
+      pointer-events: none;
+      z-index: 1;
+      will-change: transform, opacity;
+    }
+    @keyframes stink-pulse {
+      0%, 100% { transform: scale(1); opacity: 0.6; }
+      50% { transform: scale(1.4); opacity: 1; }
+    }
+
+    /* Modern Toggle Switch for Smell */
+    .switch-smell {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      margin: 0;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .switch-smell input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider-smell {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #cbd5e1;
+      transition: all 0.25s ease;
+      border-radius: 24px;
+      border: 1.5px solid #94a3b8;
+    }
+    .slider-smell:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 2px;
+      bottom: 2px;
+      background-color: white;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+    }
+    .switch-smell input:checked + .slider-smell {
+      background-color: #f59e0b;
+      border-color: #d97706;
+    }
+    .switch-smell input:checked + .slider-smell:before {
+      transform: translateX(20px);
+      background-color: #ffffff;
+    }
+
+    /* Range slider custom styling */
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: #e2e8f0;
+      border-radius: 6px;
+      height: 6px;
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #10b981;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      border: 2px solid #ffffff;
+      transition: transform 0.1s;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    /* Floating Inaccessible Warning Toast */
+    .water-toast {
+      position: fixed; top: 82px; left: 50%; transform: translateX(-50%);
+      z-index: 1500; background: rgba(220, 38, 38, 0.95); color: #ffffff;
+      padding: 10px 18px; border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4);
+      display: flex; align-items: center; gap: 12px; font-size: 13px; font-weight: 600;
+      backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.3);
+      animation: slideDownToast 0.3s ease-out;
+    }
+    .water-toast.water-toast-success {
+      background: rgba(16, 185, 129, 0.95) !important;
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4) !important;
+    }
+    .water-toast button.btn-relocate {
+      background: #ffffff; color: #b91c1c; border: none; padding: 5px 12px;
+      border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; gap: 5px; transition: all 0.2s;
+    }
+    .water-toast button.btn-relocate:hover {
+      background: #fef2f2; transform: scale(1.05);
+    }
+    @keyframes slideDownToast {
+      from { transform: translateX(-50%) translateY(-25px); opacity: 0; }
+      to { transform: translateX(-50%) translateY(0); opacity: 1; }
+    }
+
+    .marker-incident-inner {
+      width: 34px; height: 34px; background: #f59e0b; border: 3px solid #ffffff;
+      border-radius: 8px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.5);
+      display: flex; align-items: center; justify-content: center; color: #ffffff;
+      font-size: 15px; animation: bounce-incident 1.5s infinite;
+    }
+    @keyframes bounce-incident { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+    .marker-truck-wrap {
+      position: relative;
+      cursor: grab;
+      user-select: none;
+    }
+    .marker-truck-wrap:active {
+      cursor: grabbing;
+    }
+    .marker-truck-inner {
+      width: 38px; height: 38px; background: #0f172a; border: 3px solid #ffffff;
+      border-radius: 50%; box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+      display: flex; align-items: center; justify-content: center; color: #ffffff;
+      font-size: 16px; transition: transform 0.1s linear;
+    }
+    .truck-label-badge {
+      position: absolute; top: -6px; right: -6px;
+      padding: 1px 5px; font-size: 9.5px; font-weight: 800;
+      color: #ffffff; border-radius: 10px; border: 1.5px solid #ffffff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.35); line-height: 1.2;
+      pointer-events: none;
+    }
+
+    /* Stop number badges on route */
+    .stop-badge-inner {
+      width: 20px; height: 20px; background: rgba(15, 23, 42, 0.9);
+      border: 1.5px solid #ffffff; border-radius: 50%; color: #ffffff;
+      font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    /* Modal Dialog for Human Decision */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(4px);
+      z-index: 2000; display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: all 0.25s ease;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: auto; }
+    .modal-card {
+      background: #ffffff; border-radius: 16px; width: 520px; max-width: 90%;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.25); overflow: hidden;
+      transform: translateY(20px); transition: transform 0.25s ease;
+    }
+    .modal-overlay.open .modal-card { transform: translateY(0); }
+    .modal-header {
+      background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+      color: #ffffff; padding: 18px 24px; display: flex; align-items: center; gap: 12px;
+    }
+    .modal-header h3 { font-size: 16px; font-weight: 700; }
+    .modal-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+    .modal-incident-desc {
+      background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px;
+      padding: 12px; font-size: 13.5px; color: #991b1b; line-height: 1.5;
+    }
+    .modal-options { display: flex; flex-direction: column; gap: 10px; }
+    .btn-human-option {
+      background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 10px;
+      padding: 12px 16px; text-align: left; font-size: 13.5px; font-weight: 600;
+      color: #1e293b; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 10px;
+    }
+    .btn-human-option:hover {
+      background: #eff6ff; border-color: #3b82f6; transform: translateX(3px);
+    }
+
+    /* AI Auto-Resolution Toast */
+    .ai-toast {
+      position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(120px);
+      background: #ffffff; border: 1.5px solid #10b981; border-radius: 12px;
+      padding: 12px 18px; display: flex; align-items: center; gap: 12px;
+      box-shadow: 0 12px 36px rgba(16, 185, 129, 0.25), 0 4px 12px rgba(0,0,0,0.08);
+      z-index: 2000; opacity: 0; pointer-events: none;
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      max-width: 650px;
+    }
+    .ai-toast.open {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1; pointer-events: auto;
+    }
+    .ai-toast-icon {
+      width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #10b981, #059669);
+      color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
+    }
+    .ai-toast-title { font-size: 12px; font-weight: 700; color: #065f46; text-transform: uppercase; letter-spacing: 0.5px; }
+    .ai-toast-msg { font-size: 13px; color: #1e293b; line-height: 1.4; margin-top: 2px; }
+    .ai-toast-close {
+      background: transparent; border: none; font-size: 16px; color: #94a3b8; cursor: pointer; padding: 4px; border-radius: 6px;
+    }
+    .ai-toast-close:hover { color: #0f172a; background: #f1f5f9; }
+  </style>
+</head>
+<body>
+
+  <!-- Fullscreen Map Canvas -->
+  <div id="map"></div>
+
+  <!-- Top Floating Controls -->
+  <div class="control-panel">
+    <div class="brand">
+      <i class="fa-solid fa-recycle"></i>
+      <span>Smart Waste AI</span>
+    </div>
+
+    <!-- Placement Modes -->
+    <div class="mode-group">
+      <button class="btn-mode active" id="btn-mode-view" onclick="setMode('view')">
+        <i class="fa-solid fa-hand"></i> Xem
+      </button>
+      <button class="btn-mode" id="btn-mode-bin" onclick="setMode('bin')">
+        <i class="fa-solid fa-trash-can"></i> +Thùng Rác
+      </button>
+      <button class="btn-mode" id="btn-mode-depot" onclick="setMode('depot')">
+        <i class="fa-solid fa-warehouse"></i> +Bãi Rác
+      </button>
+      <button class="btn-mode" id="btn-mode-truck" onclick="setMode('truck')">
+        <i class="fa-solid fa-truck"></i> +Xe
+      </button>
+      <div class="incident-dropdown-container" id="incident-dropdown-container">
+        <button class="btn-mode btn-incident-toggle" id="btn-mode-incident" onclick="handleIncidentBtnClick(event)" title="Nhấn để kích hoạt chế độ đặt sự cố">
+          <span id="incident-btn-icon">🚧</span>
+          <span id="incident-btn-text">+Sự Cố (Đường chặn)</span>
+        </button>
+        <button class="btn-incident-arrow" id="btn-incident-arrow" onclick="toggleIncidentMenu(event)" title="Chọn loại sự cố cụ thể">
+          <i class="fa-solid fa-chevron-down"></i>
+        </button>
+        <div class="incident-menu" id="incident-menu">
+          <div class="incident-menu-header">
+            <span>Chọn loại sự cố muốn đặt:</span>
+            <span style="font-size:10px; color:#94a3b8; font-weight:normal;">4 kịch bản</span>
+          </div>
+          <div class="incident-menu-item selected" id="menu-item-road_blocked" onclick="selectIncidentType('road_blocked', event)">
+            <span class="incident-item-icon" style="background:#fef3c7; color:#d97706;">🚧</span>
+            <div class="incident-item-info">
+              <div class="incident-item-title">
+                <span>Đoạn đường bị chặn</span>
+                <span class="incident-badge-ai">✨ AI Tự Né</span>
+              </div>
+              <div class="incident-item-sub">Rào chắn/sửa đường -> AI tự tính đường vòng (Detour)</div>
+            </div>
+          </div>
+          <div class="incident-menu-item" id="menu-item-truck_breakdown" onclick="selectIncidentType('truck_breakdown', event)">
+            <span class="incident-item-icon" style="background:#fee2e2; color:#dc2626;">🛑</span>
+            <div class="incident-item-info">
+              <div class="incident-item-title">
+                <span>Xe hỏng động cơ</span>
+                <span class="incident-badge-human">👤 Cần Người</span>
+              </div>
+              <div class="incident-item-sub">Xe hỏng đứng im -> Cứu hộ / Chia tải / Hủy ca</div>
+            </div>
+          </div>
+          <div class="incident-menu-item" id="menu-item-bin_overflow" onclick="selectIncidentType('bin_overflow', event)">
+            <span class="incident-item-icon" style="background:#ffedd5; color:#ea580c;">📦</span>
+            <div class="incident-item-info">
+              <div class="incident-item-title">
+                <span>Thùng rác quá tải</span>
+                <span class="incident-badge-mixed">⚡ AI / Người</span>
+              </div>
+              <div class="incident-item-sub">Phát sinh thêm +80kg rác -> AI nén hoặc xin chỉ đạo</div>
+            </div>
+          </div>
+          <div class="incident-menu-item" id="menu-item-depot_closed" onclick="selectIncidentType('depot_closed', event)">
+            <span class="incident-item-icon" style="background:#ede9fe; color:#7c3aed;">🚨</span>
+            <div class="incident-item-info">
+              <div class="incident-item-title">
+                <span>Bãi rác đóng cửa</span>
+                <span class="incident-badge-human">👤 Cần Người</span>
+              </div>
+              <div class="incident-item-sub">Bãi chính tạm dừng nhận -> Xin chỉ đạo sang bãi Đa Phước</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Preset -->
+    <button class="btn-action btn-secondary" onclick="loadPresetData()">
+      <i class="fa-solid fa-wand-magic-sparkles"></i> Mẫu Q.1 (12 thùng)
+    </button>
+
+    <!-- Solve Route -->
+    <button class="btn-action btn-primary" id="btn-solve" onclick="solveRoutes()">
+      <i class="fa-solid fa-route"></i> Tối Ưu Tuyến Đường
+    </button>
+
+    <!-- Simulation -->
+    <button class="btn-action btn-sim" id="btn-sim" onclick="toggleSimulation()">
+      <i class="fa-solid fa-play"></i> Mô Phỏng Thu Gom
+    </button>
+
+    <!-- Reset -->
+    <button class="btn-action btn-secondary" onclick="resetAll()">
+      <i class="fa-solid fa-rotate-right"></i> Làm mới
+    </button>
+
+    <!-- Live Stats -->
+    <div class="stats-bar">
+      <div class="stat-badge">
+        <i class="fa-solid fa-trash"></i> <span id="stat-bins">0 thùng</span>
+      </div>
+      <div class="stat-badge" id="badge-smell" style="display:none; background:#fef3c7; border-color:#fde68a; color:#b45309;" title="Thùng rác bốc mùi hôi thối cần ưu tiên gom sớm">
+        <span style="font-size:13px;">🦨</span> <span id="stat-smell">0 bốc mùi</span>
+      </div>
+      <div class="stat-badge stat-badge-clickable" onclick="toggleDrawer(true)" title="Nhấn để quản lý đội xe">
+        <i class="fa-solid fa-truck"></i> <span id="stat-trucks">2 xe</span>
+      </div>
+      <div class="stat-badge">
+        <i class="fa-solid fa-road"></i> <span id="stat-dist">0 km</span>
+      </div>
+    </div>
+
+    <!-- Toggle Drawer Button -->
+    <button class="btn-drawer-toggle" onclick="toggleDrawer()">
+      <i class="fa-solid fa-list-check"></i> Nhật ký AI & Đội xe
+    </button>
+  </div>
+
+  <!-- Style Switcher (Basemap styles) -->
+  <div class="style-picker">
+    <button class="style-btn active" onclick="switchMapStyle('liberty', this)">
+      <i class="fa-solid fa-city"></i> Liberty
+    </button>
+    <button class="style-btn" onclick="switchMapStyle('satellite', this)">
+      <i class="fa-solid fa-satellite"></i> Vệ tinh
+    </button>
+  </div>
+
+  <!-- Side Drawer (Live Timeline & Fleet Status) -->
+  <div class="drawer" id="side-drawer">
+    <div class="drawer-header">
+      <span>🚚 Tình Trạng Đội Xe & Xử Lý Sự Cố</span>
+      <button class="btn-mode" onclick="toggleDrawer()" style="padding: 2px 6px;"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="drawer-body">
+      <div id="fleet-container" style="display: flex; flex-direction: column; gap: 8px;">
+        <!-- Truck Cards Generated Here -->
+      </div>
+      <div style="font-weight: 700; font-size: 13px; color: #475569; margin-top: 8px;">
+        <i class="fa-solid fa-clock-rotate-left"></i> Nhật ký hoạt động & AI:
+      </div>
+      <div id="timeline-container" style="display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto;">
+        <div class="timeline-item">
+          <span>🕒 Hệ thống sẵn sàng. Nhấn 'Tối Ưu Tuyến Đường' hoặc chọn điểm trên bản đồ.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Human-in-the-Loop Modal Dialog -->
+  <div class="modal-overlay" id="human-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <i class="fa-solid fa-triangle-exclamation" style="font-size: 22px;"></i>
+        <div>
+          <h3 id="modal-title">AI CẦN TRỢ GIÚP TỪ CON NGƯỜI</h3>
+          <p style="font-size: 12px; opacity: 0.9;">Sự cố vượt quá khả năng tự quyết của hệ thống</p>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="modal-incident-desc" id="modal-desc">
+          <!-- Incident description inserted here -->
+        </div>
+        <p style="font-size: 13px; font-weight: 600; color: #475569;">Vui lòng chọn chỉ đạo giải quyết để xe tiếp tục hoạt động:</p>
+        <div class="modal-options" id="modal-options">
+          <!-- Selectable choices generated dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Toast Notification -->
+  <div id="ai-toast" class="ai-toast">
+    <div class="ai-toast-icon"><i class="fa-solid fa-robot"></i></div>
+    <div class="ai-toast-content">
+      <div class="ai-toast-title"><i class="fa-solid fa-sparkles"></i> AI Tự Động Xử Lý Sự Cố</div>
+      <div id="ai-toast-msg" class="ai-toast-msg"></div>
+    </div>
+    <button class="ai-toast-close" onclick="dismissAiToast()"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+
+  <script>
+    // Leaflet Tile Layers (Optimized with Subdomains, KeepBuffer, and Idle Loading)
+    const TILE_LAYERS = {
+      liberty: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        subdomains: ['a', 'b', 'c'],
+        maxZoom: 19,
+        keepBuffer: 8,
+        updateWhenIdle: true,
+        updateWhenZooming: false,
+        attribution: '&copy; OpenStreetMap contributors'
+      }),
+      satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
+        keepBuffer: 6,
+        updateWhenIdle: true,
+        updateWhenZooming: false,
+        attribution: '&copy; Esri World Imagery'
+      })
+    };
+
+    const ROUTE_COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899'];
+
+    // Map Initialization (Canvas Renderer for 60fps Polylines, Smooth Wheel Zoom)
+    const map = L.map('map', {
+      center: [10.7765, 106.7015],
+      zoom: 15,
+      zoomControl: false,
+      preferCanvas: true,
+      wheelDebounceTime: 40,
+      wheelPxPerZoomLevel: 100
+    });
+    L.control.zoom({ position: 'topright' }).addTo(map);
+
+    let currentTileLayer = TILE_LAYERS.liberty;
+    currentTileLayer.addTo(map);
+
+    // Layer groups for clean management
+    const routesGroup = L.layerGroup().addTo(map);
+    const badgesGroup = L.layerGroup().addTo(map);
+    const markersGroup = L.layerGroup().addTo(map);
+    const trucksGroup = L.layerGroup().addTo(map);
+
+    // App State
+    let currentMode = 'view';
+    let depot = { id: 0, name: "Trạm tập kết rác Bến Nghé", lat: 10.7745, lon: 106.7042 };
+    let bins = [];
+    let binMarkers = {};
+    let incidents = [];
+    let vehicles = [
+      { id: 1, name: "Xe rác số 1", capacity: 300, currentLoad: 0, color: '#10b981', status: "Sẵn sàng" },
+      { id: 2, name: "Xe rác số 2", capacity: 300, currentLoad: 0, color: '#3b82f6', status: "Sẵn sàng" }
+    ];
+    let computedRoutes = [];
+    let truckMarkers = [];
+    let truckSimStates = [];
+
+    // Simulation State
+    let isSimulating = false;
+    let simInterval = null;
+
+    // Incident Configurations
+    const INCIDENT_CONFIGS = {
+      road_blocked: {
+        type: 'road_blocked',
+        name: '🚧 Đoạn đường bị phong tỏa',
+        shortName: 'Đường chặn',
+        icon: '🚧',
+        color: '#f59e0b',
+        description: 'Đoạn đường có rào chắn/sửa chữa, xe không thể đi qua',
+        can_ai_resolve: true,
+        badgeText: '✨ AI Tự Động Né (Detour)'
+      },
+      truck_breakdown: {
+        type: 'truck_breakdown',
+        name: '🛑 Xe gặp sự cố hỏng hóc',
+        shortName: 'Xe hỏng',
+        icon: '🛑',
+        color: '#ef4444',
+        description: 'Xe rác hỏng động cơ/thủy lực, không thể tiếp tục',
+        can_ai_resolve: false,
+        badgeText: '👤 Cần Người Chỉ Đạo'
+      },
+      bin_overflow: {
+        type: 'bin_overflow',
+        name: '⚠️ Thùng rác phát sinh quá tải',
+        shortName: 'Quá tải',
+        icon: '📦',
+        color: '#ea580c',
+        extra_demand: 80,
+        description: 'Lượng rác phát sinh đột xuất thêm +80kg',
+        can_ai_resolve: false,
+        badgeText: '⚡ AI Tự Nén / Hỏi Người'
+      },
+      depot_closed: {
+        type: 'depot_closed',
+        name: '🚨 Bãi rác trung tâm tạm đóng cửa',
+        shortName: 'Bãi rác đóng',
+        icon: '🚨',
+        color: '#8b5cf6',
+        description: 'Bãi tập kết bảo trì trạm cân / tạm dừng tiếp nhận',
+        can_ai_resolve: false,
+        badgeText: '👤 Chuyển Bãi Dự Phòng'
+      }
+    };
+    let selectedIncidentType = 'road_blocked';
+
+    function handleIncidentBtnClick(e) {
+      if (currentMode === 'incident') {
+        toggleIncidentMenu(e);
+      } else {
+        setMode('incident');
+        closeIncidentMenu();
+      }
+    }
+
+    function toggleIncidentMenu(e) {
+      if (e) e.stopPropagation();
+      const menu = document.getElementById('incident-menu');
+      if (menu) {
+        menu.classList.toggle('show');
+      }
+      setMode('incident');
+    }
+
+    function closeIncidentMenu() {
+      const menu = document.getElementById('incident-menu');
+      if (menu) menu.classList.remove('show');
+    }
+
+    function selectIncidentType(type, e) {
+      if (e) e.stopPropagation();
+      selectedIncidentType = type;
+      const cfg = INCIDENT_CONFIGS[type] || INCIDENT_CONFIGS['road_blocked'];
+
+      // Update button visual
+      const iconEl = document.getElementById('incident-btn-icon');
+      const textEl = document.getElementById('incident-btn-text');
+      if (iconEl) iconEl.textContent = cfg.icon;
+      if (textEl) textEl.textContent = `+Sự Cố (${cfg.shortName})`;
+
+      // Update active selection highlight in dropdown menu
+      document.querySelectorAll('.incident-menu-item').forEach(el => el.classList.remove('selected'));
+      const activeItem = document.getElementById(`menu-item-${type}`);
+      if (activeItem) activeItem.classList.add('selected');
+
+      closeIncidentMenu();
+      setMode('incident');
+      logTimeline(`🎯 Đã chọn sự cố: "${cfg.name}". Hãy nhấn lên vị trí mong muốn trên bản đồ để cắm mốc!`, 'incident');
+    }
+
+    // Close dropdown menu when clicking outside
+    document.addEventListener('click', function(e) {
+      const container = document.getElementById('incident-dropdown-container');
+      if (container && !container.contains(e.target)) {
+        closeIncidentMenu();
+      }
+    });
+
+    // Mode Switcher
+    function setMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.btn-mode').forEach(b => {
+        b.classList.remove('active', 'active-bin', 'active-depot', 'active-truck', 'active-incident');
+      });
+      const incContainer = document.getElementById('incident-dropdown-container');
+      if (incContainer) incContainer.classList.remove('active');
+
+      if (mode === 'incident') {
+        if (incContainer) incContainer.classList.add('active');
+        const incBtn = document.getElementById('btn-mode-incident');
+        if (incBtn) incBtn.classList.add('active', 'active-incident');
+      } else {
+        closeIncidentMenu();
+        const activeBtn = document.getElementById(`btn-mode-${mode}`);
+        if (activeBtn) activeBtn.classList.add('active', `active-${mode}`);
+      }
+    }
+
+    // Switch Basemap Style
+    function switchMapStyle(styleKey, btn) {
+      document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (currentTileLayer) map.removeLayer(currentTileLayer);
+      currentTileLayer = TILE_LAYERS[styleKey] || TILE_LAYERS.liberty;
+      currentTileLayer.addTo(map);
+    }
+
+    function toggleDrawer(forceOpen = false) {
+      const drawer = document.getElementById('side-drawer');
+      if (forceOpen) {
+        drawer.classList.remove('closed');
+      } else {
+        drawer.classList.toggle('closed');
+      }
+    }
+
+    function logTimeline(msg, type = 'default') {
+      const container = document.getElementById('timeline-container');
+      const item = document.createElement('div');
+      item.className = `timeline-item timeline-${type}`;
+      const now = new Date();
+      const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+      item.innerHTML = `<span><b>[${timeStr}]</b> ${msg}</span>`;
+      container.prepend(item);
+      while (container.children.length > 70) {
+        container.lastElementChild.remove();
+      }
+    }
+
+    // Map Click Handler for placing elements
+    map.on('click', (e) => {
+      const lat = e.latlng.lat;
+      const lng = e.latlng.lng;
+
+      if (currentMode === 'bin') {
+        if (computedRoutes.length > 0) {
+          computedRoutes = [];
+          routesGroup.clearLayers();
+          badgesGroup.clearLayers();
+          document.getElementById('stat-dist').textContent = '0 km';
+        }
+        const newId = bins.length > 0 ? Math.max(...bins.map(b => b.id)) + 1 : 1;
+        const fillLevel = Math.floor(Math.random() * 50) + 50; // 50 - 100%
+        const demand = Math.round(fillLevel * 0.5);
+        const hasSmell = fillLevel >= 85 ? (Math.random() > 0.6) : false;
+        const newBin = {
+          id: newId,
+          name: `Thùng #${newId}`,
+          lat: lat, lon: lng,
+          fill_level: fillLevel,
+          demand: demand,
+          has_smell: hasSmell,
+          collected: false,
+          inaccessible: false,
+          failedReported: false,
+          snappedLocation: null,
+          snappedDistance: 0,
+          snappedRoadName: ""
+        };
+        bins.push(newBin);
+        const smellNotice = hasSmell ? ' 🦨 (Bốc mùi)' : '';
+        logTimeline(`📍 Đã thêm Thùng rác #${newId} (${fillLevel}% đầy, ${demand}kg)${smellNotice}`, hasSmell ? 'incident' : 'collected');
+        updateAll();
+        checkBinAccessibility(newBin);
+      } else if (currentMode === 'depot') {
+        if (computedRoutes.length > 0) {
+          computedRoutes = [];
+          routesGroup.clearLayers();
+          badgesGroup.clearLayers();
+          document.getElementById('stat-dist').textContent = '0 km';
+        }
+        depot = { id: 0, name: "Bãi tập kết rác mới", lat: lat, lon: lng };
+        logTimeline(`🏢 Đã đổi vị trí Bãi rác trung tâm`, 'default');
+        updateAll();
+      } else if (currentMode === 'truck') {
+        addVehicle(lat, lng);
+      } else if (currentMode === 'incident') {
+        const newId = incidents.length + 1;
+        const cfg = INCIDENT_CONFIGS[selectedIncidentType] || INCIDENT_CONFIGS['road_blocked'];
+        incidents.push({
+          id: newId,
+          type: selectedIncidentType,
+          name: cfg.name,
+          description: cfg.description,
+          extra_demand: cfg.extra_demand || 80,
+          lat: lat, lon: lng,
+          can_ai_resolve: cfg.can_ai_resolve,
+          triggered: false
+        });
+        logTimeline(`⚠️ Đã đặt mốc sự cố mới: ${cfg.name} tại [${lat.toFixed(4)}, ${lng.toFixed(4)}]`, 'incident');
+        updateAll();
+      }
+    });
+
+    // Fleet Management Functions
+    function addVehicle(lat, lon) {
+      const newId = vehicles.length > 0 ? Math.max(...vehicles.map(v => v.id)) + 1 : 1;
+      const color = ROUTE_COLORS[(vehicles.length) % ROUTE_COLORS.length];
+
+      let vLat = lat;
+      let vLon = lon;
+      if (vLat === undefined || vLon === undefined) {
+        if (depot) {
+          const angle = (vehicles.length * (2 * Math.PI / 4)) + 0.4;
+          vLat = depot.lat + 0.0004 * Math.sin(angle);
+          vLon = depot.lon + 0.0004 * Math.cos(angle);
+        } else {
+          const center = map.getCenter();
+          vLat = center.lat;
+          vLon = center.lng;
+        }
+      }
+
+      const newV = {
+        id: newId,
+        name: `Xe rác số ${newId}`,
+        capacity: 300,
+        currentLoad: 0,
+        color: color,
+        status: "Sẵn sàng",
+        lat: vLat,
+        lon: vLon
+      };
+      vehicles.push(newV);
+      logTimeline(`🚚 Đã thêm ${newV.name} (Tải trọng 300kg) tại [${vLat.toFixed(4)}, ${vLon.toFixed(4)}]`, 'ai');
+
+      if (computedRoutes.length > 0) {
+        computedRoutes = [];
+        routesGroup.clearLayers();
+        badgesGroup.clearLayers();
+        document.getElementById('stat-dist').textContent = '0 km';
+      }
+
+      updateAll();
+    }
+
+    function removeVehicle(id) {
+      if (vehicles.length <= 1) {
+        alert("Đội xe cần tối thiểu ít nhất 1 xe!");
+        return;
+      }
+      const v = vehicles.find(item => item.id === id);
+      const name = v ? v.name : `Xe #${id}`;
+      vehicles = vehicles.filter(item => item.id !== id);
+      logTimeline(`🗑️ Đã xóa ${name} khỏi đội xe`, 'default');
+
+      if (computedRoutes.length > 0) {
+        computedRoutes = [];
+        routesGroup.clearLayers();
+        badgesGroup.clearLayers();
+        document.getElementById('stat-dist').textContent = '0 km';
+      }
+
+      updateAll();
+    }
+
+    function changeCapacity(id, newCap) {
+      const cap = parseInt(newCap);
+      if (isNaN(cap) || cap <= 0) return;
+      const v = vehicles.find(item => item.id === id);
+      if (v) {
+        v.capacity = cap;
+        logTimeline(`⚙️ Đã chỉnh sức chứa ${v.name}: ${cap} kg`, 'default');
+        updateFleetCards();
+      }
+    }
+
+    function zoomToVehicle(id) {
+      const v = vehicles.find(item => item.id === id);
+      if (v && v.lat && v.lon) {
+        map.setView([v.lat, v.lon], 16, { animate: true });
+        const marker = truckMarkers.find(m => {
+          const ll = m.getLatLng();
+          return Math.abs(ll.lat - v.lat) < 0.0001 && Math.abs(ll.lng - v.lon) < 0.0001;
+        });
+        if (marker) marker.openPopup();
+      }
+    }
+
+    const WATER_DISTANCE_THRESHOLD = 90; // Khoảng cách tối đa (mét) đến đường xe chạy để coi là trên bờ / tiếp cận được
+    let waterToastTimer = null;
+    const nearestRoadCache = new Map();
+
+    function dismissWaterToast() {
+      const toast = document.getElementById('water-toast');
+      if (toast) toast.remove();
+      if (waterToastTimer) {
+        clearTimeout(waterToastTimer);
+        waterToastTimer = null;
+      }
+    }
+
+    // Check if a bin is located in water/river or inaccessible off-road
+    async function checkBinAccessibility(bin) {
+      const cacheKey = `${bin.lat.toFixed(5)},${bin.lon.toFixed(5)}`;
+      try {
+        let wp = nearestRoadCache.get(cacheKey);
+
+        if (!wp) {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 2000);
+          const url = `https://router.project-osrm.org/nearest/v1/driving/${bin.lon.toFixed(6)},${bin.lat.toFixed(6)}`;
+          const resp = await fetch(url, { signal: controller.signal });
+          clearTimeout(timeoutId);
+          const data = await resp.json();
+          if (data.code === 'Ok' && data.waypoints && data.waypoints.length > 0) {
+            wp = data.waypoints[0];
+            nearestRoadCache.set(cacheKey, wp);
+          }
+        }
+
+        if (wp) {
+          const dist = Math.round(wp.distance);
+          bin.snappedDistance = dist;
+          bin.snappedLocation = { lat: wp.location[1], lon: wp.location[0] };
+          bin.snappedRoadName = wp.name || "Mép bờ / Mặt đường gần nhất";
+
+          if (dist > WATER_DISTANCE_THRESHOLD) {
+            bin.inaccessible = true;
+            logTimeline(`🌊 [Cảnh Báo Vị Trí]: Thùng rác #${bin.id} được đặt dưới sông/vùng nước (cách đường xe ${bin.snappedDistance}m)! Xe rác đường bộ không thể xuống lấy.`, 'incident');
+            showWaterWarningToast(bin);
+          } else {
+            const wasInaccessible = bin.inaccessible;
+            bin.inaccessible = false;
+
+            // Tắt cảnh báo toast nếu thùng này vừa được kéo lên bờ
+            const toast = document.getElementById('water-toast');
+            if (toast && (!toast.dataset.binId || toast.dataset.binId === String(bin.id))) {
+              dismissWaterToast();
+            }
+
+            if (wasInaccessible) {
+              logTimeline(`✅ [Vị Trí Hợp Lệ]: Thùng rác #${bin.id} đã ở trên bờ/mặt đường an toàn (${bin.snappedRoadName})! Đã tắt cảnh báo.`, 'ai');
+              showWaterSuccessToast(bin);
+            }
+          }
+          updateBinMarkerVisual(bin);
+          if (binMarkers[bin.id]) {
+            binMarkers[bin.id].setPopupContent(getBinPopupHtml(bin));
+          }
+          updateFleetCards();
+          updateStatsBar();
+        }
+      } catch (e) {
+        console.warn('Nearest road check timed out or failed:', e);
+      }
+    }
+
+    function showWaterWarningToast(bin) {
+      dismissWaterToast();
+
+      const toast = document.createElement('div');
+      toast.id = 'water-toast';
+      toast.className = 'water-toast';
+      toast.dataset.binId = String(bin.id);
+      toast.innerHTML = `
+        <i class="fa-solid fa-water" style="font-size: 18px;"></i>
+        <span><b>Cảnh báo:</b> Thùng #${bin.id} nằm dưới sông/xa đường (${bin.snappedDistance}m)! Xe không lấy được.</span>
+        ${bin.snappedLocation ? `<button class="btn-relocate" onclick="relocateBinToRoad(${bin.id})"><i class="fa-solid fa-anchor"></i> Kéo lên bờ</button>` : ''}
+        <button onclick="dismissWaterToast()" style="background:transparent; color:#fff; border:none; padding:2px 6px; cursor:pointer; font-size:14px;"><i class="fa-solid fa-xmark"></i></button>
+      `;
+      document.body.appendChild(toast);
+
+      waterToastTimer = setTimeout(() => {
+        dismissWaterToast();
+      }, 9000);
+    }
+
+    function showWaterSuccessToast(bin) {
+      dismissWaterToast();
+
+      const toast = document.createElement('div');
+      toast.id = 'water-toast';
+      toast.className = 'water-toast water-toast-success';
+      toast.dataset.binId = String(bin.id);
+      toast.innerHTML = `
+        <i class="fa-solid fa-circle-check" style="font-size: 18px; color: #fff;"></i>
+        <span><b>Đã khắc phục:</b> Thùng #${bin.id} đã ở trên bờ/gần đường (${bin.snappedRoadName || 'Mặt đường'})! Xe có thể thu gom.</span>
+        <button onclick="dismissWaterToast()" style="background:transparent; color:#fff; border:none; padding:2px 6px; cursor:pointer; font-size:14px;"><i class="fa-solid fa-xmark"></i></button>
+      `;
+      document.body.appendChild(toast);
+
+      waterToastTimer = setTimeout(() => {
+        dismissWaterToast();
+      }, 4500);
+    }
+
+    function relocateBinToRoad(binId) {
+      const b = bins.find(item => item.id === binId);
+      if (!b || !b.snappedLocation) return;
+      b.lat = b.snappedLocation.lat;
+      b.lon = b.snappedLocation.lon;
+      b.inaccessible = false;
+      b.collected = false;
+      b.failedReported = false;
+      b.snappedDistance = 0;
+
+      dismissWaterToast();
+      showWaterSuccessToast(b);
+
+      logTimeline(`⚓ [Khắc Phục]: Đã kéo/vớt Thùng #${b.id} từ dưới sông lên bờ kè (${b.snappedRoadName || 'Mặt đường'})!`, 'ai');
+
+      if (computedRoutes.length > 0) {
+        computedRoutes = [];
+        routesGroup.clearLayers();
+        badgesGroup.clearLayers();
+        document.getElementById('stat-dist').textContent = '0 km';
+      }
+
+      updateAll();
+      map.setView([b.lat, b.lon], 16, { animate: true });
+      if (binMarkers[b.id]) binMarkers[b.id].openPopup();
+    }
+
+    function removeBin(binId) {
+      bins = bins.filter(b => b.id !== binId);
+      const toast = document.getElementById('water-toast');
+      if (toast && toast.dataset.binId === String(binId)) {
+        dismissWaterToast();
+      }
+      logTimeline(`🗑️ Đã xóa Thùng rác #${binId}`, 'default');
+      if (computedRoutes.length > 0) {
+        computedRoutes = [];
+        routesGroup.clearLayers();
+        badgesGroup.clearLayers();
+        document.getElementById('stat-dist').textContent = '0 km';
+      }
+      updateAll();
+    }
+
+    function removeIncident(incId) {
+      incidents = incidents.filter(i => i.id !== incId);
+      map.closePopup();
+      logTimeline(`🗑️ Đã xóa mốc Sự cố #${incId}`, 'incident');
+      updateAll();
+    }
+
+    // Load Preset Data (District 1 TP.HCM)
+    async function loadPresetData() {
+      dismissWaterToast();
+      try {
+        const resp = await fetch('/api/waste/preset');
+        const data = await resp.json();
+        depot = data.depot;
+        bins = data.bins;
+        incidents = data.incidents;
+        vehicles = data.vehicles.map((v, i) => {
+          const defaultLat = depot ? depot.lat + (i === 0 ? 0.0003 : -0.0003) : 10.7745;
+          const defaultLon = depot ? depot.lon + (i === 0 ? 0.0004 : -0.0004) : 106.7042;
+          return {
+            ...v,
+            lat: v.lat !== undefined ? v.lat : defaultLat,
+            lon: v.lon !== undefined ? v.lon : defaultLon,
+            currentLoad: 0,
+            status: "Sẵn sàng"
+          };
+        });
+        logTimeline(`🎲 Đã nạp thành công bộ dữ liệu mẫu Q.1 TP.HCM (12 thùng rác, ${vehicles.length} xe rác, 2 mốc sự cố)`, 'ai');
+        updateAll();
+        solveRoutes(); // Auto solve
+      } catch (err) {
+        console.error('Error loading preset:', err);
+      }
+    }
+
+    // Solve Waste VRP Routes
+    async function solveRoutes() {
+      if (!depot || bins.length === 0) {
+        alert("Vui lòng đặt bãi rác và ít nhất 1 thùng rác!");
+        return;
+      }
+      if (vehicles.length === 0) {
+        alert("Vui lòng thêm ít nhất 1 xe rác vào đội xe!");
+        return;
+      }
+      const btn = document.getElementById('btn-solve');
+      btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Đang tối ưu...';
+
+      try {
+        // Clean payload to ensure zero circular references
+        const cleanDepot = { id: depot.id, name: depot.name, lat: depot.lat, lon: depot.lon };
+        const cleanBins = bins.map(b => ({
+          id: b.id, name: b.name, lat: b.lat, lon: b.lon,
+          fill_level: b.fill_level, demand: b.demand, address: b.address || "",
+          has_smell: !!b.has_smell
+        }));
+        const cleanVehicles = vehicles.map(v => ({
+          id: v.id, name: v.name, capacity: v.capacity, color: v.color, lat: v.lat, lon: v.lon
+        }));
+
+        const resp = await fetch('/api/waste/solve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            depot: cleanDepot,
+            bins: cleanBins,
+            vehicles: cleanVehicles
+          })
+        });
+        const res = await resp.json();
+        if (res.success) {
+          computedRoutes = res.routes;
+          logTimeline(`🤖 [Thuật toán]: Tối ưu hoàn tất! Sử dụng ${res.trucks_used}/${vehicles.length} xe, tổng quãng đường ${res.total_distance_km} km`, 'ai');
+          document.getElementById('stat-dist').textContent = `${res.total_distance_km} km`;
+          await fetchRoadGeometries();
+          renderRoutesOnMap();
+          updateFleetCards();
+        }
+      } catch (err) {
+        console.error('Solve error:', err);
+      } finally {
+        btn.innerHTML = '<i class="fa-solid fa-route"></i> Tối Ưu Tuyến Đường';
+      }
+    }
+
+    // Fetch Turn-by-Turn Road Polylines from OSRM (Parallelized with Caching)
+    const routeGeomCache = new Map();
+
+    async function fetchRoadGeometries() {
+      let anyStatusChanged = false;
+
+      await Promise.all(computedRoutes.map(async (route) => {
+        try {
+          const coordsStr = route.coordinates.map(c => `${c[0].toFixed(5)},${c[1].toFixed(5)}`).join(';');
+          let osrmData = routeGeomCache.get(coordsStr);
+
+          if (!osrmData) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 2500);
+            const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson`;
+            const resp = await fetch(osrmUrl, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            osrmData = await resp.json();
+            if (osrmData.code === 'Ok' && osrmData.routes && osrmData.routes.length > 0) {
+              routeGeomCache.set(coordsStr, osrmData);
+            }
+          }
+
+          if (osrmData && osrmData.code === 'Ok' && osrmData.routes && osrmData.routes.length > 0) {
+            route.streetGeometry = osrmData.routes[0].geometry.coordinates;
+
+            // Check waypoints to identify river / off-road inaccessible stops
+            if (osrmData.waypoints) {
+              osrmData.waypoints.forEach((wp, wIdx) => {
+                const stop = route.stops[wIdx];
+                if (stop && (stop.type === 'bin' || stop.id > 0)) {
+                  const b = bins.find(item => item.id === stop.id);
+                  if (b) {
+                    const dist = Math.round(wp.distance);
+                    b.snappedDistance = dist;
+                    b.snappedLocation = { lat: wp.location[1], lon: wp.location[0] };
+                    b.snappedRoadName = wp.name || "Bờ kè / Mặt đường gần nhất";
+                    if (dist > WATER_DISTANCE_THRESHOLD) {
+                      if (!b.inaccessible) {
+                        b.inaccessible = true;
+                        anyStatusChanged = true;
+                        logTimeline(`🌊 [Cảnh Báo Vị Trí]: Thùng #${b.id} dưới sông/xa đường (${b.snappedDistance}m)! Xe rác không thể tiếp cận trực tiếp.`, 'incident');
+                      }
+                    } else {
+                      if (b.inaccessible) {
+                        b.inaccessible = false;
+                        anyStatusChanged = true;
+                      }
+                    }
+                  }
+                }
+              });
+            }
+          } else {
+            route.streetGeometry = route.coordinates;
+          }
+        } catch (e) {
+          route.streetGeometry = route.coordinates;
+        }
+      }));
+
+      if (anyStatusChanged) {
+        renderMarkers();
+        updateFleetCards();
+      }
+    }
+
+    // Render Routes on Leaflet Map
+    function renderRoutesOnMap() {
+      routesGroup.clearLayers();
+      badgesGroup.clearLayers();
+
+      if (!computedRoutes || computedRoutes.length === 0) return;
+
+      computedRoutes.forEach((r, idx) => {
+        const vRef = vehicles.find(v => v.id === r.truck_id) || vehicles[idx];
+        const color = vRef ? vRef.color : (r.color || ROUTE_COLORS[idx % ROUTE_COLORS.length]);
+        const rawCoords = r.streetGeometry || r.coordinates;
+        // OSRM provides [lon, lat], Leaflet polyline expects [lat, lon]
+        const latLngs = rawCoords.map(c => [c[1], c[0]]);
+
+        // Casing border
+        L.polyline(latLngs, {
+          color: '#ffffff',
+          weight: 7,
+          opacity: 0.85,
+          lineJoin: 'round',
+          lineCap: 'round'
+        }).addTo(routesGroup);
+
+        // Colored route line
+        L.polyline(latLngs, {
+          color: color,
+          weight: 4.5,
+          opacity: 0.95,
+          lineJoin: 'round',
+          lineCap: 'round'
+        }).addTo(routesGroup);
+
+        // Add stop badges
+        r.stops.slice(1, -1).forEach((stop, sIdx) => {
+          const badgeIcon = L.divIcon({
+            html: `<div class="stop-badge-wrap"><div class="stop-badge-inner" style="background-color: ${color};">${sIdx + 1}</div></div>`,
+            className: '',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+          });
+          L.marker([stop.lat, stop.lon], { icon: badgeIcon, interactive: false }).addTo(badgesGroup);
+        });
+      });
+    }
+
+    // Render Markers (Depot, Bins, Incidents, and Vehicles)
+    function renderMarkers() {
+      markersGroup.clearLayers();
+      binMarkers = {};
+      const allBounds = [];
+
+      // 1. Depot
+      if (depot) {
+        allBounds.push([depot.lat, depot.lon]);
+        const dIcon = L.divIcon({
+          html: `<div class="marker-depot-wrap"><div class="marker-depot-inner"><i class="fa-solid fa-warehouse"></i></div></div>`,
+          className: '',
+          iconSize: [38, 38],
+          iconAnchor: [19, 19],
+          popupAnchor: [0, -19]
+        });
+        const dMarker = L.marker([depot.lat, depot.lon], { icon: dIcon }).addTo(markersGroup);
+        dMarker.bindPopup(`
+          <div style="font-weight:700; color:#dc2626; margin-bottom:4px;"><i class="fa-solid fa-warehouse"></i> ${depot.name}</div>
+          <div style="font-size:12px; color:#475569;">Trạm tập kết rác trung tâm & xuất phát xe</div>
+        `);
+      }
+
+      // 2. Bins
+      bins.forEach(b => {
+        allBounds.push([b.lat, b.lon]);
+        let fillClass = b.collected ? 'bin-collected' : (b.fill_level >= 85 ? 'bin-full' : (b.fill_level >= 60 ? 'bin-medium' : 'bin-empty'));
+        let iconContent = b.collected ? '<i class="fa-solid fa-check"></i>' : b.id;
+
+        if (b.inaccessible) {
+          fillClass = 'bin-inaccessible';
+          iconContent = '<i class="fa-solid fa-water"></i>';
+        }
+
+        const smellBadgeHtml = b.has_smell && !b.collected ? `
+          <div class="bin-smelly-badge" title="Đang bốc mùi hôi thối!">🦨</div>
+          <div class="bin-smelly-aura"></div>
+        ` : '';
+
+        const bIcon = L.divIcon({
+          html: `<div class="marker-bin-wrap" id="bin-marker-wrap-${b.id}">
+                   ${smellBadgeHtml}
+                   <div class="marker-bin-inner ${fillClass}">${iconContent}</div>
+                 </div>`,
+          className: '',
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+          popupAnchor: [0, -16]
+        });
+        const bMarker = L.marker([b.lat, b.lon], { icon: bIcon, draggable: true }).addTo(markersGroup);
+        binMarkers[b.id] = bMarker;
+
+        bMarker.on('dragstart', () => {
+          const toast = document.getElementById('water-toast');
+          if (toast && (!toast.dataset.binId || toast.dataset.binId === String(b.id))) {
+            dismissWaterToast();
+          }
+        });
+
+        bMarker.on('dragend', async (e) => {
+          const pos = (e && e.target) ? e.target.getLatLng() : bMarker.getLatLng();
+          b.lat = pos.lat;
+          b.lon = pos.lng;
+          b.collected = false;
+          b.failedReported = false;
+
+          const toast = document.getElementById('water-toast');
+          if (toast && (!toast.dataset.binId || toast.dataset.binId === String(b.id))) {
+            dismissWaterToast();
+          }
+
+          logTimeline(`📍 Đã dời Thùng #${b.id} đến [${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)}]`, 'default');
+
+          if (computedRoutes.length > 0) {
+            computedRoutes = [];
+            routesGroup.clearLayers();
+            badgesGroup.clearLayers();
+            document.getElementById('stat-dist').textContent = '0 km';
+          }
+
+          await checkBinAccessibility(b);
+          if (binMarkers[b.id]) {
+            binMarkers[b.id].setPopupContent(getBinPopupHtml(b));
+          }
+        });
+
+        bMarker.bindPopup(getBinPopupHtml(b), { maxWidth: 320 });
+      });
+
+      // 3. Incidents
+      incidents.forEach(inc => {
+        allBounds.push([inc.lat, inc.lon]);
+        const cfg = INCIDENT_CONFIGS[inc.type] || {
+          icon: inc.type === 'road_blocked' ? '🚧' : '🛑',
+          color: inc.type === 'road_blocked' ? '#f59e0b' : '#ef4444',
+          name: inc.name
+        };
+        const iIcon = L.divIcon({
+          html: `<div class="marker-incident-wrap"><div class="marker-incident-inner" style="background:${cfg.color}; font-size:16px;">${cfg.icon}</div></div>`,
+          className: '',
+          iconSize: [34, 34],
+          iconAnchor: [17, 17],
+          popupAnchor: [0, -17]
+        });
+        const iMarker = L.marker([inc.lat, inc.lon], { icon: iIcon }).addTo(markersGroup);
+        iMarker.bindPopup(`
+          <div style="font-family:'Inter',sans-serif; min-width:240px;">
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+              <span style="font-size:16px;">${cfg.icon}</span>
+              <b style="font-size:13px; color:#0f172a;">${inc.name}</b>
+            </div>
+            <div style="font-size:12px; color:#475569; margin-bottom:6px;">${inc.description || 'Sự cố phát sinh trên tuyến đường'}</div>
+            <div style="font-size:11.5px; margin-bottom:8px; color:${inc.can_ai_resolve ? '#059669' : '#dc2626'}; font-weight:600; display:flex; align-items:center; gap:4px;">
+              <i class="fa-solid ${inc.can_ai_resolve ? 'fa-wand-magic-sparkles' : 'fa-user-gear'}"></i>
+              <span>${inc.can_ai_resolve ? '✨ Khả năng: AI Tự Động Xử Lý' : '👤 Khả năng: Cần Con Người Quyết Định'}</span>
+            </div>
+            <div style="border-top:1px solid #f1f5f9; padding-top:6px; display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:11px; color:#94a3b8;">Mã: #${inc.id}</span>
+              <button onclick="removeIncident(${inc.id})" style="background:#fee2e2; color:#ef4444; border:none; padding:4px 8px; border-radius:5px; font-size:11px; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
+                <i class="fa-solid fa-trash"></i> Xóa sự cố
+              </button>
+            </div>
+          </div>
+        `, { maxWidth: 300 });
+      });
+
+      // 4. Vehicles (Idle markers when NOT simulating)
+      if (!isSimulating) {
+        trucksGroup.clearLayers();
+        truckMarkers = [];
+        vehicles.forEach((v, idx) => {
+          let vLat = v.lat;
+          let vLon = v.lon;
+          if (vLat === undefined || vLon === undefined) {
+            if (depot) {
+              const angle = (idx * (2 * Math.PI / Math.max(vehicles.length, 1))) + 0.5;
+              const offsetDist = vehicles.length > 1 ? 0.0003 : 0;
+              vLat = depot.lat + offsetDist * Math.sin(angle);
+              vLon = depot.lon + offsetDist * Math.cos(angle);
+              v.lat = vLat;
+              v.lon = vLon;
+            } else {
+              vLat = 10.7745;
+              vLon = 106.7042;
+            }
+          }
+          allBounds.push([vLat, vLon]);
+
+          const shortLabel = v.name.replace(/Xe\s*(rác)?\s*(số)?\s*/i, '#');
+          const tIcon = L.divIcon({
+            html: `
+              <div class="marker-truck-wrap" title="${v.name}">
+                <div class="marker-truck-inner" style="background-color: ${v.color || '#3b82f6'};">
+                  <i class="fa-solid fa-truck"></i>
+                </div>
+                <div class="truck-label-badge" style="background:${v.color || '#3b82f6'};">${shortLabel}</div>
+              </div>
+            `,
+            className: '',
+            iconSize: [38, 38],
+            iconAnchor: [19, 19],
+            popupAnchor: [0, -19]
+          });
+
+          const tMarker = L.marker([vLat, vLon], {
+            icon: tIcon,
+            draggable: true,
+            zIndexOffset: 600
+          }).addTo(trucksGroup);
+          truckMarkers.push(tMarker);
+
+          tMarker.bindPopup(`
+            <div style="font-weight:700; color:#0f172a; margin-bottom:4px;"><i class="fa-solid fa-truck"></i> ${v.name}</div>
+            <div style="font-size:12px; color:#475569; display:flex; justify-content:space-between; margin-bottom:2px;"><span>Tải trọng tối đa:</span><b>${v.capacity} kg</b></div>
+            <div style="font-size:12px; color:#475569; display:flex; justify-content:space-between; margin-bottom:2px;"><span>Tải hiện tại:</span><b>${v.currentLoad} kg</b></div>
+            <div style="font-size:12px; color:#475569; display:flex; justify-content:space-between; margin-bottom:6px;"><span>Trạng thái:</span><b style="color:#10b981;">${v.status}</b></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #f1f5f9; padding-top:6px;">
+              <span style="font-size:11px; color:#94a3b8;">💡 Kéo thả xe để dời chỗ</span>
+              ${vehicles.length > 1 ? `<button onclick="removeVehicle(${v.id})" style="background:#fee2e2; color:#ef4444; border:none; padding:3px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;"><i class="fa-solid fa-trash"></i> Xóa xe</button>` : ''}
+            </div>
+          `);
+
+          tMarker.on('dragend', (e) => {
+            const pos = (e && e.target) ? e.target.getLatLng() : tMarker.getLatLng();
+            v.lat = pos.lat;
+            v.lon = pos.lng;
+            logTimeline(`🚚 Đã dời vị trí ${v.name} đến [${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)}]`, 'default');
+            updateFleetCards();
+            if (computedRoutes.length > 0) {
+              computedRoutes = [];
+              routesGroup.clearLayers();
+              badgesGroup.clearLayers();
+              document.getElementById('stat-dist').textContent = '0 km';
+              logTimeline(`⚠️ Lộ trình cũ đã được đặt lại do xe dời vị trí. Bấm 'Tối Ưu Tuyến Đường' để tính lại.`, 'incident');
+            }
+          });
+        });
+      }
+
+      if (allBounds.length > 1) {
+        map.fitBounds(L.latLngBounds(allBounds), { padding: [60, 60], maxZoom: 16 });
+      }
+    }
+
+    // Live Fleet Cards in Side Drawer
+    function updateFleetCards() {
+      const container = document.getElementById('fleet-container');
+      container.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <span style="font-size:12px; font-weight:700; color:#334155;">Đội xe thu gom (${vehicles.length} xe)</span>
+          <button class="btn-action btn-primary" onclick="addVehicle()" style="padding:4px 9px; font-size:11.5px; border-radius:6px;">
+            <i class="fa-solid fa-plus"></i> Thêm xe
+          </button>
+        </div>
+      `;
+
+      vehicles.forEach(v => {
+        const pct = Math.min(100, Math.round((v.currentLoad / v.capacity) * 100));
+        const card = document.createElement('div');
+        card.className = 'truck-card';
+        card.innerHTML = `
+          <div class="truck-card-header">
+            <span style="color:${v.color}; font-weight:700;"><i class="fa-solid fa-truck"></i> ${v.name}</span>
+            <div style="display:flex; align-items:center; gap:5px;">
+              <button title="Định vị xe trên bản đồ" onclick="zoomToVehicle(${v.id})" style="border:none; background:#f1f5f9; border-radius:4px; padding:3px 7px; cursor:pointer; color:#475569; font-size:11px;">
+                <i class="fa-solid fa-location-crosshairs"></i>
+              </button>
+              ${vehicles.length > 1 ? `
+              <button title="Xóa xe này" onclick="removeVehicle(${v.id})" style="border:none; background:#fee2e2; border-radius:4px; padding:3px 7px; cursor:pointer; color:#ef4444; font-size:11px;">
+                <i class="fa-solid fa-trash"></i>
+              </button>` : ''}
+            </div>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:#64748b; margin-bottom:5px;">
+            <span>Tải: <b>${v.currentLoad}</b> kg</span>
+            <span style="display:flex; align-items:center; gap:4px;">
+              Sức chứa: 
+              <input type="number" min="50" max="2000" step="50" value="${v.capacity}" onchange="changeCapacity(${v.id}, this.value)" style="width:56px; padding:2px 4px; font-size:11.5px; border:1px solid #cbd5e1; border-radius:4px; text-align:right;"> kg
+            </span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:${pct}%; background:${v.color};"></div>
+          </div>
+          <div style="font-size:11px; color:#64748b; margin-top:5px; display:flex; justify-content:space-between;">
+            <span>Vị trí: <b>${v.lat ? `${v.lat.toFixed(4)}, ${v.lon.toFixed(4)}` : 'Bãi rác'}</b></span>
+            <span>Trạng thái: <b style="color:${v.status === 'Sẵn sàng' ? '#10b981' : '#2563eb'};">${v.status}</b></span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function getBinPopupHtml(b) {
+      const warningHtml = b.inaccessible ? `
+        <div style="background:#fef2f2; border:1px solid #fecaca; padding:6px 8px; border-radius:6px; margin:6px 0; font-size:11.5px; color:#b91c1c;">
+          <i class="fa-solid fa-triangle-exclamation"></i> <b>Dưới sông / Xa đường:</b> Cách đường xe gần nhất <b>${b.snappedDistance || `>${WATER_DISTANCE_THRESHOLD}`}m</b>. Xe rác không thể xuống nước để lấy!
+        </div>
+        ${b.snappedLocation ? `
+        <button onclick="relocateBinToRoad(${b.id})" style="width:100%; background:#10b981; color:#fff; border:none; padding:5px; border-radius:5px; font-weight:700; font-size:11.5px; cursor:pointer; margin-bottom:5px;">
+          <i class="fa-solid fa-anchor"></i> Kéo lên bờ (${b.snappedRoadName || 'Mặt đường'})
+        </button>` : ''}
+      ` : '';
+
+      const fillPercent = b.fill_level || 0;
+      const demandKg = b.demand || Math.round(fillPercent * 0.5);
+      const smellTag = b.has_smell && !b.collected ? `
+        <span style="background:#fef3c7; color:#b45309; padding:2px 7px; border-radius:12px; font-size:10.5px; font-weight:700; border:1px solid #fde68a; display:inline-flex; align-items:center; gap:3px;">
+          🦨 Bốc mùi
+        </span>
+      ` : '';
+
+      return `
+        <div class="bin-popup-card" style="min-width: 255px; font-family: 'Inter', sans-serif;">
+          <!-- Header -->
+          <div style="font-weight:700; color:${b.inaccessible ? '#dc2626' : '#0f172a'}; margin-bottom:6px; display:flex; align-items:center; justify-content:space-between;">
+            <span style="font-size:13px;">
+              <i class="fa-solid ${b.inaccessible ? 'fa-water' : 'fa-trash-can'}"></i>
+              Thùng rác #${b.id} ${b.inaccessible ? '(Dưới Sông)' : ''}
+            </span>
+            <span id="popup-smell-badge-${b.id}">${smellTag}</span>
+          </div>
+
+          ${warningHtml}
+
+          <!-- Độ đầy rác (Fullness Slider & Quick Buttons) -->
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 10px; margin-bottom:8px;" onmousedown="event.stopPropagation()">
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:600; color:#334155; margin-bottom:4px;">
+              <span><i class="fa-solid fa-gauge-high"></i> Độ đầy:</span>
+              <b id="fill-val-${b.id}" style="color:${fillPercent >= 85 ? '#ea580c' : (fillPercent >= 60 ? '#d97706' : '#10b981')}; font-size:12.5px;">
+                ${fillPercent}% (${demandKg} kg)
+              </b>
+            </div>
+            <input type="range" min="0" max="100" step="5" value="${fillPercent}" id="fill-slider-${b.id}"
+              oninput="onBinFillChange(${b.id}, this.value)"
+              onchange="onBinFillCommit(${b.id}, this.value)"
+              style="width:100%; cursor:pointer; accent-color:#10b981; margin:4px 0;" />
+
+            <div style="display:flex; gap:4px; margin-top:4px;">
+              <button type="button" onclick="setBinFillLevel(${b.id}, 20)" style="flex:1; font-size:10.5px; padding:3px 0; border:1px solid #cbd5e1; background:#fff; border-radius:4px; cursor:pointer; font-weight:600; color:#475569;">20%</button>
+              <button type="button" onclick="setBinFillLevel(${b.id}, 50)" style="flex:1; font-size:10.5px; padding:3px 0; border:1px solid #cbd5e1; background:#fff; border-radius:4px; cursor:pointer; font-weight:600; color:#475569;">50%</button>
+              <button type="button" onclick="setBinFillLevel(${b.id}, 80)" style="flex:1; font-size:10.5px; padding:3px 0; border:1px solid #cbd5e1; background:#fff; border-radius:4px; cursor:pointer; font-weight:600; color:#475569;">80%</button>
+              <button type="button" onclick="setBinFillLevel(${b.id}, 100)" style="flex:1; font-size:10.5px; padding:3px 0; border:1px solid #fecaca; background:#fef2f2; border-radius:4px; cursor:pointer; font-weight:700; color:#dc2626;">100%</button>
+            </div>
+          </div>
+
+          <!-- Bốc mùi Toggle Switch -->
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 10px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;" onmousedown="event.stopPropagation()">
+            <div style="display:flex; flex-direction:column;">
+              <span id="smell-title-${b.id}" style="font-size:12px; font-weight:700; color:${b.has_smell ? '#b45309' : '#334155'}; display:flex; align-items:center; gap:5px;">
+                ${b.has_smell ? '🦨 Bốc mùi hôi thối' : '🌱 Không có mùi'}
+              </span>
+              <span id="smell-sub-${b.id}" style="font-size:10.5px; color:#64748b;">
+                ${b.has_smell ? 'Cần xe ưu tiên thu gom' : 'Môi trường sạch sẽ'}
+              </span>
+            </div>
+            <label class="switch-smell">
+              <input type="checkbox" id="smell-chk-${b.id}" ${b.has_smell ? 'checked' : ''} onchange="toggleBinSmell(${b.id}, this.checked)">
+              <span class="slider-smell"></span>
+            </label>
+          </div>
+
+          <!-- Trạng thái & Xóa -->
+          <div style="font-size:11.5px; color:#475569; display:flex; justify-content:space-between; margin-bottom:6px;">
+            <span>Trạng thái:</span>
+            <b id="status-val-${b.id}" style="color:${b.inaccessible ? '#dc2626' : (b.collected ? '#10b981' : '#f59e0b')};">
+              ${b.inaccessible ? 'Không thể tiếp cận' : (b.collected ? '✅ Đã thu gom' : '⏳ Chờ xe đến')}
+            </b>
+          </div>
+
+          <div style="border-top:1px solid #f1f5f9; padding-top:6px; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:11px; color:#94a3b8;"><i class="fa-solid fa-arrows-up-down-left-right"></i> Kéo thả để dời</span>
+            <button onclick="removeBin(${b.id})" style="background:#fee2e2; color:#ef4444; border:none; padding:3px 8px; border-radius:4px; font-size:11px; cursor:pointer; font-weight:600;">
+              <i class="fa-solid fa-trash"></i> Xóa
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function updateBinMarkerVisual(b) {
+      const marker = binMarkers[b.id];
+      if (!marker) return;
+
+      let fillClass = b.collected ? 'bin-collected' : (b.fill_level >= 85 ? 'bin-full' : (b.fill_level >= 60 ? 'bin-medium' : 'bin-empty'));
+      let iconContent = b.collected ? '<i class="fa-solid fa-check"></i>' : b.id;
+
+      if (b.inaccessible) {
+        fillClass = 'bin-inaccessible';
+        iconContent = '<i class="fa-solid fa-water"></i>';
+      }
+
+      const smellBadgeHtml = b.has_smell && !b.collected ? `
+        <div class="bin-smelly-badge" title="Đang bốc mùi hôi thối!">🦨</div>
+        <div class="bin-smelly-aura"></div>
+      ` : '';
+
+      const newIcon = L.divIcon({
+        html: `<div class="marker-bin-wrap" id="bin-marker-wrap-${b.id}">
+                 ${smellBadgeHtml}
+                 <div class="marker-bin-inner ${fillClass}">${iconContent}</div>
+               </div>`,
+        className: '',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -16]
+      });
+      marker.setIcon(newIcon);
+    }
+
+    function onBinFillChange(binId, val) {
+      const b = bins.find(item => item.id === binId);
+      if (!b) return;
+      const numVal = parseInt(val, 10);
+      b.fill_level = numVal;
+      b.demand = Math.round(numVal * 0.5);
+
+      if (numVal > 0 && b.collected) {
+        b.collected = false;
+        const statusEl = document.getElementById(`status-val-${binId}`);
+        if (statusEl) {
+          statusEl.textContent = '⏳ Chờ xe đến';
+          statusEl.style.color = '#f59e0b';
+        }
+      }
+
+      const valEl = document.getElementById(`fill-val-${binId}`);
+      if (valEl) {
+        valEl.textContent = `${b.fill_level}% (${b.demand} kg)`;
+        valEl.style.color = b.fill_level >= 85 ? '#ea580c' : (b.fill_level >= 60 ? '#d97706' : '#10b981');
+      }
+
+      updateBinMarkerVisual(b);
+      updateStatsBar();
+    }
+
+    function onBinFillCommit(binId, val) {
+      const b = bins.find(item => item.id === binId);
+      if (!b) return;
+      logTimeline(`📊 Đã chỉnh Thùng #${b.id}: độ đầy ${b.fill_level}% (${b.demand} kg)`, 'default');
+      if (computedRoutes.length > 0) {
+        computedRoutes = [];
+        routesGroup.clearLayers();
+        badgesGroup.clearLayers();
+        document.getElementById('stat-dist').textContent = '0 km (Cần tính lại)';
+      }
+    }
+
+    function setBinFillLevel(binId, val) {
+      const slider = document.getElementById(`fill-slider-${binId}`);
+      if (slider) {
+        slider.value = val;
+      }
+      onBinFillChange(binId, val);
+      onBinFillCommit(binId, val);
+    }
+
+    function toggleBinSmell(binId, isChecked) {
+      const b = bins.find(item => item.id === binId);
+      if (!b) return;
+      b.has_smell = !!isChecked;
+
+      const smellTitle = document.getElementById(`smell-title-${binId}`);
+      const smellSub = document.getElementById(`smell-sub-${binId}`);
+      const smellBadge = document.getElementById(`popup-smell-badge-${binId}`);
+
+      if (smellTitle) {
+        smellTitle.innerHTML = b.has_smell ? '🦨 Bốc mùi hôi thối' : '🌱 Không có mùi';
+        smellTitle.style.color = b.has_smell ? '#b45309' : '#334155';
+      }
+      if (smellSub) {
+        smellSub.textContent = b.has_smell ? 'Cần xe ưu tiên thu gom' : 'Môi trường sạch sẽ';
+      }
+      if (smellBadge) {
+        smellBadge.innerHTML = b.has_smell && !b.collected ? `
+          <span style="background:#fef3c7; color:#b45309; padding:2px 7px; border-radius:12px; font-size:10.5px; font-weight:700; border:1px solid #fde68a; display:inline-flex; align-items:center; gap:3px;">
+            🦨 Bốc mùi
+          </span>
+        ` : '';
+      }
+
+      updateBinMarkerVisual(b);
+      updateStatsBar();
+
+      if (b.has_smell) {
+        logTimeline(`🦨 Thùng rác #${b.id} phát sinh mùi hôi thối! Đã bật cảnh báo ưu tiên thu gom sớm.`, 'incident');
+      } else {
+        logTimeline(`🌱 Thùng rác #${b.id} đã tắt cảnh báo mùi hôi.`, 'default');
+      }
+
+      if (computedRoutes.length > 0) {
+        computedRoutes = [];
+        routesGroup.clearLayers();
+        badgesGroup.clearLayers();
+        document.getElementById('stat-dist').textContent = '0 km (Cần tính lại)';
+      }
+    }
+
+    function updateStatsBar() {
+      document.getElementById('stat-bins').textContent = `${bins.length} thùng`;
+      document.getElementById('stat-trucks').textContent = `${vehicles.length} xe`;
+      const smellyCount = bins.filter(b => b.has_smell && !b.collected).length;
+      const smellBadge = document.getElementById('badge-smell');
+      if (smellBadge) {
+        if (smellyCount > 0) {
+          smellBadge.style.display = 'flex';
+          document.getElementById('stat-smell').textContent = `${smellyCount} bốc mùi`;
+        } else {
+          smellBadge.style.display = 'none';
+        }
+      }
+    }
+
+    function updateAll() {
+      updateStatsBar();
+      renderMarkers();
+      updateFleetCards();
+    }
+
+    function resetAll() {
+      stopSimulation();
+      dismissWaterToast();
+      bins = [];
+      incidents = [];
+      computedRoutes = [];
+      routesGroup.clearLayers();
+      badgesGroup.clearLayers();
+      trucksGroup.clearLayers();
+      vehicles.forEach(v => {
+        v.currentLoad = 0;
+        v.status = "Sẵn sàng";
+        if (depot) {
+          v.lat = depot.lat;
+          v.lon = depot.lon;
+        }
+      });
+      document.getElementById('stat-dist').textContent = '0 km';
+      logTimeline('🔄 Đã làm mới bản đồ.', 'default');
+      updateAll();
+    }
+
+    // Smooth Coordinate Interpolator for visible and silky truck movement
+    function interpolateCoords(coords, minTotalPoints = 300) {
+      if (!coords || coords.length < 2) return coords || [];
+
+      // Calculate total Euclidean distance
+      let totalDist = 0;
+      for (let i = 0; i < coords.length - 1; i++) {
+        totalDist += Math.hypot(coords[i+1][0] - coords[i][0], coords[i+1][1] - coords[i][1]);
+      }
+      if (totalDist === 0) return coords;
+
+      // Target at least minTotalPoints (smooth movement at 45ms) or 10-12 points per segment
+      const targetPoints = Math.max(minTotalPoints, coords.length * 10);
+      const result = [coords[0]];
+
+      for (let i = 0; i < coords.length - 1; i++) {
+        const p1 = coords[i];
+        const p2 = coords[i+1];
+        const segDist = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
+        const segSteps = Math.max(1, Math.round((segDist / totalDist) * targetPoints));
+
+        for (let s = 1; s <= segSteps; s++) {
+          const t = s / segSteps;
+          result.push([
+            p1[0] + (p2[0] - p1[0]) * t,
+            p1[1] + (p2[1] - p1[1]) * t
+          ]);
+        }
+      }
+
+      return result;
+    }
+
+    // Toggle Simulation
+    async function toggleSimulation() {
+      if (computedRoutes.length === 0) {
+        logTimeline("🤖 [Tự Động]: Chưa có lộ trình tối ưu, đang tự động tính toán...", "ai");
+        await solveRoutes();
+        if (computedRoutes.length === 0) {
+          alert("Không thể tối ưu lộ trình! Vui lòng đảm bảo đã đặt bãi rác, thùng rác và ít nhất 1 xe.");
+          return;
+        }
+      }
+
+      if (isSimulating) {
+        pauseSimulation();
+      } else {
+        const hasUnfinished = truckSimStates.length > 0 && truckSimStates.some(ts => ts.active && ts.currStep > 0 && ts.currStep < ts.totalSteps - 1);
+        if (hasUnfinished) {
+          resumeSimulation();
+        } else {
+          startSimulation();
+        }
+      }
+    }
+
+    function pauseSimulation() {
+      isSimulating = false;
+      if (simInterval) clearInterval(simInterval);
+      document.getElementById('btn-sim').innerHTML = '<i class="fa-solid fa-play"></i> Tiếp Tục';
+      document.getElementById('btn-sim').classList.remove('simulating');
+      logTimeline("⏸️ Tạm dừng ca mô phỏng.", "default");
+    }
+
+    function resumeSimulation() {
+      isSimulating = true;
+      document.getElementById('btn-sim').innerHTML = '<i class="fa-solid fa-pause"></i> Tạm Dừng';
+      document.getElementById('btn-sim').classList.add('simulating');
+      logTimeline("▶️ Tiếp tục di chuyển các xe rác...", "default");
+      if (simInterval) clearInterval(simInterval);
+      simInterval = setInterval(simulationStep, 45);
+    }
+
+    function stopSimulation() {
+      isSimulating = false;
+      if (simInterval) clearInterval(simInterval);
+      document.getElementById('btn-sim').innerHTML = '<i class="fa-solid fa-play"></i> Mô Phỏng Thu Gom';
+      document.getElementById('btn-sim').classList.remove('simulating');
+      trucksGroup.clearLayers();
+      truckMarkers = [];
+      truckSimStates = [];
+      renderMarkers();
+    }
+
+    function startSimulation() {
+      // Reset bins collected state
+      bins.forEach(b => {
+        b.collected = false;
+      });
+      renderMarkers();
+
+      vehicles.forEach(v => {
+        v.currentLoad = 0;
+        v.status = "Đang di chuyển thu gom";
+      });
+      incidents.forEach(inc => { inc.triggered = false; });
+
+      // Initialize truck markers on map
+      trucksGroup.clearLayers();
+      truckMarkers = [];
+
+      truckSimStates = computedRoutes.map((r, i) => {
+        const rawCoords = r.streetGeometry || r.coordinates;
+        // Leaflet format: [lat, lon]
+        let leafletCoords = rawCoords.map(c => [c[1], c[0]]);
+        leafletCoords = interpolateCoords(leafletCoords);
+
+        const vRef = vehicles.find(v => v.id === r.truck_id) || vehicles[i] || vehicles[0];
+        const color = vRef.color || ROUTE_COLORS[i % ROUTE_COLORS.length];
+        const shortLabel = vRef.name.replace(/Xe\s*(rác)?\s*(số)?\s*/i, '#');
+
+        const tIcon = L.divIcon({
+          html: `<div class="marker-truck-wrap"><div class="marker-truck-inner" style="background-color: ${color};"><i class="fa-solid fa-truck"></i></div><div class="truck-label-badge" style="background:${color};">${shortLabel}</div></div>`,
+          className: '',
+          iconSize: [38, 38],
+          iconAnchor: [19, 19]
+        });
+
+        const marker = L.marker(leafletCoords[0], { icon: tIcon, zIndexOffset: 1000 }).addTo(trucksGroup);
+        truckMarkers.push(marker);
+
+        return {
+          truckId: r.truck_id,
+          coords: leafletCoords, // [lat, lon]
+          marker: marker,
+          currStep: 0,
+          totalSteps: leafletCoords.length,
+          vehicleRef: vRef,
+          stops: r.stops,
+          active: true
+        };
+      });
+
+      isSimulating = true;
+      document.getElementById('btn-sim').innerHTML = '<i class="fa-solid fa-pause"></i> Tạm Dừng';
+      document.getElementById('btn-sim').classList.add('simulating');
+      logTimeline(`🚀 Bắt đầu ca mô phỏng thu gom với ${truckSimStates.length} xe rác hoạt động song song...`, "default");
+
+      if (simInterval) clearInterval(simInterval);
+      simInterval = setInterval(simulationStep, 45);
+      updateFleetCards();
+    }
+
+    function simulationStep() {
+      let anyActive = false;
+
+      truckSimStates.forEach(ts => {
+        if (!ts.active) return;
+        anyActive = true;
+
+        if (ts.currStep < ts.totalSteps - 1) {
+          ts.currStep++;
+          const currentPos = ts.coords[ts.currStep]; // [lat, lon]
+          if (ts.marker) {
+            ts.marker.setLatLng(currentPos);
+          }
+          ts.vehicleRef.status = "Đang di chuyển thu gom";
+
+          // Check proximity to bins
+          bins.forEach(b => {
+            if (!b.collected) {
+              const d = Math.hypot(currentPos[0] - b.lat, currentPos[1] - b.lon);
+              if (d < 0.0008) { // within ~80 meters
+                const hadSmell = b.has_smell;
+                b.collected = true;
+                b.inaccessible = false;
+                b.has_smell = false;
+                const bMarker = binMarkers[b.id];
+                if (bMarker) {
+                  const bIcon = L.divIcon({
+                    html: `<div class="marker-bin-wrap"><div class="marker-bin-inner bin-collected"><i class="fa-solid fa-check"></i></div></div>`,
+                    className: '',
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 16],
+                    popupAnchor: [0, -16]
+                  });
+                  bMarker.setIcon(bIcon);
+                }
+                ts.vehicleRef.currentLoad += b.demand;
+                if (hadSmell) {
+                  logTimeline(`✨ [${ts.vehicleRef.name}] Đã thu gom & xịt khử mùi Thùng #${b.id} (+${b.demand}kg, đã dập tắt mùi hôi!)`, 'collected');
+                } else {
+                  logTimeline(`✅ [${ts.vehicleRef.name}] Đã thu gom xong Thùng #${b.id} (+${b.demand}kg)`, 'collected');
+                }
+                updateFleetCards();
+                updateStatsBar();
+              } else if (b.inaccessible && !b.failedReported && d < 0.0022) {
+                // Truck passed by the closest road point to the river bin
+                b.failedReported = true;
+                logTimeline(`🚫 [${ts.vehicleRef.name} - Bỏ Qua]: Thùng #${b.id} nằm dưới sông/ngoài đường xe (cách bờ ${b.snappedDistance || Math.round(d * 111000)}m)! Xe không thể xuống nước để lấy.`, 'incident');
+                showWaterWarningToast(b);
+              }
+            }
+          });
+
+          // Check proximity to incidents
+          incidents.forEach(inc => {
+            if (!inc.triggered) {
+              const d = Math.hypot(currentPos[0] - inc.lat, currentPos[1] - inc.lon);
+              if (d < 0.0006) { // within ~60 meters
+                inc.triggered = true;
+                handleEncounteredIncident(inc, ts);
+              }
+            }
+          });
+        } else {
+          ts.active = false;
+          ts.vehicleRef.status = "Đã hoàn thành lộ trình";
+          logTimeline(`🎉 [${ts.vehicleRef.name}] Đã về đến Bãi tập kết rác! Hoàn thành ca làm việc.`, 'collected');
+          updateFleetCards();
+        }
+      });
+
+      if (!anyActive) {
+        isSimulating = false;
+        if (simInterval) clearInterval(simInterval);
+        document.getElementById('btn-sim').innerHTML = '<i class="fa-solid fa-rotate-right"></i> Chạy Lại';
+        document.getElementById('btn-sim').classList.remove('simulating');
+
+        const uncollected = bins.filter(b => !b.collected);
+        if (uncollected.length > 0) {
+          const waterBins = uncollected.filter(b => b.inaccessible);
+          if (waterBins.length > 0) {
+            logTimeline(`⚠️ [Tổng Kết Ca]: Đã gom ${bins.length - uncollected.length}/${bins.length} thùng. CÒN ${waterBins.length} THÙNG DƯỚI SÔNG (${waterBins.map(b => '#' + b.id).join(', ')}) XE KHÔNG THỂ LẤY!`, 'incident');
+            showWaterWarningToast(waterBins[0]);
+          } else {
+            logTimeline(`⚠️ [Tổng Kết Ca]: Đã hoàn thành ca, thu gom được ${bins.length - uncollected.length}/${bins.length} thùng.`, 'default');
+          }
+        } else {
+          logTimeline("🏁 Toàn bộ đội xe đã thu gom 100% thùng rác và trở về bãi tập kết an toàn!", "ai");
+        }
+      }
+    }
+
+    // Dynamic AI Detour: Reroute around blocked incident from current position
+    async function rerouteTruckDetour(truckState, incident) {
+      const currentPos = truckState.coords[truckState.currStep]; // [lat, lon]
+
+      // Identify uncollected remaining stops for this truck
+      const uncollectedStops = truckState.stops.filter(s => {
+        if (s.type === 'depot') return false;
+        const bin = bins.find(b => b.id === s.id);
+        return bin && !bin.collected;
+      });
+
+      // Calculate a detour waypoint perpendicular to obstacle vector
+      const dLat = currentPos[0] - incident.lat;
+      const dLon = currentPos[1] - incident.lon;
+      const detourLat = incident.lat + (Math.abs(dLon) >= Math.abs(dLat) ? 0.0018 : -0.0018);
+      const detourLon = incident.lon + (Math.abs(dLat) >= Math.abs(dLon) ? 0.0022 : -0.0022);
+
+      // Build waypoints for OSRM: [lon, lat]
+      const waypoints = [[currentPos[1], currentPos[0]], [detourLon, detourLat]];
+      uncollectedStops.forEach(s => waypoints.push([s.lon, s.lat]));
+      waypoints.push([depot.lon, depot.lat]);
+
+      try {
+        const coordsStr = waypoints.map(c => `${c[0].toFixed(5)},${c[1].toFixed(5)}`).join(';');
+        const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson`;
+        const resp = await fetch(osrmUrl);
+        const data = await resp.json();
+
+        let newRoadCoords = waypoints;
+        if (data.code === 'Ok' && data.routes.length > 0) {
+          newRoadCoords = data.routes[0].geometry.coordinates;
+        }
+
+        // Convert new road coordinates to Leaflet format [lat, lon]
+        const newLeafletCoords = newRoadCoords.map(c => [c[1], c[0]]);
+
+        // Splice truck coords: keep past path (0 .. currStep), append new detour path!
+        const pastCoords = truckState.coords.slice(0, truckState.currStep + 1);
+        truckState.coords = pastCoords.concat(newLeafletCoords.slice(1));
+        truckState.totalSteps = truckState.coords.length;
+
+        // Update route geometry on map in real time (stored as [lon, lat])
+        const routeObj = computedRoutes.find(r => r.truck_id === truckState.truckId);
+        if (routeObj) {
+          routeObj.streetGeometry = truckState.coords.map(c => [c[1], c[0]]);
+          renderRoutesOnMap();
+        }
+
+        logTimeline(`🔀 [AI Tái Định Tuyến]: Đã tính lộ trình đường vòng mới né điểm nghẽn! Xe chạy tiếp từ vị trí hiện tại (${newLeafletCoords.length} điểm tọa độ).`, 'ai');
+      } catch (err) {
+        console.warn('Detour OSRM error:', err);
+      }
+    }
+
+    // Dynamic AI Stop Reassignment: Assign broken truck's stops to other active truck
+    async function reassignStopsToOtherTruck(brokenTruckState) {
+      brokenTruckState.active = false;
+      brokenTruckState.vehicleRef.status = "🛑 Hỏng động cơ (Dừng tại chỗ)";
+
+      // Find the other active truck
+      const otherTruck = truckSimStates.find(ts => ts.truckId !== brokenTruckState.truckId && ts.active);
+      if (!otherTruck) {
+        logTimeline(`⚠️ Không còn xe rác nào khác đang hoạt động để nhận bàn giao.`, 'incident');
+        return;
+      }
+
+      // Collect uncollected bins from both trucks
+      const uncollectedBroken = bins.filter(b => !b.collected && brokenTruckState.stops.some(s => s.id === b.id));
+      const uncollectedOther = bins.filter(b => !b.collected && otherTruck.stops.some(s => s.id === b.id));
+      const allTargetBins = [...uncollectedOther, ...uncollectedBroken];
+
+      const otherCurrentPos = otherTruck.coords[otherTruck.currStep]; // [lat, lon]
+
+      // Simple Nearest Neighbor ordering from other truck's current pos
+      const orderedBins = [];
+      let cur = otherCurrentPos;
+      const pool = [...allTargetBins];
+      while (pool.length > 0) {
+        let bestIdx = 0;
+        let bestDist = Infinity;
+        for (let i = 0; i < pool.length; i++) {
+          const d = Math.hypot(cur[0] - pool[i].lat, cur[1] - pool[i].lon);
+          if (d < bestDist) {
+            bestDist = d;
+            bestIdx = i;
+          }
+        }
+        const nextBin = pool.splice(bestIdx, 1)[0];
+        orderedBins.push(nextBin);
+        cur = [nextBin.lat, nextBin.lon];
+      }
+
+      // Build waypoints for OSRM [lon, lat]: otherCurrentPos -> orderedBins -> depot
+      const waypoints = [[otherCurrentPos[1], otherCurrentPos[0]]];
+      orderedBins.forEach(b => waypoints.push([b.lon, b.lat]));
+      waypoints.push([depot.lon, depot.lat]);
+
+      try {
+        const coordsStr = waypoints.map(c => `${c[0].toFixed(5)},${c[1].toFixed(5)}`).join(';');
+        const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson`;
+        const resp = await fetch(osrmUrl);
+        const data = await resp.json();
+
+        let newRoadCoords = waypoints;
+        if (data.code === 'Ok' && data.routes.length > 0) {
+          newRoadCoords = data.routes[0].geometry.coordinates;
+        }
+
+        // Convert new road coordinates to Leaflet format [lat, lon]
+        const newLeafletCoords = newRoadCoords.map(c => [c[1], c[0]]);
+
+        // Splice other truck coordinates from current position
+        const pastCoords = otherTruck.coords.slice(0, otherTruck.currStep + 1);
+        otherTruck.coords = pastCoords.concat(newLeafletCoords.slice(1));
+        otherTruck.totalSteps = otherTruck.coords.length;
+        otherTruck.stops = [{ type: 'truck_pos', lat: otherCurrentPos[0], lon: otherCurrentPos[1] }]
+          .concat(orderedBins)
+          .concat([depot]);
+
+        // Truncate broken truck route on map to where it stopped
+        const brokenRouteObj = computedRoutes.find(r => r.truck_id === brokenTruckState.truckId);
+        if (brokenRouteObj) {
+          brokenRouteObj.streetGeometry = brokenTruckState.coords.slice(0, brokenTruckState.currStep + 1).map(c => [c[1], c[0]]);
+        }
+
+        // Expand other truck route on map
+        const otherRouteObj = computedRoutes.find(r => r.truck_id === otherTruck.truckId);
+        if (otherRouteObj) {
+          otherRouteObj.streetGeometry = otherTruck.coords.map(c => [c[1], c[0]]);
+        }
+
+        renderRoutesOnMap();
+
+        logTimeline(`📋 [Điều Phối]: Đã tích hợp ${uncollectedBroken.length} thùng của xe hỏng sang ${otherTruck.vehicleRef.name}. Lộ trình mới đã sẵn sàng!`, 'ai');
+      } catch (err) {
+        console.warn('Reassign OSRM error:', err);
+      }
+    }
+
+    // Dynamic AI Detour to Depot (for dump_early)
+    async function rerouteTruckStraightToDepot(truckState) {
+      const currentPos = truckState.coords[truckState.currStep];
+      const waypoints = [[currentPos[1], currentPos[0]], [depot.lon, depot.lat]];
+      try {
+        const coordsStr = waypoints.map(c => `${c[0].toFixed(5)},${c[1].toFixed(5)}`).join(';');
+        const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson`;
+        const resp = await fetch(osrmUrl);
+        const data = await resp.json();
+        let newRoadCoords = waypoints;
+        if (data.code === 'Ok' && data.routes.length > 0) {
+          newRoadCoords = data.routes[0].geometry.coordinates;
+        }
+        const newLeafletCoords = newRoadCoords.map(c => [c[1], c[0]]);
+        const pastCoords = truckState.coords.slice(0, truckState.currStep + 1);
+        truckState.coords = pastCoords.concat(newLeafletCoords.slice(1));
+        truckState.totalSteps = truckState.coords.length;
+        const routeObj = computedRoutes.find(r => r.truck_id === truckState.truckId);
+        if (routeObj) {
+          routeObj.streetGeometry = truckState.coords.map(c => [c[1], c[0]]);
+          renderRoutesOnMap();
+        }
+      } catch (err) {
+        console.warn('Reroute depot error:', err);
+      }
+    }
+
+    // Handle Encountered Incident (AI or Human Decision)
+    async function handleEncounteredIncident(incident, truckState) {
+      pauseSimulation(); // Freeze trucks in their exact current position
+
+      logTimeline(`⚠️ CẢNH BÁO: ${truckState.vehicleRef.name} gặp sự cố: ${incident.name}!`, 'incident');
+
+      try {
+        const resp = await fetch('/api/waste/resolve-incident', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            incident: incident,
+            truck_state: {
+              truck_id: truckState.truckId,
+              current_load: truckState.vehicleRef.currentLoad,
+              capacity: truckState.vehicleRef.capacity
+            },
+            all_trucks: vehicles
+          })
+        });
+
+        const resolution = await resp.json();
+
+        if (resolution.resolved_by_ai) {
+          // AI RESOLVED AUTOMATICALLY
+          logTimeline(resolution.log, 'ai');
+          showAiToast(resolution.log);
+
+          if (incident.type === 'road_blocked') {
+            // Calculate dynamic detour around obstacle from current position
+            await rerouteTruckDetour(truckState, incident);
+          } else if (incident.type === 'bin_overflow') {
+            if (resolution.new_load) {
+              truckState.vehicleRef.currentLoad = Math.min(resolution.new_load, truckState.vehicleRef.capacity);
+              updateFleetCards();
+            }
+          }
+
+          // Briefly pause 2.5s for user observation, then resume from current position!
+          setTimeout(() => {
+            resumeSimulation();
+          }, 2500);
+        } else {
+          // AI CANNOT RESOLVE -> ASK HUMAN!
+          logTimeline(`❓ [AI Xin Chỉ Đạo]: Sự cố cần người điều phối quyết định: ${resolution.message}`, 'human');
+          showHumanModal(resolution, truckState);
+        }
+      } catch (err) {
+        console.error('Incident resolution error:', err);
+      }
+    }
+
+    let toastTimer = null;
+    function showAiToast(msg) {
+      const toast = document.getElementById('ai-toast');
+      document.getElementById('ai-toast-msg').textContent = msg;
+      toast.classList.add('open');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove('open');
+      }, 5000);
+    }
+
+    function dismissAiToast() {
+      document.getElementById('ai-toast').classList.remove('open');
+    }
+
+    // Show Human Decision Modal Dialog
+    function showHumanModal(resolution, truckState) {
+      document.getElementById('modal-title').textContent = resolution.title || "AI CẦN TRỢ GIÚP TỪ CON NGƯỜI";
+      document.getElementById('modal-desc').innerHTML = `<b>Mô tả sự cố:</b> ${resolution.message}`;
+
+      const optionsContainer = document.getElementById('modal-options');
+      optionsContainer.innerHTML = '';
+
+      resolution.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'btn-human-option';
+        btn.innerHTML = `<i class="fa-solid fa-circle-arrow-right" style="color:#2563eb;"></i> <span><b>Phương án ${idx + 1}:</b> ${opt.label}</span>`;
+        btn.onclick = () => {
+          selectHumanOption(opt, truckState);
+        };
+        optionsContainer.appendChild(btn);
+      });
+
+      document.getElementById('human-modal').classList.add('open');
+    }
+
+    async function selectHumanOption(option, truckState) {
+      document.getElementById('human-modal').classList.remove('open');
+      logTimeline(`👤 [Người Điều Phối Quyết Định]: Đã chọn: "${option.label}"`, 'human');
+
+      if (option.action === 'dispatch_rescue') {
+        truckState.vehicleRef.name = `${truckState.vehicleRef.name} (Xe dự phòng #3)`;
+        truckState.vehicleRef.status = "Xe dự phòng tiếp quản";
+        logTimeline(`🚚 Xe dự phòng #3 đã xuất phát và tiếp quản lộ trình từ vị trí xe hỏng!`, 'ai');
+        updateFleetCards();
+        resumeSimulation(); // Resume from exact current location!
+      } else if (option.action === 'split_to_active_trucks') {
+        await reassignStopsToOtherTruck(truckState);
+        updateFleetCards();
+        resumeSimulation(); // Resume other truck from current location!
+      } else if (option.action === 'collect_partial') {
+        truckState.vehicleRef.currentLoad = truckState.vehicleRef.capacity;
+        logTimeline(`📦 [Chỉ Đạo]: Xe đã nén và bốc tối đa tải trọng (${truckState.vehicleRef.capacity}kg). Phần rác dư để xe khác.`, 'human');
+        updateFleetCards();
+        resumeSimulation();
+      } else if (option.action === 'dump_early') {
+        logTimeline(`🚛 [Chỉ Đạo]: Xe quay về trạm xả sớm trước khi tiếp tục lộ trình!`, 'human');
+        await rerouteTruckStraightToDepot(truckState);
+        resumeSimulation();
+      } else if (option.action === 'reassign_truck2') {
+        logTimeline(`🚚 [Chỉ Đạo]: Bỏ qua điểm quá tải, giao xe khác nhận sau. Xe tiếp tục di chuyển.`, 'human');
+        resumeSimulation();
+      } else if (option.action === 'redirect_secondary_depot') {
+        logTimeline(`🚨 [Chỉ Đạo]: Đã chuyển hướng xe sang Bãi xử lý dự phòng số 2 (Đa Phước)!`, 'human');
+        truckState.vehicleRef.status = "Đang về Bãi rác dự phòng #2";
+        updateFleetCards();
+        resumeSimulation();
+      } else if (option.action === 'wait_on_site') {
+        truckState.vehicleRef.status = "⏳ Chờ bãi rác mở cửa (3s demo)";
+        updateFleetCards();
+        logTimeline(`⏳ [Chỉ Đạo]: Xe tạm dừng tại chỗ chờ trạm tiếp nhận mở cửa lại...`, 'human');
+        setTimeout(() => {
+          truckState.vehicleRef.status = "Tiếp tục lộ trình";
+          logTimeline(`✅ Bãi rác trung tâm đã hoạt động trở lại! Xe tiếp tục hành trình.`, 'ai');
+          updateFleetCards();
+          resumeSimulation();
+        }, 3000);
+      } else {
+        truckState.active = false;
+        truckState.vehicleRef.status = "🛑 Tạm ngừng ca làm";
+        logTimeline(`🛑 Đã kết thúc ca sớm theo chỉ đạo con người. Các xe khác tiếp tục chạy.`, 'human');
+        updateFleetCards();
+        resumeSimulation(); // Resume other truck!
+      }
+    }
+
+    // Initial Load
+    loadPresetData();
+  </script>
+</body>
+</html>
