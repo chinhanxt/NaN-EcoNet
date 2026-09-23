@@ -9,7 +9,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 from typing import Dict, Any, List
 
-from waste_solver import solve_waste_vrp, resolve_incident
+from waste_solver import (
+    solve_waste_vrp,
+    solve_ortools_vrp,
+    solve_baseline_vrp,
+    compare_solvers,
+    resolve_incident,
+)
 
 app = FastAPI(title="Smart Waste Collection & Incident AI Server")
 
@@ -56,8 +62,8 @@ def get_waste_preset():
             "type": "road_blocked",
             "name": "🚧 Đoạn đường Lê Lợi bị chặn thi công",
             "description": "Lê Lợi giao Pasteur đang rào chắn sửa chữa",
-            "lat": 10.7748,
-            "lon": 106.7005,
+            "lat": 10.77397,
+            "lon": 106.70061,
             "can_ai_resolve": True
         },
         {
@@ -98,6 +104,75 @@ async def solve_waste(request: Request):
         raise HTTPException(status_code=400, detail="Depot and bins are required")
 
     result = solve_waste_vrp(
+        depot=depot,
+        bins=bins,
+        num_vehicles=num_vehicles,
+        vehicle_capacity=capacity,
+        vehicles=vehicles
+    )
+    return JSONResponse(content=result)
+
+
+@app.post("/api/waste/solve-ortools")
+async def solve_waste_ortools(request: Request):
+    """Calculate collection routes using Google OR-Tools Routing Solver."""
+    body = await request.json()
+    depot = body.get("depot")
+    bins = body.get("bins", [])
+    vehicles = body.get("vehicles", [])
+    num_vehicles = len(vehicles) if vehicles else 2
+    capacity = vehicles[0].get("capacity", 300) if vehicles else 300
+
+    if not depot or not bins:
+        raise HTTPException(status_code=400, detail="Depot and bins are required")
+
+    result = solve_ortools_vrp(
+        depot=depot,
+        bins=bins,
+        num_vehicles=num_vehicles,
+        vehicle_capacity=capacity,
+        vehicles=vehicles
+    )
+    return JSONResponse(content=result)
+
+
+@app.post("/api/waste/solve-baseline")
+async def solve_waste_baseline(request: Request):
+    """Simulate traditional fixed-schedule waste collection (URENCO Baseline)."""
+    body = await request.json()
+    depot = body.get("depot")
+    bins = body.get("bins", [])
+    vehicles = body.get("vehicles", [])
+    num_vehicles = len(vehicles) if vehicles else 2
+    capacity = vehicles[0].get("capacity", 300) if vehicles else 300
+
+    if not depot or not bins:
+        raise HTTPException(status_code=400, detail="Depot and bins are required")
+
+    result = solve_baseline_vrp(
+        depot=depot,
+        bins=bins,
+        num_vehicles=num_vehicles,
+        vehicle_capacity=capacity,
+        vehicles=vehicles
+    )
+    return JSONResponse(content=result)
+
+
+@app.post("/api/waste/compare")
+async def compare_all(request: Request):
+    """Run Head-to-Head Comparison: 3D-PACO vs Google OR-Tools vs Traditional Baseline."""
+    body = await request.json()
+    depot = body.get("depot")
+    bins = body.get("bins", [])
+    vehicles = body.get("vehicles", [])
+    num_vehicles = len(vehicles) if vehicles else 2
+    capacity = vehicles[0].get("capacity", 300) if vehicles else 300
+
+    if not depot or not bins:
+        raise HTTPException(status_code=400, detail="Depot and bins are required")
+
+    result = compare_solvers(
         depot=depot,
         bins=bins,
         num_vehicles=num_vehicles,
