@@ -1390,7 +1390,77 @@
       }
     }
 
-    const WATER_DISTANCE_THRESHOLD = 90; // Khoảng cách tối đa (mét) đến đường xe chạy để coi là trên bờ / tiếp cận được
+    // High-Precision Water Body Polygons for Ho Chi Minh City Center
+    // Sông Sài Gòn (Saigon River) along District 1 (West bank) & Thu Thiem (East bank)
+    const SAIGON_RIVER_POLYGON = [
+      [10.7960, 106.7085],
+      [10.7880, 106.7072],
+      [10.7815, 106.7064],
+      [10.7745, 106.7066],
+      [10.7710, 106.7070],
+      [10.7675, 106.7075],
+      [10.7640, 106.7088],
+      [10.7580, 106.7120],
+      [10.7580, 106.7400],
+      [10.7960, 106.7400]
+    ];
+
+    // Kênh Bến Nghé / Tàu Hủ (between District 1 and District 4)
+    const BEN_NGHE_CANAL_POLYGON = [
+      [10.7680, 106.7072],
+      [10.7660, 106.7040],
+      [10.7640, 106.6990],
+      [10.7620, 106.6940],
+      [10.7590, 106.6880],
+      [10.7578, 106.6885],
+      [10.7605, 106.6945],
+      [10.7628, 106.6998],
+      [10.7650, 106.7048],
+      [10.7672, 106.7078]
+    ];
+
+    // Kênh Nhiêu Lộc - Thị Nghè (between District 1 and Binh Thanh)
+    const THI_NGHE_CANAL_POLYGON = [
+      [10.7870, 106.7070],
+      [10.7900, 106.7010],
+      [10.7925, 106.6950],
+      [10.7945, 106.6955],
+      [10.7915, 106.7015],
+      [10.7890, 106.7075]
+    ];
+
+    function isPointInPolygon(lat, lon, poly) {
+      let inside = false;
+      const n = poly.length;
+      let p1x = poly[0][1], p1y = poly[0][0];
+      for (let i = 0; i <= n; i++) {
+        const p2x = poly[i % n][1], p2y = poly[i % n][0];
+        if (Math.min(p1y, p2y) < lat && lat <= Math.max(p1y, p2y)) {
+          if (lon <= Math.max(p1x, p2x)) {
+            let xinters = p1x;
+            if (p1y !== p2y) {
+              xinters = (lat - p1y) * (p2x - p1x) / (p2y - p1y) + p1x;
+            }
+            if (p1x === p2x || lon <= xinters) {
+              inside = !inside;
+            }
+          }
+        }
+        p1x = p2x;
+        p1y = p2y;
+      }
+      return inside;
+    }
+
+    // Determine if coordinates are physically located inside a river or canal
+    function isPointInWater(lat, lon) {
+      if (isPointInPolygon(lat, lon, SAIGON_RIVER_POLYGON)) return true;
+      if (isPointInPolygon(lat, lon, BEN_NGHE_CANAL_POLYGON)) return true;
+      if (isPointInPolygon(lat, lon, THI_NGHE_CANAL_POLYGON)) return true;
+      if (lon >= 106.7088 && lat >= 10.760 && lat <= 10.795) return true;
+      return false;
+    }
+
     let waterToastTimer = null;
     const nearestRoadCache = new Map();
 
@@ -1428,11 +1498,16 @@
           bin.snappedLocation = { lat: wp.location[1], lon: wp.location[0] };
           bin.snappedRoadName = wp.name || "Mép bờ / Mặt đường gần nhất";
 
-          if (dist > WATER_DISTANCE_THRESHOLD) {
+          // ONLY BLOCK IF PHYSICALLY LOCATED IN WATER / RIVER!
+          const inWater = isPointInWater(bin.lat, bin.lon);
+          bin.inWater = inWater;
+
+          if (inWater) {
             bin.inaccessible = true;
-            logTimeline(`🌊 [Cảnh Báo Vị Trí]: Thùng rác #${bin.id} được đặt dưới sông/vùng nước (cách đường xe ${bin.snappedDistance}m)! Xe rác đường bộ không thể xuống lấy.`, 'incident');
+            logTimeline(`🌊 [Cảnh Báo Vị Trí]: Thùng rác #${bin.id} được đặt dưới sông/lòng kênh (cách bờ ${bin.snappedDistance}m)! Xe rác đường bộ không thể xuống nước để lấy.`, 'incident');
             showWaterWarningToast(bin);
           } else {
+            // ON LAND: Whether by the curb or deep in an alley / park / pedestrian plaza, IT CAN BE COLLECTED!
             const wasInaccessible = bin.inaccessible;
             bin.inaccessible = false;
 
@@ -1443,8 +1518,10 @@
             }
 
             if (wasInaccessible) {
-              logTimeline(`✅ [Vị Trí Hợp Lệ]: Thùng rác #${bin.id} đã ở trên bờ/mặt đường an toàn (${bin.snappedRoadName})! Đã tắt cảnh báo.`, 'ai');
+              logTimeline(`✅ [Vị Trí Hợp Lệ]: Thùng rác #${bin.id} đã ở trên bờ/mặt đất an toàn (${bin.snappedRoadName})! Đã tắt cảnh báo dưới sông.`, 'ai');
               showWaterSuccessToast(bin);
+            } else if (dist > 35) {
+              logTimeline(`🚶 [Hẻm / Công Viên]: Thùng rác #${bin.id} cách đường xe ${dist}m (${bin.snappedRoadName}). Xe sẽ đỗ mép đường, công nhân đi bộ vào thu gom.`, 'default');
             }
           }
           updateBinMarkerVisual(bin);
@@ -2120,12 +2197,13 @@
                     const dist = Math.round(wp.distance);
                     b.snappedDistance = dist;
                     b.snappedLocation = { lat: wp.location[1], lon: wp.location[0] };
-                    b.snappedRoadName = wp.name || "Bờ kè / Mặt đường gần nhất";
-                    if (dist > WATER_DISTANCE_THRESHOLD) {
+                    const inWater = isPointInWater(b.lat, b.lon);
+                    b.inWater = inWater;
+                    if (inWater) {
                       if (!b.inaccessible) {
                         b.inaccessible = true;
                         anyStatusChanged = true;
-                        logTimeline(`🌊 [Cảnh Báo Vị Trí]: Thùng #${b.id} dưới sông/xa đường (${b.snappedDistance}m)! Xe rác không thể tiếp cận trực tiếp.`, 'incident');
+                        logTimeline(`🌊 [Cảnh Báo Vị Trí]: Thùng #${b.id} nằm dưới sông/lòng kênh (cách bờ ${b.snappedDistance}m)! Xe rác không thể tiếp cận trực tiếp.`, 'incident');
                       }
                     } else {
                       if (b.inaccessible) {
@@ -2459,13 +2537,17 @@
     function getBinPopupHtml(b) {
       const warningHtml = b.inaccessible ? `
         <div style="background:#fef2f2; border:1px solid #fecaca; padding:6px 8px; border-radius:6px; margin:6px 0; font-size:11.5px; color:#b91c1c;">
-          <i class="fa-solid fa-triangle-exclamation"></i> <b>Dưới sông / Xa đường:</b> Cách đường xe gần nhất <b>${b.snappedDistance || `>${WATER_DISTANCE_THRESHOLD}`}m</b>. Xe rác không thể xuống nước để lấy!
+          <i class="fa-solid fa-water"></i> <b>Dưới sông / Vùng nước:</b> Cách mép bờ <b>${b.snappedDistance || '>90'}m</b>. Xe rác đường bộ không thể xuống nước để lấy!
         </div>
         ${b.snappedLocation ? `
         <button onclick="relocateBinToRoad(${b.id})" style="width:100%; background:#10b981; color:#fff; border:none; padding:5px; border-radius:5px; font-weight:700; font-size:11.5px; cursor:pointer; margin-bottom:5px;">
           <i class="fa-solid fa-anchor"></i> Kéo lên bờ (${b.snappedRoadName || 'Mặt đường'})
         </button>` : ''}
-      ` : '';
+      ` : (b.snappedDistance > 35 ? `
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:6px 8px; border-radius:6px; margin:6px 0; font-size:11.5px; color:#166534;">
+          <i class="fa-solid fa-person-walking"></i> <b>Vị trí xa đường (${b.snappedDistance}m):</b> Nằm trong hẻm/công viên. Xe đỗ mép đường (${b.snappedRoadName || 'Mặt đường'}), công nhân đi bộ vào thu gom bình thường!
+        </div>
+      ` : '');
 
       const fillPercent = b.fill_level || 0;
       const demandKg = b.demand || Math.round(fillPercent * 0.5);
@@ -2529,7 +2611,7 @@
           <div style="font-size:11.5px; color:#475569; display:flex; justify-content:space-between; margin-bottom:6px;">
             <span>Trạng thái:</span>
             <b id="status-val-${b.id}" style="color:${b.inaccessible ? '#dc2626' : (b.collected ? '#10b981' : '#f59e0b')};">
-              ${b.inaccessible ? 'Không thể tiếp cận' : (b.collected ? '✅ Đã thu gom' : '⏳ Chờ xe đến')}
+              ${b.inaccessible ? 'Dưới sông (Không thể lấy)' : (b.collected ? '✅ Đã thu gom' : (b.snappedDistance > 35 ? '⏳ Chờ gom bộ qua hẻm' : '⏳ Chờ xe đến'))}
             </b>
           </div>
 
@@ -2869,7 +2951,15 @@
           bins.forEach(b => {
             if (!b.collected) {
               const d = Math.hypot(currentPos[0] - b.lat, currentPos[1] - b.lon);
-              if (d < 0.0008) { // within ~80 meters
+              let dSnapped = Infinity;
+              if (b.snappedLocation) {
+                dSnapped = Math.hypot(currentPos[0] - b.snappedLocation.lat, currentPos[1] - b.snappedLocation.lon);
+              }
+
+              // Can collect if not in river AND (truck is close to bin OR truck is at closest road parking point for alley/park bin)
+              const canCollect = !b.inaccessible && (d < 0.00085 || dSnapped < 0.00085);
+
+              if (canCollect) {
                 const hadSmell = b.has_smell;
                 b.collected = true;
                 b.inaccessible = false;
@@ -2886,17 +2976,19 @@
                   bMarker.setIcon(bIcon);
                 }
                 ts.vehicleRef.currentLoad += b.demand;
-                if (hadSmell) {
+                if (dSnapped < 0.00085 && d >= 0.00085) {
+                  logTimeline(`🚶 [${ts.vehicleRef.name} - Đi Bộ Vào Hẻm/Công Viên]: Xe đỗ tại ${b.snappedRoadName || 'mép đường'}, công nhân đi bộ vào gom xong Thùng #${b.id} (${b.snappedDistance || Math.round(d * 111000)}m) (+${b.demand}kg)!`, 'collected');
+                } else if (hadSmell) {
                   logTimeline(`✨ [${ts.vehicleRef.name}] Đã thu gom & xịt khử mùi Thùng #${b.id} (+${b.demand}kg, đã dập tắt mùi hôi!)`, 'collected');
                 } else {
                   logTimeline(`✅ [${ts.vehicleRef.name}] Đã thu gom xong Thùng #${b.id} (+${b.demand}kg)`, 'collected');
                 }
                 updateFleetCards();
                 updateStatsBar();
-              } else if (b.inaccessible && !b.failedReported && d < 0.0022) {
+              } else if (b.inaccessible && !b.failedReported && (d < 0.0022 || dSnapped < 0.0022)) {
                 // Truck passed by the closest road point to the river bin
                 b.failedReported = true;
-                logTimeline(`🚫 [${ts.vehicleRef.name} - Bỏ Qua]: Thùng #${b.id} nằm dưới sông/ngoài đường xe (cách bờ ${b.snappedDistance || Math.round(d * 111000)}m)! Xe không thể xuống nước để lấy.`, 'incident');
+                logTimeline(`🚫 [${ts.vehicleRef.name} - Bỏ Qua]: Thùng #${b.id} nằm dưới sông (cách bờ ${b.snappedDistance || Math.round(d * 111000)}m)! Xe không thể xuống nước để lấy.`, 'incident');
                 showWaterWarningToast(b);
               }
             }
