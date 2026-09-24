@@ -13,3 +13,4 @@
 {"run_id": 88, "date": "2026-09-23", "task": "docs(license): thiet lap giay phep ma nguon mo Apache License 2.0", "passed": true}
 {"run_id": 89, "date": "2026-09-23", "task": "docs(presentation): tich hop slide thuyet trinh HTML5 va bao cao ky thuat vao docs/", "passed": true}
 {"run_id": 90, "date": "2026-09-24", "task": "docs(readme): thiet ke he thong 8 so do do hoa truc quan cho toan bo he sinh thai", "passed": true}
+{"run_id": 91, "date": "2026-09-24", "task": "perf(engine): tinh chinh he so mui hoi gamma=0.5 va trong so beta=2.5 cho 3D-PACO", "passed": true}
