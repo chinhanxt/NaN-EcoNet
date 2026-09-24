@@ -1,0 +1,199 @@
+services:
+  # ============================================================================
+  # 1. ECOPASS ENTERPRISE SUITE
+  # ============================================================================
+  ecopass-web:
+    container_name: nan-ecopass-web
+    build:
+      context: ../apps/ecopass-enterprise/ecopass/client-scanner
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${ECOPASS_PORT:-3000}:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=${ECOPASS_API_URL:-http://localhost:5001/api}
+      - NEXT_PUBLIC_STAGING=false
+      - MCP_SERVER_PORT=${MCP_SERVER_PORT:-5001}
+    networks:
+      - nan-econet-network
+    depends_on:
+      - ecopass-api
+
+  ecopass-api:
+    container_name: nan-ecopass-api
+    build:
+      context: ../apps/ecopass-enterprise/ecopass/voucher-backend
+      dockerfile: docker/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${ECOPASS_API_PORT:-5001}:8000"
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+      - SECURE_COOKIES=${SECURE_COOKIES:-False}
+      - REDIS_URL=${REDIS_URL:-redis://redis-queue:6379/1}
+      - DATABASE_URL=${DATABASE_URL:-sqlite:////opt/app/database/db.sqlite3}
+      - FACEBOOK_API_KEY=${FACEBOOK_API_KEY:-}
+      - ZALO_OA_SECRET=${ZALO_OA_SECRET:-}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - MCP_SERVER_PORT=${MCP_SERVER_PORT:-5001}
+      - TZ=${TZ:-Asia/Ho_Chi_Minh}
+    volumes:
+      - ecopass_data:/opt/app/database
+    networks:
+      - nan-econet-network
+    depends_on:
+      - redis-queue
+
+  # ============================================================================
+  # 2. SMART COLLECTION & 3D-PACO OPTIMIZATION ENGINE
+  # ============================================================================
+  collection-engine:
+    container_name: nan-collection-engine
+    build:
+      context: ../apps/smart-collection-engine
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+    working_dir: /app/backend
+    ports:
+      - "${COLLECTION_ENGINE_PORT:-5000}:8000"
+    environment:
+      - OSRM_HOST=${OSRM_HOST:-http://osrm-backend:5000}
+      - REDIS_URL=${REDIS_URL:-redis://redis-queue:6379/2}
+      - NUM_FLEET_VEHICLES=${NUM_FLEET_VEHICLES:-8}
+      - MAX_CAPACITY_KG=${MAX_CAPACITY_KG:-5000}
+      - SOLVER_DEFAULT_ALGORITHM=${SOLVER_DEFAULT_ALGORITHM:-paco}
+    volumes:
+      - collection_data:/app/src/data
+    networks:
+      - nan-econet-network
+    depends_on:
+      - redis-queue
+      - osrm-backend
+
+  collection-dashboard:
+    container_name: nan-collection-dashboard
+    build:
+      context: ../apps/smart-collection-engine
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: ["streamlit", "run", "app.py", "--server.address=0.0.0.0", "--server.port=8501"]
+    working_dir: /app/streamlit
+    ports:
+      - "${COLLECTION_DASHBOARD_PORT:-8501}:8501"
+    environment:
+      - SOLVER_API_URL=http://collection-engine:8000
+      - OSRM_HOST=${OSRM_HOST:-http://osrm-backend:5000}
+      - STREAMLIT_SERVER_PORT=8501
+      - STREAMLIT_SERVER_HEADLESS=true
+    volumes:
+      - ../apps/smart-collection-engine/streamlit:/app/streamlit
+      - ../apps/smart-collection-engine/map_ui:/app/map_ui
+    networks:
+      - nan-econet-network
+    depends_on:
+      - collection-engine
+
+  # ============================================================================
+  # 3. CITIZEN BULKY APP & IOT DISPATCHER
+  # ============================================================================
+  citizen-portal:
+    container_name: nan-citizen-portal
+    build:
+      context: ../apps/citizen-bulky-app
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${CITIZEN_PORTAL_PORT:-3001}:80"
+    environment:
+      - VITE_APP_VERSION=1.0.0
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - PRICING_BASE_RATE=${PRICING_BASE_RATE:-250000}
+      - DISPATCHER_SECRET=${DISPATCHER_SECRET:-secret-key-nan-econet}
+    networks:
+      - nan-econet-network
+    depends_on:
+      - citizen-api
+
+  citizen-api:
+    container_name: nan-citizen-api
+    image: traccar/traccar:alpine
+    restart: unless-stopped
+    ports:
+      - "${CITIZEN_API_PORT:-5002}:8082"
+    environment:
+      - REDIS_URL=${REDIS_URL:-redis://redis-queue:6379/3}
+      - DISPATCHER_SECRET=${DISPATCHER_SECRET:-secret-key-nan-econet}
+      - TZ=${TZ:-Asia/Ho_Chi_Minh}
+    volumes:
+      - citizen_traccar_data:/opt/traccar/data
+      - citizen_traccar_logs:/opt/traccar/logs
+    networks:
+      - nan-econet-network
+
+  # ============================================================================
+  # 4. SHARED INFRASTRUCTURE (REDIS QUEUE & OSRM ROUTE ENGINE)
+  # ============================================================================
+  redis-queue:
+    container_name: nan-redis-queue
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - nan-econet-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  osrm-backend:
+    container_name: nan-osrm-backend
+    image: osrm/osrm-backend:latest
+    restart: unless-stopped
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        if [ -f /data/map.osrm ]; then
+          echo "Starting OSRM routing engine with /data/map.osrm..."
+          exec osrm-routed --algorithm mld /data/map.osrm
+        else
+          echo "⚠️ /data/map.osrm not found. Place your extracted .osrm map file in osrm_data volume to enable routing."
+          echo "Keeping container active for configuration..."
+          exec tail -f /dev/null
+        fi
+    ports:
+      - "${OSRM_PORT:-5003}:5000"
+    volumes:
+      - osrm_data:/data
+    networks:
+      - nan-econet-network
+
+# ==============================================================================
+# NETWORKS & VOLUMES SPECIFICATION
+# ==============================================================================
+networks:
+  nan-econet-network:
+    driver: bridge
+    name: nan-econet-network
+
+volumes:
+  redis_data:
+    name: nan_econet_redis_data
+  ecopass_data:
+    name: nan_econet_ecopass_data
+  collection_data:
+    name: nan_econet_collection_data
+  citizen_traccar_data:
+    name: nan_econet_citizen_traccar_data
+  citizen_traccar_logs:
+    name: nan_econet_citizen_traccar_logs
+  osrm_data:
+    name: nan_econet_osrm_data
