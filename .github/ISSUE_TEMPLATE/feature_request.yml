@@ -1,0 +1,68 @@
+name: 💡 Đề Xuất Tính Năng (Feature Request)
+description: Gợi ý ý tưởng mới, cải tiến thuật toán hoặc mở rộng tính năng cho hệ sinh thái NaN-EcoNet.
+title: "[FEAT]: <Tóm tắt tính năng đề xuất ngắn gọn>"
+labels: ["enhancement", "feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Chúng tôi luôn tìm kiếm những sáng kiến xuất sắc để nâng cao hiệu quả thu gom rác thải đô thị và thúc đẩy nền kinh tế tuần hoàn. Hãy chia sẻ ý tưởng của bạn theo cấu trúc dưới đây!
+
+  - type: dropdown
+    id: subsystem
+    attributes:
+      label: Phân hệ mục tiêu (Target Subsystem)
+      description: Tính năng này thuộc phạm vi phân hệ nào?
+      options:
+        - "apps/smart-collection-engine (Tối ưu hóa tuyến đường, 3D-PACO, OR-Tools, Telemetry)"
+        - "apps/citizen-bulky-app (Ứng dụng di động cư dân, Vision AI, Đặt xe cồng kềnh, Voucher)"
+        - "apps/ecopass-enterprise (Cổng nhãn hàng, Quản lý voucher, Thu ngân POS, Trạm thu gom)"
+        - "apps/ecopass-enterprise/enterprise-bi-copilot (Trợ lý MCP, Báo cáo ESG, Phân tích dữ liệu)"
+        - "deploy & DevOps (Hạ tầng, Tự động hóa, Giám sát, Bảo mật)"
+        - "Toàn bộ hệ sinh thái (Ecosystem-wide)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Vấn đề thực tế cần giải quyết (Problem Statement)
+      description: Nêu rõ vấn đề, điểm nghẽn hoặc rào cản hiện tại mà người dùng, tài xế, hoặc doanh nghiệp đang gặp phải.
+      placeholder: "Ví dụ: Hiện tại tài xế xe rác cồng kềnh gặp khó khăn khi tiếp cận các con hẻm dưới 2 mét tại TP.HCM vì thuật toán định tuyến chưa tính đến giới hạn chiều rộng đường ngõ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Giải pháp kỹ thuật đề xuất (Proposed Solution)
+      description: Mô tả chi tiết ý tưởng giải pháp hoặc cách bạn dự định hiện thực hóa tính năng này.
+      placeholder: "Ví dụ: Tích hợp thêm tham số 'độ rộng mặt cắt đường' từ OpenStreetMap vào thuật toán 3D-PACO, hoặc bổ sung cờ cảnh báo trên màn hình Flutter của tài xế..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Tác động kinh tế & Môi trường dự kiến (Expected Impact)
+      description: Tính năng này sẽ mang lại giá trị định lượng nào? (Tiết kiệm thời gian, giảm phát thải CO2, tăng tỷ lệ tái chế, nâng cao trải nghiệm cư dân).
+      placeholder: "Ví dụ: Giảm 30% thời gian quay đầu xe trong ngõ hẹp, tiết kiệm ước tính 15 lít dầu Diesel mỗi tuần cho mỗi tổ đội thu gom..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Các phương án thay thế đã cân nhắc (Alternatives Considered)
+      description: Bạn có từng nghĩ đến giải pháp nào khác trước khi đưa ra đề xuất này không?
+      placeholder: "Ví dụ: Yêu cầu cư dân tự kéo rác ra đường lớn, tuy nhiên cách này giảm trải nghiệm hài lòng của hộ dân..."
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Tham gia đóng góp mã nguồn (Willingness to Contribute)
+      options:
+        - label: Tôi sẵn sàng tự mình gửi Pull Request để hiện thực hóa tính năng này nếu được duyệt thiết kế.
+          required: false

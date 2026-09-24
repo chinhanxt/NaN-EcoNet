@@ -1,0 +1,74 @@
+# Dependabot configuration for NaN-EcoNet Monorepo
+version: 2
+updates:
+  # ----------------------------------------------------------------------------
+  # GitHub Actions Workflows
+  # ----------------------------------------------------------------------------
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(ci)"
+      include: "scope"
+    open-pull-requests-limit: 5
+
+  # ----------------------------------------------------------------------------
+  # Python Dependencies (Smart Collection Engine & AI Gateway)
+  # ----------------------------------------------------------------------------
+  - package-ecosystem: "pip"
+    directory: "/apps/smart-collection-engine/backend"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(deps-engine)"
+      include: "scope"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "pip"
+    directory: "/apps/smart-collection-engine/streamlit"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(deps-streamlit)"
+      include: "scope"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "pip"
+    directory: "/apps/ecopass-enterprise/agy-image-gateway"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(deps-gateway)"
+      include: "scope"
+    open-pull-requests-limit: 5
+
+  # ----------------------------------------------------------------------------
+  # Node.js & npm / pnpm Dependencies (Citizen Bulky Web & EcoPass Portals)
+  # ----------------------------------------------------------------------------
+  - package-ecosystem: "npm"
+    directory: "/apps/citizen-bulky-app"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(deps-bulky)"
+      include: "scope"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "npm"
+    directory: "/apps/ecopass-enterprise/enterprise-bi-copilot"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(deps-bi)"
+      include: "scope"
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "npm"
+    directory: "/apps/ecopass-enterprise/awesome-gpt-image-2"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(deps-image2)"
+      include: "scope"
+    open-pull-requests-limit: 5

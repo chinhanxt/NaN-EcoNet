@@ -1,0 +1,101 @@
+name: 🐛 Báo Cáo Lỗi (Bug Report)
+description: Gửi báo cáo lỗi kỹ thuật hoặc sự cố bất thường trong hệ sinh thái NaN-EcoNet.
+title: "[BUG]: <Tóm tắt lỗi ngắn gọn>"
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Cảm ơn bạn đã hỗ trợ hoàn thiện chất lượng hệ thống NaN-EcoNet! Vui lòng cung cấp thông tin chi tiết để đội ngũ kỹ thuật có thể nhanh chóng tái hiện và khắc phục sự cố.
+
+  - type: dropdown
+    id: subsystem
+    attributes:
+      label: Phân hệ xảy ra lỗi (Affected Component)
+      description: Vui lòng chọn phân hệ trong Monorepo bị ảnh hưởng bởi lỗi này.
+      options:
+        - "apps/smart-collection-engine (3D-PACO / OR-Tools / OSRM / FastAPI)"
+        - "apps/citizen-bulky-app (Flutter Mobile / Gemini Vision / Live Pricing)"
+        - "apps/ecopass-enterprise (EcoPass / Web Portals / 1-Time Burn QR)"
+        - "apps/ecopass-enterprise/enterprise-bi-copilot (MCP Server / BI Analytics)"
+        - "apps/ecopass-enterprise/agy-image-gateway (AI Proxy / Image Processing)"
+        - "deploy / Docker / CI/CD (Hạ tầng & Triển khai)"
+        - "Tài liệu kỹ thuật / Khác"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Mức độ nghiêm trọng (Severity Level)
+      description: Mức độ ảnh hưởng của lỗi đối với người dùng hoặc hệ thống.
+      options:
+        - "Thấp (Minor UI / Typos / Visual Glitch)"
+        - "Trung bình (Tính năng phụ không hoạt động / Có giải pháp thay thế tạm thời)"
+        - "Cao (Tính năng cốt lõi lỗi / Không thể chốt đơn hoặc giải bài toán VRP)"
+        - "Khẩn cấp / Chặn đứng (Hệ thống treo, crash ứng dụng di động, dữ liệu bị sai lệch)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Mô tả hiện tượng lỗi (Bug Description)
+      description: Mô tả chi tiết điều gì đã xảy ra so với mong đợi.
+      placeholder: "Ví dụ: Khi người dùng chụp ảnh ghế sofa bằng camera AI trên điện thoại Android, ứng dụng không hiển thị khung bounding box và báo lỗi timeout..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction_steps
+    attributes:
+      label: Các bước tái hiện lỗi (Steps to Reproduce)
+      description: Liệt kê các bước cụ thể để người khác có thể tái hiện lại lỗi này.
+      value: |
+        1. Khởi chạy phân hệ '...'
+        2. Điều hướng đến màn hình hoặc gọi endpoint '...'
+        3. Nhập dữ liệu hoặc thực hiện thao tác '...'
+        4. Quan sát lỗi xuất hiện '...'
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: Hành vi mong đợi (Expected Behavior)
+      description: Hệ thống đáng lẽ phải hoạt động như thế nào trong trường hợp này?
+      placeholder: "AI Vision Scanner phân tích xong trong vòng 1 giây, vẽ bounding box màu xanh và trả về giá cước..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Môi trường thử nghiệm (Environment Details)
+      description: Cung cấp thông tin môi trường bạn đang chạy để đội ngũ tiện chẩn đoán.
+      value: |
+        - Hệ điều hành (OS): [ví dụ: Ubuntu 22.04 LTS / macOS Sonoma / Windows 11]
+        - Phiên bản Python / Node / Flutter: [ví dụ: Python 3.12, Node 20.11, Flutter 3.19]
+        - Trình duyệt hoặc Thiết bị di động: [ví dụ: Pixel 7 Pro (Android 14) / Chrome 124]
+        - Nhánh Git hoặc Commit SHA: [ví dụ: main @ commit 2c77e841]
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs_or_screenshots
+    attributes:
+      label: Nhật ký lỗi hoặc Ảnh chụp màn hình (Logs / Screenshots)
+      description: Dán stack trace, console logs hoặc kéo thả ảnh chụp màn hình minh họa vào đây.
+      placeholder: "Dán nhật ký log thiết bị hoặc lệnh terminal tại đây..."
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Kiểm tra xác nhận trước khi gửi (Checklist)
+      options:
+        - label: Tôi đã tìm kiếm trên GitHub Issues và xác nhận lỗi này chưa từng được báo cáo trước đó.
+          required: true
+        - label: Tôi xác nhận thông tin cung cấp KHÔNG chứa mật khẩu, API keys hoặc dữ liệu nhạy cảm cá nhân.
+          required: true
