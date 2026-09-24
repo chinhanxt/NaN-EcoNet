@@ -1,0 +1,5 @@
+{
+  "name": "starter-extension",
+  "description": "A starter UI extension: a themed side panel with a backend API, saved notes, and a button that talks to the agent.",
+  "logo": "assets/logo.svg"
+}

@@ -1,0 +1,7 @@
+{
+  "name": "starter-extension-panel",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Side panel for the starter UI extension."
+}

@@ -1,0 +1,214 @@
+/*
+ * Theme-aware styles for the starter UI extension.
+ *
+ * /preload.js copies the host theme tokens onto :root and updates them live, so
+ * the panel follows light and dark themes automatically. Every var() has a
+ * fallback so the page stays readable when opened outside Antigravity.
+ */
+
+:root {
+  --radius: 8px;
+  --gap: 12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Keep the hidden attribute working on elements that set their own display. */
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  background: var(--background, #f8f9fa);
+  color: var(--foreground, #1f1f1f);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* Header ------------------------------------------------------------------ */
+
+.panel-header h1 {
+  margin: 0 0 2px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.panel-header p {
+  margin: 0;
+}
+
+/* Cards ------------------------------------------------------------------- */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--card, #ffffff);
+  border: 1px solid var(--card-border, var(--border, #e3e3e3));
+  border-radius: var(--radius);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.card h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.card p {
+  margin: 0;
+}
+
+/* Text -------------------------------------------------------------------- */
+
+.muted {
+  color: var(--muted-foreground, #5f6368);
+}
+
+.small {
+  font-size: 12px;
+}
+
+/* Status facts ------------------------------------------------------------ */
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 16px;
+  margin: 0;
+}
+
+.facts dt {
+  color: var(--muted-foreground, #5f6368);
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.badge {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--secondary, #eef0f2);
+  color: var(--secondary-foreground, var(--foreground, #1f1f1f));
+}
+
+.badge.ok {
+  background: color-mix(in srgb, #1e8e3e 18%, transparent);
+  color: color-mix(in srgb, #1e8e3e 70%, var(--foreground, #1f1f1f));
+}
+
+.badge.error {
+  background: color-mix(in srgb, #d93025 18%, transparent);
+  color: color-mix(in srgb, #d93025 70%, var(--foreground, #1f1f1f));
+}
+
+/* Form controls ----------------------------------------------------------- */
+
+textarea {
+  width: 100%;
+  padding: 8px 10px;
+  resize: vertical;
+  font: inherit;
+  color: inherit;
+  background: var(--content, var(--background, #ffffff));
+  border: 1px solid var(--border, #d0d0d0);
+  border-radius: 6px;
+}
+
+textarea::placeholder {
+  color: var(--placeholder, var(--muted-foreground, #80868b));
+}
+
+textarea:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--primary, #1a73e8);
+  outline-offset: 1px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+button {
+  padding: 6px 14px;
+  font: inherit;
+  font-weight: 500;
+  color: var(--primary-foreground, #ffffff);
+  background: var(--primary, #1a73e8);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+/* Mixing toward the text color lightens in dark themes and darkens in light. */
+button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--primary, #1a73e8) 88%, var(--foreground, #000000));
+}
+
+button:active:not(:disabled) {
+  background: color-mix(in srgb, var(--primary, #1a73e8) 76%, var(--foreground, #000000));
+}
+
+button.secondary {
+  color: var(--foreground, #1f1f1f);
+  background: transparent;
+  border-color: var(--border, #d0d0d0);
+}
+
+button.secondary:hover:not(:disabled) {
+  background: var(--secondary, #f1f3f4);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Toast ------------------------------------------------------------------- */
+
+.toast {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  left: 16px;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 8px 12px;
+  text-align: center;
+  color: var(--foreground, #1f1f1f);
+  background: var(--card, #ffffff);
+  border: 1px solid var(--card-border, var(--border, #e3e3e3));
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 15%);
+}
+
+.toast.error {
+  border-color: #d93025;
+}
