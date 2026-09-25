@@ -1,0 +1,55 @@
+import type { AssistantStream, AssistantStreamChunk } from "assistant-stream";
+import type {
+  RemoteThreadInitializeResponse,
+  RemoteThreadListAdapter,
+  RemoteThreadListResponse,
+  RemoteThreadMetadata,
+} from "../types";
+
+export class InMemoryThreadListAdapter implements RemoteThreadListAdapter {
+  list(): Promise<RemoteThreadListResponse> {
+    return Promise.resolve({
+      threads: [],
+    });
+  }
+
+  rename(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  updateCustom(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  archive(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  unarchive(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  delete(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  initialize(threadId: string): Promise<RemoteThreadInitializeResponse> {
+    return Promise.resolve({ remoteId: threadId, externalId: undefined });
+  }
+
+  generateTitle(): Promise<AssistantStream> {
+    return Promise.resolve(
+      new ReadableStream<AssistantStreamChunk>({
+        start(controller) {
+          controller.close();
+        },
+      }),
+    );
+  }
+
+  fetch(threadId: string): Promise<RemoteThreadMetadata> {
+    return Promise.reject(
+      new Error(`Thread "${threadId}" not found in in-memory thread list.`),
+    );
+  }
+}

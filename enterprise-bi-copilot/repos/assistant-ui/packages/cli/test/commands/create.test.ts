@@ -1,0 +1,692 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { spawnSync } from "node:child_process";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import type { CANCEL_SYMBOL } from "@clack/prompts";
+import {
+  create,
+  resolveCreateProjectDirectory,
+  resolvePresetUrl,
+  resolveProject,
+  resolveScaffoldSelector,
+  resolveProjectDirectoryGuidance,
+  PROJECT_METADATA,
+} from "../../src/commands/create";
+import type * as createProject from "../../src/lib/create-project";
+import { logger } from "../../src/lib/utils/logger";
+
+const mocks = vi.hoisted(() => ({
+  downloadProject: vi.fn<typeof createProject.downloadProject>(),
+  downloadTemplate: vi.fn(),
+  resolveLatestReleaseRef:
+    vi.fn<typeof createProject.resolveLatestReleaseRef>(),
+  scaffoldProject: vi.fn<typeof createProject.scaffoldProject>(),
+}));
+
+vi.mock("giget", () => ({
+  downloadTemplate: mocks.downloadTemplate,
+}));
+
+vi.mock("../../src/lib/create-project", async (importOriginal) => ({
+  ...(await importOriginal<typeof createProject>()),
+  downloadProject: mocks.downloadProject,
+  resolveLatestReleaseRef: mocks.resolveLatestReleaseRef,
+  scaffoldProject: mocks.scaffoldProject,
+}));
+
+describe("create command", () => {
+  it("exposes --preset option", () => {
+    const presetOption = create.options.find(
+      (option) => option.long === "--preset",
+    );
+    expect(presetOption).toBeDefined();
+  });
+
+  it("exposes --template option", () => {
+    const templateOption = create.options.find(
+      (option) => option.long === "--template",
+    );
+    expect(templateOption).toBeDefined();
+  });
+
+  it("exposes --example option", () => {
+    const exampleOption = create.options.find(
+      (option) => option.long === "--example",
+    );
+    expect(exampleOption).toBeDefined();
+  });
+
+  it("exposes --debug-source-root as a hidden option", () => {
+    const debugSourceRootOption = create.options.find(
+      (option) => option.long === "--debug-source-root",
+    );
+    expect(debugSourceRootOption).toBeDefined();
+    expect(debugSourceRootOption?.hidden).toBe(true);
+    expect(create.helpInformation()).not.toContain("--debug-source-root");
+  });
+
+  it("exposes --cwd as a hidden option", () => {
+    const cwdOption = create.options.find((option) => option.long === "--cwd");
+    expect(cwdOption).toBeDefined();
+    expect(cwdOption?.hidden).toBe(true);
+    expect(create.helpInformation()).not.toContain("--cwd");
+  });
+
+  it("resolves the project directory against --cwd", async () => {
+    const cwd = fs.realpathSync(
+      fs.mkdtempSync(path.join(os.tmpdir(), "aui-create-")),
+    );
+    const target = path.join(cwd, "my-app");
+    fs.writeFileSync(target, "");
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation(() => {
+      throw new Error("process.exit");
+    });
+    const errorSpy = vi.spyOn(logger, "error").mockImplementation(() => {});
+
+    try {
+      await expect(
+        create.parseAsync(
+          ["my-app", "--cwd", cwd, "--debug-source-root", cwd],
+          { from: "user" },
+        ),
+      ).rejects.toThrow("process.exit");
+
+      const { display } = resolveProjectDirectoryGuidance({
+        absoluteProjectDir: target,
+      });
+      expect(errorSpy).toHaveBeenCalledWith(
+        `${display} already exists and is not a directory`,
+      );
+    } finally {
+      exitSpy.mockRestore();
+      errorSpy.mockRestore();
+      fs.rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("create failure cleanup", () => {
+  let target: string;
+
+  beforeEach(() => {
+    const root = fs.realpathSync(
+      fs.mkdtempSync(path.join(os.tmpdir(), "aui-create-")),
+    );
+    target = path.join(root, "my-app");
+  });
+
+  afterEach(() => {
+    fs.rmSync(path.dirname(target), { recursive: true, force: true });
+  });
+
+  async function expectCreateToFail() {
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation(() => {
+      throw new Error("process.exit");
+    });
+
+    try {
+      await expect(
+        create.parseAsync(
+          [target, "--template", "minimal", "--skip-install", "--no-skills"],
+          { from: "user" },
+        ),
+      ).rejects.toThrow("process.exit");
+      expect(exitSpy).toHaveBeenCalledWith(1);
+    } finally {
+      exitSpy.mockRestore();
+    }
+  }
+
+  it("removes a project directory the failed run created", async () => {
+    mocks.scaffoldProject.mockImplementationOnce(async (_repoPath, destDir) => {
+      fs.mkdirSync(destDir);
+      fs.writeFileSync(path.join(destDir, "package.json"), "{}");
+      throw new Error("scaffold failed");
+    });
+
+    await expectCreateToFail();
+
+    expect(fs.existsSync(target)).toBe(false);
+  });
+
+  it("empties an existing directory the failed run wrote into", async () => {
+    fs.mkdirSync(target);
+    mocks.scaffoldProject.mockImplementationOnce(async (_repoPath, destDir) => {
+      fs.writeFileSync(path.join(destDir, "package.json"), "{}");
+      fs.mkdirSync(path.join(destDir, "app"));
+      throw new Error("scaffold failed");
+    });
+
+    await expectCreateToFail();
+
+    expect(fs.readdirSync(target)).toEqual([]);
+  });
+
+  it("empties an existing directory before retrying a template missing at the release tag", async () => {
+    fs.mkdirSync(target);
+    let entriesAtRetry: string[] | undefined;
+    mocks.resolveLatestReleaseRef.mockResolvedValueOnce("v0.0.1");
+    mocks.scaffoldProject.mockImplementationOnce(async (_repoPath, destDir) => {
+      fs.writeFileSync(path.join(destDir, "README.md"), "");
+    });
+    mocks.downloadProject.mockImplementationOnce(async (_repoPath, destDir) => {
+      entriesAtRetry = fs.readdirSync(destDir);
+      throw new Error("download failed");
+    });
+
+    await expectCreateToFail();
+
+    expect(entriesAtRetry).toEqual([]);
+  });
+
+  it("cleans pending downloads before re-raising a signal", async () => {
+    const previousSignalListeners = new Set(process.rawListeners("SIGINT"));
+    let finishDownload!: () => void;
+    let stagingDir: string | undefined;
+    let rejectScaffold: ((error: Error) => void) | undefined;
+    const downloadBlocked = new Promise<void>((resolve) => {
+      finishDownload = resolve;
+    });
+    mocks.downloadTemplate.mockImplementationOnce(
+      async (_source: string, options?: { dir?: string }) => {
+        stagingDir = options?.dir;
+        if (!stagingDir) throw new Error("missing staging directory");
+        fs.writeFileSync(path.join(stagingDir, "partial.txt"), "partial");
+        await downloadBlocked;
+        return {};
+      },
+    );
+    mocks.scaffoldProject.mockImplementationOnce(
+      () =>
+        new Promise<never>((_resolve, reject) => {
+          rejectScaffold = reject;
+        }),
+    );
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => {
+      throw new Error("process.exit");
+    });
+    const kill = vi.spyOn(process, "kill").mockImplementation(() => {
+      expect(stagingDir).toBeDefined();
+      expect(fs.existsSync(stagingDir!)).toBe(false);
+      expect(fs.existsSync(target)).toBe(false);
+      return true;
+    });
+    let run: Promise<unknown> | undefined;
+    let pendingDownload: Promise<void> | undefined;
+    try {
+      const actualCreateProject = await vi.importActual<typeof createProject>(
+        "../../src/lib/create-project",
+      );
+      pendingDownload = actualCreateProject.downloadProject(
+        "templates/default",
+        target,
+      );
+      const downloadResult = pendingDownload.then(
+        () => undefined,
+        (error: unknown) => error,
+      );
+      await vi.waitFor(() => expect(stagingDir).toBeDefined());
+
+      run = create.parseAsync(
+        [target, "--template", "minimal", "--skip-install", "--no-skills"],
+        { from: "user" },
+      );
+      await vi.waitFor(() => expect(mocks.scaffoldProject).toHaveBeenCalled());
+
+      const signalListener = process
+        .rawListeners("SIGINT")
+        .find((listener) => !previousSignalListeners.has(listener));
+      expect(signalListener).toBeDefined();
+      signalListener?.call(process, "SIGINT");
+
+      expect(kill).toHaveBeenCalledWith(process.pid, "SIGINT");
+
+      rejectScaffold?.(new Error("scaffold failed"));
+      await expect(run).rejects.toThrow("process.exit");
+      finishDownload();
+      const downloadError = await downloadResult;
+      expect(downloadError).toBeInstanceOf(Error);
+      expect((downloadError as Error).message).toContain(
+        "Download was interrupted",
+      );
+      expect(fs.existsSync(target)).toBe(false);
+    } finally {
+      rejectScaffold?.(new Error("test cleanup"));
+      finishDownload();
+      await Promise.allSettled(
+        [run, pendingDownload].filter(
+          (promise): promise is Promise<unknown> => promise !== undefined,
+        ),
+      );
+      exit.mockRestore();
+      kill.mockRestore();
+    }
+  });
+});
+
+describe("resolveProject", () => {
+  it("returns template metadata when --template is provided", async () => {
+    const result = await resolveProject({
+      template: "cloud",
+      stdinIsTTY: true,
+    });
+    expect(result).toEqual(
+      expect.objectContaining({
+        name: "cloud",
+        category: "template",
+        hasLocalComponents: false,
+      }),
+    );
+  });
+
+  it("returns example metadata when --example is provided", async () => {
+    const result = await resolveProject({
+      example: "with-langgraph",
+      stdinIsTTY: true,
+    });
+    expect(result).toEqual(
+      expect.objectContaining({
+        name: "with-langgraph",
+        category: "example",
+        hasLocalComponents: false,
+      }),
+    );
+  });
+
+  it("supports the cloud-clerk template", async () => {
+    const result = await resolveProject({
+      template: "cloud-clerk",
+      stdinIsTTY: true,
+    });
+    expect(result).toEqual(
+      expect.objectContaining({
+        name: "cloud-clerk",
+        category: "template",
+      }),
+    );
+  });
+
+  it("defaults to default template in non-interactive shells", async () => {
+    const result = await resolveProject({
+      stdinIsTTY: false,
+    });
+    expect(result).toEqual(
+      expect.objectContaining({
+        name: "default",
+        category: "template",
+      }),
+    );
+  });
+
+  it("uses selected project in interactive mode", async () => {
+    const select = vi.fn().mockResolvedValue("with-ai-sdk-v7");
+    const isCancelMock = vi
+      .fn<(value: unknown) => boolean>()
+      .mockReturnValue(false);
+    const isCancel = (value: unknown): value is typeof CANCEL_SYMBOL =>
+      isCancelMock(value);
+
+    const result = await resolveProject({
+      stdinIsTTY: true,
+      select,
+      isCancel,
+    });
+    expect(result).toEqual(
+      expect.objectContaining({
+        name: "with-ai-sdk-v7",
+        category: "example",
+      }),
+    );
+  });
+
+  it("returns null when selection is cancelled", async () => {
+    const select = vi.fn().mockResolvedValue(Symbol("cancel"));
+    const isCancelMock = vi
+      .fn<(value: unknown) => boolean>()
+      .mockReturnValue(true);
+    const isCancel = (value: unknown): value is typeof CANCEL_SYMBOL =>
+      isCancelMock(value);
+
+    const result = await resolveProject({
+      stdinIsTTY: true,
+      select,
+      isCancel,
+    });
+    expect(result).toBeNull();
+  });
+});
+
+describe("resolveScaffoldSelector", () => {
+  it("returns an empty selector when no scaffold selector is provided", () => {
+    expect(resolveScaffoldSelector({})).toEqual({});
+  });
+
+  it("maps --native to the Expo example", () => {
+    expect(resolveScaffoldSelector({ native: true })).toEqual({
+      example: "with-expo",
+    });
+  });
+
+  it("maps --ink to the React Ink example", () => {
+    expect(resolveScaffoldSelector({ ink: true })).toEqual({
+      example: "with-react-ink",
+    });
+  });
+
+  it("uses the default template when only --preset is provided", () => {
+    expect(resolveScaffoldSelector({ preset: "chatgpt" })).toEqual({
+      template: "default",
+      preset: "chatgpt",
+    });
+  });
+
+  it("rejects --native with --ink", () => {
+    expect(() => resolveScaffoldSelector({ native: true, ink: true })).toThrow(
+      "Only one scaffold selector can be provided (--native, --ink). Choose one scaffold selector: --template <name>, --example <name>, --native, or --ink. --preset <name-or-url> can be used with --template or by itself.",
+    );
+  });
+
+  it("rejects --native with --example", () => {
+    expect(() =>
+      resolveScaffoldSelector({ native: true, example: "with-tanstack" }),
+    ).toThrow(
+      "Only one scaffold selector can be provided (--example, --native). Choose one scaffold selector: --template <name>, --example <name>, --native, or --ink. --preset <name-or-url> can be used with --template or by itself.",
+    );
+  });
+
+  it("rejects --template with --example", () => {
+    expect(() =>
+      resolveScaffoldSelector({
+        template: "default",
+        example: "with-ai-sdk-v7",
+      }),
+    ).toThrow(
+      "Only one scaffold selector can be provided (--template, --example). Choose one scaffold selector: --template <name>, --example <name>, --native, or --ink. --preset <name-or-url> can be used with --template or by itself.",
+    );
+  });
+
+  it("rejects --ink with --template", () => {
+    expect(() =>
+      resolveScaffoldSelector({ ink: true, template: "default" }),
+    ).toThrow(
+      "Only one scaffold selector can be provided (--template, --ink). Choose one scaffold selector: --template <name>, --example <name>, --native, or --ink. --preset <name-or-url> can be used with --template or by itself.",
+    );
+  });
+
+  it("allows --preset with --template", () => {
+    expect(
+      resolveScaffoldSelector({ preset: "chatgpt", template: "minimal" }),
+    ).toEqual({
+      template: "minimal",
+      preset: "chatgpt",
+    });
+  });
+
+  it("rejects --preset with --example", () => {
+    expect(() =>
+      resolveScaffoldSelector({
+        preset: "chatgpt",
+        example: "with-ai-sdk-v7",
+      }),
+    ).toThrow(
+      "Cannot use --preset with --example. Choose one scaffold selector: --template <name>, --example <name>, --native, or --ink. --preset <name-or-url> can be used with --template or by itself.",
+    );
+  });
+
+  it("rejects --preset with --native", () => {
+    expect(() =>
+      resolveScaffoldSelector({
+        preset: "chatgpt",
+        native: true,
+      }),
+    ).toThrow(
+      "Cannot use --preset with --native. Choose one scaffold selector: --template <name>, --example <name>, --native, or --ink. --preset <name-or-url> can be used with --template or by itself.",
+    );
+  });
+
+  it("rejects --preset with --ink", () => {
+    expect(() =>
+      resolveScaffoldSelector({
+        preset: "chatgpt",
+        ink: true,
+      }),
+    ).toThrow(
+      "Cannot use --preset with --ink. Choose one scaffold selector: --template <name>, --example <name>, --native, or --ink. --preset <name-or-url> can be used with --template or by itself.",
+    );
+  });
+});
+
+describe("resolveProject error handling", () => {
+  let exitSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    exitSpy = vi.spyOn(process, "exit").mockImplementation(() => {
+      throw new Error("process.exit");
+    });
+  });
+
+  afterEach(() => {
+    exitSpy.mockRestore();
+  });
+
+  it("--template rejects an example name", async () => {
+    await expect(
+      resolveProject({ template: "with-langgraph", stdinIsTTY: true }),
+    ).rejects.toThrow("process.exit");
+    expect(exitSpy).toHaveBeenCalledWith(1);
+  });
+
+  it("--template rejects an empty name", async () => {
+    await expect(
+      resolveProject({ template: "", stdinIsTTY: true }),
+    ).rejects.toThrow("process.exit");
+    expect(exitSpy).toHaveBeenCalledWith(1);
+  });
+
+  it("--example rejects a template name", async () => {
+    await expect(
+      resolveProject({ example: "cloud", stdinIsTTY: true }),
+    ).rejects.toThrow("process.exit");
+    expect(exitSpy).toHaveBeenCalledWith(1);
+  });
+
+  it("--example rejects an empty name", async () => {
+    await expect(
+      resolveProject({ example: "", stdinIsTTY: true }),
+    ).rejects.toThrow("process.exit");
+    expect(exitSpy).toHaveBeenCalledWith(1);
+  });
+
+  it("exits when picker returns separator value", async () => {
+    const select = vi.fn().mockResolvedValue("_separator");
+    const isCancelMock = vi
+      .fn<(value: unknown) => boolean>()
+      .mockReturnValue(false);
+    const isCancel = (value: unknown): value is typeof CANCEL_SYMBOL =>
+      isCancelMock(value);
+
+    await expect(
+      resolveProject({ stdinIsTTY: true, select, isCancel }),
+    ).rejects.toThrow("process.exit");
+    expect(exitSpy).toHaveBeenCalledWith(1);
+  });
+});
+
+describe("PROJECT_METADATA", () => {
+  it("contains all 7 templates", () => {
+    const templates = PROJECT_METADATA.filter((m) => m.category === "template");
+    expect(templates).toHaveLength(7);
+    expect(templates.map((t) => t.name)).toEqual([
+      "default",
+      "minimal",
+      "cloud",
+      "cloud-clerk",
+      "langchain",
+      "mcp",
+      "eve",
+    ]);
+  });
+
+  it("only the minimal template ships local components", () => {
+    const templates = PROJECT_METADATA.filter((m) => m.category === "template");
+    expect(
+      templates.filter((t) => t.hasLocalComponents).map((t) => t.name),
+    ).toEqual(["minimal"]);
+  });
+
+  it("examples have correct hasLocalComponents values", () => {
+    const examples = PROJECT_METADATA.filter((m) => m.category === "example");
+    const withLocalComponents = examples.filter((e) => e.hasLocalComponents);
+    expect(withLocalComponents.map((e) => e.name)).toEqual(["with-react-ink"]);
+  });
+
+  it("every entry has a path", () => {
+    for (const m of PROJECT_METADATA) {
+      expect(m.path).toBeTruthy();
+      expect(
+        m.path.startsWith("templates/") || m.path.startsWith("examples/"),
+      ).toBe(true);
+    }
+  });
+});
+
+describe("resolveCreateProjectDirectory", () => {
+  it("defaults project directory in non-interactive mode", () => {
+    expect(
+      resolveCreateProjectDirectory({
+        stdinIsTTY: false,
+      }),
+    ).toBe("my-aui-app");
+  });
+
+  it("does not force a project directory in interactive mode", () => {
+    expect(
+      resolveCreateProjectDirectory({
+        stdinIsTTY: true,
+      }),
+    ).toBeUndefined();
+  });
+
+  it("keeps provided project directory in non-interactive mode", () => {
+    expect(
+      resolveCreateProjectDirectory({
+        projectDirectory: "custom-app",
+        stdinIsTTY: false,
+      }),
+    ).toBe("custom-app");
+  });
+});
+
+describe("resolveProjectDirectoryGuidance", () => {
+  it.each([
+    { abs: "/work/my-app", display: "my-app", cdCommand: "cd my-app" },
+    { abs: "/work/a/b", display: "a/b", cdCommand: "cd a/b" },
+    { abs: "/work/my app", display: "my app", cdCommand: "cd 'my app'" },
+    { abs: "/work/it's", display: "it's", cdCommand: "cd 'it'\\''s'" },
+    {
+      abs: "/work/$HOME & co",
+      display: "$HOME & co",
+      cdCommand: "cd '$HOME & co'",
+    },
+    { abs: "/work/-dash", display: "-dash", cdCommand: "cd ./-dash" },
+    {
+      abs: "/opt/apps/x",
+      display: "/opt/apps/x",
+      cdCommand: "cd /opt/apps/x",
+    },
+    {
+      abs: "/opt/apps/my app",
+      display: "/opt/apps/my app",
+      cdCommand: "cd '/opt/apps/my app'",
+    },
+  ])("describes $abs on posix", ({ abs, display, cdCommand }) => {
+    expect(
+      resolveProjectDirectoryGuidance({
+        absoluteProjectDir: abs,
+        cwd: "/work",
+        platform: "linux",
+      }),
+    ).toEqual({ display, cdCommand });
+  });
+
+  it.each([
+    {
+      abs: "C:\\Users\\me\\my-app",
+      display: "my-app",
+      cdCommand: "cd my-app",
+    },
+    { abs: "C:\\Users\\me\\a\\b", display: "a\\b", cdCommand: "cd a\\b" },
+    {
+      abs: "C:\\Users\\me\\my app",
+      display: "my app",
+      cdCommand: 'cd "my app"',
+    },
+    {
+      abs: "D:\\other\\app",
+      display: "D:\\other\\app",
+      cdCommand: "cd D:\\other\\app",
+    },
+  ])("describes $abs on windows", ({ abs, display, cdCommand }) => {
+    expect(
+      resolveProjectDirectoryGuidance({
+        absoluteProjectDir: abs,
+        cwd: "C:\\Users\\me",
+        platform: "win32",
+      }),
+    ).toEqual({ display, cdCommand });
+  });
+
+  it
+    .runIf(process.platform !== "win32")
+    .each(["my-app", "my app", "it's a $HOME & co", "-dash"])(
+    "emits a cd a posix shell can run for %s",
+    (name) => {
+      const cwd = fs.realpathSync(
+        fs.mkdtempSync(path.join(os.tmpdir(), "aui-guidance-")),
+      );
+      const target = path.join(cwd, name);
+      fs.mkdirSync(target);
+
+      try {
+        const { cdCommand } = resolveProjectDirectoryGuidance({
+          absoluteProjectDir: target,
+          cwd,
+        });
+        const result = spawnSync("/bin/sh", ["-c", `${cdCommand} && pwd -P`], {
+          cwd,
+          encoding: "utf8",
+        });
+
+        expect(result.status).toBe(0);
+        expect(result.stdout.trim()).toBe(target);
+      } finally {
+        fs.rmSync(cwd, { recursive: true, force: true });
+      }
+    },
+  );
+});
+
+describe("resolvePresetUrl", () => {
+  it("passes through full https URLs unchanged", () => {
+    const url = "https://www.assistant-ui.com/playground/init?preset=chatgpt";
+    expect(resolvePresetUrl(url)).toBe(url);
+  });
+
+  it("passes through http URLs unchanged", () => {
+    const url = "http://localhost:3000/preset";
+    expect(resolvePresetUrl(url)).toBe(url);
+  });
+
+  it("expands a bare preset name to the playground URL", () => {
+    expect(resolvePresetUrl("chatgpt")).toBe(
+      "https://www.assistant-ui.com/playground/init?preset=chatgpt",
+    );
+  });
+
+  it("encodes special characters in preset names", () => {
+    expect(resolvePresetUrl("my preset")).toBe(
+      "https://www.assistant-ui.com/playground/init?preset=my%20preset",
+    );
+  });
+});

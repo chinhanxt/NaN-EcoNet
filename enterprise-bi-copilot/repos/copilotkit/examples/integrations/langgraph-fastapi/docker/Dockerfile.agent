@@ -1,0 +1,20 @@
+# Dockerfile for the Python LangGraph FastAPI agent.
+# Mirrors the user experience: uv sync + uv run main.py (same as npm run dev:agent).
+FROM python:3.12-slim
+
+# Install uv by copying from the official image (avoids curl|sh pipe-swallow bug
+# where a 5xx on astral.sh silently produces an exit-0 layer with no uv binary).
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
+
+WORKDIR /app
+
+# Copy agent source and install deps the same way users do (uv sync)
+COPY pyproject.toml uv.lock ./
+COPY src/ ./src/
+COPY main.py ./
+
+RUN uv sync
+
+EXPOSE 8123
+
+CMD ["uv", "run", "main.py"]

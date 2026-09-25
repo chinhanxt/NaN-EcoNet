@@ -1,0 +1,77 @@
+"use client";
+
+import { forwardRef, useCallback } from "react";
+import type { ActionButtonProps } from "../../utils/createActionButton";
+import { composeEventHandlers } from "radix-ui/internal";
+import { Primitive } from "../../utils/Primitive";
+import { useAuiState, useAui } from "@assistant-ui/store";
+
+const useActionBarExportMarkdown = ({
+  filename,
+  onExport,
+}: {
+  filename?: string | undefined;
+  onExport?: ((content: string) => void | Promise<void>) | undefined;
+} = {}) => {
+  const aui = useAui();
+  const hasExportableContent = useAuiState((s) => {
+    return (
+      (s.message.role !== "assistant" ||
+        s.message.status?.type !== "running") &&
+      s.message.parts.some((c) => c.type === "text" && c.text.length > 0)
+    );
+  });
+
+  const callback = useCallback(async () => {
+    const content = aui.message.getCopyText();
+    if (!content) return;
+
+    if (onExport) {
+      await onExport(content);
+      return;
+    }
+
+    const blob = new Blob([content], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename ?? `message-${Date.now()}.md`;
+    a.rel = "noopener";
+    // Firefox starts a download only for an anchor that is in the document.
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 40_000);
+  }, [aui, filename, onExport]);
+
+  if (!hasExportableContent) return null;
+  return callback;
+};
+
+export namespace ActionBarPrimitiveExportMarkdown {
+  export type Element = HTMLButtonElement;
+  export type Props = ActionButtonProps<typeof useActionBarExportMarkdown>;
+}
+
+export const ActionBarPrimitiveExportMarkdown = forwardRef<
+  ActionBarPrimitiveExportMarkdown.Element,
+  ActionBarPrimitiveExportMarkdown.Props
+>(({ filename, onExport, onClick, disabled, ...props }, forwardedRef) => {
+  const callback = useActionBarExportMarkdown({ filename, onExport });
+  return (
+    <Primitive.button
+      type="button"
+      {...props}
+      ref={forwardedRef}
+      disabled={disabled || !callback}
+      onClick={composeEventHandlers(onClick, () => {
+        void callback?.().catch((error: unknown) => {
+          console.error("[assistant-ui] markdown export failed:", error);
+        });
+      })}
+    />
+  );
+});
+
+ActionBarPrimitiveExportMarkdown.displayName =
+  "ActionBarPrimitive.ExportMarkdown";

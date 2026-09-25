@@ -1,0 +1,57 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "ignoreCommand": "bash ../../scripts/vercel-ignore-changeset-release.sh",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "headers": [
+    {
+      "source": "/files/(.*)",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "source": "/base/files/(.*)",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "source": "/native/files/(.*)",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/styles/base-:variant/:path(.+\\.json)",
+      "destination": "/base/:path"
+    },
+    {
+      "source": "/styles/base-:variant/:path(.+)",
+      "destination": "/base/:path.json"
+    },
+    {
+      "source": "/styles/:style/:path(.+\\.json)",
+      "destination": "/:path"
+    },
+    {
+      "source": "/styles/:style/:path(.+)",
+      "destination": "/:path.json"
+    },
+    {
+      "source": "/:path*",
+      "destination": "/:path*.json"
+    }
+  ],
+  "outputDirectory": "dist"
+}

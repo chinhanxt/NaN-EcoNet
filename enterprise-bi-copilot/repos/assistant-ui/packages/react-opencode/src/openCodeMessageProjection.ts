@@ -1,0 +1,713 @@
+import type {
+  AssistantMessage,
+  Message,
+  OpenCodeProjectedThreadMessage,
+  OpenCodeServerMessage,
+  OpenCodeThreadState,
+  Part,
+  PendingUserMessage,
+  ThreadUserMessagePart,
+} from "./types";
+import {
+  ExportedMessageRepository,
+  type MessageTiming,
+  type ThreadMessage,
+} from "@assistant-ui/react";
+import {
+  resolveFileMediaType,
+  resolveImageMediaType,
+} from "@assistant-ui/core/internal";
+import {
+  projectOpenCodePermissionApproval,
+  projectResolvedOpenCodePermissionApproval,
+} from "./openCodePermissionApproval";
+import { getOpenCodeTaskSessionId } from "./openCodeTaskSession";
+
+type ProjectedContentPart = Exclude<
+  OpenCodeProjectedThreadMessage["content"],
+  string
+>[number];
+
+const isAssistantMessage = (
+  message: Message | undefined,
+): message is AssistantMessage => {
+  return message?.role === "assistant";
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === "object" && value !== null;
+};
+
+const getProjectedCreatedAt = (message: OpenCodeProjectedThreadMessage) => {
+  return message.createdAt instanceof Date
+    ? message.createdAt.getTime()
+    : Date.now();
+};
+
+const compareProjectedMessages = (
+  left: OpenCodeProjectedThreadMessage,
+  right: OpenCodeProjectedThreadMessage,
+) => {
+  const leftTime = getProjectedCreatedAt(left);
+  const rightTime = getProjectedCreatedAt(right);
+  if (leftTime !== rightTime) return leftTime - rightTime;
+  return left.id?.localeCompare(right.id ?? "") ?? 0;
+};
+
+const mergeProjectedMessages = (
+  serverMessages: readonly OpenCodeProjectedThreadMessage[],
+  pendingMessages: readonly OpenCodeProjectedThreadMessage[],
+) => {
+  const merged: OpenCodeProjectedThreadMessage[] = [];
+  let serverIndex = 0;
+  let pendingIndex = 0;
+
+  while (
+    serverIndex < serverMessages.length &&
+    pendingIndex < pendingMessages.length
+  ) {
+    const serverMessage = serverMessages[serverIndex]!;
+    const pendingMessage = pendingMessages[pendingIndex]!;
+
+    if (compareProjectedMessages(serverMessage, pendingMessage) <= 0) {
+      merged.push(serverMessage);
+      serverIndex += 1;
+    } else {
+      merged.push(pendingMessage);
+      pendingIndex += 1;
+    }
+  }
+
+  return [
+    ...merged,
+    ...serverMessages.slice(serverIndex),
+    ...pendingMessages.slice(pendingIndex),
+  ];
+};
+
+const mapToolState = (
+  state:
+    | {
+        status?: string;
+        input?: unknown;
+        output?: unknown;
+        error?: unknown;
+      }
+    | null
+    | undefined,
+) => {
+  const args = isRecord(state?.input) ? state.input : {};
+  const argsText = JSON.stringify(args);
+
+  if (state?.status === "completed") {
+    return {
+      args,
+      argsText,
+      result: state.output,
+      isError: false,
+    };
+  }
+
+  if (state?.status === "error") {
+    return {
+      args,
+      argsText,
+      result: state.error,
+      isError: true,
+    };
+  }
+
+  return {
+    args,
+    argsText,
+    result: undefined,
+    isError: false,
+  };
+};
+
+const getPartToolCallId = (part: Part) => {
+  if (part.type !== "tool") return undefined;
+  return typeof part.callID === "string" ? part.callID : undefined;
+};
+
+type PermissionState = OpenCodeThreadState["interactions"]["permissions"];
+type PendingPermission = PermissionState["pending"][string];
+type ResolvedPermission = PermissionState["resolved"][string];
+
+type PermissionIndex = {
+  pendingByCallId: ReadonlyMap<string, PendingPermission>;
+  resolvedByCallId: ReadonlyMap<string, ResolvedPermission>;
+};
+
+const permissionIndexCache = new WeakMap<PermissionState, PermissionIndex>();
+
+const getPermissionIndex = (state: OpenCodeThreadState): PermissionIndex => {
+  const permissions = state.interactions.permissions;
+  const cached = permissionIndexCache.get(permissions);
+  if (cached) return cached;
+
+  const pendingByCallId = new Map<string, PendingPermission>();
+  for (const request of Object.values(permissions.pending)) {
+    if (request.tool?.callID) pendingByCallId.set(request.tool.callID, request);
+  }
+
+  const resolvedByCallId = new Map<string, ResolvedPermission>();
+  for (const entry of Object.values(permissions.resolved)) {
+    const callId = entry.request.tool?.callID;
+    if (callId) resolvedByCallId.set(callId, entry);
+  }
+
+  const index: PermissionIndex = { pendingByCallId, resolvedByCallId };
+  permissionIndexCache.set(permissions, index);
+  return index;
+};
+
+const childMessagesCache = new WeakMap<
+  OpenCodeThreadState,
+  readonly ThreadMessage[]
+>();
+
+const getChildMessages = (
+  childState: OpenCodeThreadState,
+): readonly ThreadMessage[] => {
+  const cached = childMessagesCache.get(childState);
+  if (cached) return cached;
+
+  const messages = projectOpenCodeThreadRepository(childState).messages.map(
+    ({ message }) => message,
+  );
+  childMessagesCache.set(childState, messages);
+  return messages;
+};
+
+const getPendingPermissionForToolCall = (
+  state: OpenCodeThreadState,
+  toolCallId: string,
+) => getPermissionIndex(state).pendingByCallId.get(toolCallId);
+
+const getResolvedPermissionForToolCall = (
+  state: OpenCodeThreadState,
+  toolCallId: string,
+) => getPermissionIndex(state).resolvedByCallId.get(toolCallId);
+
+const hasPendingInteractionForToolCall = (
+  state: OpenCodeThreadState,
+  toolCallId: string | undefined,
+) => {
+  if (!toolCallId) return false;
+
+  if (getPermissionIndex(state).pendingByCallId.has(toolCallId)) {
+    return true;
+  }
+
+  for (const request of Object.values(state.interactions.questions.pending)) {
+    if (request.tool?.callID === toolCallId) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+const hasPendingInteractionForMessage = (
+  state: OpenCodeThreadState,
+  message: OpenCodeServerMessage,
+) => {
+  for (const part of message.parts) {
+    if (hasPendingInteractionForToolCall(state, getPartToolCallId(part))) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+const makeDataPart = (
+  name: string,
+  data: Record<string, unknown>,
+  parentId?: string,
+) => ({
+  type: "data" as const,
+  name,
+  data,
+  ...(parentId ? { parentId } : {}),
+});
+
+const makeUnsupportedPart = (part: Part, parentId?: string) =>
+  makeDataPart(
+    "opencode-unsupported-part",
+    {
+      type: (part as { type?: string }).type ?? "unknown",
+      part,
+    },
+    parentId,
+  );
+
+const sanitizeReasoningText = (text: string | undefined) =>
+  (text ?? "")
+    .replaceAll("[REDACTED]", "")
+    .replaceAll("\\r\\n", "\n")
+    .replaceAll("\\n", "\n")
+    .replaceAll("\\t", "\t")
+    .trim();
+
+const convertFilePart = (part: Extract<Part, { type: "file" }>) => {
+  const mimeType = part.mime ?? "application/octet-stream";
+  if (mimeType.startsWith("image/")) {
+    return {
+      type: "image" as const,
+      image: part.url ?? "",
+      ...(part.filename ? { filename: part.filename } : {}),
+    };
+  }
+
+  return {
+    type: "file" as const,
+    filename: part.filename ?? "file",
+    data: part.url ?? "",
+    mimeType,
+  };
+};
+
+const projectAssistantContent = (
+  state: OpenCodeThreadState,
+  message: OpenCodeServerMessage,
+): ProjectedContentPart[] => {
+  const content: ProjectedContentPart[] = [];
+  const stepStack: string[] = [];
+
+  const currentStepId = () => stepStack[stepStack.length - 1];
+
+  for (const [index, part] of message.parts.entries()) {
+    switch (part.type) {
+      case "text":
+        content.push({
+          type: "text",
+          text: part.text ?? "",
+        });
+        break;
+
+      case "reasoning":
+        {
+          const text = sanitizeReasoningText(part.text);
+          if (!text) break;
+          content.push({
+            type: "reasoning",
+            text,
+            ...(currentStepId() ? { parentId: currentStepId() } : {}),
+          });
+        }
+        break;
+
+      case "file":
+        content.push(convertFilePart(part));
+        break;
+
+      case "tool": {
+        const toolState = mapToolState(part.state);
+        const toolCallId = part.callID ?? part.id ?? `tool-${index}`;
+        const childSessionId = getOpenCodeTaskSessionId(part);
+        const childState = childSessionId
+          ? state.childSessionsById[childSessionId]
+          : undefined;
+        const childMessages =
+          childState?.loadState.type === "ready"
+            ? getChildMessages(childState)
+            : undefined;
+        const permission = getPendingPermissionForToolCall(state, toolCallId);
+        const resolvedPermission = permission
+          ? undefined
+          : getResolvedPermissionForToolCall(state, toolCallId);
+        content.push({
+          type: "tool-call",
+          toolCallId,
+          toolName: part.tool ?? "tool",
+          args: toolState.args as never,
+          argsText: toolState.argsText,
+          ...(toolState.result !== undefined
+            ? { result: toolState.result }
+            : {}),
+          ...(toolState.isError ? { isError: true } : {}),
+          ...(childMessages !== undefined ? { messages: childMessages } : {}),
+          ...(permission
+            ? { approval: projectOpenCodePermissionApproval(permission) }
+            : resolvedPermission
+              ? {
+                  approval:
+                    projectResolvedOpenCodePermissionApproval(
+                      resolvedPermission,
+                    ),
+                }
+              : {}),
+          ...(currentStepId() ? { parentId: currentStepId() } : {}),
+        });
+        break;
+      }
+
+      case "step-start": {
+        const nestedParentId = currentStepId();
+        const stepId =
+          ("id" in part && typeof part.id === "string" ? part.id : undefined) ??
+          `step-${index}`;
+        stepStack.push(stepId);
+        content.push(
+          makeDataPart(
+            "opencode-step-start",
+            {
+              id: stepId,
+              depth: stepStack.length - 1,
+              snapshot:
+                "snapshot" in part && typeof part.snapshot === "string"
+                  ? part.snapshot
+                  : undefined,
+            },
+            nestedParentId,
+          ),
+        );
+        break;
+      }
+
+      case "step-finish": {
+        const stepId =
+          stepStack.pop() ??
+          ("id" in part && typeof part.id === "string" ? part.id : undefined) ??
+          `step-finish-${index}`;
+        content.push(
+          makeDataPart("opencode-step-finish", {
+            id: stepId,
+            reason: "reason" in part ? part.reason : undefined,
+            cost: "cost" in part ? part.cost : undefined,
+            snapshot:
+              "snapshot" in part && typeof part.snapshot === "string"
+                ? part.snapshot
+                : undefined,
+          }),
+        );
+        break;
+      }
+
+      case "patch":
+        content.push(
+          makeDataPart(
+            "opencode-patch",
+            {
+              id:
+                ("id" in part && typeof part.id === "string"
+                  ? part.id
+                  : undefined) ?? `patch-${index}`,
+              hash: "hash" in part ? part.hash : undefined,
+              files: Array.isArray((part as { files?: unknown[] }).files)
+                ? (part as { files: unknown[] }).files.filter(
+                    (file): file is string => typeof file === "string",
+                  )
+                : [],
+              part,
+            },
+            currentStepId(),
+          ),
+        );
+        break;
+
+      case "snapshot":
+        content.push(
+          makeDataPart(
+            "opencode-snapshot",
+            {
+              id:
+                ("id" in part && typeof part.id === "string"
+                  ? part.id
+                  : undefined) ?? `snapshot-${index}`,
+              part,
+            },
+            currentStepId(),
+          ),
+        );
+        break;
+
+      case "retry":
+      case "compaction":
+      case "agent":
+      case "subtask":
+        content.push(
+          makeDataPart(
+            `opencode-${part.type}`,
+            {
+              id:
+                ("id" in part && typeof part.id === "string"
+                  ? part.id
+                  : undefined) ?? `${part.type}-${index}`,
+              part,
+            },
+            currentStepId(),
+          ),
+        );
+        break;
+
+      default:
+        content.push(makeUnsupportedPart(part, currentStepId()));
+        break;
+    }
+  }
+
+  return content;
+};
+
+type ProjectedAttachment = NonNullable<
+  OpenCodeProjectedThreadMessage["attachments"]
+>[number];
+
+const splitUserParts = (
+  parts: readonly ThreadUserMessagePart[],
+): { content: ProjectedContentPart[]; attachments: ProjectedAttachment[] } => {
+  const content: ProjectedContentPart[] = [];
+  const attachments: ProjectedAttachment[] = [];
+  for (const part of parts) {
+    if (part.type !== "image" && part.type !== "file") {
+      content.push(part as ProjectedContentPart);
+      continue;
+    }
+    // The same ladders the outbound prompt uses, so the pending copy and the
+    // reconciled server copy agree on the attachment's type and content type.
+    const mediaType =
+      part.type === "image"
+        ? resolveImageMediaType(
+            part.image,
+            (part as { contentType?: string }).contentType,
+          )
+        : resolveFileMediaType(part.data, part.mimeType);
+    attachments.push({
+      id: attachments.length.toString(),
+      type: mediaType.startsWith("image/") ? "image" : "file",
+      name: part.filename ?? "file",
+      contentType: mediaType,
+      status: { type: "complete" },
+      content: [part],
+    });
+  }
+  return { content, attachments };
+};
+
+const projectUserFileAttachment = (
+  part: Extract<Part, { type: "file" }>,
+): ProjectedAttachment => {
+  const content = convertFilePart(part);
+  return {
+    id: part.id,
+    type: content.type === "image" ? "image" : "file",
+    name: part.filename ?? "file",
+    contentType: part.mime ?? "application/octet-stream",
+    status: { type: "complete" },
+    content: [content],
+  };
+};
+
+const projectUserMessage = (
+  message: OpenCodeServerMessage,
+): { content: ProjectedContentPart[]; attachments: ProjectedAttachment[] } => {
+  if (message.parts.length === 0) {
+    return splitUserParts(message.shadowParts ?? []);
+  }
+
+  const content: ProjectedContentPart[] = [];
+  const attachments: ProjectedAttachment[] = [];
+  for (const part of message.parts) {
+    if (part.type === "text") {
+      content.push({ type: "text", text: part.text ?? "" });
+    } else if (part.type === "file") {
+      attachments.push(projectUserFileAttachment(part));
+    }
+  }
+  return { content, attachments };
+};
+
+const getMessageStatus = (
+  state: OpenCodeThreadState,
+  message: OpenCodeServerMessage,
+): OpenCodeProjectedThreadMessage["status"] => {
+  if (!isAssistantMessage(message.info)) {
+    return undefined;
+  }
+
+  if (hasPendingInteractionForMessage(state, message)) {
+    return {
+      type: "requires-action",
+      reason: "tool-calls",
+    };
+  }
+
+  if (message.info.error) {
+    const error = message.info.error;
+    const maybeMessage =
+      isRecord(error) &&
+      isRecord(error.data) &&
+      typeof error.data.message === "string"
+        ? error.data.message
+        : undefined;
+    const fallbackMessage =
+      typeof error === "string"
+        ? error
+        : isRecord(error) && typeof error.name === "string"
+          ? error.name
+          : "OpenCode run failed";
+
+    return {
+      type: "incomplete",
+      reason: "error",
+      error: maybeMessage ?? fallbackMessage,
+    };
+  }
+
+  if (!message.info.finish) {
+    return {
+      type: "running",
+    };
+  }
+
+  return {
+    type: "complete",
+    reason: "stop",
+  };
+};
+
+const mergeServerMessages = (
+  messages: readonly OpenCodeServerMessage[],
+): OpenCodeServerMessage[] => {
+  const merged: OpenCodeServerMessage[] = [];
+
+  for (const message of messages) {
+    const previous = merged[merged.length - 1];
+
+    if (
+      previous?.info?.role === "assistant" &&
+      message.info?.role === "assistant"
+    ) {
+      merged[merged.length - 1] = {
+        id: message.id,
+        info: message.info,
+        parts: [...previous.parts, ...message.parts],
+        shadowParts:
+          previous.shadowParts || message.shadowParts
+            ? [...(previous.shadowParts ?? []), ...(message.shadowParts ?? [])]
+            : undefined,
+      };
+      continue;
+    }
+
+    merged.push(message);
+  }
+
+  return merged;
+};
+
+const projectServerMessage = (
+  state: OpenCodeThreadState,
+  message: OpenCodeServerMessage,
+  timing?: MessageTiming,
+): OpenCodeProjectedThreadMessage | null => {
+  if (!message.info) return null;
+
+  const metadata = {
+    custom: {
+      opencode: {
+        originalMessage: message.info,
+        parts: message.parts,
+      },
+    },
+  };
+
+  if (message.info.role === "assistant") {
+    const assistantInfo = message.info as AssistantMessage;
+    return {
+      id: message.info.id,
+      role: "assistant",
+      createdAt: new Date(message.info.time?.created ?? Date.now()),
+      content: projectAssistantContent(state, message),
+      status: getMessageStatus(state, message),
+      metadata: {
+        custom: {
+          ...metadata.custom,
+          modelID: assistantInfo.modelID,
+          providerID: assistantInfo.providerID,
+          cost: assistantInfo.cost,
+          tokens: assistantInfo.tokens,
+          mode: assistantInfo.mode,
+        },
+        ...(timing && { timing }),
+      },
+    };
+  }
+
+  if (message.info.role === "user") {
+    const { content, attachments } = projectUserMessage(message);
+    return {
+      id: message.info.id,
+      role: "user",
+      createdAt: new Date(message.info.time?.created ?? Date.now()),
+      content,
+      attachments,
+      metadata,
+    };
+  }
+
+  return null;
+};
+
+const projectPendingMessage = (
+  pending: PendingUserMessage,
+): OpenCodeProjectedThreadMessage => ({
+  id: `local:${pending.clientId}`,
+  role: "user",
+  createdAt: new Date(pending.createdAt),
+  ...splitUserParts(pending.parts),
+  metadata: {
+    custom: {
+      opencode: {
+        pending: true,
+        clientId: pending.clientId,
+        error:
+          pending.status === "failed"
+            ? pending.error instanceof Error
+              ? pending.error.message
+              : String(pending.error ?? "Failed to send message")
+            : undefined,
+      },
+    },
+  },
+});
+
+export function projectOpenCodeThreadMessages(
+  state: OpenCodeThreadState,
+  messageTiming: Record<string, MessageTiming> = {},
+): OpenCodeProjectedThreadMessage[] {
+  const mergedServerMessages = mergeServerMessages(
+    state.messageOrder.flatMap((messageId: string) => {
+      const message = state.messagesById[messageId];
+      return message ? [message] : [];
+    }),
+  );
+
+  const serverMessages = mergedServerMessages
+    .map((message) =>
+      projectServerMessage(state, message, messageTiming[message.id]),
+    )
+    .filter(
+      (message): message is OpenCodeProjectedThreadMessage => message !== null,
+    );
+
+  const pendingMessages = (
+    Object.values(state.pendingUserMessages) as PendingUserMessage[]
+  )
+    .sort((left, right) => left.createdAt - right.createdAt)
+    .map((pending) => projectPendingMessage(pending));
+
+  return mergeProjectedMessages(serverMessages, pendingMessages);
+}
+
+export function projectOpenCodeThreadRepository(
+  state: OpenCodeThreadState,
+  messageTiming: Record<string, MessageTiming> = {},
+) {
+  return ExportedMessageRepository.fromArray(
+    projectOpenCodeThreadMessages(state, messageTiming),
+  );
+}

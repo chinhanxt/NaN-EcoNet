@@ -1,0 +1,119 @@
+{
+  "name": "@assistant-ui/core",
+  "version": "0.3.20",
+  "description": "Framework-agnostic core runtime for assistant-ui",
+  "keywords": [
+    "assistant",
+    "ai",
+    "chat",
+    "runtime",
+    "framework-agnostic"
+  ],
+  "author": "AgentbaseAI Inc.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./internal": {
+      "types": "./dist/internal.d.ts",
+      "default": "./dist/internal.js"
+    },
+    "./store": {
+      "types": "./dist/store/index.d.ts",
+      "default": "./dist/store/index.js"
+    },
+    "./store/internal": {
+      "types": "./dist/store/internal.d.ts",
+      "default": "./dist/store/internal.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "default": "./dist/react/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "react": [
+        "./dist/react/index.d.ts"
+      ],
+      "internal": [
+        "./dist/internal.d.ts"
+      ],
+      "store": [
+        "./dist/store/index.d.ts"
+      ],
+      "store/internal": [
+        "./dist/store/internal.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "aui-build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
+    "test:react-compiler": "vitest run --config vitest.react-compiler.config.ts",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "assistant-stream": "^0.3.44",
+    "nanoid": "^6.0.1"
+  },
+  "optionalDevDependencies": {
+    "@assistant-ui/x-generative-compiler": ">=0.0.3"
+  },
+  "peerDependencies": {
+    "@assistant-ui/store": "workspace:^",
+    "@assistant-ui/tap": "workspace:^",
+    "@types/react": "*",
+    "react": "^18 || ^19",
+    "assistant-cloud": "^0.2.1"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
+    "assistant-cloud": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@assistant-ui/store": "workspace:*",
+    "@assistant-ui/tap": "workspace:*",
+    "@assistant-ui/vite": "workspace:*",
+    "@assistant-ui/x-buildutils": "workspace:*",
+    "@testing-library/react": "^16.3.3",
+    "@types/react": "^19.3.0",
+    "assistant-cloud": "workspace:*",
+    "jsdom": "^30.0.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "vitest": "^5.0.1"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "homepage": "https://www.assistant-ui.com/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/assistant-ui/assistant-ui.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/assistant-ui/assistant-ui/issues"
+  }
+}

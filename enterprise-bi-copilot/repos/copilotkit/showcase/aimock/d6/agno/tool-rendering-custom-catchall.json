@@ -1,0 +1,65 @@
+{
+  "_meta": {
+    "description": "D6 fixtures for agno / tool-rendering-custom-catchall",
+    "sourceFile": "d5-tool-rendering-custom-catchall.ts",
+    "created": "2026-05-22",
+    "updated": "2026-06-15",
+    "note": "Current-turn tool-result gates separate initial calls from continuations; generated call IDs preserve repeated tool rendering."
+  },
+  "fixtures": [
+    {
+      "_comment": "Continue after this turn’s weather result without inventing values or units.",
+      "match": {
+        "userMessage": "Forecast Tokyo through the wildcard renderer",
+        "context": "agno",
+        "hasToolResult": true
+      },
+      "response": {
+        "content": "The Tokyo weather result above was rendered through the custom wildcard catchall."
+      }
+    },
+    {
+      "_comment": "Emit a fresh weather call before this turn has a tool result.",
+      "match": {
+        "userMessage": "Forecast Tokyo through the wildcard renderer",
+        "context": "agno",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "get_weather",
+            "arguments": "{\"location\":\"Tokyo\"}"
+          }
+        ]
+      }
+    },
+    {
+      "_comment": "Continue after this turn’s stock result without inventing price or change values.",
+      "match": {
+        "userMessage": "Quote AAPL through the wildcard renderer",
+        "context": "agno",
+        "hasToolResult": true
+      },
+      "response": {
+        "content": "The AAPL quote result above was rendered through the custom wildcard catchall."
+      }
+    },
+    {
+      "_comment": "Emit a fresh stock call using only the backend-supported ticker argument.",
+      "match": {
+        "userMessage": "Quote AAPL through the wildcard renderer",
+        "context": "agno",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "get_stock_price",
+            "arguments": "{\"ticker\":\"AAPL\"}"
+          }
+        ]
+      }
+    }
+  ]
+}

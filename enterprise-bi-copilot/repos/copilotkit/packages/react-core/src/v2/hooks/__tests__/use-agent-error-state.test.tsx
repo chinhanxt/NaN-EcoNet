@@ -1,0 +1,42 @@
+import React from "react";
+import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { CopilotKitProvider } from "../../providers/CopilotKitProvider";
+import { useAgent } from "../use-agent";
+import { stubWindowLocation } from "../../../v1-deprecated/test-helpers/stub-window-location";
+
+describe("useAgent error state", () => {
+  const originalFetch = global.fetch;
+  let restoreLocation: () => void = () => {};
+
+  beforeEach(() => {
+    // Make the auto-open-inspector heuristic skip by clearing window.location
+    // (keeps the real jsdom window so React 18's renderer stays intact).
+    restoreLocation = stubWindowLocation();
+    // Mock fetch to reject (simulates runtime unreachable)
+    global.fetch = vi.fn().mockRejectedValue(new Error("network failure"));
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    global.fetch = originalFetch;
+    restoreLocation();
+  });
+
+  it("returns a provisional agent instead of throwing when runtime is in error state", async () => {
+    function TestComponent() {
+      const { agent } = useAgent({ agentId: "nonexistent" });
+      return <div data-testid="agent-id">{agent.agentId}</div>;
+    }
+
+    render(
+      <CopilotKitProvider runtimeUrl="http://localhost:59999/nonexistent">
+        <TestComponent />
+      </CopilotKitProvider>,
+    );
+
+    // Should render without crashing — agent is provisional
+    const el = await screen.findByTestId("agent-id");
+    expect(el.textContent).toBe("nonexistent");
+  });
+});

@@ -1,0 +1,172 @@
+---
+title: Text-to-Speech for Chat
+description: Read AI chat messages aloud with the Web Speech API or a custom TTS adapter. Speech synthesis for React chat UIs, integrated with assistant-ui.
+platforms: ["react"]
+---
+
+import { SpeechSample } from "@/components/pages/docs/samples/speech";
+
+assistant-ui supports text-to-speech via the `SpeechSynthesisAdapter` interface. When a speech adapter is configured, users can trigger playback for any assistant message.
+
+Speech is the read-aloud mode: one message at a time, text to audio. For a live duplex conversation, see [Realtime Voice](/docs/guides/voice). For push-to-talk input into the composer, see [Dictation](/docs/guides/dictation).
+
+<SpeechSample />
+
+## SpeechSynthesisAdapter
+
+The adapter has a single method. The type lives in `@assistant-ui/core` and is re-exported from `@assistant-ui/react`:
+
+```tsx
+import type { SpeechSynthesisAdapter } from "@assistant-ui/react";
+
+type SpeechSynthesisAdapter = {
+  speak: (text: string) => SpeechSynthesisAdapter.Utterance;
+};
+```
+
+`speak` receives the plain text of an assistant message and returns an `Utterance`:
+
+```tsx
+namespace SpeechSynthesisAdapter {
+  type Status =
+    | { type: "starting" | "running" }
+    | {
+        type: "ended";
+        reason: "finished" | "cancelled" | "error";
+        error?: unknown;
+      };
+
+  type Utterance = {
+    status: Status;
+    cancel: () => void;
+    subscribe: (callback: () => void) => Unsubscribe;
+  };
+}
+```
+
+## WebSpeechSynthesisAdapter
+
+The built-in adapter uses the browser's Web Speech API (`SpeechSynthesis` / `SpeechSynthesisUtterance`):
+
+```tsx
+import { WebSpeechSynthesisAdapter } from "@assistant-ui/react";
+
+const runtime = useChatRuntime({
+  adapters: {
+    speech: new WebSpeechSynthesisAdapter(),
+  },
+});
+```
+
+When a speech adapter is provided, `capabilities.speech` is set to `true` automatically.
+
+## UI: ActionBarPrimitive.Speak
+
+The default action bar does not include a speech button. Add `ActionBarPrimitive.Speak` and `ActionBarPrimitive.StopSpeaking` to your assistant message action bar:
+
+```tsx
+import { ActionBarPrimitive, AuiIf } from "@assistant-ui/react";
+import { AudioLinesIcon, StopCircleIcon } from "lucide-react";
+
+const AssistantActionBar = () => {
+  return (
+    <ActionBarPrimitive.Root>
+      <AuiIf condition={(s) => s.message.speech == null}>
+        <ActionBarPrimitive.Speak>
+          <AudioLinesIcon />
+        </ActionBarPrimitive.Speak>
+      </AuiIf>
+      <AuiIf condition={(s) => s.message.speech != null}>
+        <ActionBarPrimitive.StopSpeaking>
+          <StopCircleIcon />
+        </ActionBarPrimitive.StopSpeaking>
+      </AuiIf>
+      <ActionBarPrimitive.Copy />
+    </ActionBarPrimitive.Root>
+  );
+};
+```
+
+`ActionBarPrimitive.Speak` is disabled when no speech adapter is configured. While playback is active, `message.speech` holds the current speech state so the UI can switch to `StopSpeaking`.
+
+## Custom adapters
+
+Implement `SpeechSynthesisAdapter` to call any external TTS provider. Fetch audio from your API, play it with `HTMLAudioElement`, and drive utterance status through `subscribe`:
+
+```tsx title="lib/custom-tts-adapter.ts"
+import type { SpeechSynthesisAdapter } from "@assistant-ui/react";
+
+export class CustomTTSAdapter implements SpeechSynthesisAdapter {
+  constructor(private apiUrl: string) {}
+
+  speak(text: string): SpeechSynthesisAdapter.Utterance {
+    const subscribers = new Set<() => void>();
+    let status: SpeechSynthesisAdapter.Status = { type: "starting" };
+    let audio: HTMLAudioElement | null = null;
+
+    const notify = () => {
+      for (const cb of subscribers) cb();
+    };
+
+    const finish = (
+      reason: "finished" | "cancelled" | "error",
+      error?: unknown,
+    ) => {
+      if (status.type === "ended") return;
+      status = { type: "ended", reason, error };
+      notify();
+    };
+
+    fetch(this.apiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    })
+      .then((res) => res.blob())
+      .then((blob) => {
+        if (status.type === "ended") return;
+        audio = new Audio(URL.createObjectURL(blob));
+        status = { type: "running" };
+        notify();
+        audio.onended = () => finish("finished");
+        audio.onerror = (e) => finish("error", e);
+        audio.play().catch((err) => finish("error", err));
+      })
+      .catch((err) => finish("error", err));
+
+    return {
+      get status() {
+        return status;
+      },
+      cancel: () => {
+        audio?.pause();
+        finish("cancelled");
+      },
+      subscribe: (cb) => {
+        subscribers.add(cb);
+        return () => subscribers.delete(cb);
+      },
+    };
+  }
+}
+```
+
+Wire it on the same `adapters.speech` slot as the built-in adapter:
+
+```tsx
+import { CustomTTSAdapter } from "@/lib/custom-tts-adapter";
+
+const runtime = useChatRuntime({
+  adapters: {
+    speech: new CustomTTSAdapter("/api/tts"),
+  },
+});
+```
+
+Use this shape for any provider TTS (OpenAI, ElevenLabs, cloud speech APIs, and so on). Keep the server route responsible for API keys; the adapter only needs a URL that returns audio bytes.
+
+## Related guides
+
+- [Realtime Voice](/docs/guides/voice): duplex voice sessions with `RealtimeVoiceAdapter`, `createVoiceSession`, and the voice UI component.
+- [Dictation](/docs/guides/dictation): speech-to-text into the composer with `DictationAdapter` and `ComposerPrimitive.Dictate`.
+- [Speech and Dictation API reference](/docs/api-reference/voice/speech-dictation): generated type docs.

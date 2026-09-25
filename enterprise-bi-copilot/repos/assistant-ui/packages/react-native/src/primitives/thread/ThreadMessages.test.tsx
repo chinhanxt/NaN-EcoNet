@@ -1,0 +1,1246 @@
+import { act, createRef } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { FlatList, FlatListProps } from "react-native";
+import type { ThreadMessage } from "@assistant-ui/core";
+import { ThreadMessages, ThreadMessagesFlatList } from "./ThreadMessages";
+
+type Msg = { id: string; role: string };
+
+const h = vi.hoisted(() => ({
+  state: {
+    thread: { messages: [] as Msg[] },
+    message: { role: "user" as string, composer: { isEditing: false } },
+  },
+  itemState: { role: "user" } as { role: string },
+  events: {} as Record<string, Set<() => void>>,
+  flatListProps: null as Record<string, unknown> | null,
+  scrollToOffset: vi.fn(),
+}));
+
+vi.mock("react-native", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react-native")>();
+  const React = await import("react");
+
+  const FlatListMock = React.forwardRef(function FlatListMock(
+    props: Record<string, unknown>,
+    ref,
+  ) {
+    h.flatListProps = props;
+
+    React.useImperativeHandle(ref, () => ({
+      scrollToOffset: h.scrollToOffset,
+    }));
+
+    const data = (props.data as unknown[]) ?? [];
+    const renderItem = props.renderItem as
+      | ((value: {
+          item: unknown;
+          index: number;
+          separators: {
+            highlight: () => void;
+            unhighlight: () => void;
+            updateProps: () => void;
+          };
+        }) => React.ReactNode)
+      | undefined;
+    const keyExtractor = props.keyExtractor as
+      | ((item: unknown, index: number) => string)
+      | undefined;
+
+    return React.createElement(
+      "div",
+      { "data-testid": "flatlist" },
+      data.map((item, index) =>
+        React.createElement(
+          "div",
+          { key: keyExtractor?.(item, index) ?? index },
+          renderItem?.({
+            item,
+            index,
+            separators: {
+              highlight: vi.fn(),
+              unhighlight: vi.fn(),
+              updateProps: vi.fn(),
+            },
+          }),
+        ),
+      ),
+    );
+  });
+
+  return {
+    ...actual,
+    FlatList: FlatListMock,
+  };
+});
+
+vi.mock("@assistant-ui/store", async () => {
+  const React = await import("react");
+
+  return {
+    useAuiState: <T,>(selector: (s: typeof h.state) => T) => selector(h.state),
+    useAuiEvent: (
+      selector: string | { scope: string; event: string },
+      callback: () => void,
+    ) => {
+      React.useEffect(() => {
+        const event =
+          typeof selector === "string"
+            ? selector
+            : `${selector.scope}.${selector.event}`;
+        const callbacks = (h.events[event] ??= new Set());
+        callbacks.add(callback);
+        return () => {
+          callbacks.delete(callback);
+        };
+      }, [selector, callback]);
+    },
+    RenderChildrenWithAccessor: ({
+      children,
+    }: {
+      children: (getItem: () => unknown) => unknown;
+    }) => children(() => h.itemState),
+  };
+});
+
+vi.mock("@assistant-ui/core/react", () => ({
+  MessageByIndexProvider: ({ children }: { children: unknown }) => children,
+}));
+
+(globalThis as Record<string, unknown>).IS_REACT_ACT_ENVIRONMENT = true;
+
+describe("ThreadMessages", () => {
+  let container: HTMLDivElement;
+  let root: Root;
+
+  beforeEach(() => {
+    h.state.thread.messages = [];
+    h.state.message.role = "user";
+    h.state.message.composer.isEditing = false;
+    h.itemState = { role: "user" };
+    h.events = {};
+    h.flatListProps = null;
+    h.scrollToOffset.mockReset();
+
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    root = createRoot(container);
+  });
+
+  afterEach(async () => {
+    await act(async () => {
+      root.unmount();
+    });
+    container.remove();
+  });
+
+  const mount = async (props: Parameters<typeof ThreadMessages>[0]) => {
+    await act(async () => {
+      root.render(<ThreadMessages {...props} />);
+    });
+  };
+
+  const mountFlatList = async (
+    props: Parameters<typeof ThreadMessagesFlatList>[0],
+  ) => {
+    await act(async () => {
+      root.render(<ThreadMessagesFlatList {...props} />);
+    });
+  };
+
+  const getFlatListProps = () => {
+    const props = h.flatListProps as {
+      onContentSizeChange?: (width: number, height: number) => void;
+      onLayout?: (event: unknown) => void;
+      onScroll?: (event: unknown) => void;
+      onStartReached?: NonNullable<
+        FlatListProps<ThreadMessage>["onStartReached"]
+      >;
+      onStartReachedThreshold?: number;
+      scrollEventThrottle?: number;
+    } | null;
+    if (!props) throw new Error("FlatList was not rendered");
+    return props;
+  };
+
+  const emit = async (event: string) => {
+    await act(async () => {
+      h.events[event]?.forEach((callback) => {
+        callback();
+      });
+    });
+  };
+
+  const messageComponents = {
+    Message: () => <span data-testid="c-message">message</span>,
+  };
+
+  describe("components mode dispatch", () => {
+    const makeComponents = () => ({
+      Message: vi.fn(() => <span data-testid="c-message">message</span>),
+      EditComposer: vi.fn(() => <span data-testid="c-edit">edit</span>),
+      UserEditComposer: vi.fn(() => (
+        <span data-testid="c-user-edit">user-edit</span>
+      )),
+      AssistantEditComposer: vi.fn(() => (
+        <span data-testid="c-assistant-edit">assistant-edit</span>
+      )),
+      SystemEditComposer: vi.fn(() => (
+        <span data-testid="c-system-edit">system-edit</span>
+      )),
+      UserMessage: vi.fn(() => <span data-testid="c-user">user</span>),
+      AssistantMessage: vi.fn(() => (
+        <span data-testid="c-assistant">assistant</span>
+      )),
+      SystemMessage: vi.fn(() => <span data-testid="c-system">system</span>),
+    });
+
+    it("renders the user message component for a user role", async () => {
+      h.state.thread.messages = [{ id: "1", role: "user" }];
+      h.state.message.role = "user";
+      await mount({ components: makeComponents() });
+      expect(container.querySelector('[data-testid="c-user"]')).not.toBeNull();
+      expect(container.querySelector('[data-testid="c-message"]')).toBeNull();
+    });
+
+    it("renders the assistant message component for an assistant role", async () => {
+      h.state.thread.messages = [{ id: "1", role: "assistant" }];
+      h.state.message.role = "assistant";
+      await mount({ components: makeComponents() });
+      expect(
+        container.querySelector('[data-testid="c-assistant"]'),
+      ).not.toBeNull();
+    });
+
+    it("renders the system message component for a system role", async () => {
+      h.state.thread.messages = [{ id: "1", role: "system" }];
+      h.state.message.role = "system";
+      await mount({ components: makeComponents() });
+      expect(
+        container.querySelector('[data-testid="c-system"]'),
+      ).not.toBeNull();
+    });
+
+    it("prefers the role-specific edit composer while editing", async () => {
+      h.state.thread.messages = [{ id: "1", role: "user" }];
+      h.state.message.role = "user";
+      h.state.message.composer.isEditing = true;
+      await mount({ components: makeComponents() });
+      expect(
+        container.querySelector('[data-testid="c-user-edit"]'),
+      ).not.toBeNull();
+    });
+
+    it("falls back to the shared EditComposer when no role edit composer exists", async () => {
+      h.state.thread.messages = [{ id: "1", role: "user" }];
+      h.state.message.role = "user";
+      h.state.message.composer.isEditing = true;
+      const components = makeComponents() as Record<string, unknown>;
+      delete components.UserEditComposer;
+      await mount({ components: components as never });
+      expect(container.querySelector('[data-testid="c-edit"]')).not.toBeNull();
+    });
+
+    it("falls back to the role message then Message when no edit composer exists", async () => {
+      h.state.thread.messages = [{ id: "1", role: "assistant" }];
+      h.state.message.role = "assistant";
+      h.state.message.composer.isEditing = true;
+      const components = makeComponents() as Record<string, unknown>;
+      delete components.AssistantEditComposer;
+      delete components.EditComposer;
+      await mount({ components: components as never });
+      expect(
+        container.querySelector('[data-testid="c-assistant"]'),
+      ).not.toBeNull();
+    });
+
+    it("falls back to Message when no role-specific component exists", async () => {
+      h.state.thread.messages = [{ id: "1", role: "user" }];
+      h.state.message.role = "user";
+      const components = makeComponents() as Record<string, unknown>;
+      delete components.UserMessage;
+      await mount({ components: components as never });
+      expect(
+        container.querySelector('[data-testid="c-message"]'),
+      ).not.toBeNull();
+    });
+
+    it("renders nothing for a system role with no system or Message component", async () => {
+      h.state.thread.messages = [{ id: "1", role: "system" }];
+      h.state.message.role = "system";
+      const components = makeComponents() as Record<string, unknown>;
+      delete components.SystemMessage;
+      delete components.Message;
+      await mount({ components: components as never });
+      expect(container.querySelector('[data-testid="c-system"]')).toBeNull();
+      expect(container.querySelector('[data-testid="c-message"]')).toBeNull();
+    });
+
+    it("renders nothing for an editing system role with no system or Message component", async () => {
+      h.state.thread.messages = [{ id: "1", role: "system" }];
+      h.state.message.role = "system";
+      h.state.message.composer.isEditing = true;
+      const components = makeComponents() as Record<string, unknown>;
+      delete components.SystemEditComposer;
+      delete components.EditComposer;
+      delete components.SystemMessage;
+      delete components.Message;
+      await mount({ components: components as never });
+      expect(container.querySelector('[data-testid="c-system"]')).toBeNull();
+      expect(container.querySelector('[data-testid="c-message"]')).toBeNull();
+    });
+
+    it("throws for an unknown role", async () => {
+      h.state.thread.messages = [{ id: "1", role: "ghost" }];
+      h.state.message.role = "ghost";
+      await expect(mount({ components: makeComponents() })).rejects.toThrow(
+        /Unknown message role/,
+      );
+    });
+  });
+
+  describe("children mode", () => {
+    it("renders via the children render prop", async () => {
+      h.state.thread.messages = [{ id: "1", role: "user" }];
+      h.itemState = { role: "user" };
+      const children = vi.fn(({ message }: { message: { role: string } }) => (
+        <span data-testid="child">child:{message.role}</span>
+      ));
+      await mount({ children });
+      const el = container.querySelector('[data-testid="child"]');
+      expect(el?.textContent).toBe("child:user");
+      expect(children).toHaveBeenCalled();
+    });
+  });
+
+  it("renders no items for an empty thread", async () => {
+    h.state.thread.messages = [];
+    await mount({
+      components: {
+        Message: () => <span data-testid="c-message">message</span>,
+      } as never,
+    });
+    expect(container.querySelector('[data-testid="c-message"]')).toBeNull();
+  });
+
+  it("forwards refs to the underlying FlatList", async () => {
+    h.state.thread.messages = [{ id: "1", role: "user" }];
+    const ref = createRef<FlatList<ThreadMessage>>();
+
+    await act(async () => {
+      root.render(
+        <ThreadMessages
+          ref={ref}
+          components={{
+            Message: () => <span data-testid="c-message">message</span>,
+          }}
+        />,
+      );
+    });
+
+    expect(ref.current).not.toBeNull();
+  });
+
+  it("anchors the visible message while content is inserted above it", async () => {
+    await mountFlatList({ children: () => null });
+
+    expect(h.flatListProps?.maintainVisibleContentPosition).toEqual({
+      minIndexForVisible: 0,
+    });
+  });
+
+  it("lets the app override the visible content anchor", async () => {
+    await mountFlatList({
+      children: () => null,
+      maintainVisibleContentPosition: { minIndexForVisible: 2 },
+    });
+
+    expect(h.flatListProps?.maintainVisibleContentPosition).toEqual({
+      minIndexForVisible: 2,
+    });
+  });
+
+  it("keeps deprecated Messages off the scroll-tracking path", async () => {
+    h.state.thread.messages = [{ id: "1", role: "user" }];
+    await mount({ components: messageComponents });
+    const props = getFlatListProps();
+
+    expect(props.onScroll).toBeUndefined();
+    expect(props.onLayout).toBeUndefined();
+    expect(props.onContentSizeChange).toBeUndefined();
+    expect(props.scrollEventThrottle).toBeUndefined();
+  });
+
+  it("keeps deprecated Messages from auto-scrolling by default", async () => {
+    h.state.thread.messages = [{ id: "1", role: "user" }];
+    await mount({ components: messageComponents });
+    const props = getFlatListProps();
+
+    await act(async () => {
+      props.onLayout?.({
+        nativeEvent: { layout: { height: 100 } },
+      });
+      props.onScroll?.({
+        nativeEvent: {
+          contentOffset: { y: 0 },
+          contentSize: { height: 100, width: 0 },
+          layoutMeasurement: { height: 100, width: 0 },
+        },
+      });
+      props.onContentSizeChange?.(0, 140);
+    });
+    await emit("thread.runStart");
+    await emit("threads.selectionChanged");
+
+    expect(h.scrollToOffset).not.toHaveBeenCalled();
+  });
+
+  describe("MessagesFlatList history", () => {
+    it("wires loadMore only while history can load more", async () => {
+      const loadMore = vi.fn();
+
+      await mountFlatList({
+        components: messageComponents,
+        history: { hasMore: true, isLoadingMore: false, loadMore },
+      });
+      getFlatListProps().onStartReached?.({ distanceFromStart: 0 });
+      expect(loadMore).toHaveBeenCalledOnce();
+
+      await mountFlatList({
+        components: messageComponents,
+        history: { hasMore: false, isLoadingMore: false, loadMore },
+      });
+      expect(getFlatListProps().onStartReached).toBeUndefined();
+
+      await mountFlatList({
+        components: messageComponents,
+        history: { hasMore: true, isLoadingMore: true, loadMore },
+      });
+      expect(getFlatListProps().onStartReached).toBeUndefined();
+    });
+
+    it("loads one page when start reached fires again before rerender", async () => {
+      const loadMore = vi.fn();
+      const callerOnStartReached = vi.fn();
+
+      await mountFlatList({
+        components: messageComponents,
+        history: { hasMore: true, isLoadingMore: false, loadMore },
+        onStartReached: callerOnStartReached,
+      });
+      const installedOnStartReached = getFlatListProps().onStartReached;
+
+      installedOnStartReached?.({ distanceFromStart: 0 });
+      installedOnStartReached?.({ distanceFromStart: 0 });
+
+      expect(loadMore).toHaveBeenCalledOnce();
+      expect(callerOnStartReached).toHaveBeenCalledTimes(2);
+    });
+
+    it("loads again after a commit without a loading transition", async () => {
+      const loadMore = vi.fn();
+      const history = { hasMore: true, isLoadingMore: false, loadMore };
+
+      await mountFlatList({ components: messageComponents, history });
+      getFlatListProps().onStartReached?.({ distanceFromStart: 0 });
+
+      await mountFlatList({ components: messageComponents, history });
+      getFlatListProps().onStartReached?.({ distanceFromStart: 0 });
+
+      expect(loadMore).toHaveBeenCalledTimes(2);
+    });
+
+    it("does not carry a request latch to another history source", async () => {
+      const firstLoadMore = vi.fn();
+      const secondLoadMore = vi.fn();
+
+      await mountFlatList({
+        components: messageComponents,
+        history: {
+          hasMore: true,
+          isLoadingMore: false,
+          loadMore: firstLoadMore,
+        },
+      });
+      getFlatListProps().onStartReached?.({ distanceFromStart: 0 });
+
+      await mountFlatList({
+        components: messageComponents,
+        history: {
+          hasMore: true,
+          isLoadingMore: false,
+          loadMore: secondLoadMore,
+        },
+      });
+      getFlatListProps().onStartReached?.({ distanceFromStart: 0 });
+
+      expect(firstLoadMore).toHaveBeenCalledOnce();
+      expect(secondLoadMore).toHaveBeenCalledOnce();
+    });
+
+    it("loads again after the previous history request settles", async () => {
+      const loadMore = vi.fn();
+
+      await mountFlatList({
+        components: messageComponents,
+        history: { hasMore: true, isLoadingMore: false, loadMore },
+      });
+      getFlatListProps().onStartReached?.({ distanceFromStart: 0 });
+
+      await mountFlatList({
+        components: messageComponents,
+        history: { hasMore: true, isLoadingMore: true, loadMore },
+      });
+      await mountFlatList({
+        components: messageComponents,
+        history: { hasMore: true, isLoadingMore: false, loadMore },
+      });
+      getFlatListProps().onStartReached?.({ distanceFromStart: 0 });
+
+      expect(loadMore).toHaveBeenCalledTimes(2);
+    });
+
+    it("allows retrying when loadMore throws synchronously", async () => {
+      const loadError = new Error("load failed");
+      const loadMore = vi
+        .fn()
+        .mockImplementationOnce(() => {
+          throw loadError;
+        })
+        .mockImplementationOnce(() => undefined);
+
+      await mountFlatList({
+        components: messageComponents,
+        history: { hasMore: true, isLoadingMore: false, loadMore },
+      });
+      const onStartReached = getFlatListProps().onStartReached;
+
+      expect(() => onStartReached?.({ distanceFromStart: 0 })).toThrow(
+        loadError,
+      );
+      expect(() => onStartReached?.({ distanceFromStart: 0 })).not.toThrow();
+      expect(loadMore).toHaveBeenCalledTimes(2);
+    });
+
+    it("defaults the history threshold and preserves a caller override", async () => {
+      const history = {
+        hasMore: true,
+        isLoadingMore: false,
+        loadMore: vi.fn(),
+      };
+
+      await mountFlatList({ components: messageComponents, history });
+      expect(getFlatListProps().onStartReachedThreshold).toBe(1);
+
+      await mountFlatList({
+        components: messageComponents,
+        history,
+        onStartReachedThreshold: 0.5,
+      });
+      expect(getFlatListProps().onStartReachedThreshold).toBe(0.5);
+    });
+
+    it("runs a caller onStartReached before loading more history", async () => {
+      const calls: string[] = [];
+      const info = { distanceFromStart: 42 };
+      const onStartReached = vi.fn(() => calls.push("onStartReached"));
+
+      await mountFlatList({
+        components: messageComponents,
+        history: {
+          hasMore: true,
+          isLoadingMore: false,
+          loadMore: () => calls.push("loadMore"),
+        },
+        onStartReached,
+      });
+
+      getFlatListProps().onStartReached?.(info);
+
+      expect(onStartReached).toHaveBeenCalledWith(info);
+      expect(calls).toEqual(["onStartReached", "loadMore"]);
+    });
+
+    it("leaves start-reached props untouched without history", async () => {
+      const onStartReached = vi.fn();
+
+      await mountFlatList({ components: messageComponents, onStartReached });
+
+      const props = getFlatListProps();
+      expect(props.onStartReached).toBe(onStartReached);
+      expect(props).not.toHaveProperty("onStartReachedThreshold");
+    });
+  });
+
+  describe("MessagesFlatList auto-scroll", () => {
+    it("scrolls to the bottom when messages first appear", async () => {
+      h.state.thread.messages = [{ id: "1", role: "user" }];
+
+      await mountFlatList({ components: messageComponents });
+
+      expect(h.scrollToOffset).toHaveBeenCalledWith({
+        animated: false,
+        offset: 0,
+      });
+    });
+
+    it("scrolls to the bottom when a run starts", async () => {
+      h.state.thread.messages = [{ id: "1", role: "user" }];
+      await mountFlatList({ components: messageComponents });
+      h.scrollToOffset.mockClear();
+
+      await emit("thread.runStart");
+
+      expect(h.scrollToOffset).toHaveBeenCalledWith({
+        animated: true,
+        offset: 0,
+      });
+    });
+
+    it("scrolls when content grows while already at the bottom", async () => {
+      h.state.thread.messages = [{ id: "1", role: "user" }];
+      await mountFlatList({ components: messageComponents });
+      const props = getFlatListProps();
+      h.scrollToOffset.mockClear();
+
+      await act(async () => {
+        props.onLayout?.({
+          nativeEvent: { layout: { height: 100 } },
+        });
+        props.onScroll?.({
+          nativeEvent: {
+            contentOffset: { y: 0 },
+            contentSize: { height: 100, width: 0 },
+            layoutMeasurement: { height: 100, width: 0 },
+          },
+        });
+        props.onContentSizeChange?.(0, 140);
+      });
+
+      expect(h.scrollToOffset).toHaveBeenCalledWith({
+        animated: false,
+        offset: 40,
+      });
+    });
+
+    it("does not treat the first content-size event as automatic content growth", async () => {
+      h.state.thread.messages = [{ id: "1", role: "user" }];
+      await mountFlatList({
+        components: messageComponents,
+        scrollToBottomOnInitialize: false,
+      });
+      const props = getFlatListProps();
+
+      await act(async () => {
+        props.onContentSizeChange?.(0, 140);
+      });
+
+      expect(h.scrollToOffset).not.toHaveBeenCalled();
+    });
+
+    it("lands the initialize scroll on the first content-size event", async () => {
+      h.state.thread.messages = [{ id: "1", role: "user" }];
+      await mountFlatList({ components: messageComponents });
+      const props = getFlatListProps();
+
+      expect(h.scrollToOffset).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        props.onLayout?.({
+          nativeEvent: { layout: { height: 100 } },
+        });
+        props.onContentSizeChange?.(0, 140);
+      });
+
+      expect(h.scrollToOffset).toHaveBeenCalledTimes(2);
+      expect(h.scrollToOffset).toHaveBeenLastCalledWith({
+        animated: false,
+        offset: 40,
+      });
+
+      await act(async () => {
+        props.onContentSizeChange?.(0, 140);
+      });
+
+      expect(h.scrollToOffset).toHaveBeenCalledTimes(2);
+    });
+
+    it("waits for the first layout before consuming a measured initialize scroll", async () => {
+      h.state.thread.messages = [{ id: "1", role: "user" }];
+      await mountFlatList({ components: messageComponents });
+      const props = getFlatListProps();
+
+      await act(async () => {
+        props.onContentSizeChange?.(0, 140);
+      });
+      expect(h.scrollToOffset).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        props.onLayout?.({
+          nativeEvent: { layout: { height: 100 } },
+        });
+      });
+
+      expect(h.scrollToOffset).toHaveBeenCalledTimes(2);
+      expect(h.scrollToOffset).toHaveBeenLastCalledWith({
+        animated: false,
+        offset: 40,
+      });
+    });
+
+    it("keeps the initialize scroll pending through a zero content measurement", async () => {
+      h.state.thread.messages = [{ id: "1", role: "user" }];
+      await mountFlatList({ components: messageComponents });
+      const props = getFlatListProps();
+
+      await act(async () => {
+        props.onLayout?.({
+          nativeEvent: { layout: { height: 100 } },
+        });
+        props.onContentSizeChange?.(0, 0);
+      });
+      expect(h.scrollToOffset).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        props.onContentSizeChange?.(0, 300);
+      });
+
+      expect(h.scrollToOffset).toHaveBeenCalledTimes(2);
+      expect(h.scrollToOffset).toHaveBeenLastCalledWith({
+        animated: false,
+        offset: 200,
+      });
+    });
+
+    it("uses horizontal measurements for horizontal lists", async () => {
+      h.state.thread.messages = [{ id: "1", role: "user" }];
+      await mountFlatList({ components: messageComponents, horizontal: true });
+      const props = getFlatListProps();
+
+      await act(async () => {
+        props.onLayout?.({
+          nativeEvent: { layout: { width: 100 } },
+        });
+        props.onContentSizeChange?.(140, 0);
+      });
+
+      expect(h.scrollToOffset).toHaveBeenLastCalledWith({
+        animated: false,
+        offset: 40,
+      });
+    });
+
+    it("lands the thread-switch scroll on the next content-size event", async () => {
+      h.state.thread.messages = [{ id: "1", role: "user" }];
+      await mountFlatList({ components: messageComponents });
+      const props = getFlatListProps();
+      h.scrollToOffset.mockClear();
+
+      await emit("threads.selectionChanged");
+      expect(h.scrollToOffset).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        props.onContentSizeChange?.(0, 300);
+      });
+      expect(h.scrollToOffset).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        props.onLayout?.({
+          nativeEvent: { layout: { height: 100 } },
+        });
+      });
+
+      expect(h.scrollToOffset).toHaveBeenCalledTimes(2);
+      expect(h.scrollToOffset).toHaveBeenLastCalledWith({
+        animated: false,
+        offset: 200,
+      });
+    });
+
+    it("does not consume a thread-switch scroll with the previous thread metrics", async () => {
+      h.state.thread.messages = [{ id: "1", role: "user" }];
+      await mountFlatList({ components: messageComponents });
+      const props = getFlatListProps();
+
+      await act(async () => {
+        props.onLayout?.({
+          nativeEvent: { layout: { height: 100 } },
+        });
+        props.onScroll?.({
+          nativeEvent: {
+            contentOffset: { y: 200 },
+            contentSize: { height: 300, width: 0 },
+            layoutMeasurement: { height: 100, width: 0 },
+          },
+        });
+      });
+      h.scrollToOffset.mockClear();
+
+      await emit("threads.selectionChanged");
+      await act(async () => {
+        props.onLayout?.({
+          nativeEvent: { layout: { height: 80 } },
+        });
+        props.onContentSizeChange?.(0, 260);
+      });
+
+      expect(h.scrollToOffset).toHaveBeenLastCalledWith({
+        animated: false,
+        offset: 180,
+      });
+    });
+
+    it("keeps following through consecutive growth events without scroll echoes", async () => {
+      h.state.thread.messages = [{ id: "1", role: "user" }];
+      await mountFlatList({ components: messageComponents });
+      const props = getFlatListProps();
+
+      await act(async () => {
+        props.onLayout?.({
+          nativeEvent: { layout: { height: 100 } },
+        });
+        props.onScroll?.({
+          nativeEvent: {
+            contentOffset: { y: 0 },
+            contentSize: { height: 100, width: 0 },
+            layoutMeasurement: { height: 100, width: 0 },
+          },
+        });
+      });
+      h.scrollToOffset.mockClear();
+
+      await act(async () => {
+        props.onContentSizeChange?.(0, 140);
+      });
+      await act(async () => {
+        props.onContentSizeChange?.(0, 180);
+      });
+
+      expect(h.scrollToOffset).toHaveBeenCalledTimes(2);
+    });
+
+    it("does not scroll when content grows after the user scrolled away", async () => {
+      h.state.thread.messages = [{ id: "1", role: "user" }];
+      await mountFlatList({ components: messageComponents });
+      const props = getFlatListProps();
+      h.scrollToOffset.mockClear();
+
+      await act(async () => {
+        props.onLayout?.({
+          nativeEvent: { layout: { height: 100 } },
+        });
+        props.onScroll?.({
+          nativeEvent: {
+            contentOffset: { y: 200 },
+            contentSize: { height: 300, width: 0 },
+            layoutMeasurement: { height: 100, width: 0 },
+          },
+        });
+        props.onScroll?.({
+          nativeEvent: {
+            contentOffset: { y: 50 },
+            contentSize: { height: 300, width: 0 },
+            layoutMeasurement: { height: 100, width: 0 },
+          },
+        });
+        props.onContentSizeChange?.(0, 340);
+      });
+
+      expect(h.scrollToOffset).not.toHaveBeenCalled();
+    });
+
+    it("lands the run-start scroll once the appended message resizes content", async () => {
+      h.state.thread.messages = [{ id: "1", role: "user" }];
+      await mountFlatList({ components: messageComponents });
+      const props = getFlatListProps();
+
+      await act(async () => {
+        props.onLayout?.({
+          nativeEvent: { layout: { height: 100 } },
+        });
+        props.onScroll?.({
+          nativeEvent: {
+            contentOffset: { y: 200 },
+            contentSize: { height: 300, width: 0 },
+            layoutMeasurement: { height: 100, width: 0 },
+          },
+        });
+        props.onScroll?.({
+          nativeEvent: {
+            contentOffset: { y: 50 },
+            contentSize: { height: 300, width: 0 },
+            layoutMeasurement: { height: 100, width: 0 },
+          },
+        });
+      });
+      h.scrollToOffset.mockClear();
+
+      await emit("thread.runStart");
+      expect(h.scrollToOffset).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        props.onScroll?.({
+          nativeEvent: {
+            contentOffset: { y: 120 },
+            contentSize: { height: 300, width: 0 },
+            layoutMeasurement: { height: 100, width: 0 },
+          },
+        });
+        props.onContentSizeChange?.(0, 360);
+      });
+
+      expect(h.scrollToOffset).toHaveBeenCalledTimes(2);
+      expect(h.scrollToOffset).toHaveBeenLastCalledWith({
+        animated: true,
+        offset: 260,
+      });
+    });
+
+    it("uses the measured bottom when a thread switch does not resize content", async () => {
+      h.state.thread.messages = [{ id: "1", role: "user" }];
+      await mountFlatList({ components: messageComponents });
+      const props = getFlatListProps();
+
+      await act(async () => {
+        props.onLayout?.({
+          nativeEvent: { layout: { height: 100 } },
+        });
+        props.onScroll?.({
+          nativeEvent: {
+            contentOffset: { y: 120 },
+            contentSize: { height: 300, width: 0 },
+            layoutMeasurement: { height: 100, width: 0 },
+          },
+        });
+      });
+      h.scrollToOffset.mockClear();
+
+      await emit("threads.selectionChanged");
+
+      expect(h.scrollToOffset).toHaveBeenCalledTimes(1);
+      expect(h.scrollToOffset).toHaveBeenCalledWith({
+        animated: false,
+        offset: 200,
+      });
+    });
+
+    it("does not rearm initialize scroll when thread-switch scroll is disabled", async () => {
+      h.state.thread.messages = [{ id: "1", role: "user" }];
+      await mountFlatList({
+        components: messageComponents,
+        scrollToBottomOnThreadSwitch: false,
+      });
+      h.scrollToOffset.mockClear();
+
+      await emit("threads.selectionChanged");
+
+      h.state.thread.messages = [
+        { id: "2", role: "user" },
+        { id: "3", role: "assistant" },
+      ];
+      await mountFlatList({
+        components: messageComponents,
+        scrollToBottomOnThreadSwitch: false,
+      });
+
+      expect(h.scrollToOffset).not.toHaveBeenCalled();
+    });
+
+    it("honors opt-outs for automatic content growth and run-start scrolls", async () => {
+      h.state.thread.messages = [{ id: "1", role: "user" }];
+      await mountFlatList({
+        autoScroll: false,
+        components: messageComponents,
+        scrollToBottomOnInitialize: false,
+        scrollToBottomOnRunStart: false,
+      });
+      const props = getFlatListProps();
+      h.scrollToOffset.mockClear();
+
+      await act(async () => {
+        props.onLayout?.({
+          nativeEvent: { layout: { height: 100 } },
+        });
+        props.onScroll?.({
+          nativeEvent: {
+            contentOffset: { y: 0 },
+            contentSize: { height: 100, width: 0 },
+            layoutMeasurement: { height: 100, width: 0 },
+          },
+        });
+        props.onContentSizeChange?.(0, 140);
+      });
+      await emit("thread.runStart");
+
+      expect(h.scrollToOffset).not.toHaveBeenCalled();
+    });
+
+    it("sets a useful default scroll throttle", async () => {
+      h.state.thread.messages = [{ id: "1", role: "user" }];
+      await mountFlatList({ components: messageComponents });
+
+      expect(getFlatListProps().scrollEventThrottle).toBe(16);
+    });
+  });
+
+  describe("isAtBottom pin state", () => {
+    const mountPinned = async () => {
+      await mountFlatList({ components: messageComponents });
+      const props = getFlatListProps();
+      await act(async () => {
+        props.onLayout?.({
+          nativeEvent: { layout: { height: 100 } },
+        });
+        props.onScroll?.({
+          nativeEvent: {
+            contentOffset: { y: 200 },
+            contentSize: { height: 300, width: 0 },
+            layoutMeasurement: { height: 100, width: 0 },
+          },
+        });
+        props.onContentSizeChange?.(0, 300);
+      });
+      h.scrollToOffset.mockClear();
+      return props;
+    };
+
+    it("stays pinned when an anchor adjustment moves the offset with the content above it", async () => {
+      const props = await mountPinned();
+
+      await act(async () => {
+        props.onScroll?.({
+          nativeEvent: {
+            contentOffset: { y: 180 },
+            contentSize: { height: 280, width: 0 },
+            layoutMeasurement: { height: 100, width: 0 },
+          },
+        });
+      });
+      await act(async () => {
+        props.onContentSizeChange?.(0, 320);
+      });
+
+      expect(h.scrollToOffset).toHaveBeenCalledWith({
+        animated: false,
+        offset: 220,
+      });
+    });
+
+    it("stays pinned when the viewport shrinks while at the bottom", async () => {
+      const props = await mountPinned();
+
+      await act(async () => {
+        props.onLayout?.({
+          nativeEvent: { layout: { height: 60 } },
+        });
+      });
+      h.scrollToOffset.mockClear();
+      await act(async () => {
+        props.onContentSizeChange?.(0, 340);
+      });
+
+      expect(h.scrollToOffset).toHaveBeenCalledWith({
+        animated: false,
+        offset: 280,
+      });
+    });
+
+    it("commands a bottom scroll when the viewport shrinks while pinned", async () => {
+      const props = await mountPinned();
+
+      await act(async () => {
+        props.onLayout?.({
+          nativeEvent: { layout: { height: 60 } },
+        });
+      });
+
+      expect(h.scrollToOffset).toHaveBeenCalledWith({
+        animated: false,
+        offset: 240,
+      });
+    });
+
+    it("preserves a pending animated scroll on a pinned viewport change", async () => {
+      const props = await mountPinned();
+
+      await emit("thread.runStart");
+      h.scrollToOffset.mockClear();
+      await act(async () => {
+        props.onLayout?.({
+          nativeEvent: { layout: { height: 60 } },
+        });
+        props.onContentSizeChange?.(0, 360);
+      });
+
+      expect(h.scrollToOffset).toHaveBeenCalledTimes(2);
+      expect(h.scrollToOffset).toHaveBeenLastCalledWith({
+        animated: true,
+        offset: 300,
+      });
+    });
+
+    it("ignores a layout event with an unchanged viewport height", async () => {
+      const props = await mountPinned();
+
+      await act(async () => {
+        props.onLayout?.({
+          nativeEvent: { layout: { height: 100 } },
+        });
+      });
+
+      expect(h.scrollToOffset).not.toHaveBeenCalled();
+    });
+
+    it("does not command a scroll on the first layout measurement", async () => {
+      await mountFlatList({ components: messageComponents });
+      getFlatListProps();
+      h.scrollToOffset.mockClear();
+
+      await act(async () => {
+        getFlatListProps().onLayout?.({
+          nativeEvent: { layout: { height: 100 } },
+        });
+      });
+
+      expect(h.scrollToOffset).not.toHaveBeenCalled();
+    });
+
+    it("does not command a scroll on viewport change when autoScroll is off", async () => {
+      await mountFlatList({ components: messageComponents, autoScroll: false });
+      const props = getFlatListProps();
+      await act(async () => {
+        props.onLayout?.({
+          nativeEvent: { layout: { height: 100 } },
+        });
+        props.onScroll?.({
+          nativeEvent: {
+            contentOffset: { y: 200 },
+            contentSize: { height: 300, width: 0 },
+            layoutMeasurement: { height: 100, width: 0 },
+          },
+        });
+        props.onContentSizeChange?.(0, 300);
+      });
+      h.scrollToOffset.mockClear();
+
+      await act(async () => {
+        props.onLayout?.({
+          nativeEvent: { layout: { height: 60 } },
+        });
+      });
+
+      expect(h.scrollToOffset).not.toHaveBeenCalled();
+    });
+
+    it("stays unpinned when the viewport shrinks after scrolling away", async () => {
+      const props = await mountPinned();
+
+      await act(async () => {
+        props.onScroll?.({
+          nativeEvent: {
+            contentOffset: { y: 50 },
+            contentSize: { height: 300, width: 0 },
+            layoutMeasurement: { height: 100, width: 0 },
+          },
+        });
+      });
+      await act(async () => {
+        props.onLayout?.({
+          nativeEvent: { layout: { height: 60 } },
+        });
+      });
+      await act(async () => {
+        props.onContentSizeChange?.(0, 340);
+      });
+
+      expect(h.scrollToOffset).not.toHaveBeenCalled();
+    });
+
+    it("keeps the pin through a downward scroll echo after a commanded scroll", async () => {
+      const props = await mountPinned();
+
+      await act(async () => {
+        props.onScroll?.({
+          nativeEvent: {
+            contentOffset: { y: 50 },
+            contentSize: { height: 300, width: 0 },
+            layoutMeasurement: { height: 100, width: 0 },
+          },
+        });
+      });
+      await emit("thread.runStart");
+      await act(async () => {
+        props.onContentSizeChange?.(0, 320);
+      });
+      h.scrollToOffset.mockClear();
+      await act(async () => {
+        props.onScroll?.({
+          nativeEvent: {
+            contentOffset: { y: 150 },
+            contentSize: { height: 320, width: 0 },
+            layoutMeasurement: { height: 100, width: 0 },
+          },
+        });
+      });
+      await act(async () => {
+        props.onContentSizeChange?.(0, 360);
+      });
+
+      expect(h.scrollToOffset).toHaveBeenCalledWith({
+        animated: false,
+        offset: 260,
+      });
+    });
+
+    it("unpins and cancels a pending scroll on an upward gesture echo", async () => {
+      const props = await mountPinned();
+
+      await emit("thread.runStart");
+      h.scrollToOffset.mockClear();
+      await act(async () => {
+        props.onScroll?.({
+          nativeEvent: {
+            contentOffset: { y: 50 },
+            contentSize: { height: 300, width: 0 },
+            layoutMeasurement: { height: 100, width: 0 },
+          },
+        });
+      });
+      await act(async () => {
+        props.onContentSizeChange?.(0, 360);
+      });
+
+      expect(h.scrollToOffset).not.toHaveBeenCalled();
+    });
+
+    it("scrolls on content growth while pinned and stays put while unpinned", async () => {
+      const props = await mountPinned();
+      h.scrollToOffset.mockClear();
+
+      await act(async () => {
+        props.onContentSizeChange?.(0, 340);
+      });
+      expect(h.scrollToOffset).toHaveBeenCalledWith({
+        animated: false,
+        offset: 240,
+      });
+
+      await act(async () => {
+        props.onScroll?.({
+          nativeEvent: {
+            contentOffset: { y: 50 },
+            contentSize: { height: 340, width: 0 },
+            layoutMeasurement: { height: 100, width: 0 },
+          },
+        });
+      });
+      h.scrollToOffset.mockClear();
+      await act(async () => {
+        props.onContentSizeChange?.(0, 380);
+      });
+
+      expect(h.scrollToOffset).not.toHaveBeenCalled();
+    });
+  });
+});

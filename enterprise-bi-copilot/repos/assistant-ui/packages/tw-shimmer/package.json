@@ -1,0 +1,48 @@
+{
+  "name": "tw-shimmer",
+  "version": "0.4.13",
+  "description": "Tailwind CSS v4 plugin for shimmer effects",
+  "keywords": [
+    "tailwindcss",
+    "tailwind",
+    "shimmer",
+    "skeleton",
+    "loading",
+    "animation",
+    "css"
+  ],
+  "author": "AgentbaseAI Inc.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "style": "./src/index.css",
+      "default": "./src/index.css"
+    }
+  },
+  "main": "./src/index.css",
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "sideEffects": [
+    "./src/index.css"
+  ],
+  "peerDependencies": {
+    "tailwindcss": ">=4.0.0-0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "homepage": "https://www.assistant-ui.com/tw-shimmer",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/assistant-ui/assistant-ui.git",
+    "directory": "packages/tw-shimmer"
+  },
+  "bugs": {
+    "url": "https://github.com/assistant-ui/assistant-ui/issues"
+  },
+  "scripts": {}
+}

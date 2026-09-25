@@ -1,0 +1,396 @@
+---
+title: MCP Apps
+description: Render MCP App UI resources inline in chat. Native renderer for the Model Context Protocol Apps spec — sandboxed iframes, JSON-RPC bridge, AI SDK integration.
+platforms: ["react"]
+---
+
+[MCP Apps](https://apps.extensions.modelcontextprotocol.io/) lets a Model Context Protocol server ship a UI resource alongside a tool — a self-contained HTML widget that the chat host renders inline when the tool is called. assistant-ui ships a native renderer that mounts the widget in a sandboxed iframe via [`SafeContentFrame`](/safe-content-frame) and runs a JSON-RPC postMessage bridge so the widget can call tools, send messages, request a display mode, and read host context.
+
+## Overview
+
+When an MCP server attaches a `_meta.ui.resourceUri` (the [`text/html;profile=mcp-app`](https://apps.extensions.modelcontextprotocol.io/api/index.html) MIME) to a tool, AI SDK forwards that metadata through the message stream. assistant-ui's renderer picks it up off the `mcp` field on `ToolCallMessagePart`, fetches the resource through your backend route, and mounts it.
+
+The renderer only acts on URIs that start with `ui://` (per the MCP Apps spec). Tools whose `resourceUri` uses any other scheme are treated as non-MCP-Apps tools and fall through to your regular tool UI.
+
+The widget communicates back through a JSON-RPC bridge:
+
+- **widget → host requests**: `ui/initialize`, `tools/call`, `resources/read`, `resources/list`, `openLink`, `sendMessage`, `requestDisplayMode`, `updateModelContext`
+- **host → widget notifications**: tool input streaming, tool result, host context changes
+- **widget → host notifications**: initialized, size changed, log, error, request teardown
+
+Capability presence is determined at mount time by which handlers you provide. Unknown methods return JSON-RPC `-32601`; bad params return `-32602`.
+
+## Quick start
+
+The renderer talks to a backend route you expose — the MCP client lives server-side so credentials and transport stay out of the browser. The route receives `{ method, params }` POSTs and dispatches to your MCP client.
+
+### Install the MCP client
+
+Install the AI SDK MCP client package used by the route handler:
+
+<InstallCommand npm={["@ai-sdk/mcp"]} />
+
+### Client
+
+Compose `McpAppRenderer({...})` into your `Tools` resource. Provide `host.url` pointing at your route. Any tool-call part carrying `mcp.app` metadata renders the MCP App widget automatically.
+
+```tsx
+import {
+  AuiConfig,
+  AuiProvider,
+  Tools,
+  McpAppRenderer,
+  McpAppsRemoteHost,
+  useAui,
+} from "@assistant-ui/react";
+
+function MyAssistant({ children }) {
+  const aui = useAui();
+  const config = AuiConfig({
+    tools: Tools({
+      toolkit: myToolkit,
+      mcpApp: McpAppRenderer({
+        host: McpAppsRemoteHost({ url: "/api/mcp-apps" }),
+        hostInfo: { name: "my-app", version: "1.0.0" },
+        hostContext: { theme: "light" },
+      }),
+    }),
+  });
+  return (
+    <AuiProvider extends={aui} config={config}>
+      {children}
+    </AuiProvider>
+  );
+}
+```
+
+`McpAppsRemoteHost` is the default host strategy — it POSTs `{ method, params }` to your route. A different strategy (e.g. a client-side MCP client) can be plugged in by writing a custom resource that returns the same `McpAppsHost` shape (`{ loadResource, callTool, readResource, listResources }`).
+
+Changes to `headers` or a custom `fetch` function apply to subsequent host requests without reloading the widget. When the account or workspace identity changes, key the host resource explicitly so its UI resource reloads.
+
+Install the resource helper:
+
+```bash
+pnpm add @assistant-ui/tap
+```
+
+```tsx
+import { withKey } from "@assistant-ui/tap";
+
+const mcpApp = McpAppRenderer({
+  host: withKey(
+    workspaceId,
+    McpAppsRemoteHost({
+      url: "/api/mcp-apps",
+      headers: () => getWorkspaceHeaders(workspaceId),
+    }),
+  ),
+});
+```
+
+`openLink` is auto-wired to `window.open(url, "_blank", "noopener,noreferrer")`. `sendMessage` is auto-wired to append a user message to the current thread. It accepts the MCP Apps `{ role, content }` params and appends each `text` block in order, plus the legacy `string`, `{ prompt }`, `{ text }`, and `{ message }` forms. The host advertises `message: { text: {} }` during `ui/initialize`, so non-text blocks are dropped, and a request carrying no text resolves to `{ isError: true }`.
+
+Pass `handlers` when the widget needs host-side UI or lifecycle callbacks. The capabilities are advertised during mount, so provide the handlers before the widget initializes:
+
+```tsx
+McpAppRenderer({
+  host: McpAppsRemoteHost({ url: "/api/mcp-apps" }),
+  handlers: {
+    requestDisplayMode: ({ mode }) => applyHostDisplayMode(mode),
+    updateModelContext: applyHostModelContext,
+    openLink: ({ url }) => window.open(url, "_blank", "noopener,noreferrer"),
+  },
+});
+```
+
+`requestDisplayMode` should update host chrome and return the mode that was actually honored. Echoing `{ mode }` without applying it tells the widget the change succeeded while the host stays `inline`. If changing modes moves the app between layout regions, follow the [state-preserving placement guidance](/docs/guides/part-grouping#render-tool-calls-as-flat-rows) to avoid reloading its iframe.
+
+Caller handlers override the default `openLink` and `sendMessage` behavior and can provide `requestDisplayMode`, `updateModelContext`, and lifecycle hooks such as `onInitialized` and `onSizeChange`. `callTool`, `readResource`, and `listResources` remain bound to the configured `host`; use a custom host to change those data-plane operations.
+
+### Per-app options
+
+One renderer serves every MCP app in the thread, so `hostContext`, `handlers`, and the other display options are thread-wide defaults. Pass `forPart` when an app needs its own values. It runs for each MCP-app tool call, and every option it returns replaces the thread-wide one for that app alone.
+
+`handlers` is the exception and merges per key, so a resolver that returns only `requestDisplayMode` keeps the thread-wide `onError` and `onInitialized` for that app. Its keys are capabilities negotiated with the widget rather than data, and replacing the whole bag to add one handler would withdraw the rest from that app with nothing to observe it by. Name a key to override it.
+
+```tsx
+const [modes, setModes] = useState<Record<string, McpAppDisplayMode>>({});
+
+McpAppRenderer({
+  host: McpAppsRemoteHost({ url: "/api/mcp-apps" }),
+  hostInfo: { name: "my-app", version: "1.0.0" },
+  hostContext: { theme },
+  forPart: (part) => ({
+    hostContext: {
+      theme,
+      displayMode: modes[part.toolCallId] ?? "inline",
+      availableDisplayModes: ["inline", "fullscreen", "pip"],
+    },
+    handlers: {
+      requestDisplayMode: ({ mode }) => {
+        setModes((current) => ({ ...current, [part.toolCallId]: mode }));
+        return { mode };
+      },
+    },
+  }),
+});
+```
+
+The resolver closes over the part, so `requestDisplayMode` knows which app asked and the granted mode reaches that app alone through `notifications/host_context/changed`. Returned values may be rebuilt on every render; a host context that is structurally unchanged never reaches the widget.
+
+`forPart` resolves before a part's first render, so a per-part value is always in place from the start. What a *later* change to one reaches depends on the option. `hostContext` is delivered again whenever it changes. Handlers are called through live references, but which handler keys exist is captured when the frame mounts, so return the same keys for a part on every render. `hostInfo` and the frame settings in `sandbox` (`className` and `style` aside) are also read once at mount, so changing them mid-life does nothing until the app's resource URI changes and the frame is rebuilt.
+
+### Route handler
+
+The route accepts `POST` requests with `{ method, params }` JSON bodies. Dispatch by method name and return the result as JSON. Example for Next.js App Router:
+
+```ts
+// app/api/mcp-apps/route.ts
+import { createMCPClient } from "@ai-sdk/mcp";
+
+const serverUrls = new Map([
+  ["search", process.env.SEARCH_MCP_SERVER_URL!],
+  ["calendar", process.env.CALENDAR_MCP_SERVER_URL!],
+]);
+const fallbackServerUrl = process.env.MCP_SERVER_URL!;
+const clientPromises = new Map<string, ReturnType<typeof createMCPClient>>();
+
+const getClient = (serverId?: string) => {
+  const url = serverId ? serverUrls.get(serverId) : fallbackServerUrl;
+  if (!url) throw new Error(`Unknown MCP server: ${serverId}`);
+  let clientPromise = clientPromises.get(url);
+  if (!clientPromise) {
+    clientPromise = createMCPClient({
+      transport: { type: "sse", url },
+    }).catch((error) => {
+      clientPromises.delete(url);
+      throw error;
+    });
+    clientPromises.set(url, clientPromise);
+  }
+  return clientPromise;
+};
+
+export async function POST(req: Request) {
+  const { method, params } = await req.json();
+  const client = await getClient(params?.serverId);
+
+  switch (method) {
+    case "mcp-apps/read-resource": {
+      const { contents } = await client.readResource({ uri: params.uri });
+      const c = contents.find((x: { uri: string }) => x.uri === params.uri);
+      return Response.json({
+        uri: params.uri,
+        mimeType: "text/html;profile=mcp-app",
+        html: c?.text ?? "",
+      });
+    }
+    case "tools/call": {
+      const tools = await client.tools();
+      const tool = tools[params.name];
+      if (!tool?.execute) {
+        return Response.json({ error: "Tool not callable" }, { status: 400 });
+      }
+      return Response.json(
+        await tool.execute(params.arguments ?? {}, {
+          toolCallId: `mcp-apps-bridge-${crypto.randomUUID()}`,
+          messages: [],
+        }),
+      );
+    }
+    case "resources/read":
+      return Response.json(await client.readResource({ uri: params.uri }));
+    case "resources/list": {
+      const { serverId: _, ...listParams } = params ?? {};
+      return Response.json(await client.listResources(listParams));
+    }
+    default:
+      return Response.json({ error: "Unsupported method" }, { status: 400 });
+  }
+}
+```
+
+The renderer POSTs four method names: `mcp-apps/read-resource`, `tools/call`, `resources/read`, `resources/list`. Reject anything else server-side and apply your own auth / rate limiting in the route.
+
+### Multiple MCP servers
+
+When a tool part carries `mcp.app.serverId`, the renderer forwards it to the host operations as `params.serverId` so the route can select the MCP client that owns the resource or tool. The agent stack emits this routable identity in part metadata. For `@ag-ui/mcp-apps-middleware`, assistant-ui uses its configured `serverId`, falling back to `serverHash` when `serverId` is absent or empty. Match the route's map keys to whichever identity your setup emits: configure an explicit `serverId` on each middleware server, or key the map by the emitted hashes. Omitting `serverId` preserves the single-server behavior, as shown by the fallback client in the route example.
+
+Per-name `setToolUI` registrations always win over the MCP fallback — you can still customize specific tools.
+
+## AI SDK integration
+
+`@assistant-ui/ai-sdk` forwards `callProviderMetadata.mcp.app` from AI SDK tool UI parts into `ToolCallMessagePart.mcp.app`. With AI SDK 5.x and an MCP-Apps-capable MCP server, no extra wiring is required on the part shape.
+
+The rich UI comes from the MCP server's metadata, not from the model, so the path is identical whichever provider drives the conversation. Running Claude is just a different `model:` in `streamText` (`anthropic("claude-sonnet-4-6")` via `@ai-sdk/anthropic`); the MCP server, `splitMcpAppTools`, and the renderer are unchanged. MCP Apps is an open standard in the MCP ecosystem (Claude is one of its hosts), so a standard MCP-Apps server renders out of the box. The bridge below is only needed for servers that use OpenAI's `openai/outputTemplate` convention, again independent of which model you run.
+
+On the chat route, use `splitMcpAppTools()` (from `@ai-sdk/mcp`) to keep app-only tools out of the model's view:
+
+```ts
+import { splitMcpAppTools } from "@ai-sdk/mcp";
+
+const tools = await client.listTools();
+const { modelVisible } = splitMcpAppTools(tools);
+
+const result = streamText({
+  model: openai("gpt-5.6-luna"),
+  tools: modelVisible.tools,
+  // ...
+});
+```
+
+### OpenAI Apps SDK servers
+
+[OpenAI Apps SDK](https://developers.openai.com/apps-sdk) servers carry the same `ui://` template under a different convention: the pointer is `_meta["openai/outputTemplate"]` on the tool definition (not `_meta.ui.resourceUri`), and the resource is served as `text/html+skybridge` rather than `text/html;profile=mcp-app`. `@ai-sdk/mcp` does not recognize `openai/outputTemplate`, so it never populates `callProviderMetadata.mcp.app` and the renderer stays idle.
+
+The renderer needs no change; you only have to surface the pointer. assistant-ui reads the canonical `result._meta.ui.resourceUri` off tool results (and still accepts the deprecated flat `result._meta["ui/resourceUri"]`), so the smallest bridge is to copy the template onto the result by tool name. Build the map once from the tool listing, then stamp it inside each tool's `execute`:
+
+```ts
+import type { Tool } from "ai";
+
+// reuse the listTools() result from the AI SDK integration step above; no second round-trip
+const templateByTool = new Map(
+  tools.tools
+    .filter((t) => typeof t._meta?.["openai/outputTemplate"] === "string")
+    .map((t) => [t.name, t._meta["openai/outputTemplate"] as string]),
+);
+
+const withTemplateUri = (tool: Tool, name: string): Tool => {
+  const uri = templateByTool.get(name);
+  const exec = tool.execute;
+  if (!uri || !exec) return tool;
+  return {
+    ...tool,
+    execute: async (args, options) => {
+      const result = (await exec(args, options)) as { _meta?: Record<string, unknown> };
+      return {
+        ...result,
+        _meta: {
+          ...result._meta,
+          ui: { ...(result._meta?.["ui"] as Record<string, unknown>), resourceUri: uri },
+        },
+      };
+    },
+  } satisfies Tool;
+};
+```
+
+Wrap the AI SDK tool objects before handing them to `streamText`:
+
+```ts
+const aiTools = await client.tools();
+const wrappedTools = Object.fromEntries(
+  Object.entries(aiTools).map(([name, t]) => [name, withTemplateUri(t, name)]),
+);
+// pass wrappedTools to streamText
+```
+
+Your `mcp-apps/read-resource` handler reads the `ui://` resource as in the route example above. Set the response `mimeType` to the `text/html;profile=mcp-app` literal that `McpAppResource` expects and keep the server's HTML in `html`; don't forward the raw `text/html+skybridge` value, which the type rejects.
+
+The cleaner long-term fix is upstream: if `@ai-sdk/mcp`'s `getMCPAppToolMeta` also read `openai/outputTemplate`, then `callProviderMetadata.mcp.app` would populate automatically and this bridge would be unnecessary.
+
+## AG-UI integration
+
+With `@assistant-ui/react-ag-ui`, the backend associates an MCP App with a tool call through an `ACTIVITY_SNAPSHOT`. Include the tool call ID, the app's `ui://` resource URI, and the MCP server identity when routing across multiple servers:
+
+```json
+{
+  "type": "ACTIVITY_SNAPSHOT",
+  "activityType": "mcp-apps",
+  "content": {
+    "toolCallId": "call-1",
+    "resourceUri": "ui://maps/result.html",
+    "serverId": "maps",
+    "result": {
+      "content": [{ "type": "text", "text": "Map ready" }],
+      "structuredContent": { "center": [37.77, -122.42] },
+      "_meta": { "initialView": "street" },
+      "isError": false
+    }
+  }
+}
+```
+
+`serverId` is optional. If it is absent, the runtime accepts `serverHash` as a fallback. Older middleware may omit `toolCallId`, in which case the snapshot applies to the last resolved tool call; new integrations should include it so concurrent tool calls are correlated unambiguously. Emit the snapshot after the tool call's `TOOL_CALL_START`. A snapshot that names a tool call restored from prior history applies to that message directly, so re-emitting the activity after a `MESSAGES_SNAPSHOT` rehydrates its widget; a snapshot for a tool call ID the runtime has never seen is silently ignored.
+
+Send the normal `TOOL_CALL_RESULT` with a concise, model-visible summary:
+
+```json
+{
+  "type": "TOOL_CALL_RESULT",
+  "toolCallId": "call-1",
+  "content": "Map ready"
+}
+```
+
+The snapshot's `result` becomes the widget-visible `part.result`, while the `TOOL_CALL_RESULT.content` string is retained for the model as `part.modelContent`, a text content-part array (`[{ "type": "text", "text": "Map ready" }]`).
+
+Alternatively, AG-UI servers can place MCP host fields directly on `TOOL_CALL_RESULT`:
+
+```json
+{
+  "type": "TOOL_CALL_RESULT",
+  "toolCallId": "call-1",
+  "content": "Map ready",
+  "structuredContent": { "center": [37.77, -122.42] },
+  "_meta": { "initialView": "street" },
+  "isError": false
+}
+```
+
+In this form, the runtime assembles a `CallToolResult`-shaped `part.result` from `content`, `structuredContent`, `_meta`, and `isError`. At least one of `structuredContent` or `_meta` must be present; when both are absent the enriched path does not activate and the result falls back to the plain `content` string. The `_meta` can also carry the app pointer itself (canonical `ui.resourceUri`, or the deprecated flat `"ui/resourceUri"`), in which case no `ACTIVITY_SNAPSHOT` is needed to activate the widget. A snapshot remains the only carrier for server identity (`serverId`), and when both provide a `resourceUri` the snapshot wins.
+
+The visibility split follows the MCP Apps contract: `content` is model-visible; `structuredContent` and `_meta` are available only to the host and widget. When assistant-ui serializes history into a later AG-UI request, it sends the saved model-visible text and never includes `structuredContent` or `_meta`.
+
+## Bridge protocol
+
+The bridge implements the MCP UI JSON-RPC protocol over `window.postMessage`, filtered by both `event.source === frame.iframe.contentWindow` AND `event.origin === frame.origin` — the cross-origin domain `SafeContentFrame` issues per render. Messages from any other origin or window are dropped silently.
+
+### Widget → host requests
+
+| Method | Notes |
+|---|---|
+| `ui/initialize` | Returns `{ protocolVersion, host, hostContext, capabilities }`. Always supported. |
+| `tools/call` | Routed to `host.url` with method `tools/call`. Optional `handlers.allowedTools` allowlist. Invalid `arguments` shape → `-32602`. |
+| `resources/read` | Routed to `host.url` with method `resources/read`. |
+| `resources/list` | Routed to `host.url` with method `resources/list`. |
+| `openLink` | Requires `handlers.openLink`. Rejects non-`http(s)` URLs with `-32602`. |
+| `sendMessage` | Requires `handlers.sendMessage`. |
+| `requestDisplayMode` | Requires `handlers.requestDisplayMode`. Modes: `inline`, `fullscreen`, `pip`. |
+| `updateModelContext` | Requires `handlers.updateModelContext`. |
+
+When a handler isn't provided, the bridge returns JSON-RPC `-32601` (method not found) — which is also how `capabilities` is reported in the `ui/initialize` response.
+
+### Host → widget notifications
+
+- `notifications/tools/call/input` — sent whenever `part.args` (the streaming tool input) changes
+- `notifications/tools/call/result` — sent when the tool result lands (including error envelopes)
+- `notifications/host_context/changed` — sent when `hostContext` changes (e.g. user toggles theme)
+
+### Widget → host notifications
+
+`notifications/initialized`, `notifications/size_changed`, `notifications/log`, `notifications/error`, `notifications/request_teardown` — wire them via `handlers.onInitialized`, `onSizeChange`, `onLog`, `onError`, `onRequestTeardown` respectively.
+
+If the widget never sends `notifications/initialized` (broken or non-spec-compliant), the host flushes its queued notifications after a 5-second safety timeout so the iframe doesn't appear hung.
+
+## Sandboxing
+
+The iframe is built with [`SafeContentFrame`](/safe-content-frame), which serves each widget from a content-hashed cross-origin so the host page is not reachable by `same-origin` references. Default sandbox flags are `allow-same-origin allow-scripts`. Tune via the `sandbox` field on `McpAppRendererOptions`:
+
+```tsx
+McpAppRenderer({
+  // ...
+  sandbox: {
+    sandbox: ["allow-forms", "allow-popups"],
+    enableBrowserCaching: true,
+    className: "my-mcp-app",
+  },
+});
+```
+
+## Security notes
+
+- Widgets run cross-origin in a sandboxed iframe. The bridge filters incoming messages by both source window and origin.
+- The host route is your auth boundary — apply session checks, rate limiting, and per-tool allowlists there. The renderer trusts whatever the route returns.
+- `openLink` rejects non-`http(s)` URLs at the bridge layer, but your `openLink` handler should still treat the URL as untrusted (e.g. always use `noopener,noreferrer`).
+- Keep custom `host` and `handlers` references stable across renders (e.g. module-scope constants or `useMemo`); an unstable custom-host identity keeps the widget in `loadingFallback` while refetching on every parent re-render.

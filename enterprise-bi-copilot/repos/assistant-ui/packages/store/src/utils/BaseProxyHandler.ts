@@ -1,0 +1,63 @@
+const INTROSPECTION_PROPS = new Set([
+  "$$typeof",
+  "nodeType",
+  "then",
+  // Vue reactivity flags, probed by toRaw/isRef/isReactive checks (Vue's dev
+  // warning formatter runs toRaw on every prop in a component trace).
+  "__v_raw",
+  "__v_isRef",
+  "__v_isReactive",
+  "__v_isReadonly",
+  "__v_isShallow",
+  "__v_skip",
+]);
+
+/**
+ * Handles common proxy introspection properties.
+ * Returns the appropriate value for toStringTag, toJSON, and props that should return undefined.
+ * Returns `false` if the prop should be handled by the subclass.
+ */
+export const handleIntrospectionProp = (
+  prop: string | symbol,
+  name: string,
+): unknown | false => {
+  if (prop === Symbol.toStringTag) return name;
+  if (typeof prop === "symbol") return undefined;
+  if (prop === "toJSON") return () => name;
+  if (INTROSPECTION_PROPS.has(prop)) return undefined;
+  return false;
+};
+
+export abstract class BaseProxyHandler implements ProxyHandler<object> {
+  abstract get(_: unknown, prop: string | symbol, receiver?: unknown): unknown;
+  abstract ownKeys(): ArrayLike<string | symbol>;
+  abstract has(_: unknown, prop: string | symbol): boolean;
+
+  getOwnPropertyDescriptor(_: unknown, prop: string | symbol) {
+    const value = this.get(_, prop);
+    if (value === undefined) return undefined;
+    return {
+      value,
+      writable: false,
+      enumerable: true,
+      // must be configurable: the invariant forbids non-configurable props absent from the empty target
+      configurable: true,
+    };
+  }
+
+  set() {
+    return false;
+  }
+  setPrototypeOf() {
+    return false;
+  }
+  defineProperty() {
+    return false;
+  }
+  deleteProperty() {
+    return false;
+  }
+  preventExtensions(): boolean {
+    return false;
+  }
+}

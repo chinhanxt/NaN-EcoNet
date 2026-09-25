@@ -1,0 +1,55 @@
+name: 🚀 Feature Request
+description: Have an idea for enhancements or features? Let us know!
+title: "🚀 Feature Request: "
+labels: ["feature request"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to suggest a feature!
+
+        > **Before you file:** Search existing issues to avoid duplicates.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Pre-flight Checklist
+      options:
+        - label: I have searched existing issues, and this hasn't been requested yet.
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Motivation
+      description: What problem does this feature solve? Why is it needed?
+      placeholder: "I'm always frustrated when..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 🎤 Tell us your idea
+      description: |
+        We want to make it as easy as possible for you to suggest enhancements or features. Please use the textareas below to describe your idea. Some high-level guidelines:
+        - What is your idea?
+        - Do you have any use case(s) in mind?
+        - Who would find this useful?
+      placeholder: |
+        Type your idea here...
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Would you like to work on this?
+      description: We welcome contributions! Let us know if you’d like to help implement this feature.
+      options:
+        - label: Yes, I’d love to work on it!
+        - label: I’m open to collaborating but need guidance.
+        - label: No, I’m just sharing the idea.
+    validations:
+      required: false

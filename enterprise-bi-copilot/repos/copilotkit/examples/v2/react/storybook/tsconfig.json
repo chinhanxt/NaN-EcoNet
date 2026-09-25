@@ -1,0 +1,13 @@
+{
+  "extends": "@copilotkit/typescript-config/base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@copilotkit/react-core/v2": ["../../packages/react-core/src/v2"],
+      "@/*": ["../../packages/react-core/src/v2/*"]
+    },
+    "types": ["node"]
+  },
+  "include": [".storybook/**/*", "stories/**/*"]
+}

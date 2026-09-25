@@ -1,0 +1,386 @@
+import { shallowEqual } from "@assistant-ui/store/client";
+import type { Unsubscribe } from "../types/unsubscribe";
+import { notifyEventListeners } from "../utils/notify-event-listeners";
+
+export const SKIP_UPDATE = Symbol("skip-update");
+export type SKIP_UPDATE = typeof SKIP_UPDATE;
+
+export type Subscribable = {
+  subscribe: (callback: () => void) => Unsubscribe;
+};
+
+export type SubscribableWithState<TState, TPath> = Subscribable & {
+  path: TPath;
+  getState: () => TState;
+};
+
+export type NestedSubscribable<
+  TState extends Subscribable | undefined,
+  TPath,
+> = SubscribableWithState<TState, TPath>;
+
+export type EventSubscribable<TEvent extends string> = {
+  event: TEvent;
+  binding: SubscribableWithState<
+    | {
+        unstable_on: (
+          event: TEvent,
+          callback: (payload?: unknown) => void,
+        ) => Unsubscribe;
+      }
+    | undefined,
+    unknown
+  >;
+};
+
+export const notifySubscribers = <TArgs extends unknown[]>(
+  subscribers: Iterable<(...args: TArgs) => void>,
+  ...args: TArgs
+): void => {
+  const errors: unknown[] = [];
+  for (const callback of subscribers) {
+    try {
+      callback(...args);
+    } catch (error) {
+      errors.push(error);
+    }
+  }
+
+  if (errors.length === 1) {
+    throw errors[0];
+  }
+
+  if (errors.length > 1) {
+    for (const error of errors) {
+      console.error(error);
+    }
+    throw new AggregateError(errors);
+  }
+};
+
+export const runCleanups = (cleanups: Iterable<Unsubscribe>): void => {
+  notifySubscribers(cleanups);
+};
+
+const rollbackSubscription = (
+  cleanup: Unsubscribe,
+  connectionError: unknown,
+): never => {
+  try {
+    cleanup();
+  } catch (cleanupError) {
+    console.error(
+      "[assistant-ui] Subscription rollback cleanup threw",
+      cleanupError,
+    );
+  }
+  throw connectionError;
+};
+
+const shallowEqualOrUndefined = <T extends object>(
+  a: T | undefined,
+  b: T | undefined,
+) => (a === undefined || b === undefined ? a === b : shallowEqual(a, b));
+
+export class BaseSubscribable {
+  private _subscribers = new Set<() => void>();
+
+  public subscribe(callback: () => void): Unsubscribe {
+    this._subscribers.add(callback);
+    return () => this._subscribers.delete(callback);
+  }
+
+  public waitForUpdate() {
+    return new Promise<void>((resolve) => {
+      const unsubscribe = this.subscribe(() => {
+        unsubscribe();
+        resolve();
+      });
+    });
+  }
+
+  protected _notifySubscribers() {
+    notifySubscribers(this._subscribers);
+  }
+}
+
+export class WritableSubscribable<TState> extends BaseSubscribable {
+  private _state: TState;
+
+  constructor(state: TState) {
+    super();
+    this._state = state;
+    this.subscribe = this.subscribe.bind(this);
+    this.getState = this.getState.bind(this);
+    // Hydration has to agree with what the server rendered, so the server
+    // snapshot stays at the creation-time state rather than following writes.
+    this.getServerSnapshot = () => state;
+  }
+
+  public getState(): TState {
+    return this._state;
+  }
+
+  public getServerSnapshot: () => TState;
+
+  public setState(state: TState): void {
+    if (Object.is(state, this._state)) return;
+    this._state = state;
+    this._notifySubscribers();
+  }
+}
+
+// lazy connect/disconnect: only opens upstream subscription while it has subscribers
+export abstract class BaseSubject {
+  private _subscriptions = new Set<(payload?: unknown) => void>();
+  private _connection: Unsubscribe | undefined;
+
+  protected get isConnected() {
+    return !!this._connection;
+  }
+
+  protected abstract _connect(): Unsubscribe;
+
+  protected notifySubscribers(payload?: unknown, errorContext?: string) {
+    if (errorContext) {
+      notifyEventListeners(this._subscriptions, payload, errorContext);
+      return;
+    }
+
+    notifySubscribers(this._subscriptions, payload);
+  }
+
+  private _updateConnection() {
+    if (this._subscriptions.size > 0) {
+      if (this._connection) return;
+      this._connection = this._connect();
+    } else {
+      const connection = this._connection;
+      this._connection = undefined;
+      connection?.();
+    }
+  }
+
+  public subscribe(callback: (payload?: unknown) => void) {
+    this._subscriptions.add(callback);
+    try {
+      this._updateConnection();
+    } catch (error) {
+      this._subscriptions.delete(callback);
+      throw error;
+    }
+
+    return () => {
+      this._subscriptions.delete(callback);
+      this._updateConnection();
+    };
+  }
+}
+
+export class ShallowMemoizeSubject<TState extends object, TPath>
+  extends BaseSubject
+  implements SubscribableWithState<TState, TPath>
+{
+  public get path() {
+    return this.binding.path;
+  }
+
+  private binding: SubscribableWithState<TState | SKIP_UPDATE, TPath>;
+
+  constructor(binding: SubscribableWithState<TState | SKIP_UPDATE, TPath>) {
+    super();
+    this.binding = binding;
+    const state = binding.getState();
+    if (state === SKIP_UPDATE)
+      throw new Error("Entry not available in the store");
+    this._previousState = state;
+  }
+
+  private _previousState: TState;
+  public getState = () => {
+    if (!this.isConnected) this._syncState();
+    return this._previousState;
+  };
+
+  private _syncState() {
+    const state = this.binding.getState();
+    if (state === SKIP_UPDATE) return false;
+    if (shallowEqualOrUndefined(state, this._previousState)) return false;
+    this._previousState = state;
+    return true;
+  }
+
+  protected _connect() {
+    const callback = () => {
+      if (this._syncState()) {
+        this.notifySubscribers();
+      }
+    };
+
+    const unsubscribe = this.binding.subscribe(callback);
+    try {
+      this._syncState();
+      return unsubscribe;
+    } catch (error) {
+      throw rollbackSubscription(unsubscribe, error);
+    }
+  }
+}
+
+export class LazyMemoizeSubject<TState extends object, TPath>
+  extends BaseSubject
+  implements SubscribableWithState<TState, TPath>
+{
+  public get path() {
+    return this.binding.path;
+  }
+
+  private binding: SubscribableWithState<TState | SKIP_UPDATE, TPath>;
+
+  constructor(binding: SubscribableWithState<TState | SKIP_UPDATE, TPath>) {
+    super();
+    this.binding = binding;
+  }
+
+  private _previousStateDirty = true;
+  private _previousState: TState | undefined;
+  public getState = () => {
+    if (!this.isConnected || this._previousStateDirty) {
+      const newState = this.binding.getState();
+      if (
+        newState !== SKIP_UPDATE &&
+        (this._previousState === undefined ||
+          !shallowEqualOrUndefined(newState, this._previousState))
+      ) {
+        this._previousState = newState;
+      }
+      this._previousStateDirty = false;
+    }
+    if (this._previousState === undefined)
+      throw new Error("Entry not available in the store");
+    return this._previousState;
+  };
+
+  protected _connect() {
+    const callback = () => {
+      this._previousStateDirty = true;
+      this.notifySubscribers();
+    };
+
+    const unsubscribe = this.binding.subscribe(callback);
+    this._previousStateDirty = true;
+    return unsubscribe;
+  }
+}
+
+export class NestedSubscriptionSubject<
+  TState extends Subscribable | undefined,
+  TPath,
+>
+  extends BaseSubject
+  implements
+    SubscribableWithState<TState, TPath>,
+    NestedSubscribable<TState, TPath>
+{
+  public get path() {
+    return this.binding.path;
+  }
+
+  private binding: NestedSubscribable<TState, TPath>;
+
+  constructor(binding: NestedSubscribable<TState, TPath>) {
+    super();
+    this.binding = binding;
+  }
+
+  public getState() {
+    return this.binding.getState();
+  }
+
+  public outerSubscribe(callback: () => void) {
+    return this.binding.subscribe(callback);
+  }
+
+  protected _connect(): Unsubscribe {
+    const callback = () => {
+      this.notifySubscribers();
+    };
+
+    let lastState = this.binding.getState();
+    let innerUnsubscribe = lastState?.subscribe(callback);
+    const onRuntimeUpdate = () => {
+      const newState = this.binding.getState();
+      if (newState === lastState) return;
+      lastState = newState;
+
+      const previousInner = innerUnsubscribe;
+      innerUnsubscribe = undefined;
+      try {
+        previousInner?.();
+      } finally {
+        innerUnsubscribe = newState?.subscribe(callback);
+        callback();
+      }
+    };
+
+    let outerUnsubscribe: Unsubscribe;
+    try {
+      outerUnsubscribe = this.outerSubscribe(onRuntimeUpdate);
+    } catch (error) {
+      throw rollbackSubscription(() => innerUnsubscribe?.(), error);
+    }
+    return () =>
+      runCleanups([() => outerUnsubscribe(), () => innerUnsubscribe?.()]);
+  }
+}
+
+export class EventSubscriptionSubject<
+  TEvent extends string,
+> extends BaseSubject {
+  private config: EventSubscribable<TEvent>;
+
+  constructor(config: EventSubscribable<TEvent>) {
+    super();
+    this.config = config;
+  }
+
+  public getState() {
+    return this.config.binding.getState();
+  }
+
+  public outerSubscribe(callback: () => void) {
+    return this.config.binding.subscribe(callback);
+  }
+
+  protected _connect(): Unsubscribe {
+    const errorContext = `Runtime event "${this.config.event}"`;
+    const callback = (payload?: unknown) => {
+      this.notifySubscribers(payload, errorContext);
+    };
+
+    let lastState = this.config.binding.getState();
+    let innerUnsubscribe = lastState?.unstable_on(this.config.event, callback);
+    const onRuntimeUpdate = () => {
+      const newState = this.config.binding.getState();
+      if (newState === lastState) return;
+      lastState = newState;
+
+      const previousInner = innerUnsubscribe;
+      innerUnsubscribe = undefined;
+      try {
+        previousInner?.();
+      } finally {
+        innerUnsubscribe = newState?.unstable_on(this.config.event, callback);
+      }
+    };
+
+    let outerUnsubscribe: Unsubscribe;
+    try {
+      outerUnsubscribe = this.outerSubscribe(onRuntimeUpdate);
+    } catch (error) {
+      throw rollbackSubscription(() => innerUnsubscribe?.(), error);
+    }
+    return () =>
+      runCleanups([() => outerUnsubscribe(), () => innerUnsubscribe?.()]);
+  }
+}

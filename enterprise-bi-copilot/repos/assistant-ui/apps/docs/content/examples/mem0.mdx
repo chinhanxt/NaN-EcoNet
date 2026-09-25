@@ -1,0 +1,103 @@
+---
+title: Mem0 Memory Chat
+description: AI chat with persistent memory powered by Mem0 — remembers user preferences, facts, and history across sessions. Open-source React example built on assistant-ui.
+---
+
+## Overview
+
+A personalized AI chat experience powered by Mem0 that remembers user preferences, facts, and context across conversations. Unlike traditional chat applications where each conversation starts fresh, this example maintains a persistent memory of user interactions to provide increasingly relevant and personalized responses.
+
+## Features
+
+- **Persistent Memory**: Facts and preferences survive across chat sessions
+- **Automatic Extraction**: AI automatically identifies and stores important information
+- **Context Injection**: Relevant memories are included in each conversation
+- **Memory Management**: Users can view, edit, and delete stored memories
+- **Privacy Controls**: Fine-grained control over what gets remembered
+- **Memory Visualization**: Clear interface showing what the AI remembers
+
+## How It Works
+
+1. **Conversation**: User chats normally with the AI
+2. **Extraction**: Mem0 identifies key facts (e.g., "User prefers dark mode")
+3. **Storage**: Facts are stored in Mem0's memory system
+4. **Retrieval**: On future conversations, relevant memories are retrieved
+5. **Personalization**: AI responses incorporate remembered context
+
+## Integration
+
+The example integrates Mem0's memory SDK with assistant-ui:
+
+```tsx
+import MemoryClient from "mem0ai";
+
+const mem0 = new MemoryClient({
+  apiKey: process.env.MEM0_API_KEY,
+});
+
+// Store memories from a conversation
+async function storeMemory(userId: string, messages: Message[]) {
+  await mem0.add(
+    messages.map((m) => ({
+      role: m.role,
+      content: m.content,
+    })),
+    { user_id: userId },
+  );
+}
+
+// Retrieve relevant memories for context
+async function getRelevantMemories(userId: string, query: string) {
+  const { results } = await mem0.search(query, {
+    user_id: userId,
+    limit: 10,
+  });
+
+  return results.map((m) => m.memory).join("\n");
+}
+```
+
+### Using Memories in Chat
+
+```tsx
+// In your API route
+export async function POST(req: Request) {
+  const { messages, userId } = await req.json();
+  const lastMessage = messages[messages.length - 1].content;
+
+  // Get relevant memories
+  const memories = await getRelevantMemories(userId, lastMessage);
+
+  // Include memories in system prompt
+  const systemPrompt = `You are a helpful assistant.
+
+Here's what you remember about this user:
+${memories}
+
+Use this context to personalize your responses.`;
+
+  const result = streamText({
+    model: openai("gpt-5.6-luna"),
+    system: systemPrompt,
+    messages,
+  });
+
+  // Store new memories after response
+  await storeMemory(userId, messages);
+
+  return result.toUIMessageStreamResponse();
+}
+```
+
+### Memory Types
+
+| Type | Example |
+|------|---------|
+| Preferences | "User prefers concise answers" |
+| Facts | "User works at Acme Corp" |
+| Context | "User is building a React app" |
+| History | "Previously discussed authentication" |
+
+## Source
+
+<SourceLink href="https://github.com/mem0ai/mem0/blob/main/examples/mem0-demo/components/assistant-ui/thread.tsx" />

@@ -1,0 +1,94 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+.vscode
+.chalk
+.claude/*.local.json
+.claude/worktrees
+
+# misc
+.DS_Store
+*.pem
+__snapshots__
+@generated
+node_modules
+.pnpm-store
+.idea/
+cdk_outputs.json
+.nx
+test-run-comment.md
+superpowers/
+
+*.egg-info/
+.installed.cfg
+*.egg
+**/.langgraph_api
+
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+__pycache__/
+*.env
+.doctest-output/
+*.next
+.venv
+.vercel
+
+# Host-specific deploy config — lives in your platform's dashboard, not the repo.
+# (e.g. a local `railway up` upload filter generated when deploying from a worktree)
+.railwayignore
+
+docs/next-env.d.ts
+showcase/shell-docs/next-env.d.ts
+showcase/angular/public/demo-files/
+showcase/angular/public/mcp-apps-sandbox.html
+showcase/angular/src/app/generated/
+showcase/angular/.staged-angular-package/
+
+# Showcase: staged shared contexts for Docker builds (see showcase/scripts/dev-local.sh)
+showcase/integrations/*/shared_python/
+showcase/integrations/*/shared_typescript/
+
+# External repos (cloned for development)
+ext-apps/
+dist
+.nx
+.angular
+build
+debug-storybook.log
+storybook-static
+coverage
+output/
+packages/angular/src/styles/generated.css
+.turbo
+.langgraph_api
+lefthook-local.yml
+.husky/
+.langgraph_api
+
+# Private agent instructions (not shared with the team)
+private-agents.md
+
+# Agent screenshots from the Inspector workbench skill. Session-only. Never commit.
+.inspector-workbench/
+
+# Scratch file the release lane passes notes through. The committed record is the
+# lane's CHANGELOG.md (see scripts/release/lib/changelog.ts); keeping this one
+# untracked is what stops the same notes existing as two editable copies.
+release-notes.md
+
+# Binary artifacts
+*.dSYM/
+*.exe
+*.dll
+*.so
+*.dylib
+*.o
+*.obj
+*.a
+*.lib
+*.wasm
+tasks/
+
+# Transient session artifacts
+.playwright-mcp/
+.claude/scheduled_tasks.lock

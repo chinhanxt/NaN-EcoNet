@@ -1,0 +1,520 @@
+import { promiseWithResolvers } from "../../utils/promiseWithResolvers";
+import {
+  parsePartialJsonObject,
+  getPartialJsonObjectFieldState,
+} from "../../utils/json/parse-partial-json-object";
+import type {
+  ToolCallArgsReader,
+  ToolCallReader,
+  ToolCallResponseReader,
+} from "./tool-types";
+import type { DeepPartial, TypeAtPath, TypePath } from "./type-path-utils";
+import type { ToolResponse } from "./ToolResponse";
+import { asAsyncIterableStream } from "../../utils/AsyncIterableStream";
+import type {
+  AsyncIterableStream,
+  ReadonlyJSONObject,
+  ReadonlyJSONValue,
+} from "../../utils";
+
+// TODO: remove dispose
+
+function getField<T>(obj: T, fieldPath: (string | number)[]): unknown {
+  let current: unknown = obj;
+  for (const key of fieldPath) {
+    if (
+      current === undefined ||
+      current === null ||
+      !Object.hasOwn(current, key)
+    ) {
+      return undefined;
+    }
+    current = current[key as keyof typeof current];
+  }
+  return current;
+}
+
+interface Handle {
+  readonly isDisposed: boolean;
+  update(args: unknown): void;
+  end(args: unknown): void;
+  dispose(): void;
+}
+
+class GetHandle<T, TValue> implements Handle {
+  private resolve: (value: TValue) => void;
+  private reject: (reason: unknown) => void;
+  private disposed = false;
+  private fieldPath: (string | number)[];
+
+  get isDisposed() {
+    return this.disposed;
+  }
+
+  constructor(
+    resolve: (value: TValue) => void,
+    reject: (reason: unknown) => void,
+    fieldPath: (string | number)[],
+  ) {
+    this.resolve = resolve;
+    this.reject = reject;
+    this.fieldPath = fieldPath;
+  }
+
+  update(args: unknown): void {
+    if (this.disposed) return;
+
+    try {
+      // Check if the field is complete
+      if (
+        getPartialJsonObjectFieldState(
+          args as Record<string, unknown>,
+          this.fieldPath,
+        ) === "complete"
+      ) {
+        const value = getField(args as T, this.fieldPath);
+        if (value !== undefined) {
+          this.resolve(value as TValue);
+          this.dispose();
+        }
+      }
+    } catch (e) {
+      this.reject(e);
+      this.dispose();
+    }
+  }
+
+  end(args: unknown): void {
+    if (this.disposed) return;
+
+    try {
+      const value = getField(args as T, this.fieldPath);
+      this.resolve(value as TValue);
+    } catch (e) {
+      this.reject(e);
+    } finally {
+      this.dispose();
+    }
+  }
+
+  dispose(): void {
+    this.disposed = true;
+  }
+}
+
+class StreamValuesHandle<T> implements Handle {
+  private controller: ReadableStreamDefaultController<unknown>;
+  private disposed = false;
+  private fieldPath: (string | number)[];
+
+  get isDisposed() {
+    return this.disposed;
+  }
+
+  constructor(
+    controller: ReadableStreamDefaultController<unknown>,
+    fieldPath: (string | number)[],
+  ) {
+    this.controller = controller;
+    this.fieldPath = fieldPath;
+  }
+
+  update(args: unknown): void {
+    if (this.disposed) return;
+
+    try {
+      const value = getField(args as T, this.fieldPath);
+
+      if (value !== undefined) {
+        this.controller.enqueue(value);
+      }
+
+      // Check if the field is complete, if so close the stream
+      if (
+        getPartialJsonObjectFieldState(
+          args as Record<string, unknown>,
+          this.fieldPath,
+        ) === "complete"
+      ) {
+        this.controller.close();
+        this.dispose();
+      }
+    } catch (e) {
+      this.controller.error(e);
+      this.dispose();
+    }
+  }
+
+  end(): void {
+    if (this.disposed) return;
+    this.controller.close();
+    this.dispose();
+  }
+
+  dispose(): void {
+    this.disposed = true;
+  }
+}
+
+class StreamTextHandle<T> implements Handle {
+  private controller: ReadableStreamDefaultController<unknown>;
+  private disposed = false;
+  private fieldPath: (string | number)[];
+  private lastValue: string | undefined = undefined;
+
+  get isDisposed() {
+    return this.disposed;
+  }
+
+  constructor(
+    controller: ReadableStreamDefaultController<unknown>,
+    fieldPath: (string | number)[],
+  ) {
+    this.controller = controller;
+    this.fieldPath = fieldPath;
+  }
+
+  update(args: unknown): void {
+    if (this.disposed) return;
+
+    try {
+      const value = getField(args as T, this.fieldPath);
+
+      if (value !== undefined && typeof value === "string") {
+        const delta = value.substring(this.lastValue?.length || 0);
+        this.lastValue = value;
+        this.controller.enqueue(delta);
+      }
+
+      // Check if the field is complete, if so close the stream
+      if (
+        getPartialJsonObjectFieldState(
+          args as Record<string, unknown>,
+          this.fieldPath,
+        ) === "complete"
+      ) {
+        this.controller.close();
+        this.dispose();
+      }
+    } catch (e) {
+      this.controller.error(e);
+      this.dispose();
+    }
+  }
+
+  end(): void {
+    if (this.disposed) return;
+    this.controller.close();
+    this.dispose();
+  }
+
+  dispose(): void {
+    this.disposed = true;
+  }
+}
+
+class ForEachHandle<T> implements Handle {
+  private controller: ReadableStreamDefaultController<unknown>;
+  private disposed = false;
+  private fieldPath: (string | number)[];
+  private nextIndex = 0;
+
+  get isDisposed() {
+    return this.disposed;
+  }
+
+  constructor(
+    controller: ReadableStreamDefaultController<unknown>,
+    fieldPath: (string | number)[],
+  ) {
+    this.controller = controller;
+    this.fieldPath = fieldPath;
+  }
+
+  update(args: unknown): void {
+    if (this.disposed) return;
+
+    try {
+      const array = getField(args as T, this.fieldPath);
+
+      if (!Array.isArray(array)) {
+        return;
+      }
+
+      // The parser's single partial path can only leave the trailing array element incomplete.
+      for (; this.nextIndex < array.length; this.nextIndex++) {
+        const elementPath = [...this.fieldPath, this.nextIndex];
+        if (
+          getPartialJsonObjectFieldState(
+            args as Record<string, unknown>,
+            elementPath,
+          ) !== "complete"
+        )
+          break;
+        this.controller.enqueue(array[this.nextIndex]);
+      }
+
+      // Check if the entire array is complete
+      if (
+        getPartialJsonObjectFieldState(
+          args as Record<string, unknown>,
+          this.fieldPath,
+        ) === "complete"
+      ) {
+        this.controller.close();
+        this.dispose();
+      }
+    } catch (e) {
+      this.controller.error(e);
+      this.dispose();
+    }
+  }
+
+  end(): void {
+    if (this.disposed) return;
+    this.controller.close();
+    this.dispose();
+  }
+
+  dispose(): void {
+    this.disposed = true;
+  }
+}
+
+// Implementation of ToolCallReader that uses stream of partial JSON
+export class ToolCallArgsReaderImpl<
+  T extends ReadonlyJSONObject,
+> implements ToolCallArgsReader<T> {
+  private argTextDeltas: ReadableStream<string>;
+  private handles: Set<Handle> = new Set();
+  private accumulatedText = "";
+  private parsedTextLength = -1;
+  private args: unknown = undefined;
+  private finished = false;
+
+  constructor(argTextDeltas: ReadableStream<string>) {
+    this.argTextDeltas = argTextDeltas;
+    this.processStream();
+  }
+
+  private async processStream(): Promise<void> {
+    try {
+      const reader = this.argTextDeltas.getReader();
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        this.accumulatedText += value;
+        if (this.handles.size === 0) continue;
+
+        if (this.parseCurrentArgs()) this.updateHandles();
+      }
+    } catch (error) {
+      console.error("Error processing argument stream:", error);
+    } finally {
+      this.finished = true;
+      for (const handle of this.handles) {
+        handle.end(this.args);
+      }
+      this.handles.clear();
+    }
+  }
+
+  private parseCurrentArgs(): boolean {
+    if (this.parsedTextLength === this.accumulatedText.length) return false;
+
+    const parsedArgs = parsePartialJsonObject(this.accumulatedText);
+    this.parsedTextLength = this.accumulatedText.length;
+    if (parsedArgs === undefined) {
+      this.args ??= parsePartialJsonObject("");
+      return false;
+    }
+
+    this.args = parsedArgs;
+    return true;
+  }
+
+  private updateHandles(): void {
+    for (const handle of this.handles) {
+      handle.update(this.args);
+      if (handle.isDisposed) this.handles.delete(handle);
+    }
+  }
+
+  private activateHandle(handle: Handle): void {
+    this.parseCurrentArgs();
+    handle.update(this.args);
+    if (handle.isDisposed) return;
+
+    if (this.finished) {
+      handle.end(this.args);
+      return;
+    }
+
+    this.handles.add(handle);
+  }
+
+  get<PathT extends TypePath<T>>(
+    ...fieldPath: PathT
+  ): Promise<TypeAtPath<T, PathT>> {
+    return new Promise<TypeAtPath<T, PathT>>((resolve, reject) => {
+      const handle = new GetHandle<T, TypeAtPath<T, PathT>>(
+        resolve,
+        reject,
+        fieldPath,
+      );
+      this.activateHandle(handle);
+    });
+  }
+
+  streamValues<PathT extends TypePath<T>>(
+    ...fieldPath: PathT
+  ): AsyncIterableStream<DeepPartial<TypeAtPath<T, PathT>>> {
+    // Use a type assertion to convert the complex TypePath to a simple array
+    const simplePath = fieldPath as unknown as (string | number)[];
+
+    let handle: StreamValuesHandle<T> | undefined;
+    const stream = new ReadableStream<DeepPartial<TypeAtPath<T, PathT>>>({
+      start: (controller) => {
+        handle = new StreamValuesHandle<T>(controller, simplePath);
+        this.activateHandle(handle);
+      },
+      cancel: () => {
+        // Dispose this stream's own handle (captured above) — scanning for the
+        // first match would dispose a concurrent streamValues()'s handle.
+        if (handle) {
+          handle.dispose();
+          this.handles.delete(handle);
+        }
+      },
+    });
+
+    return asAsyncIterableStream(stream) as any;
+  }
+
+  streamText<PathT extends TypePath<T>>(
+    ...fieldPath: PathT
+  ): TypeAtPath<T, PathT> extends string & (infer U)
+    ? AsyncIterableStream<U>
+    : never {
+    // Use a type assertion to convert the complex TypePath to a simple array
+    const simplePath = fieldPath as unknown as (string | number)[];
+
+    let handle: StreamTextHandle<T> | undefined;
+    const stream = new ReadableStream<unknown>({
+      start: (controller) => {
+        handle = new StreamTextHandle<T>(controller, simplePath);
+        this.activateHandle(handle);
+      },
+      cancel: () => {
+        // Dispose this stream's own handle (captured above) — scanning for the
+        // first match would dispose a concurrent streamText()'s handle.
+        if (handle) {
+          handle.dispose();
+          this.handles.delete(handle);
+        }
+      },
+    });
+
+    return asAsyncIterableStream(stream) as any;
+  }
+
+  forEach<PathT extends TypePath<T>>(
+    ...fieldPath: PathT
+  ): NonNullable<TypeAtPath<T, PathT>> extends Array<infer U>
+    ? AsyncIterableStream<U>
+    : never {
+    // Use a type assertion to convert the complex TypePath to a simple array
+    const simplePath = fieldPath as unknown as (string | number)[];
+
+    let handle: ForEachHandle<T> | undefined;
+    const stream = new ReadableStream<unknown>({
+      start: (controller) => {
+        handle = new ForEachHandle<T>(controller, simplePath);
+        this.activateHandle(handle);
+      },
+      cancel: () => {
+        // Dispose this stream's own handle (captured above) — scanning for the
+        // first match would dispose a concurrent forEach()'s handle.
+        if (handle) {
+          handle.dispose();
+          this.handles.delete(handle);
+        }
+      },
+    });
+
+    return asAsyncIterableStream(stream) as any;
+  }
+}
+
+export class ToolCallResponseReaderImpl<
+  TResult extends ReadonlyJSONValue,
+> implements ToolCallResponseReader<TResult> {
+  private readonly promise: Promise<ToolResponse<TResult>>;
+
+  constructor(promise: Promise<ToolResponse<TResult>>) {
+    this.promise = promise;
+  }
+
+  public get() {
+    return this.promise;
+  }
+}
+
+export class ToolCallReaderImpl<
+  TArgs extends ReadonlyJSONObject,
+  TResult extends ReadonlyJSONValue,
+> implements ToolCallReader<TArgs, TResult> {
+  public readonly args: ToolCallArgsReaderImpl<TArgs>;
+  public readonly response: ToolCallResponseReaderImpl<TResult>;
+  private readonly writable: WritableStream<string>;
+  private readonly resolve: (value: ToolResponse<TResult>) => void;
+
+  public argsText: string = "";
+
+  constructor() {
+    const stream = new TransformStream<string, string>();
+    this.writable = stream.writable;
+    this.args = new ToolCallArgsReaderImpl<TArgs>(stream.readable);
+
+    const { promise, resolve } = promiseWithResolvers<ToolResponse<TResult>>();
+    this.resolve = resolve;
+    this.response = new ToolCallResponseReaderImpl<TResult>(promise);
+  }
+
+  async appendArgsTextDelta(text: string): Promise<void> {
+    const writer = this.writable.getWriter();
+    try {
+      await writer.write(text);
+    } catch (err) {
+      console.warn(err);
+    } finally {
+      writer.releaseLock();
+    }
+
+    this.argsText += text;
+  }
+
+  async finishArgsText(): Promise<void> {
+    const writer = this.writable.getWriter();
+    try {
+      await writer.close();
+    } catch (err) {
+      console.warn(err);
+    } finally {
+      writer.releaseLock();
+    }
+  }
+
+  setResponse(value: ToolResponse<TResult>): void {
+    this.resolve(value);
+  }
+
+  result = {
+    get: async () => {
+      const response = await this.response.get();
+      return response.result;
+    },
+  };
+}

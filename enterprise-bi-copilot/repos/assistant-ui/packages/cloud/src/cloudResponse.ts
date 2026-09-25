@@ -1,0 +1,102 @@
+import type { ReadonlyJSONObject } from "assistant-stream/utils";
+
+export class CloudResponseError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "CloudResponseError";
+  }
+}
+
+const invalidCloudResponse = (field: string, expected: string) =>
+  new CloudResponseError(
+    `Invalid Assistant Cloud response for "${field}": expected ${expected}`,
+  );
+
+export const readCloudRecord = (
+  value: unknown,
+  field: string,
+): Record<string, unknown> => {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw invalidCloudResponse(field, "an object");
+  }
+  return value as Record<string, unknown>;
+};
+
+export const readCloudArray = (value: unknown, field: string): unknown[] => {
+  if (!Array.isArray(value)) throw invalidCloudResponse(field, "an array");
+  return value;
+};
+
+export const readCloudString = (value: unknown, field: string): string => {
+  if (typeof value !== "string") throw invalidCloudResponse(field, "a string");
+  return value;
+};
+
+export const readCloudNumber = (value: unknown, field: string): number => {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    throw invalidCloudResponse(field, "a number");
+  }
+  return value;
+};
+
+export const readCloudNullableNumber = (
+  value: unknown,
+  field: string,
+): number | null => {
+  if (value === null) return null;
+  return readCloudNumber(value, field);
+};
+
+export const readCloudEnum = <const T extends readonly string[]>(
+  value: unknown,
+  field: string,
+  allowed: T,
+): T[number] => {
+  const text = readCloudString(value, field);
+  if (!allowed.includes(text)) {
+    throw invalidCloudResponse(
+      field,
+      `one of ${allowed.map((entry) => `"${entry}"`).join(", ")}`,
+    );
+  }
+  return text;
+};
+
+export const readCloudNullableString = (
+  value: unknown,
+  field: string,
+): string | null => {
+  if (value === null) return null;
+  return readCloudString(value, field);
+};
+
+export const readCloudBoolean = (value: unknown, field: string): boolean => {
+  if (typeof value !== "boolean") {
+    throw invalidCloudResponse(field, "a boolean");
+  }
+  return value;
+};
+
+export const readCloudInteger = (value: unknown, field: string): number => {
+  if (!Number.isInteger(value)) throw invalidCloudResponse(field, "an integer");
+  return value as number;
+};
+
+export const readCloudTimestamp = (value: unknown, field: string): Date => {
+  if (typeof value !== "string") {
+    throw invalidCloudResponse(field, "a canonical ISO timestamp");
+  }
+
+  const date = new Date(value);
+  // The round trip pins the backend DTO's Date#toISOString() wire contract.
+  if (Number.isNaN(date.getTime()) || date.toISOString() !== value) {
+    throw invalidCloudResponse(field, "a canonical ISO timestamp");
+  }
+
+  return date;
+};
+
+export const readCloudJSONObject = (
+  value: unknown,
+  field: string,
+): ReadonlyJSONObject => readCloudRecord(value, field) as ReadonlyJSONObject;

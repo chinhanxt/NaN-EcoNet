@@ -1,0 +1,65 @@
+import type { Plugin, TransformResult } from "vite";
+import {
+  compileGenerative,
+  isGenerativeSource,
+} from "@assistant-ui/x-generative-compiler";
+
+export interface AuiOptions {
+  /**
+   * The app has no backend importing the server builds of its `"use generative"`
+   * modules (e.g. cloud-hosted runs). Frontend/human tool schemas then stay
+   * uploadable from the client instead of being assumed backend-known.
+   */
+  backendless?: boolean;
+}
+
+/** Compiles `"use generative"` modules per environment. */
+function generativePlugin(pluginOptions: AuiOptions): Plugin {
+  return {
+    name: "assistant-ui:use-generative",
+    enforce: "pre",
+    transform(code, id, options) {
+      if (!isGenerativeSource(id.split("?")[0]!, code)) return;
+
+      // Vite 6+ exposes the environment; `consumer` is the stable client/server
+      // axis. Fall back to the legacy `options.ssr` boolean for older Vite.
+      const consumer = this.environment?.config?.consumer;
+      const isClient = consumer ? consumer === "client" : !options?.ssr;
+
+      const { code: out, map } = compileGenerative(code, {
+        target: isClient ? "client" : "server",
+        filename: id,
+        sourceMaps: true,
+        // No `react-server` layer here, so `server-only` would throw on import.
+        // The environment split already keeps `execute` out of the client.
+        injectServerOnly: false,
+        backendless: pluginOptions.backendless ?? false,
+      });
+      return {
+        code: out,
+        map: (map ?? null) as Extract<
+          TransformResult,
+          { map?: unknown }
+        >["map"],
+      };
+    },
+  };
+}
+
+/**
+ * Vite plugin that compiles assistant-ui `"use generative"` modules: files that
+ * colocate a tool's schema, server-only `execute`, and client-only `render`.
+ *
+ * Add it to `vite.config`; `enforce: "pre"` makes it run ahead of
+ * `@vitejs/plugin-react`'s JSX transform, so array placement doesn't matter:
+ *
+ * ```ts
+ * import { aui } from "@assistant-ui/vite";
+ * export default defineConfig({
+ *   plugins: [aui(), tanstackStart(), viteReact()],
+ * });
+ * ```
+ */
+export function aui(options: AuiOptions = {}): Plugin[] {
+  return [generativePlugin(options)];
+}

@@ -1,0 +1,202 @@
+import { describe, it, expect, afterEach } from "vitest";
+import { useReducer } from "../../react-hooks/useReducer";
+import { useEffect } from "../../react-hooks/useEffect";
+import {
+  createTestResource,
+  renderTest,
+  cleanupAllResources,
+  waitForNextTick,
+  getCommittedValue,
+} from "../test-utils";
+
+describe("useReducer - Basic Functionality", () => {
+  afterEach(() => {
+    cleanupAllResources();
+  });
+
+  describe("Initialization", () => {
+    it("should initialize with direct value", () => {
+      const reducer = (state: number, action: number) => state + action;
+
+      const testFiber = createTestResource(() => {
+        const [count] = useReducer(reducer, 0);
+        return count;
+      });
+
+      const value = renderTest(testFiber);
+      expect(value).toBe(0);
+    });
+
+    it("should initialize with init function", () => {
+      let initCalled = 0;
+      const reducer = (state: number, action: number) => state + action;
+
+      const testFiber = createTestResource(() => {
+        const [count] = useReducer(reducer, 10, (arg) => {
+          initCalled++;
+          return arg * 2;
+        });
+        return count;
+      });
+
+      const value = renderTest(testFiber);
+      expect(value).toBe(20);
+      expect(initCalled).toBe(1);
+
+      // Re-render should not call init again
+      renderTest(testFiber);
+      expect(initCalled).toBe(1);
+    });
+  });
+
+  describe("Dispatch and re-render", () => {
+    it("should dispatch actions and trigger re-render", async () => {
+      type Action = { type: "increment" } | { type: "decrement" };
+      const reducer = (state: number, action: Action) => {
+        switch (action.type) {
+          case "increment":
+            return state + 1;
+          case "decrement":
+            return state - 1;
+        }
+      };
+
+      let dispatchFn: ((action: Action) => void) | null = null;
+
+      const testFiber = createTestResource(() => {
+        const [count, dispatch] = useReducer(reducer, 0);
+
+        useEffect(() => {
+          dispatchFn = dispatch;
+        });
+
+        return count;
+      });
+
+      renderTest(testFiber);
+      expect(getCommittedValue(testFiber)).toBe(0);
+
+      dispatchFn!({ type: "increment" });
+      await waitForNextTick();
+      expect(getCommittedValue(testFiber)).toBe(1);
+
+      dispatchFn!({ type: "increment" });
+      await waitForNextTick();
+      expect(getCommittedValue(testFiber)).toBe(2);
+
+      dispatchFn!({ type: "decrement" });
+      await waitForNextTick();
+      expect(getCommittedValue(testFiber)).toBe(1);
+    });
+  });
+
+  describe("Same-state bailout", () => {
+    it("re-renders once when the reducer returns the same state, like React", async () => {
+      // React computes user reducers during render (no eager dispatch-time
+      // bailout), so a same-state dispatch still renders once.
+      let renderCount = 0;
+      const reducer = (state: number, action: number) =>
+        action === 0 ? state : state + action;
+
+      let dispatchFn: ((action: number) => void) | null = null;
+
+      const testFiber = createTestResource(() => {
+        renderCount++;
+        const [count, dispatch] = useReducer(reducer, 42);
+
+        useEffect(() => {
+          dispatchFn = dispatch;
+        });
+
+        return count;
+      });
+
+      renderTest(testFiber);
+      expect(renderCount).toBe(1);
+
+      // Dispatch action that returns same state
+      dispatchFn!(0);
+      await waitForNextTick();
+      expect(renderCount).toBe(2);
+    });
+  });
+
+  describe("Reducer function updates", () => {
+    it("should use latest reducer reference", async () => {
+      let multiplier = 1;
+      let dispatchFn: ((action: number) => void) | null = null;
+
+      const testFiber = createTestResource(() => {
+        const reducer = (state: number, action: number) =>
+          state + action * multiplier;
+        const [count, dispatch] = useReducer(reducer, 0);
+
+        useEffect(() => {
+          dispatchFn = dispatch;
+        });
+
+        return count;
+      });
+
+      renderTest(testFiber);
+      expect(getCommittedValue(testFiber)).toBe(0);
+
+      // Dispatch with multiplier=1
+      dispatchFn!(5);
+      await waitForNextTick();
+      expect(getCommittedValue(testFiber)).toBe(5);
+
+      // Change multiplier and dispatch
+      multiplier = 10;
+      renderTest(testFiber); // re-render to update reducer
+      dispatchFn!(5);
+      await waitForNextTick();
+      expect(getCommittedValue(testFiber)).toBe(55); // 5 + 5*10
+    });
+  });
+
+  describe("Multiple dispatches", () => {
+    it("should handle multiple dispatches correctly", async () => {
+      const reducer = (state: number, action: number) => state + action;
+      let dispatchFn: ((action: number) => void) | null = null;
+
+      const testFiber = createTestResource(() => {
+        const [count, dispatch] = useReducer(reducer, 0);
+
+        useEffect(() => {
+          dispatchFn = dispatch;
+        });
+
+        return count;
+      });
+
+      renderTest(testFiber);
+      expect(getCommittedValue(testFiber)).toBe(0);
+
+      // Multiple dispatches
+      dispatchFn!(1);
+      dispatchFn!(2);
+      dispatchFn!(3);
+      await waitForNextTick();
+      expect(getCommittedValue(testFiber)).toBe(6);
+    });
+  });
+
+  describe("Dispatch identity stability", () => {
+    it("should return same dispatch reference across renders", () => {
+      const reducer = (state: number, action: number) => state + action;
+      const dispatches: ((action: number) => void)[] = [];
+
+      const testFiber = createTestResource(() => {
+        const [count, dispatch] = useReducer(reducer, 0);
+        dispatches.push(dispatch);
+        return count;
+      });
+
+      renderTest(testFiber);
+      renderTest(testFiber);
+
+      expect(dispatches[0]).toBe(dispatches[1]);
+    });
+  });
+});

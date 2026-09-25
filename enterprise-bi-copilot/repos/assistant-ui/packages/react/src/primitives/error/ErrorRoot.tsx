@@ -1,0 +1,22 @@
+"use client";
+
+import { Primitive } from "../../utils/Primitive";
+import {
+  type ComponentRef,
+  forwardRef,
+  type ComponentPropsWithoutRef,
+} from "react";
+
+export namespace ErrorPrimitiveRoot {
+  export type Element = ComponentRef<typeof Primitive.div>;
+  export type Props = ComponentPropsWithoutRef<typeof Primitive.div>;
+}
+
+export const ErrorPrimitiveRoot = forwardRef<
+  ErrorPrimitiveRoot.Element,
+  ErrorPrimitiveRoot.Props
+>((props, forwardRef) => {
+  return <Primitive.div role="alert" {...props} ref={forwardRef} />;
+});
+
+ErrorPrimitiveRoot.displayName = "ErrorPrimitive.Root";

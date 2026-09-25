@@ -1,0 +1,75 @@
+// Dedicated runtime for the Beautiful Chat flagship showcase cell (Mastra).
+//
+// Beautiful Chat simultaneously exercises A2UI (dynamic + fixed schema),
+// Open Generative UI, and MCP Apps. This route enables all three flags on
+// a single runtime backing one shared Mastra agent — keeping these global
+// runtime flags scoped to the flagship cell so other demos sharing the
+// main `/api/copilotkit` endpoint preserve their per-demo
+// `useFrontendTool` / `useComponent` registrations.
+
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
+import {
+  CopilotRuntime,
+  createCopilotRuntimeHandler,
+} from "@copilotkit/runtime/v2";
+import { getLocalAgent } from "@ag-ui/mastra";
+import { mastra } from "@/mastra";
+import { withForwardedHeaders } from "@/mastra/_header_forwarding";
+
+const beautifulChatAgent = getLocalAgent({
+  mastra,
+  agentId: "beautifulChatAgent",
+  resourceId: "mastra-beautiful-chat",
+});
+
+if (!beautifulChatAgent) {
+  throw new Error(
+    "getLocalAgent returned null for beautifulChatAgent — required for /demos/beautiful-chat",
+  );
+}
+
+const runtime = new CopilotRuntime({
+  // @ts-ignore -- see main route.ts
+  agents: {
+    "beautiful-chat": beautifulChatAgent,
+    // Internal components call useAgent() with no args (defaults to "default").
+    default: beautifulChatAgent,
+  },
+  openGenerativeUI: true,
+  a2ui: {
+    // beautifulChatAgent already owns its `generate_a2ui` tool — don't double-bind.
+    injectA2UITool: false,
+    // Models follow the tool-usage guide and omit `catalogId`, and the
+    // middleware then falls back to the unregistered spec basic catalog
+    // ("Catalog not found" render error). Pin the catalog the page registers.
+    defaultCatalogId: "copilotkit://app-dashboard-catalog",
+  },
+  mcpApps: {
+    servers: [
+      {
+        type: "http",
+        url: process.env.MCP_SERVER_URL || "https://mcp.excalidraw.com",
+        serverId: "beautiful_chat_mcp",
+      },
+    ],
+  },
+});
+
+export const POST = async (req: NextRequest) =>
+  withForwardedHeaders(req, async () => {
+    try {
+      const copilotHandler = createCopilotRuntimeHandler({
+        runtime,
+        basePath: "/api/copilotkit-beautiful-chat",
+        mode: "single-route",
+      });
+      return await copilotHandler(req);
+    } catch (error: unknown) {
+      const e = error as { message?: string; stack?: string };
+      return NextResponse.json(
+        { error: e.message, stack: e.stack },
+        { status: 500 },
+      );
+    }
+  });

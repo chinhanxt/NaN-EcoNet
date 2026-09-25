@@ -1,0 +1,16 @@
+{
+  "title": "Getting Started",
+  "description": "Build AI chat UIs for the terminal",
+  "icon": "Rocket",
+  "root": true,
+  "platforms": ["ink"],
+  "pages": [
+    "index",
+    "migration",
+    "custom-backend",
+    "---API Reference---",
+    "primitives",
+    "hooks",
+    "adapters"
+  ]
+}

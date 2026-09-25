@@ -1,0 +1,24 @@
+{
+  "title": "Getting Started",
+  "description": "Build AI chat UIs for iOS and Android",
+  "icon": "Rocket",
+  "root": true,
+  "platforms": ["rn"],
+  "pages": [
+    "index",
+    "elements",
+    "attachments",
+    "existing-app",
+    "history",
+    "migration",
+    "custom-backend",
+    "tool-ui",
+    "thread-list",
+    "web-export",
+    "testing",
+    "---API Reference---",
+    "primitives",
+    "hooks",
+    "adapters"
+  ]
+}

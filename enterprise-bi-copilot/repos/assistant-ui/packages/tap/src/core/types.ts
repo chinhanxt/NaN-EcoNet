@@ -1,0 +1,118 @@
+export type ResourceElement<V> = {
+  readonly hook: (...args: any[]) => V;
+  readonly args: readonly unknown[];
+  readonly key?: string | number;
+  readonly deps?: readonly unknown[];
+};
+
+export type Resource<V, A extends readonly unknown[] = any[]> = (
+  ...args: A
+) => ResourceElement<V>;
+export type ExtractResourceReturnType<T> =
+  T extends ResourceElement<infer V>
+    ? V
+    : T extends Resource<infer V, any>
+      ? V
+      : never;
+
+export interface ChangelogRecord {
+  readonly fiber: ResourceFiber<any>;
+  readonly cell: ReducerCell;
+  readonly action: any;
+
+  hasEagerState: boolean;
+  eagerState: any;
+  prevState: any;
+  settled: boolean;
+  queued: boolean;
+  logged: boolean;
+}
+
+export type ReducerCell = {
+  readonly type: "reducer";
+  readonly dispatch: (action: any) => void;
+
+  queue: ChangelogRecord[] | null;
+  renderQueue: any[] | null;
+
+  workInProgress: any;
+  current: any;
+  reducer: (state: any, action: any) => any;
+  isDirty: boolean;
+};
+
+export type MemoCell<T = any> = {
+  readonly type: "memo";
+  current: T;
+  currentDeps: readonly unknown[];
+  wip: T;
+  wipDeps: readonly unknown[];
+  isDirty: boolean;
+};
+
+export type EffectCell = {
+  readonly type: "effect";
+  setup: (() => (() => void) | undefined) | undefined;
+  setupDeps: readonly unknown[] | undefined;
+  cleanup: (() => void) | undefined;
+  // null = never ran or disconnected, undefined = deps-less
+  deps: readonly unknown[] | null | undefined;
+  generation: number;
+};
+
+export type Cell = ReducerCell | MemoCell | EffectCell;
+
+export type CommitCallback = () => void;
+export type CommitCallbacks = CommitCallback[];
+
+export type ResourceContext = Map<object, ResourceContextValue>;
+export type ResourceContextDeps = Map<object, ResourceFiber<any> | null>;
+
+export interface ResourceContextValue {
+  value: unknown;
+  source: ResourceFiber<any> | null;
+}
+
+export interface TapRoot {
+  version: number;
+  committedVersion: number;
+  readonly changelog: ChangelogRecord[];
+  readonly committedLog: ChangelogRecord[];
+  unsettledCount: number;
+  readonly dispatchUpdate: (
+    evaluate: () => boolean,
+    apply: () => boolean,
+  ) => void;
+
+  readonly rollbackCallbacks: (() => void)[];
+}
+
+export interface ResourceFiber<R> {
+  readonly root: TapRoot;
+  readonly hook: (...args: any[]) => R;
+  readonly markDirty: (() => void) | undefined;
+  readonly devStrictMode: "root" | "child" | null;
+
+  cells: Cell[];
+  effectCells: EffectCell[];
+
+  wipContextDeps: ResourceContextDeps | null;
+  contextDeps: ResourceContextDeps | null;
+  wipCommitCallbacks: CommitCallbacks | null;
+
+  currentIndex: number;
+  // workInProgress persists across uncommitted renders: a StrictMode double
+  // invoke reaches tap as separate renderResourceFiber calls with no attempt
+  // boundary, so an entry discard would re-run every compiled memo factory.
+  memoCache: {
+    current: unknown[][] | null;
+    workInProgress: unknown[][] | null;
+    index: number;
+  };
+
+  renderPendingCells: Set<ReducerCell> | null;
+
+  isMounted: boolean;
+  isFirstRender: boolean;
+  isNeverMounted: boolean;
+}

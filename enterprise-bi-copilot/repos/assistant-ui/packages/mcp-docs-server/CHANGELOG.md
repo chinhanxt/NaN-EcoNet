@@ -1,0 +1,315 @@
+# @assistant-ui/mcp-docs-server
+
+## 0.3.2
+
+### Patch Changes
+
+- [#7370](https://github.com/assistant-ui/assistant-ui/pull/7370) [`b7f9a96`](https://github.com/assistant-ui/assistant-ui/commit/b7f9a960dda7c7548ac1ebdf3bae368fe28bcbfc) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+## 0.3.1
+
+### Patch Changes
+
+- [#6959](https://github.com/assistant-ui/assistant-ui/pull/6959) [`17116ea`](https://github.com/assistant-ui/assistant-ui/commit/17116ea023e34cfea2025963490b38d7d867aeb8) - fix: close the docs proxy and its HTTP transport once stdin can no longer deliver messages, whether it reaches EOF or is destroyed ([@ephraimduncan](https://github.com/ephraimduncan))
+
+- [#6993](https://github.com/assistant-ui/assistant-ui/pull/6993) [`91689ab`](https://github.com/assistant-ui/assistant-ui/commit/91689ab92fa8ccaecff463c6fdc3e6a666bf93e5) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- [#6970](https://github.com/assistant-ui/assistant-ui/pull/6970) [`fefab67`](https://github.com/assistant-ui/assistant-ui/commit/fefab677dd290cea49385d52e5da041a042e0f63) - fix: keep clean proxy shutdowns from logging transport errors ([@rupic-app](https://github.com/apps/rupic-app))
+
+- [#6939](https://github.com/assistant-ui/assistant-ui/pull/6939) [`9af436c`](https://github.com/assistant-ui/assistant-ui/commit/9af436c16792cce10ea4eebd647ee9e88e126dc8) - fix: repair the type drift tsc --noEmit catches in the codemod and proxy sources ([@Kinfe123](https://github.com/Kinfe123))
+
+## 0.3.0
+
+### Minor Changes
+
+- [#6492](https://github.com/assistant-ui/assistant-ui/pull/6492) [`ba0a97f`](https://github.com/assistant-ui/assistant-ui/commit/ba0a97f7d54fe0dfc9ea762355eb94538b619fa8) - feat: proxy the hosted assistant-ui mcp endpoint instead of bundling a docs snapshot. the stdio server now forwards to the hosted tool set, and the programmatic `server` export is removed ([@okisdev](https://github.com/okisdev))
+
+### Patch Changes
+
+- [#6528](https://github.com/assistant-ui/assistant-ui/pull/6528) [`152a35d`](https://github.com/assistant-ui/assistant-ui/commit/152a35daae0e80b5307865e59af683c4ae720794) - chore: update dependencies ([@okisdev](https://github.com/okisdev))
+
+- [#6639](https://github.com/assistant-ui/assistant-ui/pull/6639) [`05e3e6d`](https://github.com/assistant-ui/assistant-ui/commit/05e3e6d3971dac4ce20fc7e2a87d187d78b0e449) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+## 0.2.3
+
+### Patch Changes
+
+- [#6381](https://github.com/assistant-ui/assistant-ui/pull/6381) [`c13cce5`](https://github.com/assistant-ui/assistant-ui/commit/c13cce5605919b93150c33ee072a7cc17a9667b4) - fix: validate template catalog entries before using them ([@Kinfe123](https://github.com/Kinfe123))
+
+- [#6305](https://github.com/assistant-ui/assistant-ui/pull/6305) [`e96d3de`](https://github.com/assistant-ui/assistant-ui/commit/e96d3dea9370159e04f82bf4eb39d6b1b1c4d21d) - chore: update dependencies ([@okisdev](https://github.com/okisdev))
+
+## 0.2.2
+
+### Patch Changes
+
+- [#5774](https://github.com/assistant-ui/assistant-ui/pull/5774) [`61d29f4`](https://github.com/assistant-ui/assistant-ui/commit/61d29f4157b525d3e36ac721d1fcef7d1baf987e) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- [#5774](https://github.com/assistant-ui/assistant-ui/pull/5774) [`61d29f4`](https://github.com/assistant-ui/assistant-ui/commit/61d29f4157b525d3e36ac721d1fcef7d1baf987e) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+## 0.2.1
+
+### Patch Changes
+
+- [#5723](https://github.com/assistant-ui/assistant-ui/pull/5723) [`94dc3e5`](https://github.com/assistant-ui/assistant-ui/commit/94dc3e509fa2b4fae1a14c88ec34b910c8d95af8) - chore: update dependencies ([@okisdev](https://github.com/okisdev))
+
+## 0.2.0
+
+### Minor Changes
+
+- [#5316](https://github.com/assistant-ui/assistant-ui/pull/5316) [`b5f20a9`](https://github.com/assistant-ui/assistant-ui/commit/b5f20a9607af038a10e99e237a4e2ea3f5d31875) - feat: migrate to MCP TypeScript SDK v2 scoped packages (`@modelcontextprotocol/client`, `@modelcontextprotocol/core`, `@modelcontextprotocol/server`), replacing the monolithic `@modelcontextprotocol/sdk` 1.x dependency ([@okisdev](https://github.com/okisdev))
+
+## 0.1.39
+
+### Patch Changes
+
+- [#4626](https://github.com/assistant-ui/assistant-ui/pull/4626) [`6bcb687`](https://github.com/assistant-ui/assistant-ui/commit/6bcb687267e856cac72bcf6bfe1b8091dad3b4ba) - perf: cache the docs and examples file listings ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#4628](https://github.com/assistant-ui/assistant-ui/pull/4628) [`4ba22c5`](https://github.com/assistant-ui/assistant-ui/commit/4ba22c528aeaff7e43cb9623c7af96f0ddd4a2a8) - feat: return structuredContent from the docs, examples, and search tools ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#4611](https://github.com/assistant-ui/assistant-ui/pull/4611) [`c11236e`](https://github.com/assistant-ui/assistant-ui/commit/c11236e9d1db5fe172aba32b41b2ec55f5485428) - feat: surface doc title and excerpt on assistantUIDocs responses ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#4746](https://github.com/assistant-ui/assistant-ui/pull/4746) [`0686f4e`](https://github.com/assistant-ui/assistant-ui/commit/0686f4e6b8ee5f6e17c968997ef11622ef8f9c98) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- [#4887](https://github.com/assistant-ui/assistant-ui/pull/4887) [`d03e5cf`](https://github.com/assistant-ui/assistant-ui/commit/d03e5cf0e6efada832503fedc565a1fb8f14676a) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- [#4809](https://github.com/assistant-ui/assistant-ui/pull/4809) [`9d3b0f6`](https://github.com/assistant-ui/assistant-ui/commit/9d3b0f682a1338f92489294e12b481468e3a43ff) - feat: expose playground template tools through the MCP docs server ([@vivek100](https://github.com/vivek100))
+
+- [#4815](https://github.com/assistant-ui/assistant-ui/pull/4815) [`5325f09`](https://github.com/assistant-ui/assistant-ui/commit/5325f0985768b750b050cf07f592fdfed34eccac) - chore: update dependencies ([@okisdev](https://github.com/okisdev))
+
+## 0.1.38
+
+### Patch Changes
+
+- [#4579](https://github.com/assistant-ui/assistant-ui/pull/4579) [`84a9fcd`](https://github.com/assistant-ui/assistant-ui/commit/84a9fcd9acb27737035ac88d48063111b944e3a6) - feat: add assistantUISearch tool for keyword search over the docs ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#4621](https://github.com/assistant-ui/assistant-ui/pull/4621) [`f7c814d`](https://github.com/assistant-ui/assistant-ui/commit/f7c814d79f8df5d7998bd4dd2340c3b3801f663c) - feat: add argument completions for the docs and examples resources ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+## 0.1.37
+
+### Patch Changes
+
+- [#4578](https://github.com/assistant-ui/assistant-ui/pull/4578) [`e65a982`](https://github.com/assistant-ui/assistant-ui/commit/e65a982bad3f1205b60ed57725c537c3fad4794c) - fix: cap aggregate directory content size in assistantUIDocs ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#4575](https://github.com/assistant-ui/assistant-ui/pull/4575) [`42db1f7`](https://github.com/assistant-ui/assistant-ui/commit/42db1f7a9759d3d5ba1c8a17a221ebc389b0fcba) - fix: do not bundle unused blog posts in the docs server ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+- [#4596](https://github.com/assistant-ui/assistant-ui/pull/4596) [`4e26f35`](https://github.com/assistant-ui/assistant-ui/commit/4e26f35f7f05979c22b86a958dece18a48ffaecb) - feat: expose docs and examples as MCP resources ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+## 0.1.36
+
+### Patch Changes
+
+- [#4517](https://github.com/assistant-ui/assistant-ui/pull/4517) [`cefcf27`](https://github.com/assistant-ui/assistant-ui/commit/cefcf27b4b53ceafef18e469644d51797c11c8ff) - chore: update dependencies ([@okisdev](https://github.com/okisdev))
+
+- [#4574](https://github.com/assistant-ui/assistant-ui/pull/4574) [`d130d38`](https://github.com/assistant-ui/assistant-ui/commit/d130d38df851533e6a06d63ded4982db83a8b546) - feat: adopt registerTool API and advertise read-only tool annotations ([@ShobhitPatra](https://github.com/ShobhitPatra))
+
+## 0.1.35
+
+### Patch Changes
+
+- [#4390](https://github.com/assistant-ui/assistant-ui/pull/4390) [`bb38d08`](https://github.com/assistant-ui/assistant-ui/commit/bb38d085b04b59f68c8cf16b23c2211454384668) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+## 0.1.34
+
+### Patch Changes
+
+- [#4306](https://github.com/assistant-ui/assistant-ui/pull/4306) [`15878d8`](https://github.com/assistant-ui/assistant-ui/commit/15878d8114edbbb82c2a467cf811478e5f4e08bc) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+## 0.1.33
+
+### Patch Changes
+
+- [#4198](https://github.com/assistant-ui/assistant-ui/pull/4198) [`78ff336`](https://github.com/assistant-ui/assistant-ui/commit/78ff336028ce125608a4b716a93a2519ad6d9eab) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+## 0.1.32
+
+### Patch Changes
+
+- [#4085](https://github.com/assistant-ui/assistant-ui/pull/4085) [`01244a5`](https://github.com/assistant-ui/assistant-ui/commit/01244a56026ee92bd4e49cb985136f9eb6d45154) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+## 0.1.31
+
+### Patch Changes
+
+- [#3962](https://github.com/assistant-ui/assistant-ui/pull/3962) [`b090acb`](https://github.com/assistant-ui/assistant-ui/commit/b090acb98f6bf3579aab4efedddaff83a0b54c94) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+## 0.1.30
+
+### Patch Changes
+
+- [#3876](https://github.com/assistant-ui/assistant-ui/pull/3876) [`ce865bc`](https://github.com/assistant-ui/assistant-ui/commit/ce865bc46af996d53f89e18068139d4d38546ca6) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+## 0.1.29
+
+### Patch Changes
+
+- c988db8: chore: update dependencies
+
+## 0.1.28
+
+### Patch Changes
+
+- 376bb00: chore: update dependencies
+
+## 0.1.27
+
+### Patch Changes
+
+- bdce66f: chore: update dependencies
+- 209ae81: chore: remove aui-source export condition from package.json exports
+
+## 0.1.26
+
+### Patch Changes
+
+- 52403c3: chore: update dependencies
+
+## 0.1.25
+
+### Patch Changes
+
+- 349f3c7: chore: update deps
+
+## 0.1.24
+
+### Patch Changes
+
+- a845911: chore: update dependencies
+
+## 0.1.23
+
+### Patch Changes
+
+- 36ef3a2: chore: update dependencies
+
+## 0.1.22
+
+### Patch Changes
+
+- a088518: chore: update dependencies
+
+## 0.1.21
+
+### Patch Changes
+
+- d45b893: chore: update dependencies
+
+## 0.1.20
+
+### Patch Changes
+
+- 605d825: chore: update dependencies
+
+## 0.1.19
+
+### Patch Changes
+
+- 3719567: chore: update deps
+
+## 0.1.18
+
+### Patch Changes
+
+- 57bd207: chore: update dependencies
+- cce009d: chore: use tsc for building packages
+
+## 0.1.17
+
+### Patch Changes
+
+- e8ea57b: chore: update deps
+
+## 0.1.16
+
+### Patch Changes
+
+- 01c31fe: chore: update dependencies
+
+## 0.1.15
+
+### Patch Changes
+
+- ec662cd: chore: update dependencies
+
+## 0.1.14
+
+### Patch Changes
+
+- 2c33091: chore: update deps
+
+## 0.1.13
+
+### Patch Changes
+
+- 2fc7e99: chore: update deps
+
+## 0.1.12
+
+### Patch Changes
+
+- 953db24: chore: update deps
+
+## 0.1.11
+
+### Patch Changes
+
+- chore: update deps
+
+## 0.1.10
+
+### Patch Changes
+
+- e6a46e4: chore: update deps
+
+## 0.1.9
+
+### Patch Changes
+
+- 8812f86: chore: update deps
+
+## 0.1.8
+
+### Patch Changes
+
+- 590f161: Comprehensive Windows support - replace Unix commands with cross-platform Node.js APIs, normalize paths for consistency, and improve path handling in build utilities
+
+## 0.1.7
+
+### Patch Changes
+
+- 12e0a77: chore: update deps
+
+## 0.1.6
+
+### Patch Changes
+
+- 87086fd: fix zod version compatibility issue that caused the mcp server to fail
+
+## 0.1.5
+
+### Patch Changes
+
+- 0f063e0: chore: update dependencies
+
+## 0.1.4
+
+### Patch Changes
+
+- 65b3ff1: chore: update deps
+
+## 0.1.3
+
+### Patch Changes
+
+- 27a771c: use console.warn for logger.warn
+
+## 0.1.2
+
+### Patch Changes
+
+- 644abb8: chore: update deps
+
+## 0.1.1
+
+### Patch Changes
+
+- 3568a91: feat(docs): Add `@assistant-ui/mcp-docs-server` for direct MCP access to docs and examples

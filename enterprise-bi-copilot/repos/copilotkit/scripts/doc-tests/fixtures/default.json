@@ -1,0 +1,10 @@
+{
+  "fixtures": [
+    {
+      "match": {},
+      "response": {
+        "content": "Hello! I'm an AI assistant."
+      }
+    }
+  ]
+}

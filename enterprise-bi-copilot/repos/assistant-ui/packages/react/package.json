@@ -1,0 +1,117 @@
+{
+  "name": "@assistant-ui/react",
+  "version": "0.15.21",
+  "description": "Open-source TypeScript/React library for building production-grade AI chat experiences",
+  "keywords": [
+    "ai",
+    "ui",
+    "sdk",
+    "mcp",
+    "agent",
+    "agentic",
+    "generative",
+    "components",
+    "assistant",
+    "chat",
+    "chatbot",
+    "shadcn",
+    "radix-ui",
+    "tailwind",
+    "javascript",
+    "openai",
+    "anthropic",
+    "claude",
+    "xai",
+    "chatgpt",
+    "gemini",
+    "grok",
+    "react",
+    "framework",
+    "nextjs",
+    "web",
+    "server",
+    "node",
+    "front-end",
+    "backend",
+    "cli",
+    "vercel"
+  ],
+  "author": "AgentbaseAI Inc.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "internal",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "prepack": "cp ../../README.md /tmp/aui-readme-pack.md && mv /tmp/aui-readme-pack.md ./README.md",
+    "postpack": "rm -f ./README.md && ln -s ../../README.md ./README.md",
+    "build": "aui-build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@assistant-ui/core": "^0.3.20",
+    "@assistant-ui/store": "^0.3.14",
+    "@assistant-ui/tap": "^0.9.18",
+    "assistant-cloud": "^0.2.2",
+    "assistant-stream": "^0.3.44",
+    "radix-ui": "^1.6.7",
+    "react-textarea-autosize": "^8.5.9",
+    "safe-content-frame": "^0.0.31",
+    "zod": "^4.6.5",
+    "zustand": "^5.0.15"
+  },
+  "peerDependencies": {
+    "@types/react": "*",
+    "@types/react-dom": "*",
+    "react": "^18 || ^19",
+    "react-dom": "^18 || ^19"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
+    "@types/react-dom": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@assistant-ui/vite": "workspace:*",
+    "@assistant-ui/x-buildutils": "workspace:*",
+    "@testing-library/react": "^16.3.3",
+    "@types/json-schema": "^7.0.15",
+    "@types/node": "^26.5.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "jsdom": "^30.0.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "vitest": "^5.0.1"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "homepage": "https://www.assistant-ui.com/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/assistant-ui/assistant-ui.git",
+    "directory": "packages/react"
+  },
+  "bugs": {
+    "url": "https://github.com/assistant-ui/assistant-ui/issues"
+  }
+}

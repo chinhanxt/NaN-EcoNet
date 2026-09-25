@@ -1,0 +1,62 @@
+{
+  "_meta": {
+    "description": "D6 fixtures for agno / gen-ui-open (basic + advanced)",
+    "sourceFile": "d5-gen-ui-open.ts, d5-gen-ui-open-advanced.ts",
+    "created": "2026-05-22"
+  },
+  "fixtures": [
+    {
+      "_comment": "gen-ui-open basic pill — '3D axis visualization (model airplane)'. The probe asserts iframe[srcdoc] mounts with ≥100 chars. The response must include an srcdoc-shaped HTML payload that the demo can render inside an iframe.",
+      "match": {
+        "userMessage": "3D axis visualization",
+        "hasToolResult": false,
+        "context": "agno"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "generateSandboxedUi",
+            "arguments": "{\"html\":\"<!DOCTYPE html><html><head><style>html,body{margin:0;background:#101827;color:#f8fafc;font-family:system-ui,sans-serif}body{display:flex;justify-content:center}svg{display:block;width:100%;max-width:320px;height:200px}text{font-weight:600}</style></head><body><svg xmlns=\\\"http://www.w3.org/2000/svg\\\" viewBox=\\\"0 0 320 200\\\" preserveAspectRatio=\\\"xMidYMid meet\\\" role=\\\"img\\\" aria-label=\\\"Model airplane with X, Y and Z axes\\\"><title>Model airplane in three-dimensional coordinates</title><text x=\\\"160\\\" y=\\\"20\\\" text-anchor=\\\"middle\\\" fill=\\\"#f8fafc\\\" font-size=\\\"14\\\">Model airplane \\u00b7 3D axes</text><g fill=\\\"none\\\" stroke-width=\\\"2.5\\\" stroke-linecap=\\\"round\\\"><path d=\\\"M160 106H282m-8-5 8 5-8 5\\\" stroke=\\\"#fb7185\\\"/><path d=\\\"M160 106V40m-5 8 5-8 5 8\\\" stroke=\\\"#67e8f9\\\"/><path d=\\\"m160 106-98 61m3-9-3 9 10 1\\\" stroke=\\\"#c4b5fd\\\"/></g><g data-part=\\\"airplane\\\" transform=\\\"translate(160 109) rotate(28)\\\" fill=\\\"#e2e8f0\\\" stroke=\\\"#94a3b8\\\" stroke-width=\\\"1.5\\\" stroke-linejoin=\\\"round\\\"><path d=\\\"M-5-12-46 17-46 24-4 9 4 9 46 24 46 17 5-12Z\\\"/><path d=\\\"M-4 25-21 40-21 45 0 38 21 45 21 40 4 25Z\\\"/><path d=\\\"M0-44Q7-39 7-25L5 35 0 45-5 35-7-25Q-7-39 0-44Z\\\" fill=\\\"#f8fafc\\\"/><path d=\\\"M-4-26Q0-31 4-26L4-16H-4Z\\\" fill=\\\"#38bdf8\\\" stroke=\\\"#0ea5e9\\\"/></g><g font-size=\\\"16\\\"><text x=\\\"288\\\" y=\\\"112\\\" fill=\\\"#fb7185\\\">X</text><text x=\\\"171\\\" y=\\\"46\\\" fill=\\\"#67e8f9\\\">Y</text><text x=\\\"43\\\" y=\\\"179\\\" fill=\\\"#c4b5fd\\\">Z</text></g></svg></body></html>\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "3D axis visualization",
+        "hasToolResult": true,
+        "context": "agno"
+      },
+      "response": {
+        "content": "Model airplane rendered above with labeled X, Y and Z axes in the sandboxed iframe."
+      }
+    },
+    {
+      "_comment": "gen-ui-open-advanced pill — 'Inline expression evaluator'. The probe asserts an iframe with sandbox='allow-scripts' mounts. Uses generateSandboxedUi tool call.",
+      "match": {
+        "userMessage": "Inline expression evaluator",
+        "hasToolResult": false,
+        "context": "agno"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "id": "call_d6_agno_gen_ui_open_adv_001",
+            "name": "generateSandboxedUi",
+            "arguments": "{\"html\":\"<!DOCTYPE html><html><head><style>body{margin:20px;font-family:monospace;background:#111;color:#0f0}input{width:100%;padding:8px;font-size:16px;background:#222;color:#0f0;border:1px solid #333}#result{margin-top:12px;padding:8px;background:#1a1a1a;border:1px solid #333;min-height:24px}</style></head><body><h3>Expression Evaluator</h3><input id='expr' placeholder='Type a JS expression...' oninput='try{document.getElementById(\\\"result\\\").textContent=eval(this.value)}catch(e){document.getElementById(\\\"result\\\").textContent=e.message}'><div id='result'></div></body></html>\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Inline expression evaluator",
+        "hasToolResult": true,
+        "context": "agno"
+      },
+      "response": {
+        "content": "Expression evaluator rendered above — type any JavaScript expression in the input field to see its result."
+      }
+    }
+  ]
+}

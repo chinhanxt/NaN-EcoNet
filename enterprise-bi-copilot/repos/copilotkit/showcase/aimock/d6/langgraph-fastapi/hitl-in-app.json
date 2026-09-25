@@ -1,0 +1,181 @@
+{
+  "_meta": {
+    "description": "D6 fixtures for langgraph-fastapi / hitl-in-app",
+    "sourceFile": "d5-all.json",
+    "copiedFrom": "langgraph-python",
+    "created": "2026-05-21"
+  },
+  "fixtures": [
+    {
+      "match": {
+        "userMessage": "Issue a $50 refund to customer #12345",
+        "hasToolResult": false,
+        "context": "langgraph-fastapi"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "id": "call_d5_request_approval_001",
+            "name": "request_user_approval",
+            "arguments": "{\"message\":\"Issue a $50 refund to customer #12345.\",\"context\":\"Per the standard goodwill-credit policy for shipping delays.\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Issue a $50 refund to customer #12345",
+        "hasToolResult": true,
+        "context": "langgraph-fastapi",
+        "toolCallId": "call_d5_request_approval_001",
+        "toolResultContains": "\"approved\":true"
+      },
+      "response": {
+        "content": "Approved — processing the $50 refund to customer #12345 now."
+      },
+      "_comment": "Match the actual approval Boolean; a rejection reason does not change the decision."
+    },
+    {
+      "match": {
+        "userMessage": "Issue a $50 refund to customer #12345",
+        "hasToolResult": true,
+        "context": "langgraph-fastapi",
+        "toolCallId": "call_d5_request_approval_001",
+        "toolResultContains": "\"approved\":false"
+      },
+      "response": {
+        "content": "The refund request was not approved. I will not process the $50 refund to customer #12345."
+      },
+      "_comment": "Match the actual approval Boolean; a rejection reason does not change the decision."
+    },
+    {
+      "_comment": "Refund continuation: narrate the actual approval from the current tool result. Notes do not change the Boolean decision.",
+      "match": {
+        "userMessage": "$50 refund to Jordan Rivera on ticket #12345",
+        "toolCallId": "call_d5_hitl_refund_12345_001",
+        "hasToolResult": true,
+        "context": "langgraph-fastapi",
+        "toolResultContains": "\"approved\":true"
+      },
+      "response": {
+        "content": "I am processing the $50 refund to Jordan Rivera on ticket #12345 now."
+      }
+    },
+    {
+      "_comment": "Refund continuation: narrate the actual rejection from the current tool result. Notes do not change the Boolean decision.",
+      "match": {
+        "userMessage": "$50 refund to Jordan Rivera on ticket #12345",
+        "toolCallId": "call_d5_hitl_refund_12345_001",
+        "hasToolResult": true,
+        "context": "langgraph-fastapi",
+        "toolResultContains": "\"approved\":false"
+      },
+      "response": {
+        "content": "The refund request was not approved. I will not process the $50 refund to Jordan Rivera on ticket #12345."
+      }
+    },
+    {
+      "_comment": "Refund initial request. Match only the current user turn, including after earlier tool results, so the continuation cannot reopen the approval dialog.",
+      "match": {
+        "userMessage": "$50 refund to Jordan Rivera on ticket #12345",
+        "context": "langgraph-fastapi",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "id": "call_d5_hitl_refund_12345_001",
+            "name": "request_user_approval",
+            "arguments": "{\"message\":\"Issue a $50 refund to Jordan Rivera on ticket #12345 for the duplicate charge.\",\"context\":\"Ticket #12345 — duplicate-charge goodwill credit.\"}"
+          }
+        ]
+      }
+    },
+    {
+      "_comment": "Downgrade continuation: narrate the actual approval from the current tool result. Notes do not change the Boolean decision.",
+      "match": {
+        "userMessage": "downgrade Priya Shah (#12346) to the Starter plan",
+        "toolCallId": "call_d5_hitl_downgrade_12346_001",
+        "hasToolResult": true,
+        "context": "langgraph-fastapi",
+        "toolResultContains": "\"approved\":true"
+      },
+      "response": {
+        "content": "Downgrade confirmed — Priya Shah (#12346) will move to the Starter plan effective next billing cycle."
+      }
+    },
+    {
+      "_comment": "Downgrade continuation: narrate the actual rejection from the current tool result. Notes do not change the Boolean decision.",
+      "match": {
+        "userMessage": "downgrade Priya Shah (#12346) to the Starter plan",
+        "toolCallId": "call_d5_hitl_downgrade_12346_001",
+        "hasToolResult": true,
+        "context": "langgraph-fastapi",
+        "toolResultContains": "\"approved\":false"
+      },
+      "response": {
+        "content": "Downgrade not approved. Priya Shah (#12346) will remain on the current plan."
+      }
+    },
+    {
+      "_comment": "Downgrade initial request. Match only the current user turn, including after earlier tool results, so the continuation cannot reopen the approval dialog.",
+      "match": {
+        "userMessage": "downgrade Priya Shah (#12346) to the Starter plan",
+        "context": "langgraph-fastapi",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "id": "call_d5_hitl_downgrade_12346_001",
+            "name": "request_user_approval",
+            "arguments": "{\"message\":\"Downgrade Priya Shah (#12346) to the Starter plan effective next billing cycle.\",\"context\":\"Ticket #12346 — voluntary downgrade per customer request.\"}"
+          }
+        ]
+      }
+    },
+    {
+      "_comment": "Escalation continuation: narrate the actual approval from the current tool result. Notes do not change the Boolean decision.",
+      "match": {
+        "userMessage": "escalate ticket #12347 to the payments team",
+        "toolCallId": "call_d5_hitl_escalate_12347_001",
+        "hasToolResult": true,
+        "context": "langgraph-fastapi",
+        "toolResultContains": "\"approved\":true"
+      },
+      "response": {
+        "content": "Escalated ticket #12347 to the payments team for Morgan Lee."
+      }
+    },
+    {
+      "_comment": "Escalation continuation: narrate the actual rejection from the current tool result. Notes do not change the Boolean decision.",
+      "match": {
+        "userMessage": "escalate ticket #12347 to the payments team",
+        "toolCallId": "call_d5_hitl_escalate_12347_001",
+        "hasToolResult": true,
+        "context": "langgraph-fastapi",
+        "toolResultContains": "\"approved\":false"
+      },
+      "response": {
+        "content": "Not escalated. I will not escalate ticket #12347 to the payments team."
+      }
+    },
+    {
+      "_comment": "Escalation initial request. Match only the current user turn, including after earlier tool results, so the continuation cannot reopen the approval dialog.",
+      "match": {
+        "userMessage": "escalate ticket #12347 to the payments team",
+        "context": "langgraph-fastapi",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "id": "call_d5_hitl_escalate_12347_001",
+            "name": "request_user_approval",
+            "arguments": "{\"message\":\"Escalate ticket #12347 to the payments team for Morgan Lee's stuck payment.\",\"context\":\"Ticket #12347 — payment stuck, needs payments-team triage.\"}"
+          }
+        ]
+      }
+    }
+  ]
+}

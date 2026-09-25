@@ -1,0 +1,55 @@
+import { ArrowUpRight, ChevronDown } from "lucide-react";
+import Link from "next/link";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+
+interface MoreDropdownItem {
+  label: string;
+  href: string;
+  external?: boolean;
+}
+
+export function MoreDropdown({ items }: { items: MoreDropdownItem[] }) {
+  return (
+    <HoverCard openDelay={100} closeDelay={100}>
+      <HoverCardTrigger asChild>
+        <button
+          type="button"
+          className="text-muted-foreground hover:text-foreground flex items-center gap-1 px-3 py-1.5 text-sm transition-colors"
+        >
+          More
+          <ChevronDown className="size-3" />
+        </button>
+      </HoverCardTrigger>
+      <HoverCardContent className="w-44 rounded-xl p-1" align="end">
+        <div className="flex flex-col gap-0.5">
+          {items.map((item) =>
+            item.external ? (
+              <a
+                key={item.href}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:bg-muted flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[13px] tracking-tight transition-colors"
+              >
+                {item.label}
+                <ArrowUpRight className="size-3 opacity-40" />
+              </a>
+            ) : (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="hover:bg-muted rounded-md px-2.5 py-1.5 text-[13px] tracking-tight transition-colors"
+              >
+                {item.label}
+              </Link>
+            ),
+          )}
+        </div>
+      </HoverCardContent>
+    </HoverCard>
+  );
+}

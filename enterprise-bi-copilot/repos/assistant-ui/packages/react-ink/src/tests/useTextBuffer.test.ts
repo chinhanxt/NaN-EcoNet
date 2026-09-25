@@ -1,0 +1,501 @@
+import { describe, expect, it } from "vitest";
+
+import stringWidth from "string-width";
+import {
+  createTextBufferState,
+  getGraphemeAt,
+  textBufferReducer,
+  type TextBufferAction,
+  type TextBufferState,
+} from "../primitives/textInput/useTextBuffer";
+
+const reduce = (
+  state: TextBufferState,
+  ...actions: TextBufferAction[]
+): TextBufferState => {
+  return actions.reduce(textBufferReducer, state);
+};
+
+describe("textBufferReducer", () => {
+  it("inserts text at the cursor and advances the cursor", () => {
+    const state = reduce(
+      createTextBufferState("helo"),
+      { type: "set-cursor", cursorOffset: 2 },
+      { type: "insert", text: "l" },
+    );
+
+    expect(state.text).toBe("hello");
+    expect(state.cursorOffset).toBe(3);
+  });
+
+  it("deletes backward and forward at the cursor", () => {
+    const backward = reduce(
+      createTextBufferState("hello"),
+      { type: "set-cursor", cursorOffset: 3 },
+      { type: "delete-backward" },
+    );
+    const forward = reduce(
+      createTextBufferState("hello"),
+      { type: "set-cursor", cursorOffset: 2 },
+      { type: "delete-forward" },
+    );
+
+    expect(backward.text).toBe("helo");
+    expect(backward.cursorOffset).toBe(2);
+    expect(forward.text).toBe("helo");
+    expect(forward.cursorOffset).toBe(2);
+  });
+
+  it("moves home and end across the whole buffer in single-line mode", () => {
+    const home = reduce(
+      createTextBufferState("hello"),
+      { type: "set-cursor", cursorOffset: 4 },
+      { type: "move-home", multiLine: false },
+    );
+    const end = reduce(home, { type: "move-end", multiLine: false });
+
+    expect(home.cursorOffset).toBe(0);
+    expect(end.cursorOffset).toBe(5);
+  });
+
+  it("moves home and end within the current line in multi-line mode", () => {
+    const home = reduce(
+      createTextBufferState("one\ntwo\nthree"),
+      { type: "set-cursor", cursorOffset: 6 },
+      { type: "move-home", multiLine: true },
+    );
+    const end = reduce(home, { type: "move-end", multiLine: true });
+
+    expect(home.cursorOffset).toBe(4);
+    expect(end.cursorOffset).toBe(7);
+  });
+
+  it("keeps CRLF intact when inserting at the end of a line", () => {
+    const state = reduce(
+      createTextBufferState("a\r\nb"),
+      { type: "set-cursor", cursorOffset: 0 },
+      { type: "move-end", multiLine: true },
+      { type: "insert", text: "x" },
+    );
+
+    expect(state.text).toBe("ax\r\nb");
+    expect(state.cursorOffset).toBe(2);
+  });
+
+  it("moves vertically across CRLF line endings", () => {
+    const movedDown = reduce(
+      createTextBufferState("ab\r\ncd"),
+      { type: "set-cursor", cursorOffset: 1 },
+      { type: "move-down" },
+    );
+    const movedUp = reduce(movedDown, { type: "move-up" });
+
+    expect(movedDown.cursorOffset).toBe(5);
+    expect(movedUp.cursorOffset).toBe(1);
+  });
+
+  it("clamps upward movement before a CRLF line ending", () => {
+    const moved = reduce(
+      createTextBufferState("abcde\r\nfghijk"),
+      { type: "move-up" },
+      { type: "insert", text: "x" },
+    );
+
+    expect(moved.text).toBe("abcdex\r\nfghijk");
+    expect(moved.cursorOffset).toBe(6);
+  });
+
+  it("preserves preferred column when moving vertically", () => {
+    const movedUp = reduce(
+      createTextBufferState("abcde\nxy\n123456"),
+      { type: "set-cursor", cursorOffset: 11 },
+      { type: "move-up" },
+    );
+    const movedDown = reduce(movedUp, { type: "move-down" });
+
+    expect(movedUp.cursorOffset).toBe(8);
+    expect(movedDown.cursorOffset).toBe(11);
+  });
+
+  it("keeps vertical movement on grapheme boundaries", () => {
+    const movedDown = reduce(
+      createTextBufferState("a\n😀b"),
+      { type: "set-cursor", cursorOffset: 1 },
+      { type: "move-down" },
+    );
+    const insertedBelow = reduce(movedDown, { type: "insert", text: "X" });
+    const movedUp = reduce(
+      createTextBufferState("😀x\nabcd"),
+      { type: "set-cursor", cursorOffset: 5 },
+      { type: "move-up" },
+    );
+    const insertedAbove = reduce(movedUp, { type: "insert", text: "X" });
+
+    expect(movedDown.cursorOffset).toBe(2);
+    expect(insertedBelow.text).toBe("a\nX😀b");
+    expect(movedUp.cursorOffset).toBe(0);
+    expect(insertedAbove.text).toBe("X😀x\nabcd");
+  });
+
+  it("preserves a display column across a shorter line", () => {
+    const start = reduce(createTextBufferState("a😀b\nxy\ncdefg"), {
+      type: "set-cursor",
+      cursorOffset: 11,
+    });
+    const middle = reduce(start, { type: "move-up" });
+    const top = reduce(middle, { type: "move-up" });
+    const roundTrip = reduce(top, { type: "move-down" }, { type: "move-down" });
+
+    expect(middle.cursorOffset).toBe(7);
+    expect(top.cursorOffset).toBe(3);
+    expect(roundTrip.cursorOffset).toBe(11);
+  });
+
+  it("uses display columns when moving across wide graphemes", () => {
+    const movedUp = reduce(
+      createTextBufferState("😀😀\nabcd"),
+      { type: "set-cursor", cursorOffset: 8 },
+      { type: "move-up" },
+    );
+    const movedDown = reduce(movedUp, { type: "move-down" });
+
+    expect(movedUp.cursorOffset).toBe(2);
+    expect(movedUp.preferredColumn).toBe(3);
+    expect(movedDown.cursorOffset).toBe(8);
+  });
+
+  it("uses display columns for CJK text", () => {
+    const movedUp = reduce(
+      createTextBufferState("你好\nabcd"),
+      { type: "set-cursor", cursorOffset: 7 },
+      { type: "move-up" },
+    );
+
+    expect(movedUp.cursorOffset).toBe(2);
+    expect(movedUp.preferredColumn).toBe(4);
+  });
+
+  it("round trips vertical movement across a line carrying escape sequences", () => {
+    const start = reduce(
+      createTextBufferState("\u001b[31mred\u001b[39m\nabcdefghijkl"),
+      { type: "set-cursor", cursorOffset: 8 },
+    );
+    const movedDown = reduce(start, { type: "move-down" });
+    const roundTrip = reduce(movedDown, { type: "move-up" });
+
+    expect(movedDown.cursorOffset).toBe(21);
+    expect(roundTrip.cursorOffset).toBe(8);
+  });
+
+  it("does not move inside a CRLF line break", () => {
+    const movedDown = reduce(
+      createTextBufferState("abc\nx\r\ny"),
+      { type: "set-cursor", cursorOffset: 3 },
+      { type: "move-down" },
+    );
+
+    expect(movedDown.cursorOffset).toBe(5);
+    expect(getGraphemeAt(movedDown.text, movedDown.cursorOffset)).toBe("\r\n");
+  });
+
+  it("moves by words and deletes the previous word", () => {
+    const movedLeft = reduce(createTextBufferState("alpha beta gamma"), {
+      type: "move-word-left",
+    });
+    const movedRight = reduce(
+      createTextBufferState("alpha beta gamma"),
+      { type: "set-cursor", cursorOffset: 0 },
+      { type: "move-word-right" },
+    );
+    const killed = reduce(createTextBufferState("alpha beta gamma"), {
+      type: "kill-word-backward",
+    });
+
+    expect(movedLeft.cursorOffset).toBe(11);
+    expect(movedRight.cursorOffset).toBe(5);
+    expect(killed.text).toBe("alpha beta ");
+    expect(killed.cursorOffset).toBe(11);
+  });
+
+  it("joins the next line when killing forward at end-of-line in multi-line mode", () => {
+    const state = reduce(
+      createTextBufferState("one\ntwo\nthree"),
+      { type: "set-cursor", cursorOffset: 3 },
+      { type: "kill-end", multiLine: true },
+    );
+
+    expect(state.text).toBe("onetwo\nthree");
+    expect(state.cursorOffset).toBe(3);
+  });
+
+  it("removes the entire CRLF when killing forward at end-of-line", () => {
+    const state = reduce(
+      createTextBufferState("one\r\ntwo"),
+      { type: "set-cursor", cursorOffset: 3 },
+      { type: "kill-end", multiLine: true },
+    );
+
+    expect(state.text).toBe("onetwo");
+    expect(state.cursorOffset).toBe(3);
+  });
+
+  it("keeps the cursor outside CRLF when insertion creates the boundary", () => {
+    const state = reduce(
+      createTextBufferState("a\nb"),
+      { type: "set-cursor", cursorOffset: 1 },
+      { type: "insert", text: "\r" },
+    );
+    const killed = reduce(state, { type: "kill-end", multiLine: true });
+
+    expect(state.text).toBe("a\r\nb");
+    expect(state.cursorOffset).toBe(3);
+    expect(killed.text).toBe("a\r\n");
+    expect(killed.cursorOffset).toBe(3);
+  });
+
+  it.each([
+    {
+      name: "deleting backward",
+      text: "a\rx\nb",
+      cursorOffset: 3,
+      action: { type: "delete-backward" },
+      expectedText: "a\r\nb",
+      expectedCursorOffset: 1,
+      expectedInsertedText: "ax\r\nb",
+    },
+    {
+      name: "deleting forward",
+      text: "a\rx\nb",
+      cursorOffset: 2,
+      action: { type: "delete-forward" },
+      expectedText: "a\r\nb",
+      expectedCursorOffset: 3,
+      expectedInsertedText: "a\r\nxb",
+    },
+    {
+      name: "killing a word backward",
+      text: "a\rword\nb",
+      cursorOffset: 6,
+      action: { type: "kill-word-backward" },
+      expectedText: "a\r\nb",
+      expectedCursorOffset: 1,
+      expectedInsertedText: "ax\r\nb",
+    },
+    {
+      name: "killing a word forward",
+      text: "a\rword\nb",
+      cursorOffset: 2,
+      action: { type: "kill-word-forward" },
+      expectedText: "a\r\nb",
+      expectedCursorOffset: 3,
+      expectedInsertedText: "a\r\nxb",
+    },
+    {
+      name: "killing to the line end",
+      text: "a\rb\nc",
+      cursorOffset: 2,
+      action: { type: "kill-end", multiLine: true },
+      expectedText: "a\r\nc",
+      expectedCursorOffset: 3,
+      expectedInsertedText: "a\r\nxc",
+    },
+  ] satisfies Array<{
+    name: string;
+    text: string;
+    cursorOffset: number;
+    action: TextBufferAction;
+    expectedText: string;
+    expectedCursorOffset: number;
+    expectedInsertedText: string;
+  }>)(
+    "keeps the cursor outside a CRLF formed by $name",
+    ({
+      text,
+      cursorOffset,
+      action,
+      expectedText,
+      expectedCursorOffset,
+      expectedInsertedText,
+    }) => {
+      const state = reduce(
+        createTextBufferState(text),
+        { type: "set-cursor", cursorOffset },
+        action,
+      );
+      const inserted = reduce(state, { type: "insert", text: "x" });
+
+      expect(state.text).toBe(expectedText);
+      expect(state.cursorOffset).toBe(expectedCursorOffset);
+      expect(inserted.text).toBe(expectedInsertedText);
+    },
+  );
+
+  it("kills to line boundaries in multi-line mode", () => {
+    const killStart = reduce(
+      createTextBufferState("one\ntwo\nthree"),
+      { type: "set-cursor", cursorOffset: 6 },
+      { type: "kill-start", multiLine: true },
+    );
+    const killEnd = reduce(
+      createTextBufferState("one\ntwo\nthree"),
+      { type: "set-cursor", cursorOffset: 5 },
+      { type: "kill-end", multiLine: true },
+    );
+
+    expect(killStart.text).toBe("one\no\nthree");
+    expect(killStart.cursorOffset).toBe(4);
+    expect(killEnd.text).toBe("one\nt\nthree");
+    expect(killEnd.cursorOffset).toBe(5);
+  });
+
+  it("replaces text from external sync and resets cursor to the end", () => {
+    const state = reduce(createTextBufferState("hello"), {
+      type: "set-text",
+      text: "reset",
+    });
+
+    expect(state.text).toBe("reset");
+    expect(state.cursorOffset).toBe(5);
+  });
+
+  it("does not corrupt the buffer when killing from line start at offset 0", () => {
+    const state = reduce(
+      createTextBufferState("\nhello"),
+      { type: "set-cursor", cursorOffset: 0 },
+      { type: "kill-start", multiLine: true },
+    );
+
+    expect(state.text).toBe("\nhello");
+    expect(state.cursorOffset).toBe(0);
+  });
+
+  it("keeps the cursor at column 0 when moving home on a line beginning with a newline", () => {
+    const state = reduce(
+      createTextBufferState("\nhello"),
+      { type: "set-cursor", cursorOffset: 0 },
+      { type: "move-home", multiLine: true },
+    );
+
+    expect(state.cursorOffset).toBe(0);
+  });
+
+  it("steps over surrogate pairs when moving and deleting", () => {
+    const emoji = "😀";
+    const movedRight = reduce(
+      createTextBufferState(`a${emoji}b`),
+      { type: "set-cursor", cursorOffset: 1 },
+      { type: "move-right" },
+    );
+    const movedLeft = reduce(
+      createTextBufferState(`a${emoji}b`),
+      { type: "set-cursor", cursorOffset: 3 },
+      { type: "move-left" },
+    );
+    const deletedBackward = reduce(
+      createTextBufferState(`a${emoji}b`),
+      { type: "set-cursor", cursorOffset: 3 },
+      { type: "delete-backward" },
+    );
+    const deletedForward = reduce(
+      createTextBufferState(`a${emoji}b`),
+      { type: "set-cursor", cursorOffset: 1 },
+      { type: "delete-forward" },
+    );
+
+    expect(movedRight.cursorOffset).toBe(3);
+    expect(movedLeft.cursorOffset).toBe(1);
+    expect(deletedBackward.text).toBe("ab");
+    expect(deletedBackward.cursorOffset).toBe(1);
+    expect(deletedForward.text).toBe("ab");
+    expect(deletedForward.cursorOffset).toBe(1);
+  });
+
+  it("treats grapheme clusters as a single character", () => {
+    const skinToned = "👍🏽";
+    const deletedBackward = reduce(
+      createTextBufferState(`a${skinToned}b`),
+      { type: "set-cursor", cursorOffset: 1 + skinToned.length },
+      { type: "delete-backward" },
+    );
+    const deletedForward = reduce(
+      createTextBufferState(`a${skinToned}b`),
+      { type: "set-cursor", cursorOffset: 1 },
+      { type: "delete-forward" },
+    );
+    const movedRight = reduce(
+      createTextBufferState(`a${skinToned}b`),
+      { type: "set-cursor", cursorOffset: 1 },
+      { type: "move-right" },
+    );
+
+    expect(deletedBackward.text).toBe("ab");
+    expect(deletedForward.text).toBe("ab");
+    expect(movedRight.cursorOffset).toBe(1 + skinToned.length);
+  });
+
+  it("snaps set-cursor to a grapheme boundary", () => {
+    const midSurrogate = reduce(createTextBufferState("👍🏽b"), {
+      type: "set-cursor",
+      cursorOffset: 2,
+    });
+    const onBoundary = reduce(createTextBufferState("👍🏽b"), {
+      type: "set-cursor",
+      cursorOffset: 4,
+    });
+    const beyondEnd = reduce(createTextBufferState("👍🏽b"), {
+      type: "set-cursor",
+      cursorOffset: 99,
+    });
+
+    expect(midSurrogate.cursorOffset).toBe(0);
+    expect(onBoundary.cursorOffset).toBe(4);
+    expect(beyondEnd.cursorOffset).toBe(5);
+  });
+
+  it("returns the full grapheme cluster at an offset", () => {
+    expect(getGraphemeAt("ab", 0)).toBe("a");
+    expect(getGraphemeAt("a😀b", 1)).toBe("😀");
+    expect(getGraphemeAt("a😀b", 3)).toBe("b");
+    expect(getGraphemeAt("a", 1)).toBe("");
+    expect(getGraphemeAt("a\nb", 1)).toBe("\n");
+    expect(getGraphemeAt("👍🏽", 0)).toBe("👍🏽");
+  });
+
+  it("advances by ideograph for CJK text without spaces", () => {
+    const movedRight = reduce(
+      createTextBufferState("你好世界"),
+      { type: "set-cursor", cursorOffset: 0 },
+      { type: "move-word-right" },
+    );
+
+    expect(movedRight.cursorOffset).toBeGreaterThan(0);
+    expect(movedRight.cursorOffset).toBeLessThanOrEqual(4);
+  });
+
+  it("kills the next word forward", () => {
+    const state = reduce(
+      createTextBufferState("alpha beta gamma"),
+      { type: "set-cursor", cursorOffset: 0 },
+      { type: "kill-word-forward" },
+    );
+
+    expect(state.text).toBe(" beta gamma");
+    expect(state.cursorOffset).toBe(0);
+  });
+});
+
+const widthCases = [
+  ["ascii", "a", 1],
+  ["emoji", "😀", 2],
+  ["CJK", "你", 2],
+  ["emoji sequence", "👩‍💻", 2],
+  ["combining mark", "e\u0301", 1],
+  ["format character", "\u200b", 0],
+  ["line break", "\r\n", 0],
+] satisfies Array<[string, string, number]>;
+
+describe("terminal cell width contract", () => {
+  it.each(widthCases)("measures %s in terminal cells", (_, grapheme, width) => {
+    expect(stringWidth(grapheme)).toBe(width);
+  });
+});

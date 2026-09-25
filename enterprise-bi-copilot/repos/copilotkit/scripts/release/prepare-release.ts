@@ -1,0 +1,89 @@
+/**
+ * Prepare a release: bump versions, generate raw release notes.
+ * Runs inside the "create release PR" workflow.
+ *
+ * Usage: tsx scripts/release/prepare-release.ts --bump <patch|minor|major> --scope <scope from release.config.json> [--dry-run]
+ */
+
+import fs from "fs";
+import path from "path";
+import {
+  getCurrentVersion,
+  computeNextStableVersion,
+  bumpPackages,
+  getPackagesForScope,
+} from "./lib/versions.js";
+import type { BumpLevel } from "./lib/versions.js";
+import { getChangesSummary } from "./lib/changes.js";
+import { generateRawReleaseNotes } from "./lib/release-notes.js";
+import { ROOT, loadConfig } from "./lib/config.js";
+import type { ReleaseScope } from "./lib/config.js";
+
+// Valid scopes come from release.config.json — the single source of truth.
+const VALID_SCOPES = Object.keys(loadConfig().scopes);
+
+function main() {
+  const argv = process.argv.slice(2);
+  const dryRun = argv.includes("--dry-run");
+  const bumpIdx = argv.indexOf("--bump");
+  const bumpLevel = (
+    bumpIdx !== -1 ? argv[bumpIdx + 1] : null
+  ) as BumpLevel | null;
+  const scopeIdx = argv.indexOf("--scope");
+  const scope = (
+    scopeIdx !== -1 ? argv[scopeIdx + 1] : null
+  ) as ReleaseScope | null;
+
+  if (!bumpLevel || !["patch", "minor", "major"].includes(bumpLevel)) {
+    console.error(
+      "Usage: prepare-release.ts --bump <patch|minor|major> --scope <scope from release.config.json>",
+    );
+    process.exit(1);
+  }
+
+  if (!scope || !VALID_SCOPES.includes(scope)) {
+    console.error(
+      `Invalid scope: ${scope}. Valid scopes: ${VALID_SCOPES.join(", ")}`,
+    );
+    process.exit(1);
+  }
+
+  const currentVersion = getCurrentVersion(scope);
+  const nextVersion = computeNextStableVersion(currentVersion, bumpLevel);
+  console.log(`Scope: ${scope}`);
+  console.log(`Current version: ${currentVersion}`);
+  console.log(`Bump level: ${bumpLevel}`);
+  console.log(`Next version: ${nextVersion}`);
+
+  const summary = getChangesSummary(scope);
+  console.log(
+    `\nCommits since ${summary.lastTag || "beginning"}: ${summary.commitCount}`,
+  );
+
+  if (dryRun) {
+    console.log("\n[DRY RUN] Would bump these packages:");
+    for (const p of getPackagesForScope(scope)) {
+      console.log(`  ${p.name}: ${p.pkg.version} -> ${nextVersion}`);
+    }
+    console.log("\n[DRY RUN] Exiting.");
+    return;
+  }
+
+  const updated = bumpPackages(scope, nextVersion);
+  console.log(`\nBumped ${updated.length} packages to ${nextVersion}`);
+
+  const rawNotes = generateRawReleaseNotes(nextVersion, scope, summary);
+  const releaseNotesPath = path.join(ROOT, "release-notes.md");
+  fs.writeFileSync(releaseNotesPath, rawNotes);
+  console.log("Raw release notes written to release-notes.md");
+
+  const outputPath = process.env.GITHUB_OUTPUT;
+  if (outputPath) {
+    fs.appendFileSync(outputPath, `version=${nextVersion}\n`);
+    fs.appendFileSync(outputPath, `scope=${scope}\n`);
+  }
+
+  console.log(`\nRelease prepared: v${nextVersion} (${scope})`);
+}
+
+main();

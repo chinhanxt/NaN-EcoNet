@@ -1,0 +1,719 @@
+# @assistant-ui/react-syntax-highlighter
+
+## 0.14.6
+
+### Patch Changes
+
+- [#7370](https://github.com/assistant-ui/assistant-ui/pull/7370) [`b7f9a96`](https://github.com/assistant-ui/assistant-ui/commit/b7f9a960dda7c7548ac1ebdf3bae368fe28bcbfc) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+## 0.14.5
+
+### Patch Changes
+
+- [#5723](https://github.com/assistant-ui/assistant-ui/pull/5723) [`94dc3e5`](https://github.com/assistant-ui/assistant-ui/commit/94dc3e509fa2b4fae1a14c88ec34b910c8d95af8) - chore: update dependencies ([@okisdev](https://github.com/okisdev))
+
+## 0.14.4
+
+### Patch Changes
+
+- Updated dependencies [[`9a7e776`](https://github.com/assistant-ui/assistant-ui/commit/9a7e77603d59b5e091ee922e2e087f0101679321), [`2f5d0d4`](https://github.com/assistant-ui/assistant-ui/commit/2f5d0d441caf6a152bf4eef13566a2f9a161541c)]:
+  - @assistant-ui/react@0.15.0
+  - @assistant@assistant-ui/react-markdown@0.14.8
+
+## 0.14.3
+
+### Patch Changes
+
+- [#5079](https://github.com/assistant-ui/assistant-ui/pull/5079) [`390e417`](https://github.com/assistant-ui/assistant-ui/commit/390e4177ca47f7ece839613ad0f076add9313328) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+## 0.14.2
+
+### Patch Changes
+
+- [#4306](https://github.com/assistant-ui/assistant-ui/pull/4306) [`15878d8`](https://github.com/assistant-ui/assistant-ui/commit/15878d8114edbbb82c2a467cf811478e5f4e08bc) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+## 0.14.1
+
+### Patch Changes
+
+- [#4085](https://github.com/assistant-ui/assistant-ui/pull/4085) [`01244a5`](https://github.com/assistant-ui/assistant-ui/commit/01244a56026ee92bd4e49cb985136f9eb6d45154) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- Updated dependencies [[`b02b701`](https://github.com/assistant-ui/assistant-ui/commit/b02b7012cff158b4e73b82503b9ea90638b7398d), [`0a0c306`](https://github.com/assistant-ui/assistant-ui/commit/0a0c306286598ea885b046a1dfb85016f720051c), [`01244a5`](https://github.com/assistant-ui/assistant-ui/commit/01244a56026ee92bd4e49cb985136f9eb6d45154), [`f2ec01c`](https://github.com/assistant-ui/assistant-ui/commit/f2ec01ce0f01317a8444b779d88f9b6a26d691c5)]:
+  - @assistant-ui/react@0.14.8
+  - @assistant-ui/react-markdown@0.14.1
+
+## 0.14.0
+
+### Patch Changes
+
+- Updated dependencies [[`040d469`](https://github.com/assistant-ui/assistant-ui/commit/040d469acfcf782de6fc188c646dfd8732d27088)]:
+  - @assistant-ui/react@0.14.0
+  - @assistant-ui/react-markdown@0.14.0
+
+## 0.13.0
+
+### Patch Changes
+
+- Updated dependencies [[`801b9a6`](https://github.com/assistant-ui/assistant-ui/commit/801b9a68d9c7c70ab15ca53842d0df6adacb7b86), [`7098bab`](https://github.com/assistant-ui/assistant-ui/commit/7098bab4c67fbd507c3fad746ef130daa01b3fd6), [`aa6e071`](https://github.com/assistant-ui/assistant-ui/commit/aa6e071fdd6ea832c5aff3f6cf817b2e3eb6ceb0), [`b090acb`](https://github.com/assistant-ui/assistant-ui/commit/b090acb98f6bf3579aab4efedddaff83a0b54c94), [`df7eb3e`](https://github.com/assistant-ui/assistant-ui/commit/df7eb3eee6beeac72d3220707cf4660adf932586), [`f4a693e`](https://github.com/assistant-ui/assistant-ui/commit/f4a693ec1898f6ed0b81be47512fe51fd93a2de8), [`d864d07`](https://github.com/assistant-ui/assistant-ui/commit/d864d0709d9db5f8e042e62cf1f40669f087ba68)]:
+  - @assistant-ui/react@0.13.0
+  - @assistant-ui/react-markdown@1.0.0
+
+## 0.12.9
+
+### Patch Changes
+
+- c988db8: chore: update dependencies
+- Updated dependencies [c988db8]
+  - @assistant-ui/react-markdown@0.12.9
+  - @assistant-ui/react@0.12.25
+
+## 0.12.8
+
+### Patch Changes
+
+- 209ae81: chore: remove aui-source export condition from package.json exports
+- Updated dependencies [6554892]
+- Updated dependencies [d726499]
+- Updated dependencies [876f75d]
+- Updated dependencies [bdce66f]
+- Updated dependencies [c362685]
+- Updated dependencies [4abb898]
+- Updated dependencies [209ae81]
+- Updated dependencies [50b3100]
+- Updated dependencies [af70d7f]
+  - @assistant-ui/react@0.12.22
+  - @assistant-ui/react-markdown@0.12.8
+
+## 0.12.7
+
+### Patch Changes
+
+- 349f3c7: chore: update deps
+- Updated dependencies [1ed9867]
+- Updated dependencies [427ffaa]
+- Updated dependencies [349f3c7]
+- Updated dependencies [02614aa]
+- Updated dependencies [642bcda]
+  - @assistant-ui/react@0.12.18
+  - @assistant-ui/react-markdown@0.12.6
+
+## 0.12.6
+
+### Patch Changes
+
+- a845911: chore: update dependencies
+- Updated dependencies [07dcce0]
+- Updated dependencies [a845911]
+- Updated dependencies [bc40eaf]
+- Updated dependencies [be23d74]
+- Updated dependencies [1eb059c]
+  - @assistant-ui/react@0.12.15
+  - @assistant-ui/react-markdown@0.12.5
+
+## 0.12.5
+
+### Patch Changes
+
+- 36ef3a2: chore: update dependencies
+- Updated dependencies [36ef3a2]
+- Updated dependencies [6692226]
+- Updated dependencies [c31c0fa]
+- Updated dependencies [1672be8]
+- Updated dependencies [28f39fe]
+- Updated dependencies [3a1cb66]
+- Updated dependencies [14769af]
+- Updated dependencies [7c360ce]
+- Updated dependencies [a638f05]
+- Updated dependencies [8a78cd2]
+  - @assistant-ui/react@0.12.12
+  - @assistant-ui/react-markdown@0.12.5
+
+## 0.12.4
+
+### Patch Changes
+
+- 93910bd: Rename .tsx files to .ts where no JSX syntax is used
+- Updated dependencies [5bbe8a9]
+- Updated dependencies [5e304ea]
+- Updated dependencies [546c053]
+- Updated dependencies [a7039e3]
+- Updated dependencies [16c10fd]
+- Updated dependencies [98c3d54]
+- Updated dependencies [b181803]
+- Updated dependencies [7836760]
+- Updated dependencies [9276547]
+- Updated dependencies [b65428e]
+- Updated dependencies [af5b085]
+- Updated dependencies [61b54e9]
+- Updated dependencies [a094c45]
+- Updated dependencies [4d7f712]
+- Updated dependencies [ecc29ec]
+- Updated dependencies [6e97999]
+- Updated dependencies [a247fc9]
+- Updated dependencies [f414af9]
+- Updated dependencies [b48912c]
+- Updated dependencies [93910bd]
+- Updated dependencies [58a8472]
+  - @assistant-ui/react@0.12.11
+  - @assistant-ui/react-markdown@0.12.4
+
+## 0.12.3
+
+### Patch Changes
+
+- a088518: chore: update dependencies
+- Updated dependencies [a088518]
+- Updated dependencies [d8122cc]
+  - @assistant-ui/react@0.12.9
+  - @assistant-ui/react-markdown@0.12.3
+
+## 0.12.2
+
+### Patch Changes
+
+- d45b893: chore: update dependencies
+- Updated dependencies [d45b893]
+- Updated dependencies [fe71bfc]
+  - @assistant-ui/react@0.12.5
+  - @assistant-ui/react-markdown@0.12.2
+
+## 0.12.1
+
+### Patch Changes
+
+- 605d825: chore: update dependencies
+- Updated dependencies [1ea3e28]
+- Updated dependencies [8cbf686]
+- Updated dependencies [a8be364]
+- Updated dependencies [605d825]
+  - @assistant-ui/react@0.12.2
+  - @assistant-ui/react-markdown@0.12.1
+
+## 0.11.10
+
+### Patch Changes
+
+- 3719567: chore: update deps
+- Updated dependencies [3719567]
+  - @assistant-ui/react@0.11.58
+  - @assistant-ui/react-markdown@0.11.10
+
+## 0.11.9
+
+### Patch Changes
+
+- 57bd207: chore: update dependencies
+- cce009d: chore: use tsc for building packages
+- Updated dependencies [57bd207]
+- Updated dependencies [cce009d]
+  - @assistant-ui/react@0.11.53
+  - @assistant-ui/react-markdown@0.11.9
+
+## 0.11.8
+
+### Patch Changes
+
+- e8ea57b: chore: update deps
+- Updated dependencies [bae3aa2]
+- Updated dependencies [e8ea57b]
+  - @assistant-ui/react@0.11.50
+  - @assistant-ui/react-markdown@0.11.8
+
+## 0.11.7
+
+### Patch Changes
+
+- 01c31fe: chore: update dependencies
+- Updated dependencies [ba26b22]
+- Updated dependencies [d169e4f]
+- Updated dependencies [da9f8a6]
+- Updated dependencies [01c31fe]
+  - @assistant-ui/react@0.11.48
+  - @assistant-ui/react-markdown@0.11.7
+
+## 0.11.6
+
+### Patch Changes
+
+- ec662cd: chore: update dependencies
+- Updated dependencies [ec662cd]
+  - @assistant-ui/react@0.11.45
+  - @assistant-ui/react-markdown@0.11.6
+
+## 0.11.5
+
+### Patch Changes
+
+- 2c33091: chore: update deps
+- Updated dependencies [2c33091]
+  - @assistant-ui/react@0.11.40
+  - @assistant-ui/react-markdown@0.11.5
+
+## 0.11.4
+
+### Patch Changes
+
+- 2fc7e99: chore: update deps
+- Updated dependencies [3ab9484]
+- Updated dependencies [7a88ead]
+- Updated dependencies [81b581f]
+- Updated dependencies [2fc7e99]
+  - @assistant-ui/react@0.11.36
+  - @assistant-ui/react-markdown@0.11.4
+
+## 0.11.3
+
+### Patch Changes
+
+- 953db24: chore: update deps
+- Updated dependencies [953db24]
+- Updated dependencies
+  - @assistant-ui/react@0.11.34
+  - @assistant-ui/react-markdown@0.11.3
+
+## 0.11.2
+
+### Patch Changes
+
+- chore: update deps
+- Updated dependencies
+  - @assistant-ui/react@0.11.31
+  - @assistant-ui/react-markdown@0.11.2
+
+## 0.11.1
+
+### Patch Changes
+
+- e6a46e4: chore: update deps
+- Updated dependencies [e6a46e4]
+  - @assistant-ui/react@0.11.27
+  - @assistant-ui/react-markdown@0.11.1
+
+## 0.11.0
+
+### Patch Changes
+
+- Updated dependencies [39ac2f3]
+- Updated dependencies [5437dbe]
+  - @assistant-ui/react@0.11.0
+  - @assistant-ui/react-markdown@1.0.0
+
+## 0.10.10
+
+### Patch Changes
+
+- 12e0a77: chore: update deps
+- Updated dependencies [12e0a77]
+  - @assistant-ui/react@0.10.42
+  - @assistant-ui/react-markdown@0.10.9
+
+## 0.10.9
+
+### Patch Changes
+
+- 0f063e0: chore: update dependencies
+- Updated dependencies [0f063e0]
+- Updated dependencies [5d8b074]
+  - @assistant-ui/react@0.10.34
+  - @assistant-ui/react-markdown@0.10.7
+
+## 0.10.8
+
+### Patch Changes
+
+- 7cc1c08: fix: moduleResolution node support
+- Updated dependencies [e359ffc]
+- Updated dependencies [2561cc0]
+- Updated dependencies [9793e64]
+  - @assistant-ui/react@0.10.26
+  - @assistant-ui/react-markdown@0.10.6
+
+## 0.10.7
+
+### Patch Changes
+
+- 65b3ff1: chore: update deps
+- Updated dependencies [65b3ff1]
+- Updated dependencies [2731323]
+- Updated dependencies [308afff]
+- Updated dependencies [cc9f567]
+- Updated dependencies [bc9f0c5]
+- Updated dependencies [c380f37]
+  - @assistant-ui/react@0.10.25
+  - @assistant-ui/react-markdown@0.10.6
+
+## 0.10.6
+
+### Patch Changes
+
+- 644abb8: chore: update deps
+- Updated dependencies [b65e354]
+- Updated dependencies [8eda24b]
+- Updated dependencies [644abb8]
+  - @assistant-ui/react@0.10.24
+  - @assistant-ui/react-markdown@0.10.5
+
+## 0.10.5
+
+### Patch Changes
+
+- 588a2c0: fix: split react-syntax-highlighter into light (default) and `/full` paths
+
+## 0.10.4
+
+### Patch Changes
+
+- chore: update deps
+- Updated dependencies
+  - @assistant-ui/react@0.10.12
+  - @assistant-ui/react-markdown@0.10.4
+
+## 0.10.3
+
+### Patch Changes
+
+- 98a680e: chore: update deps
+- Updated dependencies [98a680e]
+- Updated dependencies [98a680e]
+  - @assistant-ui/react@0.10.4
+  - @assistant-ui/react-markdown@0.10.3
+
+## 0.10.2
+
+### Patch Changes
+
+- fix: ESM without bundler compat
+- Updated dependencies
+  - @assistant-ui/react-markdown@0.10.2
+  - @assistant-ui/react@0.10.2
+
+## 0.10.1
+
+### Patch Changes
+
+- fix: correctly include Typescript declarations
+- Updated dependencies
+  - @assistant-ui/react-markdown@0.10.1
+  - @assistant-ui/react@0.10.1
+
+## 0.10.0
+
+### Patch Changes
+
+- 557c3f7: build: drop CJS builds
+- Updated dependencies [557c3f7]
+  - @assistant-ui/react-markdown@0.9.4
+  - @assistant-ui/react@0.9.7
+
+## 0.9.3
+
+### Patch Changes
+
+- chore: update deps
+- Updated dependencies
+  - @assistant-ui/react-markdown@0.9.3
+  - @assistant-ui/react@0.9.6
+
+## 0.9.2
+
+### Patch Changes
+
+- b9c731a: chore: update dependencies
+- Updated dependencies [62c2af7]
+- Updated dependencies [b9c731a]
+  - @assistant-ui/react@0.9.3
+  - @assistant-ui/react-markdown@0.9.2
+
+## 0.9.1
+
+### Patch Changes
+
+- chore: update deps
+- Updated dependencies
+  - @assistant-ui/react-markdown@0.9.1
+  - @assistant-ui/react@0.9.1
+
+## 0.8.1
+
+### Patch Changes
+
+- 39aecd7: chore: update dependencies
+- Updated dependencies [a22bc7a]
+- Updated dependencies [39aecd7]
+  - @assistant-ui/react@0.8.18
+  - @assistant-ui/react-markdown@0.8.1
+
+## 0.7.10
+
+### Patch Changes
+
+- 72e66db: chore: update dependencies
+- Updated dependencies [72e66db]
+  - @assistant-ui/react-markdown@0.7.18
+  - @assistant-ui/react@0.7.71
+
+## 0.7.9
+
+### Patch Changes
+
+- 22272e6: chore: update dependencies
+- Updated dependencies [0979334]
+- Updated dependencies [22272e6]
+  - @assistant-ui/react@0.7.39
+  - @assistant-ui/react-markdown@0.7.11
+
+## 0.7.8
+
+### Patch Changes
+
+- 345f3d5: chore: update dependencies
+- Updated dependencies [345f3d5]
+- Updated dependencies [345f3d5]
+- Updated dependencies [2846559]
+  - @assistant-ui/react-markdown@0.7.10
+  - @assistant-ui/react@0.7.35
+
+## 0.7.7
+
+### Patch Changes
+
+- 4c2bf58: chore: update dependencies
+- Updated dependencies [9a3dc93]
+- Updated dependencies [4c2bf58]
+  - @assistant-ui/react@0.7.34
+  - @assistant-ui/react-markdown@0.7.9
+
+## 0.7.6
+
+### Patch Changes
+
+- 982a6a2: chore: update dependencies
+- Updated dependencies [982a6a2]
+  - @assistant-ui/react-markdown@0.7.8
+  - @assistant-ui/react@0.7.30
+
+## 0.7.5
+
+### Patch Changes
+
+- ec3b8cc: chore: update dependencies
+- Updated dependencies [ec3b8cc]
+  - @assistant-ui/react-markdown@0.7.7
+  - @assistant-ui/react@0.7.19
+
+## 0.7.4
+
+### Patch Changes
+
+- 4c54273: chore: update dependencies
+- Updated dependencies [4c54273]
+- Updated dependencies [4c54273]
+- Updated dependencies [4c54273]
+  - @assistant-ui/react-markdown@0.7.5
+  - @assistant-ui/react@0.7.12
+
+## 0.7.3
+
+### Patch Changes
+
+- 2112ce8: chore: update dependencies
+- Updated dependencies [589d37b]
+- Updated dependencies [2112ce8]
+  - @assistant-ui/react@0.7.8
+  - @assistant-ui/react-markdown@0.7.3
+
+## 0.7.2
+
+### Patch Changes
+
+- 933b8c0: chore: update deps
+- Updated dependencies [933b8c0]
+- Updated dependencies [09a2a38]
+  - @assistant-ui/react-markdown@0.7.2
+  - @assistant-ui/react@0.7.6
+
+## 0.7.1
+
+### Patch Changes
+
+- c59d8b5: chore: update dependencies
+- Updated dependencies [c59d8b5]
+  - @assistant-ui/react-markdown@0.7.1
+  - @assistant-ui/react@0.7.5
+
+## 0.7.0
+
+### Patch Changes
+
+- Updated dependencies [c6e886b]
+- Updated dependencies [2912fda]
+  - @assistant-ui/react@0.7.0
+  - @assistant-ui/react-markdown@0.7.0
+
+## 0.0.18
+
+### Patch Changes
+
+- 1ada091: chore: update deps
+- Updated dependencies [cdcfe1e]
+- Updated dependencies [cdcfe1e]
+- Updated dependencies [94feab2]
+- Updated dependencies [472c548]
+- Updated dependencies [14da684]
+- Updated dependencies [1ada091]
+  - @assistant-ui/react@0.5.99
+  - @assistant-ui/react-markdown@0.2.27
+
+## 0.0.17
+
+### Patch Changes
+
+- ff5b86c: chore: update deps
+- Updated dependencies [ff5b86c]
+- Updated dependencies [ff5b86c]
+- Updated dependencies [ff5b86c]
+  - @assistant-ui/react-markdown@0.2.26
+  - @assistant-ui/react@0.5.98
+
+## 0.0.16
+
+### Patch Changes
+
+- d2375cd: build: disable bundling in UI package releases
+- Updated dependencies [d2375cd]
+  - @assistant-ui/react-markdown@0.2.23
+  - @assistant-ui/react@0.5.93
+
+## 0.0.15
+
+### Patch Changes
+
+- fb32e61: chore: update deps
+- Updated dependencies [2090544]
+- Updated dependencies [be04b5b]
+- Updated dependencies [2090544]
+- Updated dependencies [fb32e61]
+- Updated dependencies [fb32e61]
+  - @assistant-ui/react@0.5.90
+  - @assistant-ui/react-markdown@0.2.20
+
+## 0.0.14
+
+### Patch Changes
+
+- fb46305: chore: update dependencies
+- Updated dependencies [fb46305]
+- Updated dependencies [e225116]
+- Updated dependencies [0ff22a7]
+- Updated dependencies [378ee99]
+- Updated dependencies [378ee99]
+  - @assistant-ui/react-markdown@0.2.19
+  - @assistant-ui/react@0.5.73
+
+## 0.0.13
+
+### Patch Changes
+
+- 155d6e7: chore: update dependencies
+- Updated dependencies [926dce5]
+- Updated dependencies [155d6e7]
+- Updated dependencies [f80226f]
+  - @assistant-ui/react@0.5.60
+  - @assistant-ui/react-markdown@0.2.14
+
+## 0.0.12
+
+### Patch Changes
+
+- c348553: chore: update dependencies
+- Updated dependencies [0f99aa6]
+- Updated dependencies [c348553]
+  - @assistant-ui/react@0.5.54
+  - @assistant-ui/react-markdown@0.2.13
+
+## 0.0.11
+
+### Patch Changes
+
+- 04f6fc8: chore: update deps
+- Updated dependencies [04f6fc8]
+  - @assistant-ui/react-markdown@0.2.12
+  - @assistant-ui/react@0.5.50
+
+## 0.0.10
+
+### Patch Changes
+
+- 554a423: chore: update deps
+- Updated dependencies [554a423]
+  - @assistant-ui/react-markdown@0.2.11
+  - @assistant-ui/react@0.5.38
+
+## 0.0.9
+
+### Patch Changes
+
+- 556001f: chore: update deps
+- Updated dependencies [556001f]
+- Updated dependencies [556001f]
+  - @assistant-ui/react-markdown@0.2.10
+  - @assistant-ui/react@0.5.29
+
+## 0.0.8
+
+### Patch Changes
+
+- 134d39e: fix: undo moving internal utilities to /react/internal
+- Updated dependencies [134d39e]
+  - @assistant-ui/react-markdown@0.2.7
+  - @assistant-ui/react@0.5.22
+
+## 0.0.7
+
+### Patch Changes
+
+- 3cc67f2: refactor: move internal utilities to @assistant-ui/react/internal
+- Updated dependencies [de04d92]
+- Updated dependencies [3cc67f2]
+  - @assistant-ui/react-markdown@0.2.6
+  - @assistant-ui/react@0.5.20
+
+## 0.0.6
+
+### Patch Changes
+
+- a216fbf: chore: update deps
+- Updated dependencies [a216fbf]
+  - @assistant-ui/react-markdown@0.2.3
+  - @assistant-ui/react@0.5.9
+
+## 0.0.5
+
+### Patch Changes
+
+- 2baa898: chore: v5
+- Updated dependencies [ee38c0c]
+- Updated dependencies [ee38c0c]
+- Updated dependencies [2baa898]
+  - @assistant-ui/react-markdown@0.2.1
+  - @assistant-ui/react@0.5.1
+
+## 0.0.3
+
+### Patch Changes
+
+- Updated dependencies [e0e51cf]
+- Updated dependencies [c7ba6a2]
+- Updated dependencies [e0e51cf]
+- Updated dependencies [e0e51cf]
+- Updated dependencies [679cd54]
+  - @assistant-ui/react@0.4.0
+  - @assistant-ui/react-markdown@1.0.0
+
+## 0.0.2
+
+### Patch Changes
+
+- Updated dependencies [ef25706]
+  - @assistant-ui/react-markdown@0.0.5
+  - @assistant-ui/react@0.3.5

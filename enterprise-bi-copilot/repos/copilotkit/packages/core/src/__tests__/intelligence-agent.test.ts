@@ -1,0 +1,2099 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import type { BaseEvent, RunAgentInput, RunAgentResult } from "@ag-ui/client";
+import { EventType } from "@ag-ui/client";
+import type { Observable } from "rxjs";
+import { RUNTIME_MODE_INTELLIGENCE } from "@copilotkit/shared";
+import type { MockChannel } from "./test-utils";
+import { MockSocket } from "./test-utils";
+
+vi.mock("phoenix", () => ({
+  Socket: MockSocket,
+}));
+
+// Must come after vi.mock so phoenix is mocked when the module is loaded.
+const { IntelligenceAgent } = await import("../intelligence-agent");
+const { ProxiedCopilotRuntimeAgent } = await import("../agent");
+type IntelligenceAgentInstance = InstanceType<typeof IntelligenceAgent>;
+
+let mockFetch: ReturnType<typeof vi.fn>;
+
+function jsonResponse(body: unknown, status = 200) {
+  return Promise.resolve({
+    ok: status >= 200 && status < 300,
+    status,
+    statusText: status === 200 ? "OK" : "Error",
+    json: () => Promise.resolve(body),
+    text: () => Promise.resolve(JSON.stringify(body)),
+  } as Response);
+}
+
+function emptyResponse(status = 204) {
+  return Promise.resolve({
+    ok: status >= 200 && status < 300,
+    status,
+    statusText: "No Content",
+    json: () => Promise.resolve(null),
+    text: () => Promise.resolve(""),
+  } as Response);
+}
+
+function runtimeCredentials(
+  overrides: Partial<{
+    threadId: string;
+    runId: string | null;
+    joinToken: string;
+    clientUrl: string;
+    topic: string;
+  }> = {},
+) {
+  const threadId = overrides.threadId ?? "thread-1";
+
+  return {
+    threadId,
+    runId: "runId" in overrides ? overrides.runId : "run-1",
+    joinToken: overrides.joinToken ?? "jt-123",
+    realtime: {
+      clientUrl: overrides.clientUrl ?? "ws://localhost:4000/client",
+      topic: overrides.topic ?? `thread:${threadId}`,
+    },
+  };
+}
+
+async function flushAsyncWork() {
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
+  if (vi.isFakeTimers()) {
+    await vi.runOnlyPendingTimersAsync();
+  } else {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+  await Promise.resolve();
+}
+
+async function waitForConnection(
+  agent: IntelligenceAgentInstance,
+  attempts = 5,
+) {
+  for (let index = 0; index < attempts; index += 1) {
+    await flushAsyncWork();
+    if (getSocket(agent) && getChannel(agent)) {
+      return;
+    }
+  }
+}
+
+beforeEach(() => {
+  mockFetch = vi.fn().mockResolvedValue(jsonResponse(runtimeCredentials()));
+  vi.stubGlobal("fetch", mockFetch);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+function createAgent() {
+  return new IntelligenceAgent({
+    url: "ws://localhost:4000/client",
+    runtimeUrl: "http://localhost:4000",
+    agentId: "my-agent",
+    socketParams: { token: "test-token" },
+    headers: { Authorization: "Bearer abc" },
+  });
+}
+
+const defaultInput: RunAgentInput = {
+  threadId: "thread-1",
+  runId: "run-1",
+  messages: [],
+  tools: [],
+  context: [],
+  state: {},
+  forwardedProps: {},
+};
+
+interface IntelligenceAgentTestAccess {
+  activeChannel: MockChannel | null;
+  canonicalRunId: string | null;
+  config: unknown;
+  connect(input: RunAgentInput): Observable<BaseEvent>;
+  messages: RunAgentInput["messages"];
+  socket: MockSocket | null;
+  threadId: string | undefined;
+}
+
+function getAgentTestAccess(
+  agent: IntelligenceAgentInstance,
+): IntelligenceAgentTestAccess {
+  return agent as unknown as IntelligenceAgentTestAccess;
+}
+
+/** Collect events from the observable until it completes or errors. */
+function collectEvents(agent: IntelligenceAgentInstance, input = defaultInput) {
+  const events: BaseEvent[] = [];
+  let completed = false;
+  let error: Error | null = null;
+
+  return new Promise<{
+    events: BaseEvent[];
+    completed: boolean;
+    error: Error | null;
+    channel: MockChannel | null;
+    socket: MockSocket | null;
+  }>((resolve) => {
+    agent.run(input).subscribe({
+      next: (event) => events.push(event),
+      complete: () => {
+        completed = true;
+        resolve({
+          events,
+          completed,
+          error,
+          channel: getChannel(agent),
+          socket: getSocket(agent),
+        });
+      },
+      error: (err) => {
+        error = err;
+        resolve({
+          events,
+          completed,
+          error,
+          channel: getChannel(agent),
+          socket: getSocket(agent),
+        });
+      },
+    });
+  });
+}
+
+function getSocket(agent: IntelligenceAgentInstance): MockSocket | null {
+  return getAgentTestAccess(agent).socket;
+}
+
+function getChannel(agent: IntelligenceAgentInstance): MockChannel | null {
+  return getAgentTestAccess(agent).activeChannel;
+}
+
+function connectWithTestAccess(
+  agent: IntelligenceAgentInstance,
+  input = defaultInput,
+) {
+  return getAgentTestAccess(agent).connect(input);
+}
+
+function setThreadIdForTest(
+  agent: IntelligenceAgentInstance,
+  threadId: string,
+): void {
+  getAgentTestAccess(agent).threadId = threadId;
+}
+
+function getCanonicalRunIdForTest(
+  agent: IntelligenceAgentInstance,
+): string | null {
+  return getAgentTestAccess(agent).canonicalRunId;
+}
+
+function getConfigForTest(agent: IntelligenceAgentInstance): unknown {
+  return getAgentTestAccess(agent).config;
+}
+
+function replaceMessagesForTest(
+  agent: IntelligenceAgentInstance,
+  messages: RunAgentInput["messages"],
+): void {
+  getAgentTestAccess(agent).messages = messages;
+}
+
+describe("IntelligenceAgent", () => {
+  describe("run kickoff", () => {
+    it("fetches joinToken before connecting the socket", async () => {
+      let resolveFetch: ((value: Response) => void) | null = null;
+      mockFetch.mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveFetch = resolve;
+        }),
+      );
+
+      const agent = createAgent();
+      agent.run(defaultInput).subscribe({ next: () => {}, error: () => {} });
+
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(getSocket(agent)).toBeNull();
+      expect(getChannel(agent)).toBeNull();
+
+      resolveFetch!(
+        await jsonResponse(runtimeCredentials({ joinToken: "jt-delayed" })),
+      );
+      await flushAsyncWork();
+
+      const socket = getSocket(agent)!;
+      expect(socket.connected).toBe(true);
+      expect(socket.url).toBe("ws://localhost:4000/client");
+      expect(socket.opts.params).toEqual({
+        token: "test-token",
+        join_token: "jt-delayed",
+      });
+
+      const channel = getChannel(agent)!;
+      expect(channel.topic).toBe("thread:thread-1");
+      expect(channel.params).toEqual({
+        stream_mode: "run",
+        run_id: "run-1",
+      });
+    });
+
+    it("fires a REST POST to /agent/{agentId}/run on subscribe", async () => {
+      const agent = createAgent();
+      agent.run(defaultInput).subscribe({ next: () => {}, error: () => {} });
+      await flushAsyncWork();
+
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      const [url, options] = mockFetch.mock.calls[0]!;
+      expect(url).toContain("/agent/my-agent/run");
+      expect(options.method).toBe("POST");
+      expect(options.headers).toMatchObject({
+        "Content-Type": "application/json",
+        Authorization: "Bearer abc",
+      });
+      expect(JSON.parse(options.body)).toEqual({
+        threadId: "thread-1",
+        runId: "run-1",
+        messages: [],
+        tools: [],
+        context: [],
+        state: {},
+        forwardedProps: {},
+      });
+    });
+
+    it("carries the AG-UI resume array in the run body", async () => {
+      const resume = [
+        {
+          interruptId: "int-1",
+          status: "resolved" as const,
+          payload: { ok: true },
+        },
+      ];
+      const agent = createAgent();
+      agent
+        .run({ ...defaultInput, resume })
+        .subscribe({ next: () => {}, error: () => {} });
+      await flushAsyncWork();
+
+      const [, options] = mockFetch.mock.calls[0]!;
+      expect(JSON.parse(options.body).resume).toEqual(resume);
+    });
+
+    it("posts every RunAgentInput field, so no protocol field is dropped", async () => {
+      const input: RunAgentInput = {
+        ...defaultInput,
+        forwardedProps: { command: { resume: "yes" } },
+        resume: [{ interruptId: "int-1", status: "cancelled" }],
+        state: { step: 2 },
+      };
+      const agent = createAgent();
+      agent.run(input).subscribe({ next: () => {}, error: () => {} });
+      await flushAsyncWork();
+
+      const body = JSON.parse(mockFetch.mock.calls[0]![1].body);
+      for (const key of Object.keys(input) as (keyof RunAgentInput)[]) {
+        expect(body[key]).toEqual(input[key]);
+      }
+    });
+
+    it("does not push any events to the channel during join", async () => {
+      const agent = createAgent();
+      agent.run(defaultInput).subscribe({ next: () => {}, error: () => {} });
+      await flushAsyncWork();
+
+      const channel = getChannel(agent)!;
+      channel.triggerJoin("ok");
+
+      expect(channel.pushLog).toHaveLength(0);
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("joins with a null replay cursor when the thread has no prior events", async () => {
+      const agent = createAgent();
+      agent.run(defaultInput).subscribe({ next: () => {}, error: () => {} });
+      await flushAsyncWork();
+
+      const channel = getChannel(agent)!;
+
+      expect(channel.params).toEqual({
+        stream_mode: "run",
+        run_id: "run-1",
+      });
+    });
+  });
+
+  describe("REST run failure", () => {
+    it("errors the observable on fetch failure without creating a socket", async () => {
+      mockFetch.mockRejectedValueOnce(new Error("Network error"));
+
+      const agent = createAgent();
+      const result = await collectEvents(agent);
+
+      expect(result.completed).toBe(false);
+      expect(result.error).toBeInstanceOf(Error);
+      expect(result.error!.message).toContain("REST run request failed");
+      expect(result.socket).toBeNull();
+      expect(result.channel).toBeNull();
+    });
+
+    it("throws AgentThreadLockedError on 409 response", async () => {
+      const { AgentThreadLockedError } = await import("../intelligence-agent");
+      mockFetch.mockResolvedValueOnce(
+        Promise.resolve({
+          ok: false,
+          status: 409,
+          statusText: "Conflict",
+          json: () => Promise.resolve({ error: "Thread lock denied" }),
+          text: () => Promise.resolve('{"error":"Thread lock denied"}'),
+        } as Response),
+      );
+
+      const agent = createAgent();
+      const result = await collectEvents(agent);
+
+      expect(result.completed).toBe(false);
+      expect(result.error).toBeInstanceOf(AgentThreadLockedError);
+      expect(result.error!.message).toContain("thread-1");
+      expect(result.error!.message).toContain("locked");
+      expect(result.socket).toBeNull();
+      expect(result.channel).toBeNull();
+    });
+  });
+
+  describe("event relay", () => {
+    it("forwards AG-UI events from the server to the subscriber", async () => {
+      const agent = createAgent();
+      const events: BaseEvent[] = [];
+      agent
+        .run(defaultInput)
+        .subscribe({ next: (e) => events.push(e), error: () => {} });
+      await flushAsyncWork();
+
+      const channel = getChannel(agent)!;
+      channel.triggerJoin("ok");
+
+      const textEvent = {
+        type: EventType.TEXT_MESSAGE_CONTENT,
+        messageId: "msg-1",
+        delta: "hello",
+      } as BaseEvent;
+      channel.serverPush("ag_ui_event", textEvent);
+
+      const toolEvent = {
+        type: EventType.TOOL_CALL_START,
+        toolCallId: "tc-1",
+        toolCallName: "search",
+        parentMessageId: "msg-1",
+      } as BaseEvent;
+      channel.serverPush("ag_ui_event", toolEvent);
+
+      expect(events).toContainEqual(textEvent);
+      expect(events).toContainEqual(toolEvent);
+    });
+  });
+
+  describe("terminal events", () => {
+    it("completes the observable on RUN_FINISHED", async () => {
+      const agent = createAgent();
+      const promise = collectEvents(agent);
+      await waitForConnection(agent);
+
+      const channel = getChannel(agent)!;
+      channel.triggerJoin("ok");
+
+      const finishedEvent = {
+        type: EventType.RUN_FINISHED,
+        threadId: "thread-1",
+        runId: "run-1",
+      } as BaseEvent;
+      channel.serverPush("ag_ui_event", finishedEvent);
+
+      const result = await promise;
+      expect(result.completed).toBe(true);
+      expect(result.error).toBeNull();
+      expect(result.events).toContainEqual(finishedEvent);
+    });
+
+    it("errors the observable on RUN_ERROR", async () => {
+      const agent = createAgent();
+      const promise = collectEvents(agent);
+      await waitForConnection(agent);
+
+      const channel = getChannel(agent)!;
+      channel.triggerJoin("ok");
+
+      const errorEvent = {
+        type: EventType.RUN_ERROR,
+        message: "something went wrong",
+      } as BaseEvent;
+      channel.serverPush("ag_ui_event", errorEvent);
+
+      const result = await promise;
+      expect(result.completed).toBe(false);
+      expect(result.error).toBeInstanceOf(Error);
+      expect(result.error!.message).toBe("something went wrong");
+      expect(result.events).toContainEqual(errorEvent);
+    });
+
+    it("cleans up socket and channel on RUN_FINISHED", async () => {
+      const agent = createAgent();
+      const promise = collectEvents(agent);
+      await flushAsyncWork();
+
+      const socket = getSocket(agent)!;
+      const channel = getChannel(agent)!;
+      channel.triggerJoin("ok");
+      channel.serverPush("ag_ui_event", {
+        type: EventType.RUN_FINISHED,
+        threadId: "thread-1",
+        runId: "run-1",
+      } as BaseEvent);
+
+      await promise;
+      expect(channel.left).toBe(true);
+      expect(socket.disconnected).toBe(true);
+    });
+  });
+
+  describe("mid-run disconnect", () => {
+    it("does not error the observable on a single channel crash (Phoenix retries)", async () => {
+      const agent = createAgent();
+      let error: Error | null = null;
+      agent.run(defaultInput).subscribe({
+        next: () => {},
+        error: (err) => {
+          error = err;
+        },
+      });
+      await flushAsyncWork();
+
+      await waitForConnection(agent);
+      const channel = getChannel(agent)!;
+      channel.triggerJoin("ok");
+      channel.triggerError("server crash");
+
+      expect(error).toBeNull();
+    });
+
+    it("does not error the observable on a single socket error (Phoenix retries)", async () => {
+      const agent = createAgent();
+      let error: Error | null = null;
+      agent.run(defaultInput).subscribe({
+        next: () => {},
+        error: (err) => {
+          error = err;
+        },
+      });
+      await waitForConnection(agent);
+
+      getChannel(agent)!.triggerJoin("ok");
+      getSocket(agent)!.triggerError(new Error("network failure"));
+
+      expect(error).toBeNull();
+    });
+
+    it("reacquires connect credentials after MAX_CONSECUTIVE_ERRORS socket errors", async () => {
+      mockFetch
+        .mockResolvedValueOnce(
+          await jsonResponse(runtimeCredentials({ joinToken: "jt-1" })),
+        )
+        .mockResolvedValueOnce(
+          await jsonResponse(runtimeCredentials({ joinToken: "jt-2" })),
+        );
+      const agent = createAgent();
+      agent.run(defaultInput).subscribe({ next: () => {}, error: () => {} });
+      await waitForConnection(agent);
+
+      getChannel(agent)!.triggerJoin("ok");
+      getChannel(agent)!.serverPush("ag_ui_event", {
+        type: EventType.TEXT_MESSAGE_CONTENT,
+        metadata: {
+          cpki_event_id: "event-2",
+          cpki_event_seq: 2,
+        },
+      } as BaseEvent);
+
+      for (let i = 0; i < 5; i++) {
+        getSocket(agent)!.triggerError(new Error("network failure"));
+      }
+
+      await waitForConnection(agent);
+
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(getSocket(agent)!.opts.params).toMatchObject({
+        join_token: "jt-2",
+      });
+      expect(JSON.parse(mockFetch.mock.calls[1]![1].body)).toMatchObject({
+        lastSeenEventId: "event-2",
+      });
+      expect(getChannel(agent)!.params).toEqual({
+        stream_mode: "connect",
+        last_seen_event_id: "event-2",
+      });
+    });
+
+    it("cleans up stale socket and channel before joining with refreshed credentials", async () => {
+      mockFetch
+        .mockResolvedValueOnce(
+          await jsonResponse(runtimeCredentials({ joinToken: "jt-1" })),
+        )
+        .mockResolvedValueOnce(
+          await jsonResponse(runtimeCredentials({ joinToken: "jt-2" })),
+        );
+      const agent = createAgent();
+      agent.run(defaultInput).subscribe({ next: () => {}, error: () => {} });
+      await flushAsyncWork();
+
+      const socket = getSocket(agent)!;
+      const channel = getChannel(agent)!;
+      channel.triggerJoin("ok");
+
+      for (let i = 0; i < 5; i++) {
+        socket.triggerError();
+      }
+
+      await waitForConnection(agent);
+      expect(channel.left).toBe(true);
+      expect(socket.disconnected).toBe(true);
+    });
+
+    it("resets the error counter on successful reconnection", async () => {
+      const agent = createAgent();
+      let error: Error | null = null;
+      agent.run(defaultInput).subscribe({
+        next: () => {},
+        error: (err) => {
+          error = err;
+        },
+      });
+      await flushAsyncWork();
+
+      const socket = getSocket(agent)!;
+      getChannel(agent)!.triggerJoin("ok");
+
+      for (let i = 0; i < 4; i++) {
+        socket.triggerError();
+      }
+      expect(error).toBeNull();
+
+      socket.triggerOpen();
+
+      for (let i = 0; i < 4; i++) {
+        socket.triggerError();
+      }
+      expect(error).toBeNull();
+    });
+  });
+
+  describe("join failures", () => {
+    it("errors the observable on join error", async () => {
+      const agent = createAgent();
+      const promise = collectEvents(agent);
+      await flushAsyncWork();
+
+      getChannel(agent)!.triggerJoin("error", { reason: "unauthorized" });
+
+      const result = await promise;
+      expect(result.completed).toBe(false);
+      expect(result.error).toBeInstanceOf(Error);
+      expect(result.error!.message).toContain("Failed to join channel");
+    });
+
+    it("errors the observable on join timeout", async () => {
+      const agent = createAgent();
+      const promise = collectEvents(agent);
+      await flushAsyncWork();
+
+      getChannel(agent)!.triggerJoin("timeout");
+
+      const result = await promise;
+      expect(result.completed).toBe(false);
+      expect(result.error).toBeInstanceOf(Error);
+      expect(result.error!.message).toBe("Timed out joining channel");
+    });
+  });
+
+  describe("abortRun", () => {
+    it("pushes stop_run with the current run id", async () => {
+      const agent = createAgent();
+      agent.run(defaultInput).subscribe({ next: () => {}, error: () => {} });
+      await flushAsyncWork();
+
+      const channel = getChannel(agent)!;
+      channel.triggerJoin("ok");
+
+      agent.abortRun();
+
+      const stopPush = channel.pushLog.find((c) => c.event === "stop_run");
+      expect(stopPush).toBeDefined();
+      expect(stopPush!.payload).toEqual({ run_id: "run-1" });
+    });
+
+    it("defers cleanup until the push is acknowledged (ok)", async () => {
+      const agent = createAgent();
+      agent.run(defaultInput).subscribe({ next: () => {}, error: () => {} });
+      await flushAsyncWork();
+
+      const channel = getChannel(agent)!;
+      channel.triggerJoin("ok");
+      agent.abortRun();
+
+      expect(channel.left).toBe(false);
+
+      const stopEntry = channel.pushLog.find((c) => c.event === "stop_run")!;
+      stopEntry.push.trigger("ok");
+
+      expect(channel.left).toBe(true);
+    });
+
+    it("cleans up on push error reply", async () => {
+      const agent = createAgent();
+      agent.run(defaultInput).subscribe({ next: () => {}, error: () => {} });
+      await flushAsyncWork();
+
+      const channel = getChannel(agent)!;
+      channel.triggerJoin("ok");
+      agent.abortRun();
+
+      const stopEntry = channel.pushLog.find((c) => c.event === "stop_run")!;
+      stopEntry.push.trigger("error");
+
+      expect(channel.left).toBe(true);
+    });
+
+    it("cleans up on push timeout reply", async () => {
+      const agent = createAgent();
+      agent.run(defaultInput).subscribe({ next: () => {}, error: () => {} });
+      await flushAsyncWork();
+
+      const channel = getChannel(agent)!;
+      channel.triggerJoin("ok");
+      agent.abortRun();
+
+      const stopEntry = channel.pushLog.find((c) => c.event === "stop_run")!;
+      stopEntry.push.trigger("timeout");
+
+      expect(channel.left).toBe(true);
+    });
+
+    it("cleans up immediately via fallback timer when socket is down", async () => {
+      vi.useFakeTimers();
+
+      try {
+        const agent = createAgent();
+        agent.run(defaultInput).subscribe({ next: () => {}, error: () => {} });
+        await waitForConnection(agent);
+
+        const channel = getChannel(agent)!;
+        channel.triggerJoin("ok");
+        agent.abortRun();
+
+        expect(channel.left).toBe(false);
+
+        vi.advanceTimersByTime(5_000);
+        expect(channel.left).toBe(true);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("cleans up immediately when no run is active", () => {
+      const agent = createAgent();
+      expect(() => agent.abortRun()).not.toThrow();
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it("keeps the provided run id when replayed baseline events carry a different backend run id", async () => {
+      mockFetch.mockResolvedValueOnce(await jsonResponse(runtimeCredentials()));
+
+      const agent = createAgent();
+      setThreadIdForTest(agent, "thread-1");
+
+      const reconnectPromise = agent.connectAgent({ runId: "run-1" });
+      await waitForConnection(agent);
+
+      const channel = getChannel(agent)!;
+      channel.triggerJoin("ok");
+      channel.serverPush("ag_ui_event", {
+        type: EventType.RUN_STARTED,
+        threadId: "thread-1",
+        run_id: "backend-run-1",
+        input: {
+          messages: [
+            {
+              id: "msg-1",
+              role: "user" as const,
+              content: "hello",
+            },
+          ],
+        },
+      } as BaseEvent);
+      await flushAsyncWork();
+
+      agent.abortRun();
+
+      const stopEntry = channel.pushLog.find((c) => c.event === "stop_run");
+      expect(stopEntry).toBeDefined();
+      expect(stopEntry!.payload).toEqual({ run_id: "run-1" });
+
+      stopEntry!.push.trigger("ok");
+
+      const result = await reconnectPromise;
+      expect(result.newMessages).toEqual([
+        {
+          id: "msg-1",
+          role: "user",
+          content: "hello",
+        },
+      ]);
+    });
+  });
+
+  describe("unsubscribe cleanup", () => {
+    it("leaves the channel and disconnects the socket on unsubscribe", async () => {
+      const agent = createAgent();
+      const subscription = agent
+        .run(defaultInput)
+        .subscribe({ next: () => {}, error: () => {} });
+      await flushAsyncWork();
+
+      const socket = getSocket(agent)!;
+      const channel = getChannel(agent)!;
+      channel.triggerJoin("ok");
+
+      subscription.unsubscribe();
+
+      expect(channel.left).toBe(true);
+      expect(socket.disconnected).toBe(true);
+    });
+  });
+
+  describe("credentials forwarding", () => {
+    it("forwards credentials on run fetch when configured", async () => {
+      const agent = new IntelligenceAgent({
+        url: "ws://localhost:4000/client",
+        runtimeUrl: "http://localhost:4000",
+        agentId: "my-agent",
+        credentials: "include",
+      });
+      agent.run(defaultInput).subscribe({ next: () => {}, error: () => {} });
+      await flushAsyncWork();
+
+      const [, options] = mockFetch.mock.calls[0]!;
+      expect(options.credentials).toBe("include");
+    });
+
+    it("omits credentials when not configured", async () => {
+      const agent = createAgent();
+      agent.run(defaultInput).subscribe({ next: () => {}, error: () => {} });
+      await flushAsyncWork();
+
+      const [, options] = mockFetch.mock.calls[0]!;
+      expect(options.credentials).toBeUndefined();
+    });
+  });
+
+  describe("connect", () => {
+    function connectAgent(
+      agent: InstanceType<typeof IntelligenceAgent>,
+      input = defaultInput,
+    ) {
+      const events: BaseEvent[] = [];
+      let completed = false;
+      let error: Error | null = null;
+
+      return new Promise<{
+        events: BaseEvent[];
+        completed: boolean;
+        error: Error | null;
+        channel: MockChannel | null;
+        socket: MockSocket | null;
+      }>((resolve) => {
+        connectWithTestAccess(agent, input).subscribe({
+          next: (event: BaseEvent) => events.push(event),
+          complete: () => {
+            completed = true;
+            resolve({
+              events,
+              completed,
+              error,
+              channel: getChannel(agent),
+              socket: getSocket(agent),
+            });
+          },
+          error: (err: Error) => {
+            error = err;
+            resolve({
+              events,
+              completed,
+              error,
+              channel: getChannel(agent),
+              socket: getSocket(agent),
+            });
+          },
+        });
+      });
+    }
+
+    async function expectConnectAgentToResolve(
+      promise: Promise<RunAgentResult>,
+    ): Promise<RunAgentResult> {
+      return await Promise.race([
+        promise,
+        new Promise<never>((_, reject) => {
+          setTimeout(
+            () => reject(new Error("connectAgent did not resolve")),
+            1_000,
+          );
+        }),
+      ]);
+    }
+
+    it("fetches a live connect plan and joins the thread topic without pushing connect", async () => {
+      mockFetch.mockResolvedValueOnce(await jsonResponse(runtimeCredentials()));
+
+      const agent = createAgent();
+      connectWithTestAccess(agent, defaultInput).subscribe({
+        next: () => {},
+        error: () => {},
+      });
+      await waitForConnection(agent);
+
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      const [url] = mockFetch.mock.calls[0]!;
+      expect(url).toContain("/agent/my-agent/connect");
+
+      const socket = getSocket(agent)!;
+      expect(socket.opts.params).toEqual({
+        token: "test-token",
+        join_token: "jt-123",
+      });
+
+      const channel = getChannel(agent)!;
+      expect(channel.topic).toBe("thread:thread-1");
+      expect(channel.params).toEqual({
+        stream_mode: "connect",
+        last_seen_event_id: null,
+      });
+
+      channel.triggerJoin("ok");
+      expect(channel.pushLog).toHaveLength(0);
+    });
+
+    // The reconnect cursor is now controlled explicitly by the caller.
+    // `connect()` preserves whatever cursor is in `sharedState.lastSeenEventIds`
+    // so churn re-connects can resume from `lastSeenEventId` instead of
+    // forcing the gateway to replay the entire thread history. Callers
+    // that *want* a full historical replay (e.g. RunHandler on a detected
+    // thread switch) call `agent.clearReconnectCursor(threadId)` first.
+    it("preserves the cursor on a direct connect() (resume semantics)", async () => {
+      const agent = createAgent();
+      agent.run(defaultInput).subscribe({ next: () => {}, error: () => {} });
+      await waitForConnection(agent);
+
+      const runChannel = getChannel(agent)!;
+      runChannel.triggerJoin("ok");
+      runChannel.serverPush("ag_ui_event", {
+        type: EventType.TEXT_MESSAGE_CONTENT,
+        metadata: {
+          cpki_event_id: "event-1",
+          cpki_event_seq: 1,
+        },
+      } as BaseEvent);
+
+      mockFetch.mockResolvedValueOnce(await jsonResponse(runtimeCredentials()));
+
+      connectWithTestAccess(agent, defaultInput).subscribe({
+        next: () => {},
+        error: () => {},
+      });
+      await waitForConnection(agent);
+
+      const connectChannel = getChannel(agent)!;
+      expect(connectChannel.params).toEqual({
+        stream_mode: "connect",
+        last_seen_event_id: "event-1",
+      });
+    });
+
+    it("clearReconnectCursor() empties the cursor for the next connect", async () => {
+      const agent = createAgent();
+      agent.run(defaultInput).subscribe({ next: () => {}, error: () => {} });
+      await waitForConnection(agent);
+
+      const runChannel = getChannel(agent)!;
+      runChannel.triggerJoin("ok");
+      runChannel.serverPush("ag_ui_event", {
+        type: EventType.TEXT_MESSAGE_CONTENT,
+        metadata: {
+          cpki_event_id: "event-1",
+          cpki_event_seq: 1,
+        },
+      } as BaseEvent);
+
+      // Explicitly clear the cursor — this is what RunHandler does on a
+      // detected thread switch.
+      agent.clearReconnectCursor("thread-1");
+
+      mockFetch.mockResolvedValueOnce(await jsonResponse(runtimeCredentials()));
+
+      connectWithTestAccess(agent, defaultInput).subscribe({
+        next: () => {},
+        error: () => {},
+      });
+      await waitForConnection(agent);
+
+      const connectChannel = getChannel(agent)!;
+      expect(connectChannel.params).toEqual({
+        stream_mode: "connect",
+        last_seen_event_id: null,
+      });
+    });
+
+    it("rehydrates a restored thread after switching A to B and back to A", async () => {
+      mockFetch
+        .mockResolvedValueOnce(
+          await jsonResponse(runtimeCredentials({ threadId: "thread-a" })),
+        )
+        .mockResolvedValueOnce(
+          await jsonResponse(runtimeCredentials({ threadId: "thread-b" })),
+        )
+        .mockResolvedValueOnce(
+          await jsonResponse(runtimeCredentials({ threadId: "thread-a" })),
+        );
+
+      const agent = createAgent();
+
+      setThreadIdForTest(agent, "thread-a");
+      replaceMessagesForTest(agent, []);
+      const firstThreadAPromise = agent.connectAgent({ runId: "run-a" });
+      await waitForConnection(agent);
+
+      const firstThreadAChannel = getChannel(agent)!;
+      firstThreadAChannel.triggerJoin("ok");
+      firstThreadAChannel.serverPush("ag_ui_event", {
+        type: EventType.RUN_STARTED,
+        threadId: "thread-a",
+        run_id: "backend-run-a",
+        input: {
+          messages: [{ id: "msg-a", role: "user", content: "thread A" }],
+        },
+        metadata: {
+          cpki_event_id: "event-a-1",
+          cpki_event_seq: 1,
+        },
+      } as BaseEvent);
+      firstThreadAChannel.serverPush("replay_complete", {
+        latestEventId: "event-a-1",
+      });
+      firstThreadAChannel.serverPush("stream_idle", {
+        latestEventId: "event-a-1",
+      });
+
+      await firstThreadAPromise;
+
+      setThreadIdForTest(agent, "thread-b");
+      replaceMessagesForTest(agent, []);
+      const threadBPromise = agent.connectAgent({ runId: "run-b" });
+      await waitForConnection(agent);
+
+      const threadBChannel = getChannel(agent)!;
+      threadBChannel.triggerJoin("ok");
+      threadBChannel.serverPush("ag_ui_event", {
+        type: EventType.RUN_STARTED,
+        threadId: "thread-b",
+        run_id: "backend-run-b",
+        input: {
+          messages: [{ id: "msg-b", role: "user", content: "thread B" }],
+        },
+        metadata: {
+          cpki_event_id: "event-b-1",
+          cpki_event_seq: 1,
+        },
+      } as BaseEvent);
+      threadBChannel.serverPush("replay_complete", {
+        latestEventId: "event-b-1",
+      });
+      threadBChannel.serverPush("stream_idle", {
+        latestEventId: "event-b-1",
+      });
+
+      await threadBPromise;
+
+      setThreadIdForTest(agent, "thread-a");
+      replaceMessagesForTest(agent, []);
+      // Mimic RunHandler's behaviour on a detected thread switch:
+      // explicitly clear the cursor so the gateway is asked for a full
+      // historical replay of thread-a. Without this, the cursor from
+      // the first thread-a pass ("event-a-1") is preserved and the
+      // gateway would resume from there.
+      agent.clearReconnectCursor("thread-a");
+      const secondThreadAPromise = agent.connectAgent({ runId: "run-a" });
+      await waitForConnection(agent);
+
+      const secondThreadAChannel = getChannel(agent)!;
+      expect(JSON.parse(mockFetch.mock.calls[2]![1].body)).toMatchObject({
+        lastSeenEventId: null,
+      });
+      expect(secondThreadAChannel.params).toEqual({
+        stream_mode: "connect",
+        last_seen_event_id: null,
+      });
+
+      // Mike's regression: persisted replays reuse the original
+      // `cpki_event_id`. Push event-a-1 (NOT event-a-2) and verify the
+      // rehydrate still produces the user message — i.e. nothing
+      // downstream is suppressing it as a duplicate of the earlier
+      // pass.
+      secondThreadAChannel.triggerJoin("ok");
+      secondThreadAChannel.serverPush("ag_ui_event", {
+        type: EventType.RUN_STARTED,
+        threadId: "thread-a",
+        run_id: "backend-run-a",
+        input: {
+          messages: [{ id: "msg-a", role: "user", content: "thread A" }],
+        },
+        metadata: {
+          cpki_event_id: "event-a-1",
+          cpki_event_seq: 1,
+        },
+      } as BaseEvent);
+      secondThreadAChannel.serverPush("replay_complete", {
+        latestEventId: "event-a-1",
+      });
+      secondThreadAChannel.serverPush("stream_idle", {
+        latestEventId: "event-a-1",
+      });
+
+      const secondThreadAResult = await secondThreadAPromise;
+
+      expect(secondThreadAResult.newMessages).toEqual([
+        { id: "msg-a", role: "user", content: "thread A" },
+      ]);
+    });
+
+    it("does not complete passive connect on replayed RUN_FINISHED before replay_complete", async () => {
+      mockFetch.mockResolvedValueOnce(await jsonResponse(runtimeCredentials()));
+
+      const agent = createAgent();
+      let resolved = false;
+      const promise = connectAgent(agent).then((result) => {
+        resolved = true;
+        return result;
+      });
+      await waitForConnection(agent);
+
+      const channel = getChannel(agent)!;
+      channel.triggerJoin("ok");
+      await flushAsyncWork();
+
+      channel.serverPush("ag_ui_event", {
+        type: EventType.RUN_FINISHED,
+        threadId: "thread-1",
+        runId: "run-1",
+      } as BaseEvent);
+      await flushAsyncWork();
+
+      expect(resolved).toBe(false);
+      expect(channel.left).toBe(false);
+
+      channel.serverPush("replay_complete", { latestEventId: "event-1" });
+      channel.serverPush("stream_idle", { latestEventId: "event-1" });
+
+      const result = await promise;
+      expect(result.completed).toBe(true);
+      expect(result.error).toBeNull();
+    });
+
+    it("completes immediately without creating a socket on 204 connect", async () => {
+      mockFetch.mockResolvedValueOnce(await emptyResponse());
+
+      const agent = createAgent();
+      const result = await connectAgent(agent);
+
+      expect(result.completed).toBe(true);
+      expect(result.error).toBeNull();
+      expect(result.events).toHaveLength(0);
+      expect(result.socket).toBeNull();
+      expect(result.channel).toBeNull();
+    });
+
+    it("completes on RUN_ERROR from server", async () => {
+      mockFetch.mockResolvedValueOnce(await jsonResponse(runtimeCredentials()));
+
+      const agent = createAgent();
+      const promise = connectAgent(agent);
+      await waitForConnection(agent);
+
+      const channel = getChannel(agent)!;
+      channel.triggerJoin("ok");
+      await flushAsyncWork();
+
+      channel.serverPush("ag_ui_event", {
+        type: EventType.RUN_ERROR,
+        message: "something went wrong",
+      } as BaseEvent);
+      channel.serverPush("replay_complete", { latestEventId: "event-1" });
+      channel.serverPush("stream_idle", { latestEventId: "event-1" });
+      await flushAsyncWork();
+
+      const result = await promise;
+      expect(result.completed).toBe(true);
+      expect(result.error).toBeNull();
+      expect(result.events).toEqual([
+        {
+          type: EventType.RUN_ERROR,
+          message: "something went wrong",
+        },
+      ]);
+    });
+
+    it("hydrates messages from gateway replay events through connectAgent", async () => {
+      mockFetch.mockResolvedValueOnce(await jsonResponse(runtimeCredentials()));
+
+      const agent = createAgent();
+      setThreadIdForTest(agent, "thread-1");
+
+      const promise = agent.connectAgent({ runId: "run-1" });
+      await waitForConnection(agent);
+
+      const channel = getChannel(agent)!;
+      channel.triggerJoin("ok");
+      channel.serverPush("ag_ui_event", {
+        type: EventType.RUN_STARTED,
+        threadId: "thread-1",
+        run_id: "backend-run-1",
+        input: {
+          messages: [
+            {
+              id: "msg-1",
+              role: "user",
+              content: "hello",
+            },
+          ],
+        },
+      } as BaseEvent);
+      channel.serverPush("replay_complete", { latestEventId: "event-2" });
+      channel.serverPush("stream_idle", { latestEventId: "event-2" });
+
+      const result = await promise;
+
+      expect(result.newMessages).toEqual([
+        {
+          id: "msg-1",
+          role: "user",
+          content: "hello",
+        },
+      ]);
+      expect(agent.messages).toEqual([
+        {
+          id: "msg-1",
+          role: "user",
+          content: "hello",
+        },
+      ]);
+      expect(getCanonicalRunIdForTest(agent)).toBeNull();
+      expect(channel.left).toBe(true);
+    });
+
+    it("waits for replay_complete before completing connect on stream_idle", async () => {
+      mockFetch.mockResolvedValueOnce(await jsonResponse(runtimeCredentials()));
+
+      const agent = createAgent();
+      setThreadIdForTest(agent, "thread-1");
+
+      let resolved = false;
+      const promise = agent.connectAgent({ runId: "run-1" }).then((result) => {
+        resolved = true;
+        return result;
+      });
+      await waitForConnection(agent);
+
+      const channel = getChannel(agent)!;
+      channel.triggerJoin("ok");
+      channel.serverPush("stream_idle", { latestEventId: "event-2" });
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      await flushAsyncWork();
+
+      expect(resolved).toBe(false);
+      expect(channel.left).toBe(false);
+
+      channel.serverPush("ag_ui_event", {
+        type: EventType.RUN_STARTED,
+        threadId: "thread-1",
+        run_id: "backend-run-1",
+        input: {
+          messages: [
+            {
+              id: "msg-after-idle",
+              role: "user",
+              content: "replayed after idle",
+            },
+          ],
+        },
+      } as BaseEvent);
+      channel.serverPush("replay_complete", { latestEventId: "event-2" });
+
+      const result = await promise;
+
+      expect(result.newMessages).toEqual([
+        {
+          id: "msg-after-idle",
+          role: "user",
+          content: "replayed after idle",
+        },
+      ]);
+      expect(channel.left).toBe(true);
+    });
+
+    it("falls back and completes connect when stream_idle arrives without replay_complete", async () => {
+      mockFetch.mockResolvedValueOnce(await jsonResponse(runtimeCredentials()));
+
+      const agent = createAgent();
+      setThreadIdForTest(agent, "thread-1");
+
+      const promise = agent.connectAgent({ runId: "run-1" });
+      await waitForConnection(agent);
+
+      const channel = getChannel(agent)!;
+      const socket = getSocket(agent)!;
+      channel.triggerJoin("ok");
+      channel.serverPush("stream_idle", {});
+      await flushAsyncWork();
+
+      expect(channel.left).toBe(false);
+      expect(socket.disconnected).toBe(false);
+
+      const result = await expectConnectAgentToResolve(promise);
+
+      expect(result.newMessages).toEqual([]);
+      expect(channel.left).toBe(true);
+      expect(socket.disconnected).toBe(true);
+    });
+
+    it("uses snake_case latest_event_id control cursors for subsequent reconnects", async () => {
+      mockFetch.mockResolvedValueOnce(await jsonResponse(runtimeCredentials()));
+      mockFetch.mockResolvedValueOnce(await jsonResponse(runtimeCredentials()));
+
+      const agent = createAgent();
+      setThreadIdForTest(agent, "thread-1");
+
+      const firstConnectPromise = agent.connectAgent({ runId: "run-1" });
+      await waitForConnection(agent);
+
+      const firstChannel = getChannel(agent)!;
+      firstChannel.triggerJoin("ok");
+      firstChannel.serverPush("replay_complete", {
+        latest_event_id: "event-snake",
+      });
+      firstChannel.serverPush("stream_idle", {
+        latest_event_id: "event-snake",
+      });
+      await firstConnectPromise;
+
+      const secondConnectPromise = agent.connectAgent({ runId: "run-2" });
+      await waitForConnection(agent);
+
+      const secondChannel = getChannel(agent)!;
+      expect(JSON.parse(mockFetch.mock.calls[1]![1].body)).toMatchObject({
+        lastSeenEventId: "event-snake",
+      });
+      expect(secondChannel.params).toEqual({
+        stream_mode: "connect",
+        last_seen_event_id: "event-snake",
+      });
+
+      secondChannel.triggerJoin("ok");
+      secondChannel.serverPush("replay_complete", {
+        latest_event_id: "event-snake",
+      });
+      secondChannel.serverPush("stream_idle", {
+        latest_event_id: "event-snake",
+      });
+      await secondConnectPromise;
+    });
+
+    it("hydrates agent state from gateway replay events through connectAgent", async () => {
+      const finalSnapshot = {
+        todos: [
+          { id: "1", title: "Read CopilotKit docs", status: "pending" },
+          { id: "2", title: "Build a CopilotKit prototype", status: "pending" },
+          { id: "3", title: "Explore agent state", status: "pending" },
+        ],
+      };
+
+      mockFetch.mockResolvedValueOnce(await jsonResponse(runtimeCredentials()));
+
+      const agent = createAgent();
+      setThreadIdForTest(agent, "thread-1");
+
+      const promise = agent.connectAgent({ runId: "run-1" });
+      await waitForConnection(agent);
+
+      const channel = getChannel(agent)!;
+      channel.triggerJoin("ok");
+      channel.serverPush("ag_ui_event", {
+        type: EventType.RUN_STARTED,
+        threadId: "thread-1",
+        run_id: "backend-run-1",
+        input: { messages: [] },
+      } as BaseEvent);
+      channel.serverPush("ag_ui_event", {
+        type: EventType.STATE_SNAPSHOT,
+        snapshot: {
+          todos: [
+            { id: "1", title: "Read CopilotKit docs", status: "pending" },
+          ],
+        },
+      } as BaseEvent);
+      channel.serverPush("ag_ui_event", {
+        type: EventType.STATE_SNAPSHOT,
+        snapshot: finalSnapshot,
+      } as BaseEvent);
+      channel.serverPush("ag_ui_event", {
+        type: EventType.RUN_FINISHED,
+      } as BaseEvent);
+      channel.serverPush("replay_complete", { latestEventId: "event-4" });
+      channel.serverPush("stream_idle", { latestEventId: "event-4" });
+
+      await promise;
+
+      expect(agent.state).toEqual(finalSnapshot);
+    });
+
+    it("completes connect streams on stream_idle after replay_complete", async () => {
+      mockFetch.mockResolvedValueOnce(await jsonResponse(runtimeCredentials()));
+
+      const agent = createAgent();
+      const events: BaseEvent[] = [];
+      let completed = false;
+
+      connectWithTestAccess(agent, defaultInput).subscribe({
+        next: (event: BaseEvent) => events.push(event),
+        complete: () => {
+          completed = true;
+        },
+        error: () => {},
+      });
+      await waitForConnection(agent);
+
+      const channel = getChannel(agent)!;
+      channel.triggerJoin("ok");
+      channel.serverPush("ag_ui_event", {
+        type: EventType.RUN_STARTED,
+        threadId: "thread-1",
+        run_id: "backend-run-1",
+        input: {
+          messages: [
+            {
+              id: "msg-1",
+              role: "user",
+              content: "hello",
+            },
+          ],
+        },
+      } as BaseEvent);
+      channel.serverPush("replay_complete", { latestEventId: "event-2" });
+      expect(completed).toBe(false);
+
+      channel.serverPush("stream_idle", { latestEventId: "event-2" });
+      await flushAsyncWork();
+
+      expect(events[0]).toEqual({
+        type: EventType.RUN_STARTED,
+        threadId: "thread-1",
+        run_id: "backend-run-1",
+        input: {
+          messages: [
+            {
+              id: "msg-1",
+              role: "user",
+              content: "hello",
+            },
+          ],
+        },
+      });
+      expect(completed).toBe(true);
+      expect(getCanonicalRunIdForTest(agent)).toBeNull();
+    });
+
+    it("resolves connectAgent and tears down the channel on stream_idle after replay", async () => {
+      mockFetch.mockResolvedValueOnce(await jsonResponse(runtimeCredentials()));
+
+      const agent = createAgent();
+      setThreadIdForTest(agent, "thread-1");
+
+      const promise = agent.connectAgent({ runId: "run-1" });
+      await waitForConnection(agent);
+
+      const socket = getSocket(agent)!;
+      const channel = getChannel(agent)!;
+      channel.triggerJoin("ok");
+      channel.serverPush("ag_ui_event", {
+        type: EventType.RUN_STARTED,
+        threadId: "thread-1",
+        run_id: "backend-run-1",
+        input: {
+          messages: [
+            {
+              id: "msg-1",
+              role: "user",
+              content: "hello",
+            },
+          ],
+        },
+        metadata: {
+          cpki_event_id: "event-1",
+          cpki_event_seq: 1,
+        },
+      } as BaseEvent);
+      channel.serverPush("replay_complete", { latestEventId: "event-1" });
+      await flushAsyncWork();
+
+      expect(channel.left).toBe(false);
+      expect(socket.disconnected).toBe(false);
+
+      channel.serverPush("stream_idle", { latestEventId: "event-1" });
+
+      const result = await expectConnectAgentToResolve(promise);
+
+      expect(result.newMessages).toEqual([
+        {
+          id: "msg-1",
+          role: "user",
+          content: "hello",
+        },
+      ]);
+      expect(channel.left).toBe(true);
+      expect(socket.disconnected).toBe(true);
+      expect(getChannel(agent)).toBeNull();
+      expect(getSocket(agent)).toBeNull();
+    });
+
+    it("sends the advanced replay cursor on the next connectAgent reconnect", async () => {
+      mockFetch
+        .mockResolvedValueOnce(await jsonResponse(runtimeCredentials()))
+        .mockResolvedValueOnce(await jsonResponse(runtimeCredentials()));
+
+      const agent = createAgent();
+      setThreadIdForTest(agent, "thread-1");
+
+      const firstConnectPromise = agent.connectAgent({ runId: "run-1" });
+      await waitForConnection(agent);
+
+      const firstChannel = getChannel(agent)!;
+      firstChannel.triggerJoin("ok");
+      firstChannel.serverPush("ag_ui_event", {
+        type: EventType.RUN_STARTED,
+        threadId: "thread-1",
+        run_id: "backend-run-1",
+        input: { messages: [] },
+        metadata: {
+          cpki_event_id: "event-1",
+          cpki_event_seq: 1,
+        },
+      } as BaseEvent);
+      firstChannel.serverPush("replay_complete", {
+        latestEventId: "event-2",
+      });
+      firstChannel.serverPush("stream_idle", {
+        latestEventId: "event-3",
+      });
+      await expectConnectAgentToResolve(firstConnectPromise);
+
+      const secondConnectPromise = agent.connectAgent({ runId: "run-2" });
+      await waitForConnection(agent);
+
+      expect(JSON.parse(mockFetch.mock.calls[1]![1].body)).toMatchObject({
+        lastSeenEventId: "event-3",
+      });
+      expect(getChannel(agent)!.params).toEqual({
+        stream_mode: "connect",
+        last_seen_event_id: "event-3",
+      });
+
+      getChannel(agent)!.triggerJoin("ok");
+      getChannel(agent)!.serverPush("replay_complete", {
+        latestEventId: "event-3",
+      });
+      getChannel(agent)!.serverPush("stream_idle", {
+        latestEventId: "event-3",
+      });
+      await expectConnectAgentToResolve(secondConnectPromise);
+    });
+
+    it("keeps the durable event cursor when control events only carry ingestion ids", async () => {
+      mockFetch
+        .mockResolvedValueOnce(await jsonResponse(runtimeCredentials()))
+        .mockResolvedValueOnce(await jsonResponse(runtimeCredentials()));
+
+      const agent = createAgent();
+      setThreadIdForTest(agent, "thread-1");
+
+      const firstConnectPromise = agent.connectAgent({ runId: "run-1" });
+      await waitForConnection(agent);
+
+      const firstChannel = getChannel(agent)!;
+      firstChannel.triggerJoin("ok");
+      firstChannel.serverPush("ag_ui_event", {
+        type: EventType.RUN_STARTED,
+        threadId: "thread-1",
+        run_id: "backend-run-1",
+        input: { messages: [] },
+        metadata: {
+          cpki_event_id: "zzzz-runner-event",
+          cpki_event_seq: 3,
+        },
+      } as BaseEvent);
+      firstChannel.serverPush("replay_complete", {
+        latestEventId: "cpki_ingested_00000000000000000002",
+      });
+      firstChannel.serverPush("stream_idle", {
+        latestEventId: "cpki_ingested_00000000000000000002",
+      });
+      await expectConnectAgentToResolve(firstConnectPromise);
+
+      const secondConnectPromise = agent.connectAgent({ runId: "run-2" });
+      await waitForConnection(agent);
+
+      expect(JSON.parse(mockFetch.mock.calls[1]![1].body)).toMatchObject({
+        lastSeenEventId: "zzzz-runner-event",
+      });
+      expect(getChannel(agent)!.params).toEqual({
+        stream_mode: "connect",
+        last_seen_event_id: "zzzz-runner-event",
+      });
+
+      getChannel(agent)!.triggerJoin("ok");
+      getChannel(agent)!.serverPush("replay_complete", {
+        latestEventId: "zzzz-runner-event",
+      });
+      getChannel(agent)!.serverPush("stream_idle", {
+        latestEventId: "zzzz-runner-event",
+      });
+      await expectConnectAgentToResolve(secondConnectPromise);
+    });
+
+    it("does not use metadata cpki_ingested as a durable reconnect cursor", async () => {
+      mockFetch
+        .mockResolvedValueOnce(await jsonResponse(runtimeCredentials()))
+        .mockResolvedValueOnce(await jsonResponse(runtimeCredentials()));
+
+      const agent = createAgent();
+      setThreadIdForTest(agent, "thread-1");
+
+      const firstConnectPromise = agent.connectAgent({ runId: "run-1" });
+      await waitForConnection(agent);
+
+      const firstChannel = getChannel(agent)!;
+      firstChannel.triggerJoin("ok");
+      firstChannel.serverPush("ag_ui_event", {
+        type: EventType.RUN_STARTED,
+        threadId: "thread-1",
+        run_id: "backend-run-1",
+        input: { messages: [] },
+        metadata: {
+          cpki_ingested: "cpki_ingested_00000000000000000011",
+        },
+      } as BaseEvent);
+      firstChannel.serverPush("replay_complete", {});
+      firstChannel.serverPush("stream_idle", {});
+      await expectConnectAgentToResolve(firstConnectPromise);
+
+      const secondConnectPromise = agent.connectAgent({ runId: "run-2" });
+      await waitForConnection(agent);
+
+      expect(JSON.parse(mockFetch.mock.calls[1]![1].body)).toMatchObject({
+        lastSeenEventId: null,
+      });
+      expect(getChannel(agent)!.params).toEqual({
+        stream_mode: "connect",
+        last_seen_event_id: null,
+      });
+
+      getChannel(agent)!.triggerJoin("ok");
+      getChannel(agent)!.serverPush("replay_complete", {});
+      getChannel(agent)!.serverPush("stream_idle", {});
+      await expectConnectAgentToResolve(secondConnectPromise);
+    });
+
+    it("errors the observable on connect fetch failure", async () => {
+      mockFetch.mockRejectedValueOnce(new Error("Network error"));
+
+      const agent = createAgent();
+      const result = await new Promise<{
+        error: Error | null;
+      }>((resolve) => {
+        connectWithTestAccess(agent, defaultInput).subscribe({
+          next: () => {},
+          error: (error: Error) => resolve({ error }),
+        });
+      });
+
+      expect(result.error).toBeInstanceOf(Error);
+      expect(result.error!.message).toContain("REST connect request failed");
+      expect(getSocket(agent)).toBeNull();
+    });
+
+    it("errors the observable on join error", async () => {
+      mockFetch.mockResolvedValueOnce(await jsonResponse(runtimeCredentials()));
+
+      const agent = createAgent();
+      const promise = connectAgent(agent);
+      await waitForConnection(agent);
+
+      getChannel(agent)!.triggerJoin("error", { reason: "unauthorized" });
+
+      const result = await promise;
+      expect(result.error).toBeInstanceOf(Error);
+      expect(result.error!.message).toContain("Failed to join channel");
+    });
+
+    it("does not error the observable on a single channel crash (Phoenix retries)", async () => {
+      mockFetch.mockResolvedValueOnce(await jsonResponse(runtimeCredentials()));
+
+      const agent = createAgent();
+      let error: Error | null = null;
+      connectWithTestAccess(agent, defaultInput).subscribe({
+        next: () => {},
+        error: (err: Error) => {
+          error = err;
+        },
+      });
+      await waitForConnection(agent);
+
+      const channel = getChannel(agent)!;
+      channel.triggerJoin("ok");
+      channel.triggerError("server crash");
+
+      expect(error).toBeNull();
+    });
+
+    it("reacquires connect credentials after MAX_CONSECUTIVE_ERRORS socket errors", async () => {
+      mockFetch.mockResolvedValueOnce(
+        await jsonResponse(runtimeCredentials({ joinToken: "jt-1" })),
+      );
+      mockFetch.mockResolvedValueOnce(
+        await jsonResponse(runtimeCredentials({ joinToken: "jt-2" })),
+      );
+
+      const agent = createAgent();
+      connectWithTestAccess(agent, defaultInput).subscribe({
+        next: () => {},
+        error: () => {},
+      });
+      await waitForConnection(agent);
+
+      getChannel(agent)!.triggerJoin("ok");
+
+      for (let i = 0; i < 5; i++) {
+        getSocket(agent)!.triggerError(new Error("network failure"));
+      }
+
+      await waitForConnection(agent);
+
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(getSocket(agent)!.opts.params).toMatchObject({
+        join_token: "jt-2",
+      });
+    });
+
+    it("uses one captured replay cursor for REST refresh and Phoenix rejoin after socket exhaustion", async () => {
+      let resolveRefreshCredentials: (response: Response) => void = () => {};
+      const refreshCredentials = new Promise<Response>((resolve) => {
+        resolveRefreshCredentials = resolve;
+      });
+      mockFetch
+        .mockResolvedValueOnce(
+          await jsonResponse(runtimeCredentials({ joinToken: "jt-1" })),
+        )
+        .mockReturnValueOnce(refreshCredentials);
+
+      const agent = createAgent();
+      connectWithTestAccess(agent, defaultInput).subscribe({
+        next: () => {},
+        error: () => {},
+      });
+      await waitForConnection(agent);
+
+      const firstChannel = getChannel(agent)!;
+      firstChannel.triggerJoin("ok");
+      firstChannel.serverPush("ag_ui_event", {
+        type: EventType.TEXT_MESSAGE_CONTENT,
+        metadata: {
+          cpki_event_id: "event-before-refresh",
+          cpki_event_seq: 1,
+        },
+      } as BaseEvent);
+
+      for (let index = 0; index < 5; index += 1) {
+        getSocket(agent)!.triggerError(new Error("network failure"));
+      }
+      await flushAsyncWork();
+
+      firstChannel.serverPush("ag_ui_event", {
+        type: EventType.TEXT_MESSAGE_CONTENT,
+        metadata: {
+          cpki_event_id: "event-after-rest-request",
+          cpki_event_seq: 2,
+        },
+      } as BaseEvent);
+      resolveRefreshCredentials(
+        await jsonResponse(runtimeCredentials({ joinToken: "jt-2" })),
+      );
+      await waitForConnection(agent);
+
+      expect(JSON.parse(mockFetch.mock.calls[1]![1].body)).toMatchObject({
+        lastSeenEventId: "event-before-refresh",
+      });
+      expect(getChannel(agent)!.params).toMatchObject({
+        stream_mode: "connect",
+        last_seen_event_id: "event-before-refresh",
+      });
+    });
+
+    it("does not treat a synthetic connect run id as abortable run identity", async () => {
+      mockFetch.mockResolvedValueOnce(
+        await jsonResponse(runtimeCredentials({ runId: null })),
+      );
+
+      const agent = createAgent();
+      connectWithTestAccess(agent, {
+        ...defaultInput,
+        runId: "synthetic-connect-run",
+      }).subscribe({
+        next: () => {},
+        error: () => {},
+      });
+      await waitForConnection(agent);
+
+      const channel = getChannel(agent)!;
+      channel.triggerJoin("ok");
+
+      expect(getCanonicalRunIdForTest(agent)).toBeNull();
+
+      agent.abortRun();
+
+      expect(channel.pushLog).toHaveLength(0);
+      expect(channel.left).toBe(true);
+    });
+  });
+
+  describe("clone", () => {
+    it("returns a new IntelligenceAgent with the same config", () => {
+      const agent = createAgent();
+      const cloned = agent.clone();
+
+      expect(cloned).toBeInstanceOf(IntelligenceAgent);
+      expect(cloned).not.toBe(agent);
+      expect(getConfigForTest(cloned)).toEqual(getConfigForTest(agent));
+    });
+
+    it("shares the replay cursor across clones (clearing on one clears for both)", async () => {
+      const agent = createAgent();
+      agent.run(defaultInput).subscribe({ next: () => {}, error: () => {} });
+      await waitForConnection(agent);
+
+      const runChannel = getChannel(agent)!;
+      runChannel.triggerJoin("ok");
+      runChannel.serverPush("ag_ui_event", {
+        type: EventType.TEXT_MESSAGE_CONTENT,
+        metadata: {
+          cpki_event_id: "event-2",
+          cpki_event_seq: 2,
+        },
+      } as BaseEvent);
+
+      const cloned = agent.clone();
+      // Clearing the cursor on the original should be reflected on the
+      // clone because they share `sharedState`. This is what makes a
+      // RunHandler-driven thread switch work end-to-end across the
+      // proxy clones returned by useAgent's per-thread WeakMap.
+      agent.clearReconnectCursor("thread-1");
+
+      const reconnectInput: RunAgentInput = {
+        ...defaultInput,
+        messages: [
+          {
+            id: "msg-1",
+            role: "user",
+            content: "hello",
+          },
+        ],
+      };
+      mockFetch.mockResolvedValueOnce(await jsonResponse(runtimeCredentials()));
+      connectWithTestAccess(cloned, reconnectInput).subscribe({
+        next: () => {},
+        error: () => {},
+      });
+      await waitForConnection(cloned);
+
+      const connectChannel = getChannel(cloned)!;
+      expect(connectChannel.params).toEqual({
+        stream_mode: "connect",
+        last_seen_event_id: null,
+      });
+    });
+
+    it("a clone's connect() resumes from the cursor inherited via sharedState", async () => {
+      const agent = createAgent();
+      agent.run(defaultInput).subscribe({ next: () => {}, error: () => {} });
+      await waitForConnection(agent);
+
+      const runChannel = getChannel(agent)!;
+      runChannel.triggerJoin("ok");
+      runChannel.serverPush("ag_ui_event", {
+        type: EventType.TEXT_MESSAGE_CONTENT,
+        metadata: {
+          cpki_event_id: "event-2",
+          cpki_event_seq: 2,
+        },
+      } as BaseEvent);
+
+      const cloned = agent.clone();
+      mockFetch.mockResolvedValueOnce(await jsonResponse(runtimeCredentials()));
+      connectWithTestAccess(cloned, defaultInput).subscribe({
+        next: () => {},
+        error: () => {},
+      });
+      await waitForConnection(cloned);
+
+      // No explicit clearReconnectCursor — the clone inherits the
+      // original's `lastSeenEventIds` map and resumes from event-2.
+      expect(JSON.parse(mockFetch.mock.calls[1]![1].body)).toMatchObject({
+        lastSeenEventId: "event-2",
+      });
+
+      const connectChannel = getChannel(cloned)!;
+      expect(connectChannel.params).toEqual({
+        stream_mode: "connect",
+        last_seen_event_id: "event-2",
+      });
+    });
+  });
+});
+
+describe("ProxiedCopilotRuntimeAgent (intelligence mode)", () => {
+  // Mirrors the real demo wiring: Vite app → BFF runtime that exposes a
+  // ProxiedCopilotRuntimeAgent in intelligence mode → IntelligenceAgent delegate
+  // talking to the realtime gateway. On thread resume, gateway replay emits
+  // STATE_SNAPSHOT events captured during the original run;
+  // the proxy bridges delegate.state → proxy.state so useAgent re-renders.
+  it("hydrates proxy state from gateway replay STATE_SNAPSHOT events via the intelligence delegate", async () => {
+    const finalSnapshot = {
+      todos: [
+        { id: "1", title: "Read CopilotKit docs", status: "pending" },
+        { id: "2", title: "Build a CopilotKit prototype", status: "pending" },
+        { id: "3", title: "Explore agent state", status: "pending" },
+      ],
+    };
+
+    mockFetch.mockResolvedValueOnce(await jsonResponse(runtimeCredentials()));
+
+    const agent = new ProxiedCopilotRuntimeAgent({
+      runtimeUrl: "http://localhost:4000/api/copilotkit",
+      agentId: "default",
+      runtimeMode: RUNTIME_MODE_INTELLIGENCE,
+      intelligence: { wsUrl: "ws://localhost:4401/client" },
+    });
+    agent.threadId = "thread-1";
+
+    const promise = agent.connectAgent({ runId: "run-1" });
+    await flushAsyncWork();
+    await waitForConnection(
+      (agent as unknown as { delegate: IntelligenceAgentInstance }).delegate,
+    );
+
+    const delegate = (
+      agent as unknown as { delegate: IntelligenceAgentInstance }
+    ).delegate;
+    const channel = getChannel(delegate)!;
+    channel.triggerJoin("ok");
+    channel.serverPush("ag_ui_event", {
+      type: EventType.RUN_STARTED,
+      threadId: "thread-1",
+      run_id: "backend-run-1",
+      input: { messages: [] },
+    } as BaseEvent);
+    channel.serverPush("ag_ui_event", {
+      type: EventType.STATE_SNAPSHOT,
+      snapshot: {
+        todos: [{ id: "1", title: "Read CopilotKit docs", status: "pending" }],
+      },
+    } as BaseEvent);
+    channel.serverPush("ag_ui_event", {
+      type: EventType.STATE_SNAPSHOT,
+      snapshot: finalSnapshot,
+    } as BaseEvent);
+    channel.serverPush("ag_ui_event", {
+      type: EventType.RUN_FINISHED,
+    } as BaseEvent);
+    channel.serverPush("replay_complete", { latestEventId: "event-4" });
+    channel.serverPush("stream_idle", { latestEventId: "event-4" });
+
+    await promise;
+
+    expect(agent.state).toEqual(finalSnapshot);
+  });
+
+  // The delegate is created once and cached for the lifetime of the proxy, so
+  // anything it copied out of the proxy at construction time goes stale the
+  // moment the proxy is updated. `CopilotKitCore.setHeaders` /
+  // `applyHeadersToAgent` write the proxy's `headers`; the Intelligence join
+  // request must read that live value, not the construction-time copy.
+  describe("delegate reads live proxy headers", () => {
+    /** Drive one full connect cycle to resolution. */
+    async function completeConnect(
+      agent: InstanceType<typeof ProxiedCopilotRuntimeAgent>,
+      runId: string,
+      eventId: string,
+    ) {
+      const promise = agent.connectAgent({ runId });
+      await flushAsyncWork();
+      const delegate = (
+        agent as unknown as { delegate: IntelligenceAgentInstance }
+      ).delegate;
+      await waitForConnection(delegate);
+      const channel = getChannel(delegate)!;
+      channel.triggerJoin("ok");
+      channel.serverPush("replay_complete", { latestEventId: eventId });
+      channel.serverPush("stream_idle", { latestEventId: eventId });
+      await promise;
+    }
+
+    function joinHeaders(callIndex: number) {
+      return mockFetch.mock.calls[callIndex]![1].headers as Record<
+        string,
+        string
+      >;
+    }
+
+    it("sends a header changed after the delegate was created", async () => {
+      const agent = new ProxiedCopilotRuntimeAgent({
+        runtimeUrl: "http://localhost:4000/api/copilotkit",
+        agentId: "default",
+        runtimeMode: RUNTIME_MODE_INTELLIGENCE,
+        intelligence: { wsUrl: "ws://localhost:4401/client" },
+        headers: { "X-Tenant": "tenant-a" },
+      });
+      agent.threadId = "thread-1";
+
+      // First connect: builds and caches the delegate under tenant A.
+      await completeConnect(agent, "run-1", "event-1");
+      expect(joinHeaders(0)).toMatchObject({ "X-Tenant": "tenant-a" });
+
+      // Tenant switch — this is exactly what applyHeadersToAgent does to the
+      // proxy when the `headers` prop changes.
+      agent.headers = { "X-Tenant": "tenant-b" };
+
+      await completeConnect(agent, "run-2", "event-2");
+
+      expect(joinHeaders(1)).toMatchObject({ "X-Tenant": "tenant-b" });
+    });
+
+    // The report names both endpoints. `/run` reaches the delegate through
+    // `#runViaDelegate`, which shares `resolveDelegate` with the connect path —
+    // pin that rather than infer it from the shared call site.
+    it("sends a changed header on the run path too", async () => {
+      const agent = new ProxiedCopilotRuntimeAgent({
+        runtimeUrl: "http://localhost:4000/api/copilotkit",
+        agentId: "default",
+        runtimeMode: RUNTIME_MODE_INTELLIGENCE,
+        intelligence: { wsUrl: "ws://localhost:4401/client" },
+        headers: { "X-Tenant": "tenant-a" },
+      });
+      agent.threadId = "thread-1";
+
+      // First connect builds and caches the delegate under tenant A.
+      await completeConnect(agent, "run-1", "event-1");
+
+      agent.headers = { "X-Tenant": "tenant-b" };
+
+      // `run` is protected on AbstractAgent; concrete agents expose it.
+      (agent as unknown as { run(input: RunAgentInput): Observable<BaseEvent> })
+        .run({ ...defaultInput, runId: "run-2" })
+        .subscribe({ next: () => {}, error: () => {} });
+      await flushAsyncWork();
+
+      const runCall = mockFetch.mock.calls.find((call) =>
+        String(call[0]).includes("/run"),
+      );
+      expect(runCall).toBeDefined();
+      expect(runCall![1].headers).toMatchObject({ "X-Tenant": "tenant-b" });
+    });
+
+    it("sends credentials changed after the delegate was created", async () => {
+      const agent = new ProxiedCopilotRuntimeAgent({
+        runtimeUrl: "http://localhost:4000/api/copilotkit",
+        agentId: "default",
+        runtimeMode: RUNTIME_MODE_INTELLIGENCE,
+        intelligence: { wsUrl: "ws://localhost:4401/client" },
+      });
+      agent.threadId = "thread-1";
+
+      await completeConnect(agent, "run-1", "event-1");
+      expect(mockFetch.mock.calls[0]![1].credentials).toBeUndefined();
+
+      agent.credentials = "include";
+
+      await completeConnect(agent, "run-2", "event-2");
+
+      expect(mockFetch.mock.calls[1]![1].credentials).toBe("include");
+    });
+
+    // `IntelligenceAgent.clone()` hands the copy the same config object, so the
+    // headers setter must replace that object rather than write through it.
+    // The join path alone would mask an in-place write (syncDelegate rewrites
+    // headers just before every join), but the credential re-acquisition inside
+    // a running pipeline does not re-sync — so a clone's tenant could ride out
+    // on the original's refresh. This pins the invariant directly.
+    it("does not let a clone's header update reach the original", () => {
+      const original = new IntelligenceAgent({
+        url: "ws://localhost:4401/client",
+        runtimeUrl: "http://localhost:4000",
+        agentId: "default",
+        headers: { "X-Tenant": "tenant-a" },
+      });
+
+      const copy = original.clone();
+      copy.headers = { "X-Tenant": "tenant-b" };
+
+      expect(copy.headers).toEqual({ "X-Tenant": "tenant-b" });
+      expect(original.headers).toEqual({ "X-Tenant": "tenant-a" });
+    });
+
+    it("keeps a per-thread clone's headers independent of the original", async () => {
+      const agent = new ProxiedCopilotRuntimeAgent({
+        runtimeUrl: "http://localhost:4000/api/copilotkit",
+        agentId: "default",
+        runtimeMode: RUNTIME_MODE_INTELLIGENCE,
+        intelligence: { wsUrl: "ws://localhost:4401/client" },
+        headers: { "X-Tenant": "tenant-a" },
+      });
+      agent.threadId = "thread-1";
+
+      await completeConnect(agent, "run-1", "event-1");
+
+      // End-to-end companion to the invariant test above: each proxy's joins
+      // carry its own tenant. This does NOT guard the copy-on-write setter —
+      // syncDelegate rewrites headers before every join, so it passes even with
+      // an in-place write. The test above is what pins that.
+      const clone = agent.clone();
+      clone.headers = { "X-Tenant": "tenant-b" };
+      await completeConnect(clone, "run-2", "event-2");
+
+      await completeConnect(agent, "run-3", "event-3");
+
+      expect(joinHeaders(1)).toMatchObject({ "X-Tenant": "tenant-b" });
+      expect(joinHeaders(2)).toMatchObject({ "X-Tenant": "tenant-a" });
+    });
+  });
+});

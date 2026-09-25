@@ -1,0 +1,134 @@
+name: Template Metrics
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "templates/**"
+      - "packages/ui/**"
+      - "scripts/template-metrics.mjs"
+      - ".github/workflows/template-metrics.yaml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Only these are built for bundle measurement; next build is the expensive part.
+  BUNDLE_TEMPLATES: "default minimal"
+  # Exceeding MAX_LOC_INCREASE only warns; MAX_LOC_HARD_INCREASE fails the gate.
+  MAX_LOC_INCREASE: "50"
+  MAX_LOC_HARD_INCREASE: "300"
+
+jobs:
+  gate:
+    name: Footprint Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # ratchet:actions/setup-node@v7.0.0
+        with:
+          node-version: 24
+
+      # LOC reads tracked sources only; no dependency install needed.
+      - name: Compare against merge-base
+        run: node scripts/template-metrics.mjs check .
+
+  report:
+    name: LOC + Bundle Size
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout code repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ratchet:actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup pnpm and node.js
+        uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # ratchet:pnpm/setup@v2.1.0
+        with:
+          runtime: node@24
+          cache: true
+          install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build templates (bundle subset)
+        env:
+          # next build needs these public vars defined; values are placeholders.
+          NEXT_PUBLIC_ASSISTANT_BASE_URL: "https://example.com"
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_placeholder"
+          NEXT_TELEMETRY_DISABLED: "1"
+          TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+          TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+        run: |
+          filters=""
+          for t in $BUNDLE_TEMPLATES; do
+            filters="$filters --filter=./templates/$t"
+          done
+          # turbo pulls in the @assistant-ui/* workspace deps each template needs.
+          pnpm turbo build $filters
+
+      - name: Measure metrics
+        run: |
+          node scripts/template-metrics.mjs measure . metrics-head.json
+          node scripts/template-metrics.mjs measure-base . metrics-base-main.json
+
+      - name: Build report
+        run: |
+          node scripts/template-metrics.mjs report metrics-base-main.json metrics-head.json metrics-report.md metrics-comment.txt
+          cat metrics-report.md
+
+      # continue-on-error: a fork PR's read-only token makes commenting 403; the
+      # comment is informational, so that must not fail the job.
+      - name: Post / update PR comment
+        continue-on-error: true
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # ratchet:actions/github-script@v9.0.0
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('metrics-report.md', 'utf8');
+            const marker = '<!-- template-metrics -->';
+            // paginate: a long PR thread can push the sticky comment past the
+            // first 30, and missing it would post a duplicate on every re-run.
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find((c) => c.body?.includes(marker));
+            const shouldCreate = fs.readFileSync('metrics-comment.txt', 'utf8').trim() === 'post';
+            if (!existing && !shouldCreate) {
+              console.log('No LOC changes; skipping template metrics comment.');
+              return;
+            }
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }

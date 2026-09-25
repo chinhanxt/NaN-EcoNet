@@ -1,0 +1,304 @@
+---
+title: Speech-to-Text Dictation
+description: Add voice dictation to your AI chat composer with the Web Speech API or a custom adapter. Speech-to-text in React, integrated through assistant-ui.
+platforms: ["react"]
+---
+
+import { DictationSample } from "@/components/pages/docs/samples/dictation";
+
+assistant-ui supports speech-to-text (dictation) via the `DictationAdapter` interface. Users speak into the microphone and transcribed text lands in the composer, either as interim preview or as committed final text.
+
+Dictation is the push-to-talk input mode. For a live duplex conversation, see [Realtime Voice](/docs/guides/voice). For reading messages aloud, see [Speech](/docs/guides/speech).
+
+<DictationSample />
+
+## WebSpeechDictationAdapter
+
+The zero-config built-in adapter uses the browser's Web Speech API (`SpeechRecognition` / `webkitSpeechRecognition`). It works in Chrome, Edge, and Safari. Check [browser compatibility](https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition#browser_compatibility) for details.
+
+```tsx
+import { WebSpeechDictationAdapter } from "@assistant-ui/react";
+
+const runtime = useChatRuntime({
+  adapters: {
+    dictation: new WebSpeechDictationAdapter({
+      language: "en-US", // default: browser language
+      continuous: true, // keep recording after pauses (default: true)
+      interimResults: true, // emit interim transcripts (default: true)
+    }),
+  },
+});
+```
+
+You can gate the feature on browser support:
+
+```tsx
+import { WebSpeechDictationAdapter } from "@assistant-ui/react";
+
+if (WebSpeechDictationAdapter.isSupported()) {
+  // Dictation is available
+}
+```
+
+## DictationAdapter interface
+
+Custom providers implement the same contract. The interface is defined in `@assistant-ui/core` and re-exported from `@assistant-ui/react`:
+
+```tsx
+import type { DictationAdapter } from "@assistant-ui/react";
+
+type DictationAdapter = {
+  listen: () => DictationAdapter.Session;
+  disableInputDuringDictation?: boolean;
+};
+
+namespace DictationAdapter {
+  type Status =
+    | { type: "starting" | "running" }
+    | {
+        type: "ended";
+        reason: "stopped" | "cancelled" | "error";
+      };
+
+  type Result = {
+    transcript: string;
+    isFinal?: boolean;
+  };
+
+  type Session = {
+    status: Status;
+    stop: () => Promise<void>;
+    cancel: () => void;
+    onSpeechStart: (callback: () => void) => Unsubscribe;
+    onSpeechEnd: (callback: (result: Result) => void) => Unsubscribe;
+    onSpeech: (callback: (result: Result) => void) => Unsubscribe;
+  };
+}
+```
+
+`listen()` starts a session. The session reports status, accepts `stop` / `cancel`, and emits speech events through the three `on*` methods (each returns an unsubscribe function).
+
+### Interim vs final results
+
+The `onSpeech` callback receives results with an optional `isFinal` flag:
+
+- `isFinal: true` (or omitted): text is committed into the composer input.
+- `isFinal: false`: text is shown as a preview that later interim results replace until a final result commits it.
+
+Both interim and final results render in the input field, similar to native dictation on mobile.
+
+### Disabling input during dictation
+
+Some services return cumulative transcripts that conflict with simultaneous typing. Set `disableInputDuringDictation` to block the text input while a session is active:
+
+```tsx
+import type { DictationAdapter } from "@assistant-ui/react";
+
+class MyAdapter implements DictationAdapter {
+  disableInputDuringDictation = true;
+
+  listen() {
+    // ...
+  }
+}
+```
+
+<Callout type="info">
+  When a message is sent during an active dictation session, the session is automatically stopped.
+</Callout>
+
+## UI: ComposerPrimitive.Dictate
+
+The dictation trigger is `ComposerPrimitive.Dictate`. Pair it with `ComposerPrimitive.StopDictation` to end the session. Both live under `ComposerPrimitive` in `@assistant-ui/react`.
+
+```tsx
+import { AuiIf, ComposerPrimitive } from "@assistant-ui/react";
+import { MicIcon, SquareIcon } from "lucide-react";
+
+const ComposerWithDictation = () => (
+  <ComposerPrimitive.Root>
+    <ComposerPrimitive.Input />
+
+    <AuiIf condition={(s) => s.composer.dictation == null}>
+      <ComposerPrimitive.Dictate>
+        <MicIcon />
+      </ComposerPrimitive.Dictate>
+    </AuiIf>
+
+    <AuiIf condition={(s) => s.composer.dictation != null}>
+      <ComposerPrimitive.StopDictation>
+        <SquareIcon className="animate-pulse" />
+      </ComposerPrimitive.StopDictation>
+    </AuiIf>
+
+    <ComposerPrimitive.Send />
+  </ComposerPrimitive.Root>
+);
+```
+
+`ComposerPrimitive.Dictate` is disabled when no dictation adapter is configured. For a separate interim transcript display, `ComposerPrimitive.DictationTranscript` and `composer.dictation?.transcript` are available.
+
+## Server-side transcription
+
+Browser speech recognition is convenient, but production apps often need higher accuracy, more languages, or a consistent model across devices. Implement a custom `DictationAdapter` that records audio with `MediaRecorder`, then POST the blob to a Next.js route that calls the AI SDK's `transcribe` API.
+
+### API route
+
+```ts title="app/api/transcribe/route.ts"
+import { transcribe } from "ai";
+import { openai } from "@ai-sdk/openai";
+
+export async function POST(req: Request) {
+  const formData = await req.formData();
+  const audio = formData.get("audio");
+
+  if (!(audio instanceof Blob)) {
+    return Response.json({ error: "audio required" }, { status: 400 });
+  }
+
+  const result = await transcribe({
+    model: openai.transcription("whisper-1"),
+    audio: new Uint8Array(await audio.arrayBuffer()),
+  });
+
+  return Response.json({ text: result.text });
+}
+```
+
+`transcribe` is the stable export on the `ai` package. It accepts a transcription model and audio as `DataContent` (for example a `Uint8Array`) or a `URL`, and returns a `TranscriptionResult` whose `text` field is the full transcript.
+
+### Adapter
+
+```tsx title="lib/server-dictation-adapter.ts"
+import type { DictationAdapter } from "@assistant-ui/react";
+
+export class ServerDictationAdapter implements DictationAdapter {
+  constructor(private endpoint = "/api/transcribe") {}
+
+  listen(): DictationAdapter.Session {
+    const speechStart = new Set<() => void>();
+    const speechEnd = new Set<(r: DictationAdapter.Result) => void>();
+    const speech = new Set<(r: DictationAdapter.Result) => void>();
+
+    let mediaRecorder: MediaRecorder | null = null;
+    let stream: MediaStream | null = null;
+    let cancelled = false;
+    const chunks: BlobPart[] = [];
+
+    const session: DictationAdapter.Session = {
+      status: { type: "starting" },
+
+      stop: async () => {
+        mediaRecorder?.stop();
+      },
+
+      cancel: () => {
+        cancelled = true;
+        mediaRecorder?.stop();
+        stream?.getTracks().forEach((t) => t.stop());
+        session.status = { type: "ended", reason: "cancelled" };
+      },
+
+      onSpeechStart: (cb) => {
+        speechStart.add(cb);
+        return () => speechStart.delete(cb);
+      },
+      onSpeechEnd: (cb) => {
+        speechEnd.add(cb);
+        return () => speechEnd.delete(cb);
+      },
+      onSpeech: (cb) => {
+        speech.add(cb);
+        return () => speech.delete(cb);
+      },
+    };
+
+    void (async () => {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (cancelled) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) chunks.push(e.data);
+        };
+        mediaRecorder.onstart = () => {
+          session.status = { type: "running" };
+          for (const cb of speechStart) cb();
+        };
+        mediaRecorder.onstop = async () => {
+          stream?.getTracks().forEach((t) => t.stop());
+          if (cancelled) return;
+          try {
+            const blob = new Blob(chunks, {
+              type: mediaRecorder?.mimeType || "audio/webm",
+            });
+            const body = new FormData();
+            body.append("audio", blob, "dictation.webm");
+
+            const res = await fetch(this.endpoint, {
+              method: "POST",
+              body,
+            });
+            if (!res.ok) throw new Error("transcription failed");
+
+            const { text } = (await res.json()) as { text: string };
+            const result: DictationAdapter.Result = {
+              transcript: text,
+              isFinal: true,
+            };
+            for (const cb of speech) cb(result);
+            for (const cb of speechEnd) cb(result);
+            session.status = { type: "ended", reason: "stopped" };
+          } catch {
+            session.status = { type: "ended", reason: "error" };
+          }
+        };
+        mediaRecorder.start();
+      } catch {
+        session.status = { type: "ended", reason: "error" };
+      }
+    })();
+
+    return session;
+  }
+}
+```
+
+Wire it like any other adapter:
+
+```tsx
+import { ServerDictationAdapter } from "@/lib/server-dictation-adapter";
+
+const runtime = useChatRuntime({
+  adapters: {
+    dictation: new ServerDictationAdapter("/api/transcribe"),
+  },
+});
+```
+
+This pattern records until the user stops dictation, then commits a single final transcript. For streaming partials, keep the same `DictationAdapter` surface and emit `isFinal: false` results as your provider produces them.
+
+## Custom realtime providers
+
+You can implement `DictationAdapter` against any streaming STT service. [ElevenLabs Scribe](https://elevenlabs.io/docs/overview/capabilities/speech-to-text) is one option for low-latency WebSocket transcription; scaffold a full example with:
+
+```bash
+npx assistant-ui create my-app -e with-elevenlabs-scribe
+```
+
+Cumulative transcript services should set `disableInputDuringDictation: true` so interim text does not fight the user's keyboard.
+
+The example keeps the ElevenLabs API key server-side, and its token route accepts a request only when `Sec-Fetch-Site` is `same-origin` or `none`, falling back to comparing the `Origin` header against the request URL for clients that omit Fetch Metadata.
+
+<Callout type="warn">
+  A request-context check is not authentication. Before deploying, require your application session in the token route and apply a durable rate limit, so anonymous callers cannot consume transcription capacity.
+</Callout>
+
+## Related guides
+
+- [Realtime Voice](/docs/guides/voice): duplex voice sessions (`RealtimeVoiceAdapter`, `createVoiceSession`, voice UI component).
+- [Speech](/docs/guides/speech): text-to-speech for assistant messages.
+- [Speech and Dictation API reference](/docs/api-reference/voice/speech-dictation): generated type docs.
