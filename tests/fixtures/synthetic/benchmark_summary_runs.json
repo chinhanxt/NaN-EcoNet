@@ -18,3 +18,4 @@
 {"run_id": 93, "date": "2026-09-25", "task": "docs(benchmarks): xuat ban ho so phuong phap do va tap du lieu thuc nghiem chi tiet", "passed": true}
 {"run_id": 94, "date": "2026-09-25", "task": "docs(readme): tinh gon noi dung duoi 280 dong giu tron ven 8 so do truc quan", "passed": true}
 {"run_id": 95, "date": "2026-09-25", "task": "docs(summary): hoan thien bao cao thuyet minh san pham toan dien cho hoi dong", "passed": true}
+{"run_id": 96, "date": "2026-09-25", "task": "docs(eval): phan tich do nhay tham so alpha va beta cua 3D-PACO trong gio cao diem", "passed": true}
