@@ -1,0 +1,30 @@
+{
+  "name": "@enterprise/agent-server",
+  "version": "1.0.0",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/src/server.js",
+    "dev": "node --watch dist/src/server.js",
+    "test": "node --test dist/test/**/*.test.js"
+  },
+  "dependencies": {
+    "@copilotkit/runtime": "^1.73.0",
+    "@enterprise/budget-connector": "workspace:*",
+    "@enterprise/diagram-engine": "workspace:*",
+    "@enterprise/omnichannel-core": "workspace:*",
+    "@enterprise/security-core": "workspace:*",
+    "@enterprise/shared-types": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "express": "^5.2.1",
+    "openai": "^7.19.0",
+    "pg": "^8.11.5"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.2",
+    "@types/pg": "^8.11.5",
+    "typescript": "^5.4.5"
+  }
+}
