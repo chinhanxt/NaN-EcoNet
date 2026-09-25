@@ -1,0 +1,13 @@
+{
+  "name": "enterprise-bi-copilot-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Enterprise Executive Copilot - Real Analytics, Zero Mock",
+  "scripts": {
+    "test": "pnpm --filter \"@enterprise/*\" test",
+    "build": "pnpm --filter \"@enterprise/*\" build"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}
