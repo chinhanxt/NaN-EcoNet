@@ -1,0 +1,9 @@
+.DS_Store
+node_modules/
+dist/
+.vercel/
+.env.local
+.env*.local
+npm-debug.log*
+.vercel
+/.alipay-sandbox.json

@@ -1,0 +1,24 @@
+{
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/community",
+      "destination": "/"
+    },
+    {
+      "source": "/community/",
+      "destination": "/"
+    },
+    {
+      "source": "/community/result",
+      "destination": "/"
+    },
+    {
+      "source": "/community/result/",
+      "destination": "/"
+    }
+  ]
+}
