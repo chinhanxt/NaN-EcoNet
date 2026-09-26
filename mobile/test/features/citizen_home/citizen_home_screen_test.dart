@@ -71,12 +71,11 @@ void main() {
       expect(find.textContaining('08:00 - 10:00'), findsOneWidget);
       expect(find.textContaining('🚚 Xe số 03 đang đến thu gom • Cách bạn 1.2 km'), findsOneWidget);
 
-      // Quick Actions Header & 4 Grid Cards
+      // Quick Actions Header & Cards
       expect(find.text('HÀNH ĐỘNG NHANH'), findsOneWidget);
       expect(find.byKey(const Key('quick_action_bulky_booking')), findsOneWidget);
       expect(find.byKey(const Key('quick_action_billing')), findsOneWidget);
       expect(find.byKey(const Key('quick_action_rewards')), findsOneWidget);
-      expect(find.byKey(const Key('quick_action_complaint')), findsOneWidget);
 
       // Card 3: Eco Impact (LazyInterface)
       expect(find.text('ĐÓNG GÓP MÔI TRƯỜNG (Eco Impact)'), findsOneWidget);
@@ -167,7 +166,7 @@ void main() {
       expect(find.textContaining('thành công'), findsOneWidget);
     });
 
-    testWidgets('5. Tapping complaint quick action opens feedback dialog',
+    testWidgets('5. Eco rewards sheet allows switching to Points History tab',
         (tester) async {
       tester.view.physicalSize = const Size(800, 1200);
       tester.view.devicePixelRatio = 1.0;
@@ -179,20 +178,16 @@ void main() {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
-      final complaintAction = find.byKey(const Key('quick_action_complaint'));
-      await tester.ensureVisible(complaintAction);
-      await tester.tap(complaintAction);
+      final rewardsAction = find.byKey(const Key('quick_action_rewards'));
+      await tester.ensureVisible(rewardsAction);
+      await tester.tap(rewardsAction);
       await tester.pumpAndSettle();
 
-      expect(find.text('Phản Ánh Thùng Rác'), findsOneWidget);
-      expect(find.text('Thùng quá tải'), findsOneWidget);
-      expect(find.text('Bị bốc mùi hôi'), findsOneWidget);
-
-      // Submit feedback
-      await tester.tap(find.text('Gửi phản ánh'));
+      expect(find.text('Lịch sử tích điểm'), findsOneWidget);
+      await tester.tap(find.text('Lịch sử tích điểm'));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Đã gửi phản ánh'), findsOneWidget);
+      expect(find.textContaining('Phân loại rác tái chế tuần qua'), findsOneWidget);
     });
 
     testWidgets('6. Tapping notifications bell button opens notifications sheet',

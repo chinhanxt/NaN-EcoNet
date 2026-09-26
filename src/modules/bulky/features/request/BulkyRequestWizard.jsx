@@ -333,7 +333,7 @@ export function BulkyRequestWizard({
       }
     } catch (error) {
       setErrors({
-        ai: error.message || 'Không nhận diện được ảnh bằng Gemini Vision.',
+        ai: error.message || 'Không nhận diện được ảnh bằng AI phân tích đồ vật.',
       });
     } finally {
       setIsAnalyzing(false);
@@ -654,7 +654,7 @@ export function BulkyRequestWizard({
                   </Box>
                   <Box>
                     <Typography variant="body2" sx={{ color: '#166534', fontWeight: 700 }}>
-                      Trợ lý AI Phân Loại
+                      AI phân tích đồ vật
                     </Typography>
                     <Typography variant="caption" sx={{ color: '#15803d', display: 'block' }}>
                       AI gợi ý loại đồ; bạn xác nhận số lượng và chọn kích thước

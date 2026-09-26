@@ -12,13 +12,15 @@ import 'ai_recognition_result.dart';
 class GeminiVisionService {
   static const List<String> candidateModels = [
     'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
     'gemini-3.6-flash',
   ];
 
   static const String defaultGeminiApiKey = String.fromEnvironment('GEMINI_API_KEY');
 
   static const String systemPrompt = '''
-Bạn là Trợ lý Giám định Thị giác AI chuyên nghiệp của Hệ thống Quản lý Rác cồng kềnh đô thị thông minh Smartbin (Chính quyền Xã/Phường thông minh).
+Bạn là AI phân tích đồ vật chuyên nghiệp của Hệ thống Quản lý Rác cồng kềnh đô thị thông minh Smartbin (Chính quyền Xã/Phường thông minh).
 Nhiệm vụ của bạn là phân tích (các) bức ảnh do người dân chụp và xuất kết quả theo định dạng JSON duy nhất.
 
 CÁC QUY TẮC THẨM ĐỊNH BẮT BUỘC:

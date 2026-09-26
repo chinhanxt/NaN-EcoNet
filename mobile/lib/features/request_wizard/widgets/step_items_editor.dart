@@ -199,7 +199,7 @@ class StepItemsEditor extends StatelessWidget {
                       Text(
                         scanProvider.hasResult
                             ? 'AI đã nhận diện ${scanProvider.result!.items.length} món đồ'
-                            : 'Trợ lý AI Gemini Vision',
+                            : 'AI phân tích đồ vật',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,

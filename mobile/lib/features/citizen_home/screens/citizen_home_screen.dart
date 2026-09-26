@@ -464,34 +464,76 @@ class CitizenHomeScreen extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        Row(
+        // Rewards Banner (Full Width - Replaced Complaint Tile)
+        _buildEcoRewardsBanner(
+          key: const Key('quick_action_rewards'),
+          points: points,
+          onTap: () => _showEcoRewardsSheet(context, points),
+        ),
+      ],
+    );
+  }
+
+  /// Full-width reward banner for Eco Points & drink vouchers
+  Widget _buildEcoRewardsBanner({
+    required Key key,
+    required int points,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      key: key,
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: BulkyColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: BulkyColors.border),
+          boxShadow: BulkyColors.softShadow,
+        ),
+        child: Row(
           children: [
-            Expanded(
-              child: _buildActionTile(
-                key: const Key('quick_action_rewards'),
-                emoji: '🎁',
-                title: 'ĐỔI ĐIỂM XANH',
-                subtitle: '$points điểm • Voucher cafe, trà sữa',
-                accentColor: BulkyColors.warning,
-                bgColor: BulkyColors.warningBg,
-                onTap: () => _showEcoRewardsSheet(context, points),
+            Container(
+              width: 44,
+              height: 44,
+              decoration: const BoxDecoration(
+                color: BulkyColors.warningBg,
+                shape: BoxShape.circle,
+              ),
+              child: const Center(
+                child: Text('🎁', style: TextStyle(fontSize: 22)),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildActionTile(
-                key: const Key('quick_action_complaint'),
-                emoji: '📢',
-                title: 'PHẢN ÁNH THÙNG',
-                subtitle: 'Bị bỏ sót / bốc mùi',
-                accentColor: const Color(0xFFDC2626),
-                bgColor: const Color(0xFFFEE2E2),
-                onTap: () => _showCitizenFeedbackDialog(context),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'ĐỔI ĐIỂM XANH TÍCH LŨY',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                      color: BulkyColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '$points điểm • Voucher Highlands Coffee, Phúc Long, Katinat',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: BulkyColors.textSecondary,
+                    ),
+                  ),
+                ],
               ),
             ),
+            const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: BulkyColors.warning),
           ],
         ),
-      ],
+      ),
     );
   }
 
@@ -1010,7 +1052,7 @@ class CitizenHomeScreen extends StatelessWidget {
           Text(
             '• Quy trình nhắc cước: Ngày D (hạn đóng), D+3 (nhắc nhẹ qua app), D+7 (thông báo tổ dân phố), D+14 (chuyển cán bộ an sinh duyệt).\n'
             '• Cam kết an sinh: Hệ thống TUYỆT ĐỐI KHÔNG TỰ ĐỘNG CHẶN THU GOM nếu hộ dân chưa được xem xét hoàn cảnh an sinh.\n'
-            '• Hệ thống thu gom rác sinh hoạt đô thị vận hành định kỳ 2-3 ngày/lần và tiếp nhận phản ánh thùng đầy qua app 24/7.',
+            '• Hệ thống thu gom rác sinh hoạt đô thị vận hành tự động định kỳ 2-3 ngày/lần theo tuyến cố định.',
             style: TextStyle(fontSize: 12, color: BulkyColors.textPrimary, height: 1.4),
           ),
         ],
@@ -1348,202 +1390,6 @@ class CitizenHomeScreen extends StatelessWidget {
           ),
         );
       }).toList(),
-    );
-  }
-
-  /// Dialog: Citizen Feedback & Bin Complaints with Tabs (Create & History)
-  void _showCitizenFeedbackDialog(BuildContext context) {
-    int activeTab = 0; // 0: Gửi mới, 1: Lịch sử phản ánh
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Row(
-                children: [
-                  Text('📢 ', style: TextStyle(fontSize: 20)),
-                  Text('Phản Ánh Thùng Rác', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                ],
-              ),
-              IconButton(
-                icon: const Icon(Icons.close, size: 20),
-                onPressed: () => Navigator.pop(ctx),
-              ),
-            ],
-          ),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    ChoiceChip(
-                      label: const Text('Gửi phản ánh mới'),
-                      selected: activeTab == 0,
-                      selectedColor: BulkyColors.primaryLight.withValues(alpha: 0.15),
-                      backgroundColor: BulkyColors.background,
-                      labelStyle: TextStyle(
-                        fontSize: 11,
-                        fontWeight: activeTab == 0 ? FontWeight.bold : FontWeight.normal,
-                        color: activeTab == 0 ? BulkyColors.primary : BulkyColors.textSecondary,
-                      ),
-                      onSelected: (selected) {
-                        if (selected) setDialogState(() => activeTab = 0);
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    ChoiceChip(
-                      label: const Text('Lịch sử (2)'),
-                      selected: activeTab == 1,
-                      selectedColor: BulkyColors.primaryLight.withValues(alpha: 0.15),
-                      backgroundColor: BulkyColors.background,
-                      labelStyle: TextStyle(
-                        fontSize: 11,
-                        fontWeight: activeTab == 1 ? FontWeight.bold : FontWeight.normal,
-                        color: activeTab == 1 ? BulkyColors.primary : BulkyColors.textSecondary,
-                      ),
-                      onSelected: (selected) {
-                        if (selected) setDialogState(() => activeTab = 1);
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                if (activeTab == 0) ...[
-                  const Text(
-                    'Chọn vấn đề phản ánh về thùng rác thông minh:',
-                    style: TextStyle(fontSize: 13, color: BulkyColors.textSecondary),
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      _buildComplaintChip('Thùng quá tải'),
-                      _buildComplaintChip('Bị bốc mùi hôi'),
-                      _buildComplaintChip('Bị bỏ sót thu gom'),
-                      _buildComplaintChip('Thùng hư hỏng / nứt'),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Nhập vị trí ngõ hoặc mô tả cụ thể...',
-                      hintStyle: const TextStyle(fontSize: 12, color: BulkyColors.textSecondary),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    maxLines: 2,
-                  ),
-                ] else ...[
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: BulkyColors.background,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: BulkyColors.border),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Phiếu #PA-8921 • Bị bốc mùi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(color: BulkyColors.successBg, borderRadius: BorderRadius.circular(4)),
-                              child: const Text('ĐÃ XỬ LÝ', style: TextStyle(color: BulkyColors.success, fontSize: 10, fontWeight: FontWeight.bold)),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        const Text('Tổ VSMT đã xịt khử khuẩn lúc 10:15 ngày 22/09.', style: TextStyle(fontSize: 11, color: BulkyColors.textSecondary)),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: BulkyColors.background,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: BulkyColors.border),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Phiếu #PA-8710 • Thùng đầy tràn', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(color: BulkyColors.successBg, borderRadius: BorderRadius.circular(4)),
-                              child: const Text('ĐÃ GIẢI QUYẾT', style: TextStyle(color: BulkyColors.success, fontSize: 10, fontWeight: FontWeight.bold)),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        const Text('Xe thu gom số 03 đã đến lấy rác lúc 14:00 ngày 15/09.', style: TextStyle(fontSize: 11, color: BulkyColors.textSecondary)),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          actions: activeTab == 0
-              ? [
-                  TextButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    child: const Text('Hủy', style: TextStyle(color: BulkyColors.textSecondary)),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('✓ Đã gửi phản ánh tới Tổ VSMT đô thị. Cảm ơn đóng góp của bạn!'),
-                          backgroundColor: BulkyColors.primary,
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(100, 40),
-                      backgroundColor: BulkyColors.primary,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('Gửi phản ánh'),
-                  ),
-                ]
-              : [
-                  ElevatedButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(80, 40),
-                      backgroundColor: BulkyColors.primary,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('Đóng'),
-                  ),
-                ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildComplaintChip(String label) {
-    return Chip(
-      label: Text(label, style: const TextStyle(fontSize: 12)),
-      backgroundColor: BulkyColors.surface,
-      side: const BorderSide(color: BulkyColors.border),
     );
   }
 
