@@ -52,15 +52,10 @@ void main() {
       expect(find.textContaining('Nguyễn Văn An', findRichText: true), findsOneWidget);
       expect(find.textContaining('HH-78921', findRichText: true), findsOneWidget);
 
-      // Card 1: IoT Smart Bin Telemetry (Nixtio)
-      expect(find.text('THÙNG RÁC THÔNG MINH GIA ĐÌNH'), findsOneWidget);
-      expect(find.text('📶 IoT Online'), findsOneWidget);
-      expect(find.text('68%'), findsOneWidget);
-      expect(find.textContaining('🍃 Mùi: Bình thường'), findsOneWidget);
-      expect(find.textContaining('Cập nhật: 5 phút trước'), findsOneWidget);
-      expect(find.textContaining('⚡ Pin cảm biến: 92%'), findsOneWidget);
+      // THÙNG RÁC THÔNG MINH GIA ĐÌNH card has been removed per citizen UI simplification
+      expect(find.text('THÙNG RÁC THÔNG MINH GIA ĐÌNH'), findsNothing);
 
-      // Card 2: Weekly Schedule Strip & Today's Schedule (Deepthi)
+      // Card: Weekly Schedule Strip & Today's Schedule (Deepthi)
       expect(find.text('LỊCH THU GOM HÔM NAY'), findsOneWidget);
       expect(find.text('T2'), findsOneWidget);
       expect(find.text('T3'), findsOneWidget);

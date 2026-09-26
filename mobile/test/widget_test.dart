@@ -16,7 +16,7 @@ void main() {
 
     // Verify Citizen Home Dashboard elements are displayed on Tab 0
     expect(find.text('SMARTBIN CITIZEN'), findsOneWidget);
-    expect(find.text('THÙNG RÁC THÔNG MINH GIA ĐÌNH'), findsOneWidget);
+    expect(find.text('THÙNG RÁC THÔNG MINH GIA ĐÌNH'), findsNothing);
     expect(find.text('LỊCH THU GOM HÔM NAY'), findsOneWidget);
     expect(find.text('HÀNH ĐỘNG NHANH'), findsOneWidget);
 

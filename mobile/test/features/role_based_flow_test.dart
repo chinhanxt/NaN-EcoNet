@@ -217,6 +217,7 @@ void main() {
       // Active order order-demo-scheduled is waiting
       final startTripButton = find.byKey(const Key('driver_start_collection_button_order-demo-scheduled'));
       expect(startTripButton, findsOneWidget);
+      await tester.scrollUntilVisible(startTripButton, 100);
 
       // Tap start trip
       await tester.tap(startTripButton);

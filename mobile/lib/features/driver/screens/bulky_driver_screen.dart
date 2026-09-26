@@ -6,6 +6,7 @@ import '../../../core/theme/bulky_colors.dart';
 import '../../auth/models/citizen_user.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../orders/providers/orders_provider.dart';
+import '../widgets/driver_route_map_card.dart';
 
 /// Screen for collection drivers / field teams to view assigned pickup stops,
 /// start trips, verify items on-site, and confirm bulky waste collection.
@@ -65,9 +66,16 @@ class BulkyDriverScreen extends StatelessWidget {
           children: [
             // 1. Driver & Vehicle Information Card
             _buildDriverHeaderCard(user, vehiclePlate, assignedOrders.length),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
 
-            // 2. Active Stops Section
+            // 2. Interactive Route Mockup Map (IoT Smart Bins & Bulky Waste Stops with Turn-by-Turn Directions)
+            DriverRouteMapCard(
+              vehiclePlate: vehiclePlate,
+              activeOrders: assignedOrders,
+            ),
+            const SizedBox(height: 16),
+
+            // 3. Active Stops Section
             const Row(
               children: [
                 Icon(Icons.route_rounded, size: 18, color: BulkyColors.primary),
