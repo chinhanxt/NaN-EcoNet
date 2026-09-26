@@ -8,10 +8,12 @@ import '../../auth/providers/auth_provider.dart';
 /// and Eco Environmental Impact stats.
 class CitizenHomeScreen extends StatelessWidget {
   final ValueChanged<int>? onNavigateTab;
+  final int? todayWeekday;
 
   const CitizenHomeScreen({
     super.key,
     this.onNavigateTab,
+    this.todayWeekday,
   });
 
   @override
@@ -133,8 +135,8 @@ class CitizenHomeScreen extends StatelessWidget {
             _buildIotTelemetryCard(context),
             const SizedBox(height: 16),
 
-            // Card 2: 📅 LỊCH THU GOM HÔM NAY (Riciclario Concept)
-            _buildCollectionScheduleCard(context),
+            // Card 2: 📅 LỊCH THU GOM TUẦN & HÔM NAY (Deepthi Concept)
+            _buildWeeklyScheduleStrip(context),
             const SizedBox(height: 20),
 
             // Section: HÀNH ĐỘNG NHANH
@@ -200,7 +202,7 @@ class CitizenHomeScreen extends StatelessWidget {
     );
   }
 
-  /// Card 1: IoT Smart Bin Telemetry (Fill level, Odor, Update timestamp, Battery)
+  /// Card 1: IoT Smart Bin Telemetry (Fill level, Odor, Update timestamp, Battery) - Nixtio
   Widget _buildIotTelemetryCard(BuildContext context) {
     const fillPercent = 68; // 68% fill level
 
@@ -208,15 +210,9 @@ class CitizenHomeScreen extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: BulkyColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: BulkyColors.primaryLight.withValues(alpha: 0.35)),
-        boxShadow: [
-          BoxShadow(
-            color: BulkyColors.primary.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: BulkyColors.border),
+        boxShadow: BulkyColors.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -238,50 +234,58 @@ class CitizenHomeScreen extends StatelessWidget {
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: BulkyColors.successBg,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: BulkyColors.success.withValues(alpha: 0.3)),
                 ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.sensors, size: 12, color: BulkyColors.success),
-                    SizedBox(width: 4),
-                    Text(
-                      'IoT Online',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: BulkyColors.success,
-                      ),
-                    ),
-                  ],
+                child: const Text(
+                  '📶 IoT Online',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: BulkyColors.success,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
-          // Fill level visual bar
+          // Fill level visual bar with dynamic gradient
           Row(
             children: [
               const Text(
                 'Mức đầy: ',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: BulkyColors.textPrimary),
               ),
               Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LinearProgressIndicator(
-                    value: fillPercent / 100.0,
-                    minHeight: 12,
-                    backgroundColor: Colors.grey.shade200,
-                    valueColor: const AlwaysStoppedAnimation<Color>(BulkyColors.warning),
+                child: Container(
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: BulkyColors.border),
+                  ),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return Align(
+                        alignment: Alignment.centerLeft,
+                        child: Container(
+                          width: constraints.maxWidth * (fillPercent / 100.0),
+                          height: 14,
+                          decoration: BoxDecoration(
+                            gradient: BulkyColors.iotWarnGradient,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               const Text(
                 '$fillPercent%',
                 style: TextStyle(
@@ -290,13 +294,28 @@ class CitizenHomeScreen extends StatelessWidget {
                   color: BulkyColors.warning,
                 ),
               ),
-              const Text(
-                ' • Mùi: Bình thường',
-                style: TextStyle(fontSize: 12, color: BulkyColors.textSecondary),
-              ),
             ],
           ),
           const SizedBox(height: 10),
+
+          // Odor badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: BulkyColors.successBg,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: BulkyColors.success.withValues(alpha: 0.25)),
+            ),
+            child: const Text(
+              '🍃 Mùi: Bình thường',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: BulkyColors.success,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
           const Divider(height: 1),
           const SizedBox(height: 10),
 
@@ -316,10 +335,10 @@ class CitizenHomeScreen extends StatelessWidget {
               ),
               Row(
                 children: [
-                  Icon(Icons.battery_charging_full_rounded, size: 15, color: BulkyColors.primary),
+                  Icon(Icons.bolt_rounded, size: 16, color: BulkyColors.primary),
                   SizedBox(width: 4),
                   Text(
-                    'Pin cảm biến: 92%',
+                    '⚡ Pin cảm biến: 92%',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -335,64 +354,229 @@ class CitizenHomeScreen extends StatelessWidget {
     );
   }
 
-  /// Card 2: Today's Collection Schedule (Riciclario Concept)
-  Widget _buildCollectionScheduleCard(BuildContext context) {
+  /// Card 2: Weekly Collection Schedule Strip (Deepthi N Anekal Concept)
+  Widget _buildWeeklyScheduleStrip(BuildContext context) {
+    final currentDay = todayWeekday ?? DateTime.now().weekday; // 1 = T2 ... 7 = CN
+    const dayLabels = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: BulkyColors.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: BulkyColors.border),
+        boxShadow: BulkyColors.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('📅 ', style: TextStyle(fontSize: 16)),
-              Text(
-                'LỊCH THU GOM HÔM NAY',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: BulkyColors.textPrimary,
+              const Row(
+                children: [
+                  Text('📅 ', style: TextStyle(fontSize: 16)),
+                  Text(
+                    'LỊCH THU GOM HÔM NAY',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: BulkyColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: BulkyColors.primaryContainer,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  'Lịch 7 ngày',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: BulkyColors.primary,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          const Row(
+          const SizedBox(height: 12),
+
+          // 7-day horizontal strip
+          Row(
+            children: List.generate(7, (index) {
+              final dayNum = index + 1;
+              final isToday = (dayNum == currentDay);
+              return Expanded(
+                child: Container(
+                  margin: EdgeInsets.only(right: index < 6 ? 6 : 0),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isToday ? BulkyColors.primary : BulkyColors.background,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isToday ? BulkyColors.primary : BulkyColors.border,
+                    ),
+                    boxShadow: isToday
+                        ? [
+                            BoxShadow(
+                              color: BulkyColors.primary.withValues(alpha: 0.3),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        dayLabels[index],
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isToday ? FontWeight.bold : FontWeight.w600,
+                          color: isToday ? Colors.white : BulkyColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      if (isToday)
+                        const Text(
+                          'Hôm nay',
+                          style: TextStyle(
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        )
+                      else
+                        Container(
+                          width: 4,
+                          height: 4,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: BulkyColors.border,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 14),
+
+          // Today collection category heading & badges
+          const Text(
+            'Rác sinh hoạt & Tái chế định kỳ',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: BulkyColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
             children: [
-              Text('♻️ ', style: TextStyle(fontSize: 16)),
-              Text(
-                'Rác sinh hoạt & Tái chế định kỳ',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: BulkyColors.textPrimary,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: BulkyColors.wasteOrganic.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: BulkyColors.wasteOrganic.withValues(alpha: 0.3)),
+                ),
+                child: const Text(
+                  '🍏 Hữu cơ',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: BulkyColors.wasteOrganic,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: BulkyColors.wasteRecyclable.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: BulkyColors.wasteRecyclable.withValues(alpha: 0.3)),
+                ),
+                child: const Text(
+                  '♻️ Tái chế',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: BulkyColors.wasteRecyclable,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                decoration: BoxDecoration(
+                  color: BulkyColors.primaryContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  '⏰ 08:00 - 10:00',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: BulkyColors.primaryDark,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 12),
+
+          // Truck Proximity ETA card
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: BulkyColors.primaryContainer,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(14),
               border: Border.all(color: BulkyColors.primaryLight.withValues(alpha: 0.3)),
             ),
-            child: const Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.local_shipping_rounded, color: BulkyColors.primary, size: 20),
-                SizedBox(width: 8),
-                Expanded(
+                const Row(
+                  children: [
+                    Icon(Icons.local_shipping_rounded, color: BulkyColors.primary, size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '🚚 Xe số 03 đang đến thu gom • Cách bạn 1.2 km',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: BulkyColors.primaryDark,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                const Padding(
+                  padding: EdgeInsets.only(left: 28),
                   child: Text(
-                    '⏰ 08:00 - 10:00 (Xe số 03 đang cách bạn 1.2 km)',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: BulkyColors.primaryDark,
+                    'Ước tính khoảng 8 phút nữa sẽ đến ngõ của bạn',
+                    style: TextStyle(fontSize: 11, color: BulkyColors.textSecondary),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.only(left: 28),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: const LinearProgressIndicator(
+                      value: 0.75,
+                      minHeight: 5,
+                      backgroundColor: Colors.white,
+                      valueColor: AlwaysStoppedAnimation<Color>(BulkyColors.primary),
                     ),
                   ),
                 ),
@@ -467,7 +651,7 @@ class CitizenHomeScreen extends StatelessWidget {
     );
   }
 
-  /// Reusable Action Tile for the 2x2 grid
+  /// Reusable Action Tile for the 2x2 grid (LazyInterface)
   Widget _buildActionTile({
     required Key key,
     required String emoji,
@@ -480,21 +664,15 @@ class CitizenHomeScreen extends StatelessWidget {
     return InkWell(
       key: key,
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(20),
       child: Container(
-        height: 112,
-        padding: const EdgeInsets.all(12),
+        height: 122,
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: BulkyColors.surface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(color: BulkyColors.border),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          boxShadow: BulkyColors.softShadow,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -504,12 +682,12 @@ class CitizenHomeScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(6),
+                  padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: bgColor,
-                    borderRadius: BorderRadius.circular(8),
+                    shape: BoxShape.circle,
                   ),
-                  child: Text(emoji, style: const TextStyle(fontSize: 20)),
+                  child: Text(emoji, style: const TextStyle(fontSize: 18)),
                 ),
                 Icon(Icons.arrow_forward_ios_rounded, size: 12, color: accentColor),
               ],
@@ -528,12 +706,12 @@ class CitizenHomeScreen extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 Text(
                   subtitle,
                   style: TextStyle(
                     fontSize: 10,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                     color: accentColor,
                   ),
                   maxLines: 1,
@@ -547,21 +725,15 @@ class CitizenHomeScreen extends StatelessWidget {
     );
   }
 
-  /// Card 3: Environmental Contribution (Purrweb Eco Impact Concept)
+  /// Card 3: Environmental Contribution (LazyInterface Eco Impact)
   Widget _buildEcoImpactCard(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: BulkyColors.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: BulkyColors.primaryLight.withValues(alpha: 0.35)),
-        boxShadow: [
-          BoxShadow(
-            color: BulkyColors.primary.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        boxShadow: BulkyColors.softShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -590,10 +762,10 @@ class CitizenHomeScreen extends StatelessWidget {
             children: [
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: BulkyColors.primaryContainer,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: BulkyColors.primaryLight.withValues(alpha: 0.25)),
                   ),
                   child: const Column(
@@ -601,24 +773,29 @@ class CitizenHomeScreen extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Text('♻️', style: TextStyle(fontSize: 18)),
+                          Text('♻️', style: TextStyle(fontSize: 20)),
                           SizedBox(width: 6),
                           Expanded(
                             child: Text(
                               '34.5 kg',
                               style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
                                 color: BulkyColors.primaryDark,
                               ),
                             ),
                           ),
                         ],
                       ),
-                      SizedBox(height: 4),
+                      SizedBox(height: 6),
                       Text(
                         'Rác phân loại tái chế',
-                        style: TextStyle(fontSize: 11, color: BulkyColors.textSecondary),
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: BulkyColors.textPrimary),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        '+12% so với tháng trước',
+                        style: TextStyle(fontSize: 10, color: BulkyColors.primaryDark, fontWeight: FontWeight.w500),
                       ),
                     ],
                   ),
@@ -627,35 +804,40 @@ class CitizenHomeScreen extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFDCFCE7),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFF86EFAC)),
+                    color: Color(0xFFDCFCE7),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Color(0xFF86EFAC)),
                   ),
                   child: const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          Text('🌳', style: TextStyle(fontSize: 18)),
+                          Text('🌳', style: TextStyle(fontSize: 20)),
                           SizedBox(width: 6),
                           Expanded(
                             child: Text(
                               '6.8 kg CO₂',
                               style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
                                 color: Color(0xFF15803D),
                               ),
                             ),
                           ),
                         ],
                       ),
-                      SizedBox(height: 4),
+                      SizedBox(height: 6),
                       Text(
                         'Khí thải giảm thiểu',
-                        style: TextStyle(fontSize: 11, color: BulkyColors.textSecondary),
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: BulkyColors.textPrimary),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        '~0.4 cây xanh tương đương',
+                        style: TextStyle(fontSize: 10, color: Color(0xFF15803D), fontWeight: FontWeight.w500),
                       ),
                     ],
                   ),

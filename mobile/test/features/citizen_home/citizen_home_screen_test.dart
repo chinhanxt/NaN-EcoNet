@@ -52,19 +52,29 @@ void main() {
       expect(find.textContaining('Nguyễn Văn An', findRichText: true), findsOneWidget);
       expect(find.textContaining('HH-78921', findRichText: true), findsOneWidget);
 
-      // Card 1: IoT Smart Bin Telemetry
+      // Card 1: IoT Smart Bin Telemetry (Nixtio)
       expect(find.text('THÙNG RÁC THÔNG MINH GIA ĐÌNH'), findsOneWidget);
-      expect(find.text('IoT Online'), findsOneWidget);
+      expect(find.text('📶 IoT Online'), findsOneWidget);
       expect(find.text('68%'), findsOneWidget);
-      expect(find.textContaining('Mùi: Bình thường'), findsOneWidget);
+      expect(find.textContaining('🍃 Mùi: Bình thường'), findsOneWidget);
       expect(find.textContaining('Cập nhật: 5 phút trước'), findsOneWidget);
-      expect(find.textContaining('Pin cảm biến: 92%'), findsOneWidget);
+      expect(find.textContaining('⚡ Pin cảm biến: 92%'), findsOneWidget);
 
-      // Card 2: Today's Schedule
+      // Card 2: Weekly Schedule Strip & Today's Schedule (Deepthi)
       expect(find.text('LỊCH THU GOM HÔM NAY'), findsOneWidget);
+      expect(find.text('T2'), findsOneWidget);
+      expect(find.text('T3'), findsOneWidget);
+      expect(find.text('T4'), findsOneWidget);
+      expect(find.text('T5'), findsOneWidget);
+      expect(find.text('T6'), findsOneWidget);
+      expect(find.text('T7'), findsOneWidget);
+      expect(find.text('CN'), findsOneWidget);
+      expect(find.text('Hôm nay'), findsOneWidget);
       expect(find.text('Rác sinh hoạt & Tái chế định kỳ'), findsOneWidget);
+      expect(find.textContaining('🍏 Hữu cơ'), findsOneWidget);
+      expect(find.textContaining('♻️ Tái chế'), findsOneWidget);
       expect(find.textContaining('08:00 - 10:00'), findsOneWidget);
-      expect(find.textContaining('Xe số 03 đang cách bạn 1.2 km'), findsOneWidget);
+      expect(find.textContaining('🚚 Xe số 03 đang đến thu gom • Cách bạn 1.2 km'), findsOneWidget);
 
       // Quick Actions Header & 4 Grid Cards
       expect(find.text('HÀNH ĐỘNG NHANH'), findsOneWidget);
@@ -73,10 +83,11 @@ void main() {
       expect(find.byKey(const Key('quick_action_rewards')), findsOneWidget);
       expect(find.byKey(const Key('quick_action_complaint')), findsOneWidget);
 
-      // Card 3: Eco Impact
+      // Card 3: Eco Impact (LazyInterface)
       expect(find.text('ĐÓNG GÓP MÔI TRƯỜNG (Eco Impact)'), findsOneWidget);
       expect(find.text('34.5 kg'), findsOneWidget);
       expect(find.text('6.8 kg CO₂'), findsOneWidget);
+      expect(find.textContaining('0.4 cây xanh'), findsOneWidget);
     });
 
     testWidgets('2. Tapping bulky booking action tile triggers tab navigation',
@@ -208,6 +219,37 @@ void main() {
       expect(find.text('🔔 Thông Báo Mới (2)'), findsOneWidget);
       expect(find.text('Xe số 03 đang đến thu gom'), findsOneWidget);
       expect(find.text('+20 Điểm Xanh đã cộng vào ví'), findsOneWidget);
+    });
+
+    testWidgets('7. Weekly schedule strip highlights today and displays waste category badges',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      // Check all 7 days in the horizontal strip
+      expect(find.text('T2'), findsOneWidget);
+      expect(find.text('T3'), findsOneWidget);
+      expect(find.text('T4'), findsOneWidget);
+      expect(find.text('T5'), findsOneWidget);
+      expect(find.text('T6'), findsOneWidget);
+      expect(find.text('T7'), findsOneWidget);
+      expect(find.text('CN'), findsOneWidget);
+      expect(find.text('Hôm nay'), findsOneWidget);
+
+      // Check waste categories
+      expect(find.text('🍏 Hữu cơ'), findsOneWidget);
+      expect(find.text('♻️ Tái chế'), findsOneWidget);
+
+      // Check proximity card and ETA
+      expect(find.textContaining('Xe số 03 đang đến thu gom'), findsOneWidget);
+      expect(find.textContaining('1.2 km'), findsOneWidget);
     });
   });
 }
