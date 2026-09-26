@@ -14,3 +14,4 @@
 docs/* linguist-documentation
 apps/smart-collection-engine/map_ui/route_cache.json linguist-generated
 apps/smart-collection-engine/backend/bin/* binary
+apps/ecopass-enterprise/enterprise-bi-copilot/repos/** linguist-vendored

@@ -183,3 +183,8 @@ Desktop.ini
 
 # Local scratch / presentation dumps
 /presentation/
+*.zip
+*.pdf
+*.so
+*.so.*
+bin/test

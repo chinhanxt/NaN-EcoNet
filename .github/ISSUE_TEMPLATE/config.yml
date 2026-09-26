@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Thảo Luận & Hỏi Đáp Cộng Đồng
+    url: https://github.com/chinhanxt/NaN-EcoNet/discussions
+    about: Đặt câu hỏi và trao đổi ý tưởng với nhóm phát triển
+  - name: 🛡️ Báo Cáo Lỗ Hổng Bảo Mật
+    url: https://github.com/chinhanxt/NaN-EcoNet/security/advisories/new
+    about: Báo cáo sự cố bảo mật theo chính sách có trách nhiệm

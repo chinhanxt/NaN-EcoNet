@@ -18,10 +18,18 @@ RESET   := \033[0m
 COMPOSE_FILE := deploy/docker-compose.yml
 
 # Path adjustments
-export PATH := /home/chinhan/.bun/bin:/home/chinhan/.local/bin:$(PATH)
+export PATH := $(HOME)/.bun/bin:$(HOME)/.local/bin:$(PATH)
 
-.PHONY: help install run-ecopass run-collection run-citizen run-all \
+.PHONY: help install install-all run-ecopass dev-ecopass run-collection dev-engine \
+        run-citizen dev-citizen run-all dev-all \
         docker-up docker-down docker-ps docker-logs test lint clean status
+
+# Aliases for Quick Start compatibility
+install-all: install
+dev-ecopass: run-ecopass
+dev-engine: run-collection
+dev-citizen: run-citizen
+dev-all: run-all
 
 # ==============================================================================
 # 📋 HELP TARGET (AUTO-FORMATTED)
