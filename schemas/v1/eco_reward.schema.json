@@ -1,0 +1,134 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nan-econet.org/schemas/v1/eco_reward.json",
+  "title": "EcoRewardPayload",
+  "description": "Schema contract for EcoRewardPayload v1.0.0 exchanged between Smart Collection Engine / Citizen App and EcoPass Enterprise BI",
+  "type": "object",
+  "required": [
+    "transaction_id",
+    "version",
+    "order_id",
+    "citizen_id",
+    "fmcg_partner_id",
+    "epr_material_category",
+    "weight_verified_kg",
+    "voucher_issued",
+    "audit_trail"
+  ],
+  "properties": {
+    "transaction_id": {
+      "type": "string",
+      "pattern": "^TX-[A-Za-z0-9-]+$",
+      "description": "Unique EPR incentive transaction token"
+    },
+    "version": {
+      "type": "string",
+      "enum": ["1.0.0"],
+      "description": "Semantic version of the payload contract"
+    },
+    "order_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Associated bulky waste order or smart bin drop-off identifier"
+    },
+    "citizen_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Citizen / student account receiving the EPR voucher or green points"
+    },
+    "fmcg_partner_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "FMCG sponsor funding the EPR voucher subsidy (e.g., FMCG-UNILEVER-VN)"
+    },
+    "epr_material_category": {
+      "type": "string",
+      "enum": [
+        "RIGID_PLASTIC_PET",
+        "ALUMINUM_CAN",
+        "PAPER_CARDBOARD",
+        "TETRA_PAK",
+        "GLASS_BOTTLE",
+        "FLEXIBLE_PLASTIC_LDPE",
+        "SCRAP_METAL",
+        "E_WASTE",
+        "OTHER_RECYCLABLE"
+      ],
+      "description": "EPR certified recyclable material category"
+    },
+    "weight_verified_kg": {
+      "type": "number",
+      "minimum": 0.0,
+      "description": "Calibrated scale measurement at the collection point or smart bin"
+    },
+    "voucher_issued": {
+      "type": "object",
+      "description": "EPR reward voucher disbursed to citizen wallet",
+      "required": [
+        "code",
+        "brand",
+        "discount_value",
+        "expiry_iso"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Redeemable voucher promotional code"
+        },
+        "brand": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Retailer, cafeteria, or coffee partner brand name"
+        },
+        "discount_value": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "Denomination or discount amount in VND"
+        },
+        "expiry_iso": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Expiration timestamp in ISO 8601 format"
+        }
+      },
+      "additionalProperties": false
+    },
+    "audit_trail": {
+      "type": "object",
+      "description": "Cryptographic and geospatial audit trail for anti-fraud EPR verification",
+      "required": [
+        "gps_lat",
+        "gps_lng",
+        "collected_at_iso",
+        "one_time_burn_token"
+      ],
+      "properties": {
+        "gps_lat": {
+          "type": "number",
+          "minimum": -90.0,
+          "maximum": 90.0,
+          "description": "GPS latitude at collection handover"
+        },
+        "gps_lng": {
+          "type": "number",
+          "minimum": -180.0,
+          "maximum": 180.0,
+          "description": "GPS longitude at collection handover"
+        },
+        "collected_at_iso": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Collection handover timestamp in ISO 8601 format"
+        },
+        "one_time_burn_token": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Single-use cryptographic nonce preventing voucher replay attacks"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": true
+}

@@ -67,3 +67,25 @@ $$P_{\text{total}} = P_{\text{items}} + P_{\text{volume}} + P_{\text{floor}} + P
 Xây dựng trên nền tảng React 18, TailwindCSS và Vite tại thư mục `apps/citizen-bulky-app`:
 * **Cổng Thông Tin Hộ Dân (`/citizen`):** Tra cứu tiến độ đơn gom rác cồng kềnh theo thời gian thực, xem vị trí xe tải trên bản đồ số, đánh giá chất lượng phục vụ của tài xế.
 * **Cổng Điều Phối Viên Đô Thị (`/admin`):** Theo dõi bản đồ nhiệt các điểm ùn ứ rác cồng kềnh theo phường/quận, phê duyệt các đơn hàng có tính chất đặc biệt và xuất dữ liệu báo cáo vận hành.
+
+---
+
+## 5. Hợp Đồng Dữ Liệu & Định Danh Phiên Bản (Data Contracts & Schema Versioning)
+
+Để đảm bảo tính toàn vẹn và khả năng tương thích ngược khi trao đổi dữ liệu đơn gom phế thải cồng kềnh giữa **Ứng dụng Cư dân (Flutter/Web)**, **Động cơ Định tuyến Thu gom Thông minh (C++ OpenMP Engine)** và **Hệ sinh thái EcoPass Enterprise**, hệ thống áp dụng chuẩn đặc tả **JSON Schema Draft-07** nghiêm ngặt.
+
+### 5.1. Đặc Tả Hợp Đồng `BulkyOrderPayload v1.0.0`:
+* **Vị trí định nghĩa schema:** [`schemas/v1/bulky_order.schema.json`](../../schemas/v1/bulky_order.schema.json)
+* **Schema URI:** `https://nan-econet.org/schemas/v1/bulky_order.json`
+* **Cấu trúc trường bắt buộc:**
+  * `order_id`: Mã định danh đơn hàng duy nhất (`ORD-YYYY-LOC-XXXXX`).
+  * `version`: Phiên bản hợp đồng dữ liệu (`"1.0.0"`).
+  * `customer_id`: Mã định danh tài khoản công dân / hộ gia đình.
+  * `pickup_location`: Tọa độ WGS84 (`lat`, `lng`), địa chỉ chi tiết (`address`), cờ cảnh báo hẻm (`is_alley`), và cự ly hẻm sâu tính bằng mét (`alley_depth_meters`).
+  * `items`: Danh sách tối thiểu 1 vật phẩm cồng kềnh kèm danh mục chuẩn (`category`), thể tích hình học (`volume_m3`), khối lượng ước tính (`weight_kg`), và phân rã tỷ lệ vật liệu (`material_breakdown`).
+  * `pricing`: Chi tiết cước phí 4 thành phần (`base_fee`, `volume_fee`, `floor_surcharge`, `alley_surcharge`, `total_vnd`) và mốc thời gian hết hạn khóa giá 15 phút (`locked_until_epoch`).
+  * `time_window`: Khung giờ hẹn thu gom mong muốn (`earliest`, `latest`).
+
+### 5.2. Kiểm Thử Hợp Đồng Tự Động (Contract Testing):
+Bộ kiểm thử tích hợp tại [`tests/contracts/test_schemas.py`](../../tests/contracts/test_schemas.py) thực thi tự động qua CI/CD để đảm bảo mọi payload phát sinh từ ứng dụng Flutter hay Web Portal đều tuân thủ 100% schema trước khi gửi tới IPC Queue hoặc backend C++.
+

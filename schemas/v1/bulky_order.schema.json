@@ -1,0 +1,213 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nan-econet.org/schemas/v1/bulky_order.json",
+  "title": "BulkyOrderPayload",
+  "description": "Schema contract for BulkyOrderPayload v1.0.0 exchanged between Citizen Bulky App and Smart Collection Engine",
+  "type": "object",
+  "required": [
+    "order_id",
+    "version",
+    "customer_id",
+    "pickup_location",
+    "items",
+    "pricing",
+    "time_window"
+  ],
+  "properties": {
+    "order_id": {
+      "type": "string",
+      "pattern": "^ORD-[A-Za-z0-9-]+$",
+      "description": "Unique identifier for the bulky waste collection order"
+    },
+    "version": {
+      "type": "string",
+      "enum": ["1.0.0"],
+      "description": "Semantic version of the payload contract"
+    },
+    "customer_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Citizen account identifier initiating the request"
+    },
+    "pickup_location": {
+      "type": "object",
+      "description": "Geographical and physical access parameters of the collection point",
+      "required": [
+        "lat",
+        "lng",
+        "address",
+        "is_alley",
+        "alley_depth_meters"
+      ],
+      "properties": {
+        "lat": {
+          "type": "number",
+          "minimum": -90.0,
+          "maximum": 90.0,
+          "description": "WGS84 latitude coordinate"
+        },
+        "lng": {
+          "type": "number",
+          "minimum": -180.0,
+          "maximum": 180.0,
+          "description": "WGS84 longitude coordinate"
+        },
+        "address": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Full human-readable street address"
+        },
+        "is_alley": {
+          "type": "boolean",
+          "description": "Flag indicating if the location is in an alley inaccessible directly by heavy trucks"
+        },
+        "alley_depth_meters": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "Walking/carting distance from nearest curbside truck parking in meters"
+        }
+      },
+      "additionalProperties": false
+    },
+    "items": {
+      "type": "array",
+      "description": "List of bulky items detected by AI Vision or confirmed by citizen",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "category",
+          "volume_m3",
+          "weight_kg",
+          "material_breakdown"
+        ],
+        "properties": {
+          "item_id": {
+            "type": "string",
+            "description": "Unique identifier of item within the order"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["SOFA", "MATTRESS", "CABINET", "TABLE", "OTHER", "APPLIANCE", "BED", "CHAIR"],
+            "description": "Standard bulky waste taxonomy category"
+          },
+          "volume_m3": {
+            "type": "number",
+            "minimum": 0.0,
+            "description": "Estimated geometric volume in cubic meters"
+          },
+          "weight_kg": {
+            "type": "number",
+            "minimum": 0.0,
+            "description": "Estimated or scale-verified mass in kilograms"
+          },
+          "material_breakdown": {
+            "type": "object",
+            "description": "Surface and volumetric material composition breakdown ratios (sum ~ 1.0)",
+            "properties": {
+              "wood_ratio": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 1.0
+              },
+              "foam_ratio": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 1.0
+              },
+              "metal_ratio": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 1.0
+              },
+              "plastic_ratio": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 1.0
+              },
+              "glass_ratio": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 1.0
+              },
+              "other_ratio": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 1.0
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "pricing": {
+      "type": "object",
+      "description": "Four-component dynamic pricing calculation and guarantee lock",
+      "required": [
+        "base_fee",
+        "volume_fee",
+        "floor_surcharge",
+        "alley_surcharge",
+        "total_vnd",
+        "locked_until_epoch"
+      ],
+      "properties": {
+        "base_fee": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "Base fee calculated from item categories and quantities (VND)"
+        },
+        "volume_fee": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "Surcharge for excessive volume above standard quota (VND)"
+        },
+        "floor_surcharge": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "Stair carry fee without elevator (VND)"
+        },
+        "alley_surcharge": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "Deep alley carry surcharge (>50m) (VND)"
+        },
+        "total_vnd": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "Total final fee presented to citizen (VND)"
+        },
+        "locked_until_epoch": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Unix timestamp until which 15-minute price lock and tolerance guarantee are valid"
+        }
+      },
+      "additionalProperties": false
+    },
+    "time_window": {
+      "type": "object",
+      "description": "Requested pickup time window for collection scheduling",
+      "required": [
+        "earliest",
+        "latest"
+      ],
+      "properties": {
+        "earliest": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Earliest acceptable collection ISO 8601 timestamp"
+        },
+        "latest": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Latest acceptable collection ISO 8601 timestamp"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": true
+}

@@ -83,15 +83,16 @@ graph LR
 
 ### 3.2. Hệ Quả Bảo Mật & Chốt Chặn Phòng Vệ Chuyên Sâu (Security Consequences & Guardrails)
 
-Trong phân hệ Enterprise BI Copilot, các tác vụ Text-to-SQL và MCP Tool Calling trực tiếp tương tác với dữ liệu nhạy cảm của các tập đoàn đa quốc gia (FMCG, F&B như Unilever, Nestlé, Highlands Coffee). Do đó, mô hình bảo vệ dữ liệu được thiết kế theo nguyên lý **Phòng vệ Chuyên sâu (Defense-in-Depth)** qua 4 lớp chốt chặn bất khả xâm phạm:
+Trong phân hệ Enterprise BI Copilot, các tác vụ Text-to-SQL và MCP Tool Calling trực tiếp tương tác với dữ liệu nhạy cảm của các tập đoàn đa quốc gia (FMCG, F&B như Unilever, Nestlé, Highlands Coffee). Do đó, mô hình bảo vệ dữ liệu được thiết kế theo nguyên lý **Phòng vệ Chuyên sâu (Defense-in-Depth)** qua 5 lớp chốt chặn bất khả xâm phạm, được cài đặt tại [`apps/ecopass-enterprise/enterprise-bi-copilot/src/security-guardrails.ts`](../../apps/ecopass-enterprise/enterprise-bi-copilot/src/security-guardrails.ts) và kiểm chứng bởi [`tests/security/test_mcp_guardrails.py`](../../tests/security/test_mcp_guardrails.py):
 
 ```mermaid
 graph TD
-  Prompt["User Prompt / LLM Generated SQL"] --> Layer1["LỚP 1: Bộ Lọc AST & Regex Sanitize\n(Chặn DDL/DML, Piggyback Semicolon)"]
-  Layer1 --> Layer2["LỚP 2: Whitelist Bảng Phân Tích Được Cấp Phép\n(Chặn truy cập users, credentials, system tables)"]
-  Layer2 --> Layer3["LỚP 3: Mandatory Row Limit & Rate Limiter\n(Tự động ép LIMIT 100, Token Bucket 30 req/min)"]
-  Layer3 --> Layer4["LỚP 4: Enforced Read-Only Connection Pool\n(PRAGMA query_only = ON / DB User Read-Only)"]
-  Layer4 --> DB[(EPR Audit Ledger & Transactions DB)]
+  Prompt["User Prompt / LLM Generated SQL"] --> Layer1["LỚP 1: Sliding Window Rate Limiter\n(Tối đa 30 queries / phút mỗi phiên)"]
+  Layer1 --> Layer2["LỚP 2: Bộ Lọc AST & Regex Sanitize\n(Chặn DDL/DML, Piggyback Semicolon)"]
+  Layer2 --> Layer3["LỚP 3: Whitelist Bảng & Cột Được Cấp Phép\n(Chặn truy cập users, credentials, system tables)"]
+  Layer3 --> Layer4["LỚP 4: Mandatory Row Limit Clamping\n(Tự động ép LIMIT 100, trần tối đa 500 dòng)"]
+  Layer4 --> Layer5["LỚP 5: Enforced Read-Only Connection Pool\n(MODE_READONLY = true / DB User Read-Only)"]
+  Layer5 --> DB[(EPR Audit Ledger & Transactions DB)]
 ```
 
 #### A. Mô Hình Bảo Vệ Cơ Sở Dữ Liệu Kiểm Toán EPR (EPR Audit Ledger Security)
