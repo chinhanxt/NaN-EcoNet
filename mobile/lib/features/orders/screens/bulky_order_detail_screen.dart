@@ -129,6 +129,36 @@ class BulkyOrderDetailScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
+            // Pending review banner for citizen
+            if (order.status == BulkyOrderStatus.PENDING_REVIEW) ...[
+              _buildPendingReviewBanner(),
+              const SizedBox(height: 16),
+            ],
+
+            // Approved awaiting payment card & deposit hold CTA
+            if (order.status == BulkyOrderStatus.APPROVED_AWAITING_PAYMENT) ...[
+              _buildApprovedAwaitingPaymentCard(context, order),
+              const SizedBox(height: 16),
+            ],
+
+            // Discrepancy pending card (driver on-site report)
+            if (order.status == BulkyOrderStatus.DISCREPANCY_PENDING) ...[
+              _buildDiscrepancyPendingCard(context, ordersProvider, order),
+              const SizedBox(height: 16),
+            ],
+
+            // Rejected on-site banner (safety violation & 50k callout fee)
+            if (order.status == BulkyOrderStatus.REJECTED_ON_SITE) ...[
+              _buildRejectedOnSiteBanner(order),
+              const SizedBox(height: 16),
+            ],
+
+            // Rejected banner (operator quote/material rejection)
+            if (order.status == BulkyOrderStatus.REJECTED) ...[
+              _buildRejectedBanner(order),
+              const SizedBox(height: 16),
+            ],
+
             // Pending approval alert banner for citizens when awaiting approval
             if (order.status == BulkyOrderStatus.CONFIRMED && !isOperator) ...[
               Container(
@@ -179,8 +209,12 @@ class BulkyOrderDetailScreen extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Vehicle & Driver Info Card (if assigned or past confirmation)
-            _buildDriverVehicleCard(context, order),
-            const SizedBox(height: 16),
+            if (order.status != BulkyOrderStatus.PENDING_REVIEW &&
+                order.status != BulkyOrderStatus.APPROVED_AWAITING_PAYMENT &&
+                order.status != BulkyOrderStatus.REJECTED) ...[
+              _buildDriverVehicleCard(context, order),
+              const SizedBox(height: 16),
+            ],
 
             // Logistics & Pickup Information Card
             _buildLogisticsCard(order),
@@ -687,15 +721,480 @@ class BulkyOrderDetailScreen extends StatelessWidget {
             'Ước tính cước:',
             '${BulkyColors.formatCurrency(q.minVnd)} - ${BulkyColors.formatCurrency(q.maxVnd)}',
           ),
+          if (order.finalizedPriceVnd != null) ...[
+            const SizedBox(height: 8),
+            _buildInfoRow(
+              'Mức giá chính thức:',
+              BulkyColors.formatCurrency(order.finalizedPriceVnd!),
+            ),
+          ],
+          if (order.onSiteAdjustedPriceVnd != null) ...[
+            const SizedBox(height: 8),
+            _buildInfoRow(
+              'Cước điều chỉnh hiện trường:',
+              BulkyColors.formatCurrency(order.onSiteAdjustedPriceVnd!),
+            ),
+          ],
           const SizedBox(height: 8),
           _buildInfoRow(
             'Tiền cọc giữ chỗ:',
             BulkyColors.formatCurrency(q.depositHoldVnd),
           ),
+          if (order.calloutFeeVnd > 0) ...[
+            const SizedBox(height: 8),
+            _buildInfoRow(
+              'Phí điều xe khấu trừ:',
+              BulkyColors.formatCurrency(order.calloutFeeVnd),
+            ),
+          ],
           const SizedBox(height: 8),
           _buildInfoRow(
             'Trạng thái tiền cọc:',
             order.paymentStatus.label,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPendingReviewBanner() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: BulkyColors.warningBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: BulkyColors.warning.withValues(alpha: 0.4)),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.hourglass_top_rounded, color: BulkyColors.warning, size: 28),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '⏳ Đang Chờ Điều Phối Viên Xét Duyệt',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Color(0xFFB45309),
+                  ),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  'Đơn hàng đang được Điều phối viên kiểm tra ảnh và chốt mức giá chính xác. Bạn sẽ nhận được thông báo để đặt cọc ngay khi đơn được duyệt.',
+                  style: TextStyle(fontSize: 13, color: BulkyColors.textSecondary, height: 1.4),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildApprovedAwaitingPaymentCard(BuildContext context, BulkyOrder order) {
+    final finalizedPrice = order.finalizedPriceVnd ?? order.quote.maxVnd;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: BulkyColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: BulkyColors.success.withValues(alpha: 0.5), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: BulkyColors.success.withValues(alpha: 0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: BulkyColors.success.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check_circle_rounded, color: BulkyColors.success, size: 24),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  '🎉 Đơn Hàng Đã Được Phê Duyệt!',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: BulkyColors.success,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(height: 1, color: BulkyColors.border),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Mức giá chính thức:',
+                style: TextStyle(fontSize: 13, color: BulkyColors.textSecondary),
+              ),
+              Text(
+                BulkyColors.formatCurrency(finalizedPrice),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: BulkyColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Tiền cọc giữ xe (15 phút):',
+                style: TextStyle(fontSize: 13, color: BulkyColors.textSecondary),
+              ),
+              Text(
+                BulkyColors.formatCurrency(order.quote.depositHoldVnd),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: BulkyColors.primary,
+                ),
+              ),
+            ],
+          ),
+          if (order.operatorNote != null && order.operatorNote!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: BulkyColors.background,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: BulkyColors.border),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.comment_outlined, size: 16, color: BulkyColors.textSecondary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Ghi chú điều phối: ${order.operatorNote!}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: BulkyColors.textPrimary,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          ElevatedButton(
+            key: const Key('proceed_to_deposit_button'),
+            onPressed: () {
+              Navigator.pushNamed(context, '/payment', arguments: order.id);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: BulkyColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              elevation: 2,
+            ),
+            child: const Text(
+              'TIẾN HÀNH ĐẶT CỌC GIỮ XE (15 PHÚT) ➔',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDiscrepancyPendingCard(
+    BuildContext context,
+    OrdersProvider ordersProvider,
+    BulkyOrder order,
+  ) {
+    final originalPrice = order.finalizedPriceVnd ?? order.quote.maxVnd;
+    final adjustedPrice = order.onSiteAdjustedPriceVnd ?? originalPrice;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: BulkyColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: BulkyColors.warning.withValues(alpha: 0.6), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: BulkyColors.warning.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: BulkyColors.warning, size: 26),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  '⚠️ Tài Xế Báo Phát Sinh Đồ Tại Hiện Trường',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Color(0xFFB45309),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (order.onSiteDiscrepancyNote != null && order.onSiteDiscrepancyNote!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: BulkyColors.background,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: BulkyColors.border),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info_outline, size: 16, color: BulkyColors.textSecondary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Lý do tài xế báo: ${order.onSiteDiscrepancyNote!}',
+                      style: const TextStyle(fontSize: 12, color: BulkyColors.textPrimary),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          const Divider(height: 1, color: BulkyColors.border),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Cước chốt ban đầu:', style: TextStyle(fontSize: 13, color: BulkyColors.textSecondary)),
+              Text(
+                BulkyColors.formatCurrency(originalPrice),
+                style: const TextStyle(
+                  fontSize: 13,
+                  decoration: TextDecoration.lineThrough,
+                  color: BulkyColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Cước điều chỉnh mới:',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: BulkyColors.textPrimary),
+              ),
+              Text(
+                BulkyColors.formatCurrency(adjustedPrice),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: BulkyColors.warning,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  key: const Key('accept_discrepancy_button'),
+                  onPressed: () async {
+                    await context.read<OrdersProvider>().respondToOnSiteDiscrepancy(order.id, accept: true);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('✓ Đã đồng ý mức cước điều chỉnh. Tài xế tiếp tục bốc xếp hàng.'),
+                          backgroundColor: BulkyColors.primary,
+                        ),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: BulkyColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text(
+                    '✓ Đồng ý cước điều chỉnh',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton(
+                  key: const Key('reject_discrepancy_button'),
+                  onPressed: () async {
+                    await context.read<OrdersProvider>().respondToOnSiteDiscrepancy(order.id, accept: false);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('✕ Giữ danh mục cũ. Tài xế chỉ thu gom các đồ đã đăng ký ban đầu.'),
+                        ),
+                      );
+                    }
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: BulkyColors.textSecondary,
+                    side: const BorderSide(color: BulkyColors.border),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text(
+                    '✕ Giữ danh mục cũ / Không bốc đồ thêm',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRejectedOnSiteBanner(BulkyOrder order) {
+    final calloutFee = order.calloutFeeVnd > 0 ? order.calloutFeeVnd : 50000;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: BulkyColors.errorBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: BulkyColors.error.withValues(alpha: 0.5), width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: BulkyColors.error.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.block_rounded, color: BulkyColors.error, size: 24),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  '⛔ Đã Từ Chối Thu Gom Tại Hiện Trường',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: BulkyColors.error,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (order.onSiteRejectionReason != null && order.onSiteRejectionReason!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Lý do từ chối: ${order.onSiteRejectionReason!}',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: BulkyColors.textPrimary),
+            ),
+          ],
+          const SizedBox(height: 8),
+          Text(
+            'Đơn hàng bị từ chối do vi phạm quy chuẩn an toàn thu gom đô thị. Hệ thống tự động khấu trừ ${BulkyColors.formatCurrency(calloutFee)} chi phí điều xe của tài xế và hoàn lại phần tiền cọc còn lại vào ví/tài khoản của bạn.',
+            style: const TextStyle(fontSize: 12, color: BulkyColors.textSecondary, height: 1.4),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRejectedBanner(BulkyOrder order) {
+    final rejectionReason = (order.operatorNote != null && order.operatorNote!.isNotEmpty)
+        ? order.operatorNote!
+        : (order.note != null && order.note!.isNotEmpty ? order.note! : null);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: BulkyColors.errorBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: BulkyColors.error.withValues(alpha: 0.5), width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: BulkyColors.error.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.cancel_outlined, color: BulkyColors.error, size: 24),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  '❌ Đơn Hàng Không Được Phê Duyệt',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: BulkyColors.error,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (rejectionReason != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Lý do từ chối: $rejectionReason',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: BulkyColors.textPrimary),
+            ),
+          ],
+          const SizedBox(height: 8),
+          const Text(
+            'Đơn hàng không đáp ứng điều kiện thu gom rác cồng kềnh đô thị. Tiền cọc (nếu có) đã được hoàn trả nguyên vẹn cho bạn.',
+            style: TextStyle(fontSize: 12, color: BulkyColors.textSecondary, height: 1.4),
           ),
         ],
       ),
@@ -952,7 +1451,9 @@ class BulkyOrderDetailScreen extends StatelessWidget {
   ) {
     final canPay = order.status == BulkyOrderStatus.AWAITING_PAYMENT;
     final canCancel = order.status == BulkyOrderStatus.AWAITING_PAYMENT ||
-        order.status == BulkyOrderStatus.CONFIRMED;
+        order.status == BulkyOrderStatus.CONFIRMED ||
+        order.status == BulkyOrderStatus.PENDING_REVIEW ||
+        order.status == BulkyOrderStatus.APPROVED_AWAITING_PAYMENT;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

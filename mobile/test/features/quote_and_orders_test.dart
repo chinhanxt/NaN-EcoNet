@@ -506,5 +506,306 @@ void main() {
       expect(updated?.status, BulkyOrderStatus.CANCELLED);
       expect(updated?.paymentStatus, BulkyPaymentStatus.REFUNDED);
     });
+
+    testWidgets('BulkyOrderDetailScreen displays PENDING_REVIEW banner for citizen', (tester) async {
+      final items = [
+        const BulkyItem(
+          id: 'item-review',
+          category: BulkyCategory.SOFA,
+          displayName: 'Sofa góc nỉ',
+          quantity: 1,
+        ),
+      ];
+      final quote = PricingEngine.calculateQuote(items: items);
+      final reviewOrder = BulkyOrder(
+        id: 'order-pending-review-1',
+        items: items,
+        quote: quote,
+        address: '88 Lê Lợi, P. Bến Nghé, Q.1',
+        pickupDate: '2026-10-30',
+        status: BulkyOrderStatus.PENDING_REVIEW,
+        paymentStatus: BulkyPaymentStatus.UNPAID,
+        createdAt: DateTime.now(),
+      );
+
+      final storage = MockBulkyStorage();
+      await storage.saveOrder(reviewOrder);
+      final provider = OrdersProvider(storage: storage);
+      await provider.loadOrders();
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: provider),
+          ],
+          child: MaterialApp(
+            home: BulkyOrderDetailScreen(orderId: reviewOrder.id),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('⏳ Đang Chờ Điều Phối Viên Xét Duyệt'), findsOneWidget);
+      expect(
+        find.textContaining('Đơn hàng đang được Điều phối viên kiểm tra ảnh và chốt mức giá chính xác.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('BulkyOrderDetailScreen displays APPROVED_AWAITING_PAYMENT card, finalized price and navigates to payment', (tester) async {
+      final items = [
+        const BulkyItem(
+          id: 'item-approved',
+          category: BulkyCategory.SOFA,
+          displayName: 'Sofa da 3 chỗ',
+          quantity: 1,
+        ),
+      ];
+      final quote = PricingEngine.calculateQuote(items: items);
+      final approvedOrder = BulkyOrder(
+        id: 'order-approved-1',
+        items: items,
+        quote: quote,
+        address: '12 Nguyễn Thị Minh Khai, Q.1',
+        pickupDate: '2026-11-01',
+        status: BulkyOrderStatus.APPROVED_AWAITING_PAYMENT,
+        paymentStatus: BulkyPaymentStatus.UNPAID,
+        finalizedPriceVnd: 280000,
+        operatorNote: 'Đã kiểm tra ảnh, chấp nhận hỗ trợ bốc vác tầng 2',
+        createdAt: DateTime.now(),
+      );
+
+      final storage = MockBulkyStorage();
+      await storage.saveOrder(approvedOrder);
+      final provider = OrdersProvider(storage: storage);
+      await provider.loadOrders();
+
+      String? navigatedOrderId;
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: provider),
+          ],
+          child: MaterialApp(
+            home: BulkyOrderDetailScreen(orderId: approvedOrder.id),
+            routes: {
+              '/payment': (context) {
+                navigatedOrderId = ModalRoute.of(context)?.settings.arguments as String?;
+                return const Scaffold(body: Text('Payment Gateway Screen'));
+              },
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('🎉 Đơn Hàng Đã Được Phê Duyệt!'), findsOneWidget);
+      expect(find.textContaining('280.000 đ'), findsWidgets);
+      expect(find.textContaining('Đã kiểm tra ảnh, chấp nhận hỗ trợ bốc vác tầng 2'), findsOneWidget);
+
+      final depositBtn = find.byKey(const Key('proceed_to_deposit_button'));
+      expect(depositBtn, findsOneWidget);
+      await tester.tap(depositBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Payment Gateway Screen'), findsOneWidget);
+      expect(navigatedOrderId, 'order-approved-1');
+    });
+
+    testWidgets('BulkyOrderDetailScreen displays DISCREPANCY_PENDING card and accepts adjusted price', (tester) async {
+      final items = [
+        const BulkyItem(
+          id: 'item-disc',
+          category: BulkyCategory.SOFA,
+          displayName: 'Sofa da 3 chỗ',
+          quantity: 1,
+        ),
+      ];
+      final quote = PricingEngine.calculateQuote(items: items);
+      final discOrder = BulkyOrder(
+        id: 'order-disc-1',
+        items: items,
+        quote: quote,
+        address: '34 Lê Duẩn, Q.1',
+        pickupDate: '2026-11-05',
+        status: BulkyOrderStatus.DISCREPANCY_PENDING,
+        paymentStatus: BulkyPaymentStatus.DEPOSIT_HELD,
+        finalizedPriceVnd: 280000,
+        onSiteAdjustedPriceVnd: 380000,
+        onSiteDiscrepancyNote: 'Phát sinh thêm 1 nệm và đổi sang gỗ đặc',
+        createdAt: DateTime.now(),
+      );
+
+      final storage = MockBulkyStorage();
+      await storage.saveOrder(discOrder);
+      final provider = OrdersProvider(storage: storage);
+      await provider.loadOrders();
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: provider),
+          ],
+          child: MaterialApp(
+            home: BulkyOrderDetailScreen(orderId: discOrder.id),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('⚠️ Tài Xế Báo Phát Sinh Đồ Tại Hiện Trường'), findsOneWidget);
+      expect(find.textContaining('Phát sinh thêm 1 nệm và đổi sang gỗ đặc'), findsOneWidget);
+      expect(find.textContaining('280.000 đ'), findsWidgets);
+      expect(find.textContaining('380.000 đ'), findsWidgets);
+
+      final acceptBtn = find.byKey(const Key('accept_discrepancy_button'));
+      expect(acceptBtn, findsOneWidget);
+      await tester.tap(acceptBtn);
+      await tester.pumpAndSettle();
+
+      final updatedOrder = provider.getOrderById('order-disc-1');
+      expect(updatedOrder?.status, BulkyOrderStatus.IN_PROGRESS);
+      expect(updatedOrder?.finalizedPriceVnd, 380000);
+    });
+
+    testWidgets('BulkyOrderDetailScreen handles rejecting on-site discrepancy', (tester) async {
+      final items = [
+        const BulkyItem(
+          id: 'item-disc-2',
+          category: BulkyCategory.SOFA,
+          displayName: 'Sofa da 3 chỗ',
+          quantity: 1,
+        ),
+      ];
+      final quote = PricingEngine.calculateQuote(items: items);
+      final discOrder = BulkyOrder(
+        id: 'order-disc-2',
+        items: items,
+        quote: quote,
+        address: '34 Lê Duẩn, Q.1',
+        pickupDate: '2026-11-05',
+        status: BulkyOrderStatus.DISCREPANCY_PENDING,
+        paymentStatus: BulkyPaymentStatus.DEPOSIT_HELD,
+        finalizedPriceVnd: 280000,
+        onSiteAdjustedPriceVnd: 380000,
+        onSiteDiscrepancyNote: 'Phát sinh thêm đồ',
+        createdAt: DateTime.now(),
+      );
+
+      final storage = MockBulkyStorage();
+      await storage.saveOrder(discOrder);
+      final provider = OrdersProvider(storage: storage);
+      await provider.loadOrders();
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: provider),
+          ],
+          child: MaterialApp(
+            home: BulkyOrderDetailScreen(orderId: discOrder.id),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final rejectBtn = find.byKey(const Key('reject_discrepancy_button'));
+      expect(rejectBtn, findsOneWidget);
+      await tester.tap(rejectBtn);
+      await tester.pumpAndSettle();
+
+      final updatedOrder = provider.getOrderById('order-disc-2');
+      expect(updatedOrder?.status, BulkyOrderStatus.IN_PROGRESS);
+      expect(updatedOrder?.finalizedPriceVnd, 280000);
+      expect(updatedOrder?.onSiteDiscrepancyNote, isNull);
+    });
+
+    testWidgets('BulkyOrderDetailScreen displays REJECTED_ON_SITE banner with safety reason and callout fee', (tester) async {
+      final items = [
+        const BulkyItem(
+          id: 'item-rej-site',
+          category: BulkyCategory.OTHER,
+          displayName: 'Đồ phế liệu linh tinh',
+          quantity: 1,
+        ),
+      ];
+      final quote = PricingEngine.calculateQuote(items: items);
+      final rejectedOnSiteOrder = BulkyOrder(
+        id: 'order-rej-site-1',
+        items: items,
+        quote: quote,
+        address: '56 Hàm Nghi, Q.1',
+        pickupDate: '2026-11-06',
+        status: BulkyOrderStatus.REJECTED_ON_SITE,
+        paymentStatus: BulkyPaymentStatus.REFUNDED,
+        onSiteRejectionReason: 'Chất thải nguy hại chứa hóa chất độc hại',
+        calloutFeeVnd: 50000,
+        createdAt: DateTime.now(),
+      );
+
+      final storage = MockBulkyStorage();
+      await storage.saveOrder(rejectedOnSiteOrder);
+      final provider = OrdersProvider(storage: storage);
+      await provider.loadOrders();
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: provider),
+          ],
+          child: MaterialApp(
+            home: BulkyOrderDetailScreen(orderId: rejectedOnSiteOrder.id),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('⛔ Đã Từ Chối Thu Gom Tại Hiện Trường'), findsOneWidget);
+      expect(find.textContaining('Chất thải nguy hại chứa hóa chất độc hại'), findsOneWidget);
+      expect(find.textContaining('50.000 đ'), findsWidgets);
+    });
+
+    testWidgets('BulkyOrderDetailScreen displays REJECTED banner with operator rejection reason', (tester) async {
+      final items = [
+        const BulkyItem(
+          id: 'item-rej-op',
+          category: BulkyCategory.OTHER,
+          displayName: 'Xà bần gạch vữa',
+          quantity: 1,
+        ),
+      ];
+      final quote = PricingEngine.calculateQuote(items: items);
+      final rejectedOrder = BulkyOrder(
+        id: 'order-rej-op-1',
+        items: items,
+        quote: quote,
+        address: '78 Pasteur, Q.1',
+        pickupDate: '2026-11-07',
+        status: BulkyOrderStatus.REJECTED,
+        paymentStatus: BulkyPaymentStatus.REFUNDED,
+        operatorNote: 'Không thu gom rác thải xây dựng theo quy định đô thị',
+        createdAt: DateTime.now(),
+      );
+
+      final storage = MockBulkyStorage();
+      await storage.saveOrder(rejectedOrder);
+      final provider = OrdersProvider(storage: storage);
+      await provider.loadOrders();
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: provider),
+          ],
+          child: MaterialApp(
+            home: BulkyOrderDetailScreen(orderId: rejectedOrder.id),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('❌ Đơn Hàng Không Được Phê Duyệt'), findsOneWidget);
+      expect(find.textContaining('Không thu gom rác thải xây dựng theo quy định đô thị'), findsOneWidget);
+    });
   });
 }
