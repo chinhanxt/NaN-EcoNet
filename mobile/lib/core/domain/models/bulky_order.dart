@@ -21,6 +21,12 @@ class BulkyOrder {
   final String? contactPhone;
   final String? note;
   final String? imageUri;
+  final int? finalizedPriceVnd;
+  final String? operatorNote;
+  final int? onSiteAdjustedPriceVnd;
+  final String? onSiteDiscrepancyNote;
+  final String? onSiteRejectionReason;
+  final int calloutFeeVnd;
 
   const BulkyOrder({
     required this.id,
@@ -40,6 +46,12 @@ class BulkyOrder {
     this.contactPhone,
     this.note,
     this.imageUri,
+    this.finalizedPriceVnd,
+    this.operatorNote,
+    this.onSiteAdjustedPriceVnd,
+    this.onSiteDiscrepancyNote,
+    this.onSiteRejectionReason,
+    this.calloutFeeVnd = 0,
   });
 
   int get totalItemsCount =>
@@ -66,6 +78,12 @@ class BulkyOrder {
     String? contactPhone,
     String? note,
     String? imageUri,
+    int? finalizedPriceVnd,
+    String? operatorNote,
+    int? onSiteAdjustedPriceVnd,
+    String? onSiteDiscrepancyNote,
+    String? onSiteRejectionReason,
+    int? calloutFeeVnd,
   }) {
     return BulkyOrder(
       id: id ?? this.id,
@@ -85,6 +103,15 @@ class BulkyOrder {
       contactPhone: contactPhone ?? this.contactPhone,
       note: note ?? this.note,
       imageUri: imageUri ?? this.imageUri,
+      finalizedPriceVnd: finalizedPriceVnd ?? this.finalizedPriceVnd,
+      operatorNote: operatorNote ?? this.operatorNote,
+      onSiteAdjustedPriceVnd:
+          onSiteAdjustedPriceVnd ?? this.onSiteAdjustedPriceVnd,
+      onSiteDiscrepancyNote:
+          onSiteDiscrepancyNote ?? this.onSiteDiscrepancyNote,
+      onSiteRejectionReason:
+          onSiteRejectionReason ?? this.onSiteRejectionReason,
+      calloutFeeVnd: calloutFeeVnd ?? this.calloutFeeVnd,
     );
   }
 
@@ -107,6 +134,12 @@ class BulkyOrder {
       'contactPhone': contactPhone,
       'note': note,
       'imageUri': imageUri,
+      'finalizedPriceVnd': finalizedPriceVnd,
+      'operatorNote': operatorNote,
+      'onSiteAdjustedPriceVnd': onSiteAdjustedPriceVnd,
+      'onSiteDiscrepancyNote': onSiteDiscrepancyNote,
+      'onSiteRejectionReason': onSiteRejectionReason,
+      'calloutFeeVnd': calloutFeeVnd,
     };
   }
 
@@ -141,6 +174,12 @@ class BulkyOrder {
       contactPhone: json['contactPhone'] as String?,
       note: json['note'] as String?,
       imageUri: json['imageUri'] as String?,
+      finalizedPriceVnd: (json['finalizedPriceVnd'] as num?)?.toInt(),
+      operatorNote: json['operatorNote'] as String?,
+      onSiteAdjustedPriceVnd: (json['onSiteAdjustedPriceVnd'] as num?)?.toInt(),
+      onSiteDiscrepancyNote: json['onSiteDiscrepancyNote'] as String?,
+      onSiteRejectionReason: json['onSiteRejectionReason'] as String?,
+      calloutFeeVnd: (json['calloutFeeVnd'] as num?)?.toInt() ?? 0,
     );
   }
 }

@@ -158,7 +158,12 @@ enum BulkyOrderStatus {
   IN_PROGRESS,
   COLLECTED,
   COMPLETED,
-  CANCELLED;
+  CANCELLED,
+  PENDING_REVIEW,
+  APPROVED_AWAITING_PAYMENT,
+  DISCREPANCY_PENDING,
+  REJECTED_ON_SITE,
+  REJECTED;
 
   String get label {
     switch (this) {
@@ -180,6 +185,16 @@ enum BulkyOrderStatus {
         return 'Hoàn tất quyết toán';
       case BulkyOrderStatus.CANCELLED:
         return 'Đã hủy';
+      case BulkyOrderStatus.PENDING_REVIEW:
+        return 'Chờ điều phối viên duyệt giá';
+      case BulkyOrderStatus.APPROVED_AWAITING_PAYMENT:
+        return 'Đã duyệt giá • Chờ đặt cọc';
+      case BulkyOrderStatus.DISCREPANCY_PENDING:
+        return 'Chờ duyệt phát sinh tại chỗ';
+      case BulkyOrderStatus.REJECTED_ON_SITE:
+        return 'Từ chối tại hiện trường';
+      case BulkyOrderStatus.REJECTED:
+        return 'Đã từ chối';
     }
   }
 
