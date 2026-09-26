@@ -23,7 +23,7 @@
     "echarts-for-react": "^3.0.2",
     "lucide-react": "^0.441.0",
     "pg": "^8.11.5",
-    "react": "^18.3.1",
+    "react": "^19.3.0",
     "react-dom": "^18.3.1",
     "recharts": "^2.12.7",
     "tailwind-merge": "^2.5.2",
@@ -32,7 +32,7 @@
   "devDependencies": {
     "@types/node": "^20.14.9",
     "@types/pg": "^8.11.5",
-    "@types/react": "^18.3.3",
+    "@types/react": "^19.3.0",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.19",
