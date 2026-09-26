@@ -188,13 +188,13 @@ void main() {
       expect(order?.vehiclePlate, '51C-889.21');
     });
 
-    testWidgets('3. BulkyDriverScreen renders active tasks and confirms collection flow', (tester) async {
+    testWidgets('3. BulkyDriverScreen renders active tasks and confirms collection flow for BulkyDriver', (tester) async {
       final storage = MockBulkyStorage();
       await storage.seedInitialOrdersIfEmpty();
       final ordersProvider = OrdersProvider(storage: storage);
       await ordersProvider.loadOrders();
 
-      final auth = AuthProvider(initialUser: CitizenUser.demoDriver);
+      final auth = AuthProvider(initialUser: CitizenUser.demoBulkyDriver);
 
       await tester.pumpWidget(
         MultiProvider(
@@ -209,10 +209,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Verify Driver Header
+      // Verify Bulky Driver Header
       expect(find.text('Lộ Trình Thu Gom Hiện Trường'), findsOneWidget);
-      expect(find.text('Nguyễn Văn Hùng'), findsOneWidget);
-      expect(find.textContaining('51C-889.21'), findsWidgets);
+      expect(find.text('Lê Hoàng Long'), findsOneWidget);
+      expect(find.textContaining('51D-924.58'), findsWidgets);
 
       // Active order order-demo-scheduled is waiting
       final startTripButton = find.byKey(const Key('driver_start_collection_button_order-demo-scheduled'));
@@ -265,13 +265,65 @@ void main() {
       expect(find.text('Trần Thị Mai'), findsOneWidget);
       expect(find.text('NV-DP01'), findsOneWidget);
 
-      // Tap switch to driver
+      // Tap switch to regular driver
       await tester.tap(find.byKey(const Key('switch_role_driver_button')));
       await tester.pumpAndSettle();
 
       expect(auth.isDriver, isTrue);
       expect(find.text('Nguyễn Văn Hùng'), findsOneWidget);
       expect(find.text('TX-51C889'), findsOneWidget);
+
+      // Tap switch to bulky driver
+      await tester.tap(find.byKey(const Key('switch_role_driver_bulky_button')));
+      await tester.pumpAndSettle();
+
+      expect(auth.isBulkyDriver, isTrue);
+      expect(find.text('Lê Hoàng Long'), findsOneWidget);
+      expect(find.text('TX-CK924'), findsOneWidget);
+    });
+
+    testWidgets('5. BulkyDriverScreen renders regular waste tasks for regular driver Nguyễn Văn Hùng and confirms collection', (tester) async {
+      final storage = MockBulkyStorage();
+      await storage.seedInitialOrdersIfEmpty();
+      final ordersProvider = OrdersProvider(storage: storage);
+      await ordersProvider.loadOrders();
+
+      final auth = AuthProvider(initialUser: CitizenUser.demoRegularDriver);
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<AuthProvider>.value(value: auth),
+            ChangeNotifierProvider<OrdersProvider>.value(value: ordersProvider),
+          ],
+          child: const MaterialApp(
+            home: BulkyDriverScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verify Regular Driver Header
+      expect(find.text('Lộ Trình Thu Gom Hiện Trường'), findsOneWidget);
+      expect(find.text('Nguyễn Văn Hùng'), findsOneWidget);
+      expect(find.textContaining('51C-889.21'), findsWidgets);
+      expect(find.textContaining('TÀI XẾ THU GOM RÁC SINH HOẠT'), findsOneWidget);
+
+      // Verify regular stops
+      expect(find.text('Thùng rác công cộng #SH-01'), findsWidgets);
+      expect(find.byKey(const Key('regular_stop_card_sh-01')), findsOneWidget);
+      expect(find.textContaining('Cư dân báo thùng đầy qua App'), findsWidgets);
+
+      // Tap confirm collection on stop 1
+      final confirmBtn = find.byKey(const Key('confirm_regular_collection_button_sh-01'));
+      expect(confirmBtn, findsOneWidget);
+      await tester.scrollUntilVisible(confirmBtn, 100);
+      await tester.tap(confirmBtn);
+      await tester.pumpAndSettle();
+
+      // Verify completed section shows
+      expect(find.text('Đã hoàn tất ép rác hôm nay'), findsOneWidget);
+      expect(find.text('Đã ép tải'), findsOneWidget);
     });
   });
 }

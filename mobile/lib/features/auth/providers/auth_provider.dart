@@ -21,6 +21,10 @@ class AuthProvider extends ChangeNotifier {
   bool get isCitizen => _currentUser?.role == UserRole.citizen;
   bool get isOperator => _currentUser?.role == UserRole.operator;
   bool get isDriver => _currentUser?.role == UserRole.driver;
+  bool get isRegularDriver => _currentUser?.isRegularWasteDriver ?? false;
+  bool get isBulkyDriver => _currentUser?.isBulkyWasteDriver ?? false;
+  bool get isRegularWasteDriver => isRegularDriver;
+  bool get isBulkyWasteDriver => isBulkyDriver;
 
   /// Loads stored user from local storage or defaults to demo citizen.
   Future<void> loadSession() async {
@@ -45,8 +49,8 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// Quickly switches the active role between Citizen, Operator, and Driver.
-  Future<void> switchRole(UserRole role) async {
+  /// Quickly switches the active role between Citizen, Operator, and Driver (Regular vs Bulky).
+  Future<void> switchRole(UserRole role, {DriverWasteType? driverType}) async {
     _isLoading = true;
     notifyListeners();
 
@@ -58,7 +62,11 @@ class AuthProvider extends ChangeNotifier {
         _currentUser = CitizenUser.demoOperator;
         break;
       case UserRole.driver:
-        _currentUser = CitizenUser.demoDriver;
+        if (driverType == DriverWasteType.bulky) {
+          _currentUser = CitizenUser.demoBulkyDriver;
+        } else {
+          _currentUser = CitizenUser.demoRegularDriver;
+        }
         break;
     }
 
@@ -97,7 +105,9 @@ class AuthProvider extends ChangeNotifier {
     if (normalized == '0908111222' || trimmedPhone == '0908.111.222') {
       _currentUser = CitizenUser.demoOperator;
     } else if (normalized == '0909123456' || trimmedPhone == '0909.123.456') {
-      _currentUser = CitizenUser.demoDriver;
+      _currentUser = CitizenUser.demoRegularDriver;
+    } else if (normalized == '0903888999' || trimmedPhone == '0903.888.999') {
+      _currentUser = CitizenUser.demoBulkyDriver;
     } else if (normalized == '0912345678' || trimmedPhone == '0912.345.678') {
       _currentUser = CitizenUser.demoCitizen;
     } else {

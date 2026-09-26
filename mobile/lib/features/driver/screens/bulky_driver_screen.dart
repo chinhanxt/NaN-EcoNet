@@ -10,34 +10,90 @@ import '../widgets/driver_route_map_card.dart';
 
 /// Screen for collection drivers / field teams to view assigned pickup stops,
 /// start trips, verify items on-site, and confirm bulky waste collection.
-class BulkyDriverScreen extends StatelessWidget {
+class BulkyDriverScreen extends StatefulWidget {
   const BulkyDriverScreen({super.key});
+
+  @override
+  State<BulkyDriverScreen> createState() => _BulkyDriverScreenState();
+}
+
+class _BulkyDriverScreenState extends State<BulkyDriverScreen> {
+  final Set<String> _completedRegularStopIds = {};
+
+  final List<Map<String, dynamic>> _regularWasteStops = [
+    {
+      'id': 'sh-01',
+      'name': 'Thùng rác công cộng #SH-01',
+      'address': 'Số 68 Cầu Giấy, Quan Hoa',
+      'reason': '📱 Cư dân báo thùng đầy qua App (15 phút trước)',
+      'isAppReported': true,
+      'reporterNote': 'Thùng rác vỉa hè đầy tràn rác sinh hoạt sau ca chợ sáng.',
+      'distance': '450 m',
+      'timeReported': '15 phút trước',
+    },
+    {
+      'id': 'sh-02',
+      'name': 'Điểm thu gom rác #SH-02',
+      'address': '120 Đường Cầu Giấy, Quan Hoa',
+      'reason': '🗓️ Lịch thu gom định kỳ (Chu kỳ 2 ngày/lần)',
+      'isAppReported': false,
+      'reporterNote': 'Tuyến cố định xe ép rác sinh hoạt sáng T7.',
+      'distance': '1.2 km',
+      'timeReported': 'Định kỳ T7',
+    },
+    {
+      'id': 'sh-03',
+      'name': 'Thùng rác công cộng #SH-03',
+      'address': 'Ngã tư Trần Thái Tông - Xuân Thủy',
+      'reason': '📱 Cư dân báo tồn đọng rác qua App (25 phút trước)',
+      'isAppReported': true,
+      'reporterNote': 'Rác sinh hoạt tồn đọng quanh điểm chờ xe buýt sau giờ cao điểm.',
+      'distance': '1.8 km',
+      'timeReported': '25 phút trước',
+    },
+    {
+      'id': 'sh-04',
+      'name': 'Điểm thu gom rác #SH-04',
+      'address': '45 Phố Duy Tân, Dịch Vọng Hậu',
+      'reason': '🗓️ Lịch thu gom định kỳ (Chu kỳ 2 ngày/lần)',
+      'isAppReported': false,
+      'reporterNote': 'Cụm 3 thùng rác công cộng khu văn phòng Duy Tân.',
+      'distance': '2.5 km',
+      'timeReported': 'Định kỳ T7',
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final ordersProvider = context.watch<OrdersProvider>();
     final user = auth.currentUser;
-    final vehiclePlate = user?.vehiclePlate ?? '51C-889.21';
+    final isRegularDriver = user?.isRegularWasteDriver ?? false;
+    final vehiclePlate = user?.vehiclePlate ?? (isRegularDriver ? '51C-889.21' : '51D-924.58');
 
-    // Get orders assigned to this vehicle or currently in scheduled / progress / discrepancy pending
-    final assignedOrders = ordersProvider.orders
-        .where((o) =>
-            (o.vehiclePlate == null ||
-                o.vehiclePlate!.toLowerCase().contains('51c-889.21') ||
-                o.vehiclePlate == vehiclePlate) &&
-            (o.status == BulkyOrderStatus.SCHEDULED ||
-                o.status == BulkyOrderStatus.ASSIGNED ||
-                o.status == BulkyOrderStatus.IN_PROGRESS ||
-                o.status == BulkyOrderStatus.DISCREPANCY_PENDING))
+    // Bulky driver: handles bulky orders
+    final assignedOrders = isRegularDriver
+        ? <BulkyOrder>[]
+        : ordersProvider.orders
+            .where((o) =>
+                (o.status == BulkyOrderStatus.SCHEDULED ||
+                    o.status == BulkyOrderStatus.ASSIGNED ||
+                    o.status == BulkyOrderStatus.IN_PROGRESS ||
+                    o.status == BulkyOrderStatus.DISCREPANCY_PENDING))
+            .toList();
+
+    final completedTrips = isRegularDriver
+        ? <BulkyOrder>[]
+        : ordersProvider.orders
+            .where((o) => o.status == BulkyOrderStatus.COMPLETED)
+            .toList();
+
+    // Regular driver stops:
+    final activeRegularStops = _regularWasteStops
+        .where((s) => !_completedRegularStopIds.contains(s['id']))
         .toList();
-
-    final completedTrips = ordersProvider.orders
-        .where((o) =>
-            o.status == BulkyOrderStatus.COMPLETED &&
-            (o.vehiclePlate == null ||
-                o.vehiclePlate!.toLowerCase().contains('51c-889.21') ||
-                o.vehiclePlate == vehiclePlate))
+    final completedRegularStops = _regularWasteStops
+        .where((s) => _completedRegularStopIds.contains(s['id']))
         .toList();
 
     return Scaffold(
@@ -65,24 +121,36 @@ class BulkyDriverScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // 1. Driver & Vehicle Information Card
-            _buildDriverHeaderCard(user, vehiclePlate, assignedOrders.length),
+            _buildDriverHeaderCard(
+              user: user,
+              vehiclePlate: vehiclePlate,
+              activeCount: isRegularDriver ? activeRegularStops.length : assignedOrders.length,
+              isRegularDriver: isRegularDriver,
+            ),
             const SizedBox(height: 14),
 
-            // 2. Interactive Route Mockup Map (IoT Smart Bins & Bulky Waste Stops with Turn-by-Turn Directions)
+            // 2. Interactive Route Mockup Map
             DriverRouteMapCard(
               vehiclePlate: vehiclePlate,
               activeOrders: assignedOrders,
+              isRegularWasteRoute: isRegularDriver,
             ),
             const SizedBox(height: 16),
 
             // 3. Active Stops Section
-            const Row(
+            Row(
               children: [
-                Icon(Icons.route_rounded, size: 18, color: BulkyColors.primary),
-                SizedBox(width: 8),
+                Icon(
+                  isRegularDriver ? Icons.cleaning_services_rounded : Icons.route_rounded,
+                  size: 18,
+                  color: isRegularDriver ? const Color(0xFF0D9488) : BulkyColors.primary,
+                ),
+                const SizedBox(width: 8),
                 Text(
-                  'Nhiệm vụ thu gom trên tuyến',
-                  style: TextStyle(
+                  isRegularDriver
+                      ? 'Điểm thu gom trên tuyến (Định kỳ & Dân báo App)'
+                      : 'Nhiệm vụ thu gom trên tuyến',
+                  style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: BulkyColors.textPrimary,
@@ -92,17 +160,41 @@ class BulkyDriverScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
 
-            if (assignedOrders.isEmpty)
-              _buildEmptyTasksCard()
-            else
-              ...assignedOrders.map(
-                (order) => _buildDriverTaskCard(context, ordersProvider, order),
-              ),
+            if (isRegularDriver) ...[
+              if (activeRegularStops.isEmpty)
+                _buildRegularAllCompletedCard()
+              else
+                ...activeRegularStops.map(_buildRegularWasteStopCard),
+            ] else ...[
+              if (assignedOrders.isEmpty)
+                _buildEmptyTasksCard()
+              else
+                ...assignedOrders.map(
+                  (order) => _buildDriverTaskCard(context, ordersProvider, order),
+                ),
+            ],
 
             const SizedBox(height: 20),
 
-            // 3. Completed Trips Section
-            if (completedTrips.isNotEmpty) ...[
+            // 4. Completed Trips Section
+            if (isRegularDriver && completedRegularStops.isNotEmpty) ...[
+              const Row(
+                children: [
+                  Icon(Icons.check_circle_outline_rounded, size: 18, color: BulkyColors.success),
+                  SizedBox(width: 8),
+                  Text(
+                    'Đã hoàn tất ép rác hôm nay',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: BulkyColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ...completedRegularStops.map(_buildCompletedRegularStopCard),
+            ] else if (!isRegularDriver && completedTrips.isNotEmpty) ...[
               const Row(
                 children: [
                   Icon(Icons.check_circle_outline_rounded,
@@ -127,7 +219,237 @@ class BulkyDriverScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDriverHeaderCard(CitizenUser? user, String vehiclePlate, int activeCount) {
+  Widget _buildRegularWasteStopCard(Map<String, dynamic> stop) {
+    final isAppReported = stop['isAppReported'] as bool;
+    final id = stop['id'] as String;
+
+    return Container(
+      key: Key('regular_stop_card_$id'),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: BulkyColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isAppReported
+              ? const Color(0xFFF59E0B).withValues(alpha: 0.4)
+              : const Color(0xFF0D9488).withValues(alpha: 0.3),
+        ),
+        boxShadow: BulkyColors.softShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isAppReported ? const Color(0xFFFEF3C7) : const Color(0xFFE6FFFA),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isAppReported ? Icons.phone_android_rounded : Icons.event_repeat_rounded,
+                      size: 13,
+                      color: isAppReported ? const Color(0xFFD97706) : const Color(0xFF0D9488),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      stop['reason'] as String,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: isAppReported ? const Color(0xFFB45309) : const Color(0xFF0F766E),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              Text(
+                stop['distance'] as String,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: BulkyColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // Name & Address
+          Text(
+            stop['name'] as String,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: BulkyColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              const Icon(Icons.location_on_rounded, size: 15, color: BulkyColors.primary),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  stop['address'] as String,
+                  style: const TextStyle(fontSize: 12, color: BulkyColors.textSecondary),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // Note
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: BulkyColors.background,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline_rounded, size: 14, color: BulkyColors.textSecondary),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    stop['reporterNote'] as String,
+                    style: const TextStyle(fontSize: 11, color: BulkyColors.textPrimary),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // Complete Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              key: Key('confirm_regular_collection_button_$id'),
+              onPressed: () {
+                setState(() {
+                  _completedRegularStopIds.add(id);
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      '✓ Đã thu gom và ép rác tại ${stop['name']} vào xe ép 51C-889.21!',
+                    ),
+                    backgroundColor: const Color(0xFF0D9488),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.check_circle_rounded, size: 18),
+              label: const Text('🚛 Xác nhận đã thu gom & ép rác'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0D9488),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 11),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompletedRegularStopCard(Map<String, dynamic> stop) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: BulkyColors.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: BulkyColors.border),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.check_circle, color: BulkyColors.success, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  stop['name'] as String,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  stop['address'] as String,
+                  style: const TextStyle(fontSize: 11, color: BulkyColors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: BulkyColors.successBg,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Text(
+              'Đã ép tải',
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: BulkyColors.success),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRegularAllCompletedCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE6FFFA),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF0D9488).withValues(alpha: 0.3)),
+      ),
+      child: const Column(
+        children: [
+          Icon(Icons.task_alt_rounded, size: 40, color: Color(0xFF0D9488)),
+          SizedBox(height: 8),
+          Text(
+            'Hoàn tất ca thu gom rác sinh hoạt!',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F766E)),
+          ),
+          SizedBox(height: 4),
+          Text(
+            'Toàn bộ điểm rác báo qua app và định kỳ đã được dọn sạch. Xe ép rác di chuyển về Trạm ép kín Cầu Giấy để xả rác.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, color: BulkyColors.textSecondary),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDriverHeaderCard({
+    required CitizenUser? user,
+    required String vehiclePlate,
+    required int activeCount,
+    required bool isRegularDriver,
+  }) {
+    final badgeText = isRegularDriver
+        ? '🚚 TÀI XẾ THU GOM RÁC SINH HOẠT'
+        : '🛋️ TÀI XẾ THU GOM RÁC CỒNG KỀNH CHUYÊN DỤNG';
+
+    final badgeColor = isRegularDriver ? const Color(0xFF0D9488) : const Color(0xFFEA580C);
+
+    final vehicleDesc = isRegularDriver
+        ? 'Xe ép rác 5T ($vehiclePlate) • Đội Xe Ép Sinh Hoạt Q.1'
+        : 'Xe tải 2.5T ($vehiclePlate) • Đội Xe Thu Gom Cồng Kềnh Q.1';
+
+    final defaultName = isRegularDriver ? 'Nguyễn Văn Hùng' : 'Lê Hoàng Long';
+    final defaultStaffCode = isRegularDriver ? 'TX-51C889' : 'TX-CK924';
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
@@ -142,15 +464,15 @@ class BulkyDriverScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEA580C).withValues(alpha: 0.12),
+                  color: badgeColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Text(
-                  '🚚 TÀI XẾ THU GOM CHUYÊN DỤNG',
+                child: Text(
+                  badgeText,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFFEA580C),
+                    color: badgeColor,
                   ),
                 ),
               ),
@@ -186,11 +508,10 @@ class BulkyDriverScreen extends StatelessWidget {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF97316).withValues(alpha: 0.15),
+                  color: badgeColor.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.local_shipping_rounded,
-                    color: Color(0xFFEA580C), size: 22),
+                child: Icon(Icons.local_shipping_rounded, color: badgeColor, size: 22),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -201,7 +522,7 @@ class BulkyDriverScreen extends StatelessWidget {
                       children: [
                         Flexible(
                           child: Text(
-                            user?.name ?? 'Nguyễn Văn Hùng',
+                            user?.name ?? defaultName,
                             style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.bold,
@@ -218,7 +539,7 @@ class BulkyDriverScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            user?.staffCode ?? 'TX-51C889',
+                            user?.staffCode ?? defaultStaffCode,
                             style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
@@ -230,7 +551,7 @@ class BulkyDriverScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Xe tải 2.5T ($vehiclePlate) • Đội VSMT Q.1',
+                      vehicleDesc,
                       style: const TextStyle(
                         fontSize: 11,
                         color: BulkyColors.textSecondary,

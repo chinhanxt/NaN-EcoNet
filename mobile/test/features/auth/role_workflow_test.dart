@@ -53,19 +53,33 @@ void main() {
         expect(find.text('NV-DP01'), findsOneWidget);
         expect(find.textContaining('ĐIỀU PHỐI VIÊN'), findsWidgets);
 
-        // 3. Switch to Driver
+        // 3. Switch to Driver (Regular Waste)
         final drvBtn = find.byKey(const Key('switch_role_driver_button'));
         expect(drvBtn, findsOneWidget);
         await tester.tap(drvBtn);
         await tester.pumpAndSettle();
 
         expect(auth.isDriver, isTrue);
+        expect(auth.isRegularWasteDriver, isTrue);
         expect(find.text('Nguyễn Văn Hùng'), findsOneWidget);
         expect(find.text('TX-51C889'), findsOneWidget);
         expect(find.textContaining('51C-889.21'), findsWidgets);
-        expect(find.textContaining('TÀI XẾ THU GOM'), findsWidgets);
+        expect(find.textContaining('TÀI XẾ THU GOM RÁC SINH HOẠT'), findsWidgets);
 
-        // 4. Switch back to Citizen
+        // 4. Switch to Driver (Bulky Waste)
+        final drvBulkyBtn = find.byKey(const Key('switch_role_driver_bulky_button'));
+        expect(drvBulkyBtn, findsOneWidget);
+        await tester.tap(drvBulkyBtn);
+        await tester.pumpAndSettle();
+
+        expect(auth.isDriver, isTrue);
+        expect(auth.isBulkyWasteDriver, isTrue);
+        expect(find.text('Lê Hoàng Long'), findsOneWidget);
+        expect(find.text('TX-CK924'), findsOneWidget);
+        expect(find.textContaining('51D-924.58'), findsWidgets);
+        expect(find.textContaining('TÀI XẾ THU GOM RÁC CỒNG KỀNH'), findsWidgets);
+
+        // 5. Switch back to Citizen
         final ctzBtn = find.byKey(const Key('switch_role_citizen_button'));
         expect(ctzBtn, findsOneWidget);
         await tester.tap(ctzBtn);
@@ -144,7 +158,7 @@ void main() {
         final ordersProvider = OrdersProvider(storage: storage);
         await ordersProvider.loadOrders();
 
-        final auth = AuthProvider(initialUser: CitizenUser.demoDriver);
+        final auth = AuthProvider(initialUser: CitizenUser.demoBulkyDriver);
 
         await tester.pumpWidget(
           MultiProvider(
@@ -160,9 +174,9 @@ void main() {
         await tester.pumpAndSettle();
 
         // 1. Driver Banner & Vehicle info
-        expect(find.textContaining('TÀI XẾ THU GOM CHUYÊN DỤNG'), findsOneWidget);
-        expect(find.text('Nguyễn Văn Hùng'), findsWidgets);
-        expect(find.textContaining('51C-889.21'), findsWidgets);
+        expect(find.textContaining('TÀI XẾ THU GOM RÁC CỒNG KỀNH CHUYÊN DỤNG'), findsOneWidget);
+        expect(find.text('Lê Hoàng Long'), findsWidgets);
+        expect(find.textContaining('51D-924.58'), findsWidgets);
         expect(find.textContaining('Xe tải 2.5T'), findsWidgets);
 
         // 2. Active Trip Card & 1-tap call button
@@ -394,7 +408,7 @@ void main() {
         // Put order into IN_PROGRESS
         await ordersProvider.startCollection('order-demo-scheduled');
 
-        final auth = AuthProvider(initialUser: CitizenUser.demoDriver);
+        final auth = AuthProvider(initialUser: CitizenUser.demoBulkyDriver);
 
         await tester.pumpWidget(
           MultiProvider(
@@ -455,7 +469,7 @@ void main() {
         // Put order into IN_PROGRESS
         await ordersProvider.startCollection('order-demo-scheduled');
 
-        final auth = AuthProvider(initialUser: CitizenUser.demoDriver);
+        final auth = AuthProvider(initialUser: CitizenUser.demoBulkyDriver);
 
         await tester.pumpWidget(
           MultiProvider(
@@ -498,6 +512,53 @@ void main() {
         expect(updatedOrder?.status, BulkyOrderStatus.REJECTED_ON_SITE);
         expect(updatedOrder?.onSiteRejectionReason, 'Phát hiện bình gas mini và hóa chất công nghiệp dễ cháy nổ');
         expect(updatedOrder?.calloutFeeVnd, 50000);
+      },
+    );
+
+    testWidgets(
+      '8. BulkyDriverScreen for Regular Waste Driver displays regular stops and allows completing collection',
+      (tester) async {
+        final storage = MockBulkyStorage();
+        await storage.seedInitialOrdersIfEmpty();
+        final ordersProvider = OrdersProvider(storage: storage);
+        await ordersProvider.loadOrders();
+
+        final auth = AuthProvider(initialUser: CitizenUser.demoRegularDriver);
+
+        await tester.pumpWidget(
+          MultiProvider(
+            providers: [
+              ChangeNotifierProvider<AuthProvider>.value(value: auth),
+              ChangeNotifierProvider<OrdersProvider>.value(value: ordersProvider),
+            ],
+            child: const MaterialApp(
+              home: BulkyDriverScreen(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // 1. Driver Banner for regular waste
+        expect(find.textContaining('TÀI XẾ THU GOM RÁC SINH HOẠT'), findsOneWidget);
+        expect(find.text('Nguyễn Văn Hùng'), findsWidgets);
+        expect(find.textContaining('51C-889.21'), findsWidgets);
+        expect(find.textContaining('Xe ép rác 5T'), findsWidgets);
+
+        // 2. Regular waste stops displayed (SH-01, SH-02, etc.)
+        final confirmBtn = find.byKey(const Key('confirm_regular_collection_button_sh-01'));
+        await tester.scrollUntilVisible(confirmBtn, 100);
+        await tester.pumpAndSettle();
+
+        expect(find.textContaining('#SH-01'), findsWidgets);
+        expect(find.textContaining('Cư dân báo thùng đầy qua App'), findsWidgets);
+
+        // 3. Confirm collection at SH-01
+        expect(confirmBtn, findsOneWidget);
+        await tester.tap(confirmBtn);
+        await tester.pumpAndSettle();
+
+        // 4. Verify completed stop shows "Đã ép tải"
+        expect(find.text('Đã ép tải'), findsOneWidget);
       },
     );
   });

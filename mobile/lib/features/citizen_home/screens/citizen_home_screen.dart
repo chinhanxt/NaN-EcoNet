@@ -4,7 +4,7 @@ import '../../../core/theme/bulky_colors.dart';
 import '../../auth/providers/auth_provider.dart';
 
 /// Citizen Home Screen adhering strictly to the Smartbin Citizen Dashboard mock.
-/// Displays IoT Bin Telemetry, Daily Collection Schedule, Quick Action Grid,
+/// Displays Daily Collection Schedule, Quick Action Grid,
 /// and Eco Environmental Impact stats.
 class CitizenHomeScreen extends StatelessWidget {
   final ValueChanged<int>? onNavigateTab;
@@ -1010,7 +1010,7 @@ class CitizenHomeScreen extends StatelessWidget {
           Text(
             '• Quy trình nhắc cước: Ngày D (hạn đóng), D+3 (nhắc nhẹ qua app), D+7 (thông báo tổ dân phố), D+14 (chuyển cán bộ an sinh duyệt).\n'
             '• Cam kết an sinh: Hệ thống TUYỆT ĐỐI KHÔNG TỰ ĐỘNG CHẶN THU GOM nếu hộ dân chưa được xem xét hoàn cảnh an sinh.\n'
-            '• Cảm biến IoT thông minh tại thùng rác gia đình vẫn duy trì đo đạc mức đầy và cảnh báo mùi 24/7.',
+            '• Hệ thống thu gom rác sinh hoạt đô thị vận hành định kỳ 2-3 ngày/lần và tiếp nhận phản ánh thùng đầy qua app 24/7.',
             style: TextStyle(fontSize: 12, color: BulkyColors.textPrimary, height: 1.4),
           ),
         ],

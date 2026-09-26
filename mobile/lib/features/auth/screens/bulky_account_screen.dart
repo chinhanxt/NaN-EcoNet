@@ -171,7 +171,9 @@ class _BulkyAccountScreenState extends State<BulkyAccountScreen> {
                             ? 'Hộ gia đình • Hạng Bạc'
                             : (user.isOperator
                                 ? '👮 ĐIỀU PHỐI VIÊN ĐÔ THỊ • Tổ VSMT Q.1'
-                                : '🚚 TÀI XẾ THU GOM CHUYÊN DỤNG • Đội Xe 2.5T'),
+                                : (user.isRegularWasteDriver
+                                    ? '🚚 TÀI XẾ THU GOM RÁC SINH HOẠT • Đội Xe Ép 5T'
+                                    : '🛋️ TÀI XẾ THU GOM RÁC CỒNG KỀNH • Đội Xe Tải 2.5T')),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -345,7 +347,7 @@ class _BulkyAccountScreenState extends State<BulkyAccountScreen> {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Chọn 1 trong 3 tài khoản để test toàn bộ luồng thu gom cồng kềnh:',
+            'Chọn 1 trong 4 tài khoản để test toàn bộ luồng nghiệp vụ:',
             style: TextStyle(fontSize: 12, color: BulkyColors.textSecondary),
           ),
           const SizedBox(height: 10),
@@ -372,15 +374,30 @@ class _BulkyAccountScreenState extends State<BulkyAccountScreen> {
                   onTap: () => auth.switchRole(UserRole.operator),
                 ),
               ),
-              const SizedBox(width: 6),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
               Expanded(
                 child: _buildRoleSwitchButton(
                   key: const Key('switch_role_driver_button'),
-                  label: 'Tài xế',
-                  sub: 'Hùng',
-                  isSelected: user.isDriver,
+                  label: 'TX Rác Sinh Hoạt',
+                  sub: 'Hùng (Xe ép 5T)',
+                  isSelected: user.isRegularWasteDriver,
+                  color: const Color(0xFF0D9488),
+                  onTap: () => auth.switchRole(UserRole.driver, driverType: DriverWasteType.regular),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _buildRoleSwitchButton(
+                  key: const Key('switch_role_driver_bulky_button'),
+                  label: 'TX Rác Cồng Kềnh',
+                  sub: 'Long (Xe tải 2.5T)',
+                  isSelected: user.isBulkyWasteDriver,
                   color: const Color(0xFFEA580C),
-                  onTap: () => auth.switchRole(UserRole.driver),
+                  onTap: () => auth.switchRole(UserRole.driver, driverType: DriverWasteType.bulky),
                 ),
               ),
             ],
@@ -639,20 +656,38 @@ class _BulkyAccountScreenState extends State<BulkyAccountScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           margin: const EdgeInsets.only(bottom: 10),
           decoration: BoxDecoration(
-            color: const Color(0xFFEA580C).withValues(alpha: 0.1),
+            color: (user.isRegularWasteDriver
+                    ? const Color(0xFF0D9488)
+                    : const Color(0xFFEA580C))
+                .withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFFEA580C).withValues(alpha: 0.3)),
+            border: Border.all(
+              color: (user.isRegularWasteDriver
+                      ? const Color(0xFF0D9488)
+                      : const Color(0xFFEA580C))
+                  .withValues(alpha: 0.3),
+            ),
           ),
-          child: const Row(
+          child: Row(
             children: [
-              Icon(Icons.local_shipping_rounded, size: 18, color: Color(0xFFEA580C)),
-              SizedBox(width: 8),
+              Icon(
+                Icons.local_shipping_rounded,
+                size: 18,
+                color: user.isRegularWasteDriver
+                    ? const Color(0xFF0D9488)
+                    : const Color(0xFFEA580C),
+              ),
+              const SizedBox(width: 8),
               Text(
-                '🚚 TÀI XẾ THU GOM CHUYÊN DỤNG • Đội Xe Hiện Trường',
+                user.isRegularWasteDriver
+                    ? '🚚 TÀI XẾ RÁC THÔNG DỤNG • Xe Ép Rác Sinh Hoạt'
+                    : '🛋️ TÀI XẾ RÁC CỒNG KỀNH • Xe Tải Thu Gom Chuyên Dụng',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFEA580C),
+                  color: user.isRegularWasteDriver
+                      ? const Color(0xFF0D9488)
+                      : const Color(0xFFEA580C),
                 ),
               ),
             ],
