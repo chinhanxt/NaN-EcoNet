@@ -50,12 +50,8 @@
    - [Yêu cầu Tiền đề (Prerequisites)](#yêu-cầu-tiền-đề-prerequisites)
    - [Khởi chạy qua Root Makefile](#khởi-chạy-qua-root-makefile)
    - [Khởi chạy qua Docker Compose](#khởi-chạy-qua-docker-compose)
-7. [Trực quan hóa Giao diện Thực tế (Live System UI Showcase)](#-trực-quan-hóa-giao-diện-thực-tế-live-system-ui-showcase)
-   - [Bản đồ Điều phối & Phân luồng Sự cố Động (Dual-Map Engine)](#1-bản-đồ-điều-phối--phân-luồng-sự-cố-động-dual-map-engine---công-nghiệp)
-   - [Cổng Thông tin Hộ Gia đình & Đặt lịch Rác Cồng kềnh (Citizen Bulky Portal)](#2-cổng-thông-tin-hộ-gia-đình--đặt-lịch-rác-cồng-kềnh-citizen-bulky-portal---quốc-anh)
-   - [Mô hình Kinh tế Tuần hoàn & Cơ chế Phygital 4-WIN (Pitch Presentation)](#3-mô-hình-kinh-tế-tuần-hoàn--cơ-chế-phygital-4-win-pitch-presentation---chí-nhân)
-8. [Số liệu Thực nghiệm & Đối sánh Hiệu năng (Empirical Benchmarks & Performance Metrics)](#-số-liệu-thực-nghiệm--đối-sánh-hiệu-năng-empirical-benchmarks--performance-metrics)
-9. [Di sản Nguồn mở, Bản quyền & Trích dẫn (Open Source Heritage & Citation)](#-di-sản-nguồn-mở-bản-quyền--trích-dẫn-open-source-heritage--citation)
+7. [Số liệu Thực nghiệm & Đối sánh Hiệu năng (Empirical Benchmarks & Performance Metrics)](#-số-liệu-thực-nghiệm--đối-sánh-hiệu-năng-empirical-benchmarks--performance-metrics)
+8. [Di sản Nguồn mở, Bản quyền & Trích dẫn (Open Source Heritage & Citation)](#-di-sản-nguồn-mở-bản-quyền--trích-dẫn-open-source-heritage--citation)
 
 ---
 
@@ -649,36 +645,6 @@ docker compose -f apps/citizen-bulky-app/docker-compose.yml up -d
 
 ---
 
-## 📸 Trực quan hóa Giao diện Thực tế (Live System UI Showcase)
-
-Dưới đây là một số hình ảnh thực tế ghi nhận từ quá trình vận hành, kiểm thử hiện trường và trình diễn hệ sinh thái của 3 phân hệ cốt lõi:
-
-### 1. Bản đồ Điều phối & Phân luồng Sự cố Động (Dual-Map Engine — Công Nghiệp)
-Hệ thống hiển thị trực quan bản đồ nhiệt (Heatmap), các trạm gom ngõ hẻm được phân cụm thông minh, lộ trình di chuyển tối ưu của đội xe rác và cơ chế tự động điều hướng né vật cản / ngập lụt theo thời gian thực (*Human-in-the-Loop Incident Dispatching*).
-
-<p align="center">
-  <img src="docs/assets/ui/maplibre-dual-map.png" alt="MapLibre Dual-Map UI Preview" width="100%" />
-</p>
-<p align="center"><i>Hình 7: Giao diện Dual-Map tương tác trên nền MapLibre GL tích hợp Telemetry và Điều phối sự cố giao thông</i></p>
-
-### 2. Cổng Thông tin Hộ Gia đình & Đặt lịch Rác Cồng kềnh (Citizen Bulky Portal — Quốc Anh)
-Giao diện portal cho phép hộ gia đình tra cứu chỉ số phát thải, kết quả kiểm toán rác thải sinh hoạt, đặt lịch hẹn thu gom rác cồng kềnh với báo giá tự động minh bạch từ AI Vision Scanner và theo dõi trạng thái xe đến thu gom theo thời gian thực.
-
-<p align="center">
-  <img src="docs/assets/ui/citizen-portal-preview.png" alt="Citizen Bulky Portal Preview" width="95%" />
-</p>
-<p align="center"><i>Hình 8: Bảng điều khiển quản lý dịch vụ rác cồng kềnh, phân loại tự động và đối soát chi phí hộ gia đình</i></p>
-
-### 3. Mô hình Kinh tế Tuần hoàn & Cơ chế Phygital 4-WIN (Pitch Presentation — Chí Nhân)
-Cơ cấu vận hành thực tế chứng minh dòng tiền và dòng giá trị tuần hoàn: Sinh viên có động lực phân loại tại nguồn để nhận voucher đồ uống; Doanh nghiệp FMCG đạt chỉ tiêu tuân thủ EPR minh bạch; Đơn vị thu gom tối ưu chi phí vận hành logistics; và Quán cafe/cửa hàng F&B gia tăng lượng khách hàng thân thiết.
-
-<p align="center">
-  <img src="docs/assets/ui/pitch-deck-slide.png" alt="Pitch Deck Architecture Overview" width="95%" />
-</p>
-<p align="center"><i>Hình 9: Tổng quan mô hình kiến trúc kinh tế tuần hoàn và cơ chế cộng hưởng 4-Win tại đô thị</i></p>
-
----
-
 ## 📈 Số liệu Thực nghiệm & Đối sánh Hiệu năng (Empirical Benchmarks & Performance Metrics)
 
 Hiệu quả vận hành của NaN-EcoNet đã được đối chuẩn nghiêm ngặt thông qua các tập dữ liệu thực nghiệm tại khu vực đô thị trung tâm TP. Hồ Chí Minh (khu vực Quận 1, Quận 3, Bến Nghé, Đa Kao với hơn 100 điểm phát sinh rác thực tế):
@@ -699,7 +665,7 @@ Hiệu quả vận hành của NaN-EcoNet đã được đối chuẩn nghiêm n
 <p align="center">
   <img src="docs/assets/diagrams/performance-growth.png" alt="Operational and Economic Improvement Growth Chart" width="100%" />
 </p>
-<p align="center"><i>Hình 10: Biểu đồ Mức Cải thiện Vận hành & Kinh tế Thực nghiệm (% Cắt giảm & Tăng trưởng)</i></p>
+<p align="center"><i>Hình 7: Biểu đồ Mức Cải thiện Vận hành & Kinh tế Thực nghiệm (% Cắt giảm & Tăng trưởng)</i></p>
 
 <details>
 <summary><b>🔍 Xem chi tiết Mã nguồn Biểu đồ Đối sánh (Mermaid XY-Chart Source)</b></summary>
