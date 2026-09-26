@@ -224,7 +224,7 @@ class MockBulkyStorage {
   Future<BulkyOrder?> rejectOnSiteSafetyViolation(
     String orderId,
     String reason, {
-    int calloutFee = 50000,
+    int calloutFee = DEFAULT_CALLOUT_FEE_VND,
   }) async {
     final orders = await getOrders();
     final index = orders.indexWhere((o) => o.id == orderId);

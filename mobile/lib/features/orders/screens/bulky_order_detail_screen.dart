@@ -1094,7 +1094,7 @@ class BulkyOrderDetailScreen extends StatelessWidget {
   }
 
   Widget _buildRejectedOnSiteBanner(BulkyOrder order) {
-    final calloutFee = order.calloutFeeVnd > 0 ? order.calloutFeeVnd : 50000;
+    final calloutFee = order.calloutFeeVnd > 0 ? order.calloutFeeVnd : DEFAULT_CALLOUT_FEE_VND;
 
     return Container(
       padding: const EdgeInsets.all(16),

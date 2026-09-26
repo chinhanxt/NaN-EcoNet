@@ -146,6 +146,7 @@ const int FLOOR_FEE_PER_FLOOR = 20000;
 const int DEFAULT_AREA_FEE = 25000;
 const double SPREAD_FACTOR = 1.3;
 const int TOLERANCE_PERCENT = 15;
+const int DEFAULT_CALLOUT_FEE_VND = 50000;
 const String TOLERANCE_MESSAGE =
     'Miễn phí phụ thu nếu khối lượng hoặc kích thước thực tế sai lệch không quá ±15% so với khai báo.';
 

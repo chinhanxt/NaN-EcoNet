@@ -961,7 +961,7 @@ class BulkyDriverScreen extends StatelessWidget {
                 reason.isEmpty
                     ? 'Phát hiện chất thải nguy hại / cấm thu gom tại hiện trường'
                     : reason,
-                calloutFee: 50000,
+                calloutFee: DEFAULT_CALLOUT_FEE_VND,
               );
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(

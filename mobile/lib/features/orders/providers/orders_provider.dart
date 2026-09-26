@@ -391,7 +391,7 @@ class OrdersProvider extends ChangeNotifier {
   Future<void> rejectOnSiteSafetyViolation(
     String orderId,
     String reason, {
-    int calloutFee = 50000,
+    int calloutFee = DEFAULT_CALLOUT_FEE_VND,
   }) async {
     if (_orders.isEmpty) {
       await loadOrders();
