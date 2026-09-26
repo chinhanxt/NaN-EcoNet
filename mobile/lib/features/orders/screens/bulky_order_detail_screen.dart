@@ -3,12 +3,13 @@ import 'package:provider/provider.dart';
 import '../../../core/constants/bulky_constants.dart';
 import '../../../core/domain/models/bulky_order.dart';
 import '../../../core/theme/bulky_colors.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../../quote/widgets/tolerance_guarantee_banner.dart';
 import '../../../core/widgets/bulky_app_bottom_nav_bar.dart';
 import '../providers/orders_provider.dart';
 
-/// Detailed view of a bulky waste order with a 4-step progress timeline,
-/// driver info, pickup logistics, itemized breakdown, and cancellation option.
+/// Detailed view of a bulky waste order with a 5-step progress timeline,
+/// driver info, pickup logistics, itemized breakdown, operator review, and cancellation.
 class BulkyOrderDetailScreen extends StatelessWidget {
   final String? orderId;
 
@@ -39,6 +40,16 @@ class BulkyOrderDetailScreen extends StatelessWidget {
       );
     }
 
+    AuthProvider? auth;
+    try {
+      auth = context.watch<AuthProvider>();
+    } catch (_) {
+      try {
+        auth = Provider.of<AuthProvider>(context, listen: false);
+      } catch (_) {}
+    }
+    final isOperator = auth?.isOperator ?? false;
+
     final statusColor = _getStatusColor(order.status);
     final statusBgColor = _getStatusBgColor(order.status);
 
@@ -63,8 +74,15 @@ class BulkyOrderDetailScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: BulkyColors.surface,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: BulkyColors.border),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,12 +129,13 @@ class BulkyOrderDetailScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            if (order.status == BulkyOrderStatus.CONFIRMED) ...[
+            // Pending approval alert banner for citizens when awaiting approval
+            if (order.status == BulkyOrderStatus.CONFIRMED && !isOperator) ...[
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: BulkyColors.warningBg,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: BulkyColors.warning.withValues(alpha: 0.4)),
                 ),
                 child: Row(
@@ -137,7 +156,7 @@ class BulkyOrderDetailScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            'Hồ sơ đơn ${order.id} đang được cán bộ kiểm tra hình ảnh AI và vật liệu để phê duyệt và điều phối xe tải.',
+                            'Hồ sơ đơn ${order.id} đang được cán bộ kiểm tra hình ảnh AI và vật liệu để phê duyệt và điều phối xe tải thu gom.',
                             style: const TextStyle(fontSize: 12, color: BulkyColors.textSecondary, height: 1.3),
                           ),
                         ],
@@ -149,12 +168,18 @@ class BulkyOrderDetailScreen extends StatelessWidget {
               const SizedBox(height: 16),
             ],
 
+            // Operator review card when in Operator role
+            if (order.status == BulkyOrderStatus.CONFIRMED && isOperator) ...[
+              _buildOperatorReviewCard(context, ordersProvider, order),
+              const SizedBox(height: 16),
+            ],
+
             // 5-Step Timeline Card
             _buildTimelineCard(order),
             const SizedBox(height: 16),
 
             // Vehicle & Driver Info Card (if assigned or past confirmation)
-            _buildDriverVehicleCard(order),
+            _buildDriverVehicleCard(context, order),
             const SizedBox(height: 16),
 
             // Logistics & Pickup Information Card
@@ -197,35 +222,66 @@ class BulkyOrderDetailScreen extends StatelessWidget {
     ].contains(order.status);
 
     final isStep3Active = [
+      BulkyOrderStatus.SCHEDULED,
+      BulkyOrderStatus.ASSIGNED,
       BulkyOrderStatus.IN_PROGRESS,
       BulkyOrderStatus.COLLECTED,
       BulkyOrderStatus.COMPLETED,
     ].contains(order.status);
 
-    final isStep4Active = order.status == BulkyOrderStatus.COMPLETED;
+    final isStep4Active = [
+      BulkyOrderStatus.IN_PROGRESS,
+      BulkyOrderStatus.COLLECTED,
+      BulkyOrderStatus.COMPLETED,
+    ].contains(order.status);
+
+    final isStep5Active = order.status == BulkyOrderStatus.COMPLETED;
 
     final timelineSteps = [
-      {'title': 'Đã đặt cọc', 'active': isStep1Active, 'desc': 'Đã cọc giữ chỗ'},
+      {
+        'title': 'Đã đặt cọc',
+        'active': isStep1Active,
+        'desc': 'Đã cọc giữ chỗ thành công',
+      },
       {
         'title': 'Kiểm duyệt & Phê duyệt',
         'active': isStep2Active,
-        'desc': isStep2Active ? 'Tổ điều phối đã duyệt hồ sơ' : 'Đang chờ điều phối viên phê duyệt'
+        'desc': isStep2Active
+            ? 'Tổ điều phối đã duyệt hồ sơ'
+            : 'Đang chờ điều phối viên phê duyệt',
       },
       {
-        'title': 'Đã xếp lịch xe & Tài xế',
-        'active': isStep2Active,
-        'desc': isStep2Active ? 'Đã điều phối xe thu gom' : 'Chờ phân công xe thu gom'
+        'title': 'Đã xếp lịch xe tải & Tài xế',
+        'active': isStep3Active,
+        'desc': isStep3Active
+            ? 'Đã điều phối xe tải thu gom'
+            : 'Chờ phân công xe tải thu gom',
       },
-      {'title': 'Đang đến lấy rác', 'active': isStep3Active, 'desc': 'Tài xế đang di chuyển'},
-      {'title': 'Hoàn tất thu gom', 'active': isStep4Active, 'desc': 'Đã hoàn tất thanh toán'},
+      {
+        'title': 'Đang đến lấy rác',
+        'active': isStep4Active,
+        'desc': 'Tài xế đang di chuyển tới điểm hẹn',
+      },
+      {
+        'title': 'Hoàn tất thu gom',
+        'active': isStep5Active,
+        'desc': 'Đã hoàn tất thanh toán & dịch vụ',
+      },
     ];
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: BulkyColors.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: BulkyColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -322,29 +378,59 @@ class BulkyOrderDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDriverVehicleCard(BulkyOrder order) {
+  Widget _buildDriverVehicleCard(BuildContext context, BulkyOrder order) {
     final vehiclePlate = order.vehiclePlate ?? '51C-889.21 (Xe tải 2.5T)';
+    const driverPhone = '0909.123.456';
+    const driverName = 'Nguyễn Văn Hùng';
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: BulkyColors.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: BulkyColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(Icons.local_shipping_outlined, size: 20, color: BulkyColors.primary),
-              SizedBox(width: 8),
-              Text(
-                'Thông tin Xe & Tài xế',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: BulkyColors.textPrimary,
+              const Row(
+                children: [
+                  Icon(Icons.local_shipping_outlined, size: 20, color: BulkyColors.primary),
+                  SizedBox(width: 8),
+                  Text(
+                    'Thông tin Xe & Tài xế',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: BulkyColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: BulkyColors.successBg,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: BulkyColors.success.withValues(alpha: 0.3)),
+                ),
+                child: const Text(
+                  'Đã phân công',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: BulkyColors.success,
+                  ),
                 ),
               ),
             ],
@@ -354,7 +440,61 @@ class BulkyOrderDetailScreen extends StatelessWidget {
           const SizedBox(height: 12),
           _buildInfoRow('Biển số xe:', vehiclePlate),
           const SizedBox(height: 8),
-          _buildInfoRow('Tài xế:', 'Nguyễn Văn Hùng • 0909.123.456'),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(
+                width: 140,
+                child: Text(
+                  'Tài xế:',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: BulkyColors.textSecondary,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    const Text(
+                      '$driverName • $driverPhone',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: BulkyColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    InkWell(
+                      key: const Key('call_driver_button'),
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Đang gọi cho tài xế Nguyễn Văn Hùng ($driverPhone)...'),
+                            duration: Duration(seconds: 1),
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: BulkyColors.primaryLight.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.phone_in_talk_rounded,
+                          size: 14,
+                          color: BulkyColors.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 8),
           _buildInfoRow('Đơn vị phụ trách:', 'Đội Vệ Sinh Môi Trường Đô Thị Q.1'),
         ],
@@ -367,8 +507,15 @@ class BulkyOrderDetailScreen extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: BulkyColors.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: BulkyColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -422,8 +569,15 @@ class BulkyOrderDetailScreen extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: BulkyColors.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: BulkyColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -499,8 +653,15 @@ class BulkyOrderDetailScreen extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: BulkyColors.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: BulkyColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -537,6 +698,249 @@ class BulkyOrderDetailScreen extends StatelessWidget {
             order.paymentStatus.label,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildOperatorReviewCard(
+    BuildContext context,
+    OrdersProvider ordersProvider,
+    BulkyOrder order,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: BulkyColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.5), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6366F1).withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.admin_panel_settings_rounded, size: 20, color: Color(0xFF6366F1)),
+                  SizedBox(width: 8),
+                  Text(
+                    'Kiểm Duyệt Hồ Sơ',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: BulkyColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEEF2FF),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.4)),
+                ),
+                child: const Text(
+                  'Tổ Điều Phối',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF6366F1),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const Divider(height: 1, color: BulkyColors.border),
+          const SizedBox(height: 10),
+          Text(
+            'Đơn hàng ${order.id} đã hoàn tất đặt cọc ${BulkyColors.formatCurrency(order.quote.depositHoldVnd)}. Vui lòng xác nhận phê duyệt để điều xe tải thu gom hoặc từ chối nếu sai phạm quy định.',
+            style: const TextStyle(fontSize: 12, color: BulkyColors.textSecondary, height: 1.4),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  key: Key('operator_approve_button_${order.id}'),
+                  onPressed: () async {
+                    await ordersProvider.assignDriverAndSchedule(
+                      order.id,
+                      vehiclePlate: '51C-889.21',
+                    );
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            '✓ Đã phê duyệt hồ sơ và điều phối xe tải 51C-889.21 (Tài xế Nguyễn Văn Hùng) cho đơn ${order.id}!',
+                          ),
+                          backgroundColor: BulkyColors.primary,
+                        ),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.verified_rounded, size: 16),
+                  label: const Text(
+                    '✓ Phê duyệt & Điều xe tải',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: BulkyColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton(
+                key: Key('operator_reject_button_${order.id}'),
+                onPressed: () => _showRejectDialog(context, ordersProvider, order),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: BulkyColors.error,
+                  side: const BorderSide(color: BulkyColors.error),
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: const Text(
+                  'Từ chối',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRejectDialog(
+    BuildContext context,
+    OrdersProvider ordersProvider,
+    BulkyOrder order,
+  ) {
+    String selectedReason = 'Chứa chất thải nguy hại / bình gas không thu gom';
+    final reasons = [
+      'Chứa chất thải nguy hại / bình gas không thu gom',
+      'Đường hẻm quá hẹp, xe tải không tiếp cận được',
+      'Khai báo sai lệch thể tích / kích thước thực tế',
+      'Địa chỉ nằm ngoài địa bàn phụ trách Quận 1',
+    ];
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: BulkyColors.error.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.cancel_rounded, color: BulkyColors.error, size: 22),
+              ),
+              const SizedBox(width: 10),
+              const Text('Từ chối đơn thu gom', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Bạn đang xem xét từ chối đơn ${order.id}. Tiền cọc ${BulkyColors.formatCurrency(order.quote.depositHoldVnd)} sẽ được hoàn lại cho công dân.',
+                style: const TextStyle(fontSize: 13, color: BulkyColors.textSecondary, height: 1.3),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Lý do từ chối kiểm duyệt:',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: BulkyColors.textPrimary),
+              ),
+              const SizedBox(height: 6),
+              ...reasons.map(
+                (r) {
+                  final isSelected = selectedReason == r;
+                  return InkWell(
+                    onTap: () {
+                      setDialogState(() {
+                        selectedReason = r;
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                            size: 16,
+                            color: isSelected ? BulkyColors.error : BulkyColors.textSecondary,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              r,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                color: isSelected ? BulkyColors.textPrimary : BulkyColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Hủy bỏ'),
+            ),
+            ElevatedButton(
+              key: const Key('confirm_reject_button'),
+              onPressed: () async {
+                Navigator.pop(ctx);
+                await ordersProvider.rejectOrder(order.id, reason: selectedReason);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Đã từ chối đơn ${order.id}. Tiền cọc ${BulkyColors.formatCurrency(order.quote.depositHoldVnd)} đã được hoàn trả.',
+                      ),
+                      backgroundColor: BulkyColors.error,
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: BulkyColors.error,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: const Text('Xác nhận từ chối & Hoàn cọc'),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -162,9 +162,6 @@ class _BulkyOrdersListScreenState extends State<BulkyOrdersListScreen> {
   Widget _buildOrderCard(BuildContext context, BulkyOrder order) {
     final statusColor = _getStatusColor(order.status);
     final statusBgColor = _getStatusBgColor(order.status);
-    final itemsSummary = order.items.isEmpty
-        ? 'Chưa có thông tin đồ'
-        : '${order.totalItemsCount} món: ${order.items.map((i) => i.displayName).join(', ')}';
 
     return InkWell(
       key: Key('order_card_${order.id}'),
@@ -175,18 +172,18 @@ class _BulkyOrdersListScreenState extends State<BulkyOrdersListScreen> {
           arguments: order.id,
         );
       },
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(18),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: BulkyColors.surface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(color: BulkyColors.border),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -197,19 +194,25 @@ class _BulkyOrdersListScreenState extends State<BulkyOrdersListScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  order.id,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: BulkyColors.textPrimary,
-                  ),
+                Row(
+                  children: [
+                    const Icon(Icons.receipt_rounded, size: 16, color: BulkyColors.primary),
+                    const SizedBox(width: 6),
+                    Text(
+                      order.id,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: BulkyColors.textPrimary,
+                      ),
+                    ),
+                  ],
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: statusBgColor,
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: statusColor.withValues(alpha: 0.4)),
                   ),
                   child: Text(
@@ -223,36 +226,63 @@ class _BulkyOrdersListScreenState extends State<BulkyOrdersListScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             const Divider(height: 1, color: BulkyColors.border),
             const SizedBox(height: 10),
 
-            // Items summary
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(Icons.inventory_2_outlined, size: 16, color: BulkyColors.textSecondary),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    itemsSummary,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: BulkyColors.textPrimary,
+            // Item tags
+            if (order.items.isNotEmpty) ...[
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: order.items.map((item) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: BulkyColors.background,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: BulkyColors.border),
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '${item.material.emoji} ${item.displayName}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: BulkyColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: BulkyColors.surface,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: BulkyColors.border),
+                          ),
+                          child: Text(
+                            'x${item.quantity}',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: BulkyColors.primary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 10),
+            ],
 
             // Pickup Date & Address
             Row(
               children: [
-                const Icon(Icons.calendar_today_outlined, size: 15, color: BulkyColors.textSecondary),
+                const Icon(Icons.calendar_today_outlined, size: 14, color: BulkyColors.textSecondary),
                 const SizedBox(width: 6),
                 Text(
                   'Lịch hẹn: ${order.pickupDate.isNotEmpty ? order.pickupDate : "Chưa xác định"}',

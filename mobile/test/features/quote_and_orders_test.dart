@@ -7,6 +7,8 @@ import 'package:bulky_mobile/core/domain/models/bulky_order.dart';
 import 'package:bulky_mobile/core/domain/models/bulky_quote.dart';
 import 'package:bulky_mobile/core/domain/pricing/pricing_engine.dart';
 import 'package:bulky_mobile/core/services/storage/mock_bulky_storage.dart';
+import 'package:bulky_mobile/features/auth/models/citizen_user.dart';
+import 'package:bulky_mobile/features/auth/providers/auth_provider.dart';
 import 'package:bulky_mobile/features/orders/providers/orders_provider.dart';
 import 'package:bulky_mobile/features/orders/screens/bulky_order_detail_screen.dart';
 import 'package:bulky_mobile/features/orders/screens/bulky_orders_list_screen.dart';
@@ -364,9 +366,13 @@ void main() {
       expect(find.text('Đang xử lý'), findsOneWidget);
       expect(find.text('Đã hoàn tất'), findsOneWidget);
 
-      // Verify order cards are shown
-      expect(find.byKey(const Key('order_card_order-active-1')), findsOneWidget);
+      // Verify order cards are shown with 18px border radius
+      final cardFinder = find.byKey(const Key('order_card_order-active-1'));
+      expect(cardFinder, findsOneWidget);
       expect(find.byKey(const Key('order_card_order-done-2')), findsOneWidget);
+
+      final cardInkWell = tester.widget<InkWell>(cardFinder);
+      expect(cardInkWell.borderRadius, BorderRadius.circular(18));
 
       // Tap tab 'Đã hoàn tất'
       await tester.tap(find.text('Đã hoàn tất'));
@@ -382,7 +388,7 @@ void main() {
       expect(find.text('Order Detail Screen: order-done-2'), findsOneWidget);
     });
 
-    testWidgets('BulkyOrderDetailScreen displays timeline, vehicle info, cancel dialog', (tester) async {
+    testWidgets('BulkyOrderDetailScreen displays 5-step timeline, vehicle info, pending banner and cancel dialog', (tester) async {
       await tester.pumpWidget(
         MultiProvider(
           providers: [
@@ -398,16 +404,22 @@ void main() {
       expect(find.text('Chi Tiết Đơn Hàng'), findsOneWidget);
       expect(find.textContaining('order-active-1'), findsWidgets);
 
-      // 4-step timeline check
+      // Citizen pending approval banner
+      expect(find.text('Đang chờ Tổ điều phối VSMT kiểm duyệt'), findsOneWidget);
+      expect(find.textContaining('Hồ sơ đơn order-active-1 đang được cán bộ kiểm tra'), findsOneWidget);
+
+      // 5-step timeline check
       expect(find.text('Đã đặt cọc'), findsOneWidget);
-      expect(find.text('Đã xếp lịch xe & Tài xế'), findsOneWidget);
+      expect(find.text('Kiểm duyệt & Phê duyệt'), findsOneWidget);
+      expect(find.text('Đã xếp lịch xe tải & Tài xế'), findsOneWidget);
       expect(find.text('Đang đến lấy rác'), findsOneWidget);
       expect(find.text('Hoàn tất thu gom'), findsOneWidget);
 
-      // Vehicle & Driver Info Card
+      // Vehicle & Driver Info Card with call button
       expect(find.textContaining('Biển số xe:'), findsOneWidget);
       expect(find.textContaining('Tài xế:'), findsOneWidget);
       expect(find.textContaining('Đội Vệ Sinh Môi Trường Đô Thị Q.1'), findsOneWidget);
+      expect(find.byKey(const Key('call_driver_button')), findsOneWidget);
 
       // Cancel order button
       final cancelBtn = find.text('Hủy đơn hàng');
@@ -424,6 +436,75 @@ void main() {
 
       // Verify order cancelled
       expect(ordersProvider.getOrderById(order1.id)?.status, BulkyOrderStatus.CANCELLED);
+    });
+
+    testWidgets('BulkyOrderDetailScreen renders Operator review card and triggers approval', (tester) async {
+      final auth = AuthProvider(initialUser: CitizenUser.demoOperator);
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: auth),
+            ChangeNotifierProvider.value(value: ordersProvider),
+          ],
+          child: MaterialApp(
+            home: BulkyOrderDetailScreen(orderId: order1.id),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verify Operator Review Card
+      expect(find.text('Kiểm Duyệt Hồ Sơ'), findsOneWidget);
+      expect(find.text('Tổ Điều Phối'), findsOneWidget);
+      expect(find.text('✓ Phê duyệt & Điều xe tải'), findsOneWidget);
+      expect(find.text('Từ chối'), findsOneWidget);
+
+      // Citizen pending banner should NOT be displayed for Operator
+      expect(find.text('Đang chờ Tổ điều phối VSMT kiểm duyệt'), findsNothing);
+
+      // Tap approve
+      final approveBtn = find.byKey(Key('operator_approve_button_${order1.id}'));
+      expect(approveBtn, findsOneWidget);
+      await tester.tap(approveBtn);
+      await tester.pumpAndSettle();
+
+      // Verify order transitioned to SCHEDULED
+      expect(ordersProvider.getOrderById(order1.id)?.status, BulkyOrderStatus.SCHEDULED);
+    });
+
+    testWidgets('BulkyOrderDetailScreen Operator can reject order with deposit refund', (tester) async {
+      final auth = AuthProvider(initialUser: CitizenUser.demoOperator);
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: auth),
+            ChangeNotifierProvider.value(value: ordersProvider),
+          ],
+          child: MaterialApp(
+            home: BulkyOrderDetailScreen(orderId: order1.id),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tap reject
+      final rejectBtn = find.byKey(Key('operator_reject_button_${order1.id}'));
+      expect(rejectBtn, findsOneWidget);
+      await tester.tap(rejectBtn);
+      await tester.pumpAndSettle();
+
+      // Verify reject dialog
+      expect(find.text('Từ chối đơn thu gom'), findsOneWidget);
+      expect(find.byKey(const Key('confirm_reject_button')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('confirm_reject_button')));
+      await tester.pumpAndSettle();
+
+      // Verify order cancelled and refunded
+      final updated = ordersProvider.getOrderById(order1.id);
+      expect(updated?.status, BulkyOrderStatus.CANCELLED);
+      expect(updated?.paymentStatus, BulkyPaymentStatus.REFUNDED);
     });
   });
 }

@@ -73,7 +73,7 @@ class _BulkyPaymentScreenState extends State<BulkyPaymentScreen> {
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: BulkyColors.warningBg.withValues(alpha: 0.35),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: BulkyColors.warning.withValues(alpha: 0.4)),
               ),
               child: Column(
@@ -120,8 +120,15 @@ class _BulkyPaymentScreenState extends State<BulkyPaymentScreen> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: BulkyColors.surface,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: BulkyColors.border),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -301,12 +308,25 @@ class _BulkyPaymentScreenState extends State<BulkyPaymentScreen> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Text(
-                              'Xác nhận đã thanh toán cọc',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          : const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Xác nhận đã thanh toán cọc',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(width: 6),
+                                Text(
+                                  '✓',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
                     ),
                   ),

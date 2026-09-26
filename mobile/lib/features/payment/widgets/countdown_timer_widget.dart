@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../../core/theme/bulky_colors.dart';
 
 /// Countdown timer widget showing remaining slot reservation hold time.
 class CountdownTimerWidget extends StatefulWidget {
@@ -62,32 +61,47 @@ class _CountdownTimerWidgetState extends State<CountdownTimerWidget> {
   @override
   Widget build(BuildContext context) {
     final isUrgent = _remainingSeconds < 180; // Under 3 minutes
-    final color = isUrgent ? BulkyColors.error : BulkyColors.warning;
-    final bgColor = isUrgent ? BulkyColors.errorBg : BulkyColors.warningBg;
+    // Crimson red when urgent (< 3 min), amber warning when normal
+    final color = isUrgent ? const Color(0xFFDC2626) : const Color(0xFFB45309);
+    final bgColor = isUrgent ? const Color(0xFFFEF2F2) : const Color(0xFFFFFBEB);
+    final borderColor = isUrgent ? const Color(0xFFF87171) : const Color(0xFFFDE68A);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor, width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.08),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            isUrgent ? Icons.timer_outlined : Icons.access_time_filled_rounded,
-            size: 18,
-            color: color,
+          const Text(
+            '⏳ ',
+            style: TextStyle(fontSize: 14),
           ),
-          const SizedBox(width: 6),
           Text(
             _formatDuration(_remainingSeconds),
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: FontWeight.bold,
               color: color,
               letterSpacing: 0.5,
+            ),
+          ),
+          Text(
+            ' còn lại',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: color,
             ),
           ),
         ],
