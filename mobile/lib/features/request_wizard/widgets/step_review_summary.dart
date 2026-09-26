@@ -83,7 +83,62 @@ class StepReviewSummary extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // 2. Items Breakdown Card (Itemized Receipt)
+          // 2. Operator Review Notice Banner
+          Container(
+            key: const Key('operator_review_notice_banner'),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: BulkyColors.primaryLight.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: BulkyColors.primary.withValues(alpha: 0.3)),
+              boxShadow: BulkyColors.softShadow,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: BulkyColors.primaryContainer,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.assignment_turned_in_outlined,
+                    size: 20,
+                    color: BulkyColors.primary,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Quy trình xét duyệt minh bạch',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: BulkyColors.primaryDark,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Đơn hàng sẽ được chuyển đến Điều phối viên để kiểm tra và chốt mức giá chính xác. Bạn chỉ cần thanh toán cọc sau khi đơn được phê duyệt.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: BulkyColors.textPrimary,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 3. Items Breakdown Card (Itemized Receipt)
           _buildCard(
             title: 'Danh mục đồ vật (${wizard.totalItemsCount} món - ~${wizard.totalEstimatedWeightKg.toStringAsFixed(1)} kg)',
             icon: Icons.inventory_2_outlined,
@@ -284,7 +339,7 @@ class StepReviewSummary extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Cọc giữ chỗ xe (Thanh toán ngay):',
+                            'Cọc giữ chỗ xe (Thanh toán sau khi duyệt):',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,

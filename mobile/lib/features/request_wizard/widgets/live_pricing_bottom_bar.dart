@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' hide MaterialType;
 import 'package:provider/provider.dart';
 import '../../../../core/constants/bulky_constants.dart';
 import '../../../../core/theme/bulky_colors.dart';
+import '../../orders/providers/orders_provider.dart';
 import '../providers/booking_wizard_provider.dart';
 
 /// Persistent bottom action bar displaying real-time price estimation,
@@ -9,11 +10,13 @@ import '../providers/booking_wizard_provider.dart';
 class LivePricingBottomBar extends StatelessWidget {
   final VoidCallback? onNext;
   final VoidCallback? onBack;
+  final Future<void> Function()? onSubmitReview;
 
   const LivePricingBottomBar({
     super.key,
     this.onNext,
     this.onBack,
+    this.onSubmitReview,
   });
 
   void _showPriceBreakdownSheet(BuildContext context, BookingWizardProvider wizard) {
@@ -232,6 +235,42 @@ class LivePricingBottomBar extends StatelessWidget {
     );
   }
 
+  Future<void> _handleReviewSubmission(BuildContext context, BookingWizardProvider wizard) async {
+    if (onSubmitReview != null) {
+      await onSubmitReview!();
+      return;
+    }
+    if (onNext != null) {
+      onNext!();
+      return;
+    }
+    try {
+      final newOrder = await context.read<OrdersProvider>().createOrderForReview(wizard);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Đã gửi yêu cầu xét duyệt thành công! Điều phối viên sẽ kiểm tra và chốt giá sớm nhất.',
+          ),
+          backgroundColor: BulkyColors.success,
+        ),
+      );
+      Navigator.pushNamed(
+        context,
+        '/order-detail',
+        arguments: newOrder.id,
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Không thể gửi yêu cầu xét duyệt: $e'),
+          backgroundColor: BulkyColors.error,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<BookingWizardProvider>(
@@ -397,34 +436,42 @@ class LivePricingBottomBar extends StatelessWidget {
                       const SizedBox(width: 12),
                     ],
                     Expanded(
-                      child: ElevatedButton(
-                        key: const Key('wizard_next_button'),
-                        onPressed: canGoNext
-                            ? (onNext ??
-                                () {
+                      child: KeyedSubtree(
+                        key: currentStep == 2
+                            ? const Key('wizard_submit_review_button')
+                            : const Key('wizard_next_container'),
+                        child: ElevatedButton(
+                          key: const Key('wizard_next_button'),
+                          onPressed: canGoNext
+                              ? () {
                                   if (currentStep == 2) {
-                                    Navigator.pushNamed(context, '/quote');
+                                    _handleReviewSubmission(context, wizard);
                                   } else {
-                                    wizard.nextStep();
+                                    if (onNext != null) {
+                                      onNext!();
+                                    } else {
+                                      wizard.nextStep();
+                                    }
                                   }
-                                })
-                            : null,
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: const Size.fromHeight(52),
-                          backgroundColor: BulkyColors.primary,
-                          foregroundColor: Colors.white,
-                          disabledBackgroundColor: BulkyColors.border,
-                          disabledForegroundColor: BulkyColors.textSecondary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                                }
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(52),
+                            backgroundColor: BulkyColors.primary,
+                            foregroundColor: Colors.white,
+                            disabledBackgroundColor: BulkyColors.border,
+                            disabledForegroundColor: BulkyColors.textSecondary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: canGoNext ? 2 : 0,
                           ),
-                          elevation: canGoNext ? 2 : 0,
-                        ),
-                        child: Text(
-                          currentStep == 2 ? 'Xác nhận & Báo giá' : 'Tiếp tục',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
+                          child: Text(
+                            currentStep == 2 ? 'GỬI YÊU CẦU XÉT DUYỆT' : 'Tiếp tục',
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                       ),

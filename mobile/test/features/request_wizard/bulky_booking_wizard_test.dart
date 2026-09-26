@@ -4,16 +4,21 @@ import 'package:provider/provider.dart';
 import 'package:bulky_mobile/core/constants/bulky_constants.dart';
 import 'package:bulky_mobile/core/services/ai/ai_recognition_result.dart';
 import 'package:bulky_mobile/core/theme/bulky_theme.dart';
+import 'package:bulky_mobile/core/services/storage/mock_bulky_storage.dart';
+import 'package:bulky_mobile/features/orders/providers/orders_provider.dart';
 import 'package:bulky_mobile/features/scan/providers/scan_provider.dart';
 import 'package:bulky_mobile/features/scan/widgets/bulky_camera_preview.dart';
 import 'package:bulky_mobile/features/request_wizard/providers/booking_wizard_provider.dart';
 import 'package:bulky_mobile/features/request_wizard/widgets/material_survey_chips.dart';
 import 'package:bulky_mobile/features/request_wizard/widgets/live_pricing_bottom_bar.dart';
 import 'package:bulky_mobile/features/request_wizard/screens/bulky_booking_wizard_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 Widget createTestApp({
   required BookingWizardProvider wizardProvider,
   ScanProvider? scanProvider,
+  OrdersProvider? ordersProvider,
+  Map<String, WidgetBuilder>? routes,
   Widget? child,
 }) {
   return MultiProvider(
@@ -22,9 +27,13 @@ Widget createTestApp({
       ChangeNotifierProvider<ScanProvider>.value(
         value: scanProvider ?? ScanProvider(),
       ),
+      ChangeNotifierProvider<OrdersProvider>.value(
+        value: ordersProvider ?? OrdersProvider(),
+      ),
     ],
     child: MaterialApp(
       theme: BulkyTheme.lightTheme,
+      routes: routes ?? {},
       home: child ?? const BulkyBookingWizardScreen(),
     ),
   );
@@ -32,6 +41,10 @@ Widget createTestApp({
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
 
   group('MaterialSurveyChips Widget', () {
     testWidgets('renders all 3 material options with icons, labels, and price deltas',
@@ -550,6 +563,99 @@ void main() {
 
       // Sheet should be dismissed
       expect(find.textContaining('Chi Tiết Bảng Cước'), findsNothing);
+    });
+
+    testWidgets('9. Tapping GỬI YÊU CẦU XÉT DUYỆT at Step 2 creates PENDING_REVIEW order and navigates to order-detail',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final wizardProvider = BookingWizardProvider();
+      final storage = MockBulkyStorage();
+      final ordersProvider = OrdersProvider(storage: storage);
+
+      // Add item and logistics details
+      wizardProvider.addItem(const BulkyItem(
+        id: 'item-1',
+        category: BulkyCategory.SOFA,
+        displayName: 'Ghế sofa da',
+        quantity: 1,
+        material: MaterialType.STANDARD,
+      ));
+      wizardProvider.setCustomerInfo(
+        name: 'Nguyễn Văn Cư Dân',
+        phone: '0901234567',
+        address: '123 Nguyễn Thị Minh Khai, Q.1',
+        date: '2026-10-15',
+        timeSlot: '09:00 - 11:00',
+      );
+
+      // Advance directly to step 2 (Review)
+      wizardProvider.goToStep(2);
+      expect(wizardProvider.currentStep, 2);
+
+      String? navigatedOrderId;
+      await tester.pumpWidget(
+        createTestApp(
+          wizardProvider: wizardProvider,
+          ordersProvider: ordersProvider,
+          routes: {
+            '/order-detail': (context) {
+              navigatedOrderId = ModalRoute.of(context)?.settings.arguments as String?;
+              return Scaffold(
+                body: Text('Chi tiết đơn hàng: $navigatedOrderId'),
+              );
+            },
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verify explanation banner in step_review_summary
+      expect(
+        find.text(
+          'Đơn hàng sẽ được chuyển đến Điều phối viên để kiểm tra và chốt mức giá chính xác. Bạn chỉ cần thanh toán cọc sau khi đơn được phê duyệt.',
+        ),
+        findsOneWidget,
+      );
+
+      // Verify CTA button label
+      final ctaFinder = find.widgetWithText(ElevatedButton, 'GỬI YÊU CẦU XÉT DUYỆT');
+      expect(ctaFinder, findsOneWidget);
+      expect(find.byKey(const Key('wizard_submit_review_button')), findsOneWidget);
+      expect(find.byKey(const Key('wizard_next_button')), findsOneWidget);
+
+      // Tap CTA button
+      await tester.tap(ctaFinder);
+      for (int i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+
+      // Verify SnackBar shown
+      expect(
+        find.text(
+          'Đã gửi yêu cầu xét duyệt thành công! Điều phối viên sẽ kiểm tra và chốt giá sớm nhất.',
+        ),
+        findsOneWidget,
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verify order created with PENDING_REVIEW status
+      expect(ordersProvider.orders.length, 1);
+      final createdOrder = ordersProvider.orders.first;
+      expect(createdOrder.status, BulkyOrderStatus.PENDING_REVIEW);
+      expect(createdOrder.paymentStatus, BulkyPaymentStatus.UNPAID);
+      expect(createdOrder.address, '123 Nguyễn Thị Minh Khai, Q.1');
+      expect(createdOrder.items.first.displayName, 'Ghế sofa da');
+
+      // Verify navigation to /order-detail with created order id
+      expect(navigatedOrderId, createdOrder.id);
+      expect(find.text('Chi tiết đơn hàng: ${createdOrder.id}'), findsOneWidget);
     });
   });
 }

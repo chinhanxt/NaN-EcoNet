@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' hide MaterialType;
 import 'package:provider/provider.dart';
 import '../../../../core/theme/bulky_colors.dart';
+import '../../orders/providers/orders_provider.dart';
 import '../providers/booking_wizard_provider.dart';
 import '../widgets/live_pricing_bottom_bar.dart';
 import '../widgets/step_items_editor.dart';
@@ -10,9 +11,14 @@ import '../widgets/step_review_summary.dart';
 /// 3-Step Wizard Screen for Bulky Waste collection booking.
 /// Step 0: Đồ vật & Ảnh (Items, Camera, AI recognition, Material survey)
 /// Step 1: Địa điểm & Bốc xếp (Address, Date/Time slot, Logistics handling)
-/// Step 2: Xác nhận & Báo giá (Review order summary, 2-tiered quote, tolerance guarantee)
+/// Step 2: Xác nhận & Gửi xét duyệt (Review order summary, submit for operator review)
 class BulkyBookingWizardScreen extends StatelessWidget {
-  const BulkyBookingWizardScreen({super.key});
+  final void Function(String orderId)? onSubmitted;
+
+  const BulkyBookingWizardScreen({
+    super.key,
+    this.onSubmitted,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -71,8 +77,45 @@ class BulkyBookingWizardScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: const LivePricingBottomBar(),
+      bottomNavigationBar: LivePricingBottomBar(
+        onSubmitReview: () => _handleSubmitReview(context, wizard),
+      ),
     );
+  }
+
+  Future<void> _handleSubmitReview(
+    BuildContext context,
+    BookingWizardProvider wizard,
+  ) async {
+    try {
+      final newOrder = await context.read<OrdersProvider>().createOrderForReview(wizard);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Đã gửi yêu cầu xét duyệt thành công! Điều phối viên sẽ kiểm tra và chốt giá sớm nhất.',
+          ),
+          backgroundColor: BulkyColors.success,
+        ),
+      );
+      if (onSubmitted != null) {
+        onSubmitted!(newOrder.id);
+      } else {
+        Navigator.pushNamed(
+          context,
+          '/order-detail',
+          arguments: newOrder.id,
+        );
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Không thể gửi yêu cầu xét duyệt: $e'),
+          backgroundColor: BulkyColors.error,
+        ),
+      );
+    }
   }
 
   Widget _buildStepBody(int step) {
