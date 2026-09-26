@@ -483,7 +483,7 @@ git commit -m "docs: bo sung phan loai trang thai truong thanh tung module trong
 - Consumes: Cấu hình build CMake.
 - Produces: Cấu hình `CMAKE_CXX_FLAGS_RELEASE` khớp chính xác 100% với tuyên bố trong `README.md`.
 
-- [ ] **Step 1: Cập nhật `CMakeLists.txt`**
+- [x] **Step 1: Cập nhật `CMakeLists.txt`**
 
 Bổ sung các cờ tối ưu hóa biên dịch:
 ```cmake
@@ -497,12 +497,12 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 ```
 
-- [ ] **Step 2: Xác nhận CMake cú pháp hợp lệ**
+- [x] **Step 2: Xác nhận CMake cú pháp hợp lệ**
 
 Run: `cd /home/chinhan/NaN-EcoNet/apps/smart-collection-engine/src && cmake -B build -S .`
 Expected: CMake configuration succeeds without syntax errors.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/smart-collection-engine/src/CMakeLists.txt apps/smart-collection-engine/src/README.md

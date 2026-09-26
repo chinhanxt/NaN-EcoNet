@@ -10,11 +10,36 @@
 
 For example: `uv run -m src.experiment.sensitivity --size small --instance-file data/25 --parameters parameters/paco.tune.yaml --output results/sensitivity.csv --num-runs 5`
 
-**Build the project**
+**Build the project (High-Performance C++ Core)**
 
-1. `cd src/build`
-2. `make`
-3. `cd ..`
+Yêu cầu môi trường (Prerequisites):
+- Trình biên dịch C++ hỗ trợ C++17 (GCC 9+ hoặc Clang 10+)
+- CMake >= 3.10
+- OpenMP (`libomp-dev`)
+- `yaml-cpp` (`libyaml-cpp-dev`)
+- `nlohmann-json` (`nlohmann-json3-dev`)
+
+Cấu hình cờ biên dịch tối ưu hóa Release (`CMAKE_CXX_FLAGS_RELEASE`):
+- `-O3`: Tối ưu hóa mức cao nhất (autovectorization, aggressive loop unrolling, function inlining).
+- `-fopenmp`: Kích hoạt đa luồng song song OpenMP cho thuật toán đàn kiến 3D-PACO.
+- `-march=native`: Tận dụng toàn bộ tập lệnh phần cứng của CPU máy chủ (AVX2, FMA, BMI) để đạt tốc độ tối đa.
+- `-DNDEBUG`: Vô hiệu hóa assertions trong mã nguồn nhằm loại trừ overhead khi vận hành.
+- `-Wall -Wextra`: Bật toàn bộ cảnh báo kiểm tra an toàn mã nguồn cho GCC/Clang.
+
+Các bước biên dịch và kiểm chứng:
+
+```bash
+# 1. Cấu hình CMake ở chế độ Release với đầy đủ cờ tối ưu hóa
+cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
+
+# 2. Biên dịch song song toàn bộ các mục tiêu (main, test)
+cmake --build build -j$(nproc)
+
+# 3. Xác minh khả năng thực thi của các binary đã tạo
+./build/main
+./build/test
+```
+
 
 **Run the solver on a set of instances (`main`)**
 
