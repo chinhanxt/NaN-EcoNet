@@ -8,11 +8,11 @@ Tập hợp mã nguồn và kiến trúc vận hành của 5 phân hệ cốt l�
 
 | Thư mục | Phân hệ | Vai trò chính | Tech Stack | Cổng mặc định |
 |---|---|---|---|---|
-| [`ecopass/`](file:///home/chinhan/NaN-EcoNet/ecopass) | **EcoPass** | Nền tảng tuần hoàn vỏ lon/ly đổi voucher khuyến mãi (Mô hình 4-Win) | Next.js, Django, SQLite | `3009` - `3013` |
-| [`enterprise-bi-copilot/`](file:///home/chinhan/NaN-EcoNet/enterprise-bi-copilot) | **BI Copilot** | Trợ lý phân tích chỉ số kinh doanh & dữ liệu tài chính thời gian thực | React, Vite, MCP Server | `3000` |
-| [`agy-image-gateway/`](file:///home/chinhan/NaN-EcoNet/agy-image-gateway) | **Image Gateway** | Cổng Proxy & điều phối API sinh ảnh AI đa nhà cung cấp | Python, FastAPI, Vite | `8000`, `5173` |
-| [`awesome-gpt-image-2/`](file:///home/chinhan/NaN-EcoNet/awesome-gpt-image-2) | **GPT-Image-2** | Thư viện phong cách thị giác & Studio thiết kế prompt chuẩn công nghiệp | React, Vite, Supabase | `5174` |
-| [`nan-team/`](file:///home/chinhan/NaN-EcoNet/nan-team) | **NaN-Team MMO** | Nền tảng tự động hóa sản xuất & đăng tải nội dung mạng xã hội | NestJS, Next.js, Docker | `4200`, `5200` |
+| [`ecopass/`](ecopass) | **EcoPass** | Nền tảng tuần hoàn vỏ lon/ly đổi voucher khuyến mãi (Mô hình 4-Win) | Next.js, Django, SQLite | `3009` - `3013` |
+| [`enterprise-bi-copilot/`](enterprise-bi-copilot) | **BI Copilot** | Trợ lý phân tích chỉ số kinh doanh & dữ liệu tài chính thời gian thực | React, Vite, MCP Server | `3000` |
+| [`agy-image-gateway/`](agy-image-gateway) | **Image Gateway** | Cổng Proxy & điều phối API sinh ảnh AI đa nhà cung cấp | Python, FastAPI, Vite | `8000`, `5173` |
+| [`awesome-gpt-image-2/`](awesome-gpt-image-2) | **GPT-Image-2** | Thư viện phong cách thị giác & Studio thiết kế prompt chuẩn công nghiệp | React, Vite, Supabase | `5174` |
+| [`nan-team/`](nan-team) | **NaN-Team MMO** | Nền tảng tự động hóa sản xuất & đăng tải nội dung mạng xã hội | NestJS, Next.js, Docker | `4200`, `5200` |
 
 ---
 

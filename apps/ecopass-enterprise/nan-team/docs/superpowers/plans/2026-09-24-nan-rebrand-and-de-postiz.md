@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, Next.js 16 (App Router), NestJS, TailwindCSS, MobX / Konva (Polotno), Bash / Make.
 
-**Spec:** [`docs/superpowers/specs/2026-09-24-nan-rebrand-and-de-postiz-design.md`](file:///home/chinhan/MMO/postiz/docs/superpowers/specs/2026-09-24-nan-rebrand-and-de-postiz-design.md)
+**Spec:** [`../specs/2026-09-24-nan-rebrand-and-de-postiz-design.md`](../specs/2026-09-24-nan-rebrand-and-de-postiz-design.md)
 
 ## Global Constraints
 - **Blacklist Files**: TUYỆT ĐỐI KHÔNG CHỈNH SỬA các file:

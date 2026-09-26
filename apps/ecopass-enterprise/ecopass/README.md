@@ -1,8 +1,8 @@
 # EcoPass — Phygital Waste-to-Reward Platform
 > **Mô hình tuần hoàn rác thải thông minh liên kết Doanh nghiệp & Người tiêu dùng**  
 > *Lấy cảm hứng từ các giải pháp xuất sắc tại Kosen Procon Nhật Bản (POOI & Triplean), tinh chỉnh tối ưu cho thị trường Việt Nam.*  
-> 📌 **Tài liệu chiến lược cốt lõi**: Xem chi tiết tại [PROJECT_STRATEGY.md](file:///home/chinhan/ecopass/PROJECT_STRATEGY.md) (Bản Tuyên Ngôn Triết Lý Kinh Doanh & Hướng Đi Cốt Lõi 4-Win).  
-> 🏆 **Kịch bản Demo Vòng Chung Kết**: Xem chi tiết tại [FINALS_DEMO_STRATEGY.md](file:///home/chinhan/ecopass/FINALS_DEMO_STRATEGY.md) (Kịch bản 15s thực chiến, phản biện BGK & thiết lập GPS/QR).
+> 📌 **Tài liệu chiến lược cốt lõi**: Xem chi tiết tại [PROJECT_STRATEGY.md](PROJECT_STRATEGY.md) (Bản Tuyên Ngôn Triết Lý Kinh Doanh & Hướng Đi Cốt Lõi 4-Win).  
+> 🏆 **Kịch bản Demo Vòng Chung Kết**: Xem chi tiết tại [FINALS_DEMO_STRATEGY.md](FINALS_DEMO_STRATEGY.md) (Kịch bản 15s thực chiến, phản biện BGK & thiết lập GPS/QR).
 
 ---
 
