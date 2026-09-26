@@ -35,17 +35,22 @@
 <a id="executive-summary"></a>
 ## 🌍 1. Tổng Quan Dự Án (Executive Summary)
 
-Tại các siêu đô thị đang phát triển nhanh như TP. Hồ Chí Minh và Hà Nội, tốc độ đô thị hóa nhanh chóng tạo ra hơn **64.000 tấn rác sinh hoạt mỗi ngày**. Hệ sinh thái **NaN-EcoNet** tập trung giải quyết dứt điểm 3 điểm nghẽn đô thị cốt lõi:
+Tại các siêu đô thị đang phát triển nhanh như TP. Hồ Chí Minh và Hà Nội, tốc độ đô thị hóa nhanh chóng tạo ra hơn **64.000 tấn rác sinh hoạt mỗi ngày**. Hệ sinh thái **NaN-EcoNet** tập trung giải quyết dứt điểm 4 điểm nghẽn đô thị cốt lõi:
 
 * 🛋️ **Rác cồng kềnh quá tải:** Đồ nội thất cũ (sofa, nệm, tủ gỗ) bị xả bừa bãi ra vỉa hè do thiếu kênh đặt lịch thu gom chính thống và chi phí phát sinh tùy tiện tại hiện trường.
 * 🚛 **Logistics thu gom kém hiệu quả:** Xe rác chạy tuyến cố định gây lãng phí nhiên liệu Diesel, luồn lách vào ngõ hẹp gây ùn tắc giao thông và xả khí thải $\text{CO}_2$.
 * 🌿 **Thiếu động lực kinh tế tuần hoàn:** Người dân chưa có thói quen phân loại rác tại nguồn; doanh nghiệp FMCG đối mặt áp lực kiểm toán định mức tái chế bắt buộc (**EPR** - Nghị định 08/2022/NĐ-CP).
+* 📢 **Truyền thông xanh thủ công, tốn kém & rời rạc:** Các chiến dịch vận động môi trường hiện nay phụ thuộc hoàn toàn vào nhân sự viết bài thủ công, chi phí thiết kế đồ họa đắt đỏ, nội dung khô khan khó lan tỏa, không duy trì được tần suất xuất bản đều đặn trên đa nền tảng mạng xã hội.
+
+> 💡 **Điểm Đột Phá (The Game Changer):** NaN-EcoNet tích hợp **Omni-Channel Agentic Media Hub** do AI làm chủ 100%: Tự động tạo ảnh poster thẩm mỹ cao qua đa mô hình SOTA (FLUX / Imagen / Qwen), tự động dựng video ngắn 9:16 bằng FFmpeg, viết caption bắt trend và tự động đăng tải đa kênh lên **Facebook Page**, **TikTok** và **YouTube Shorts** với chi phí vận hành gần như bằng 0.
 
 ```mermaid
 graph LR
   A["📱 Quốc Anh\nCitizen Bulky App\n• Gemini AI Vision\n• Báo giá 4 thành phần\n• Khóa giá 15 phút"] -->|Đẩy đơn gom rác| B["🚛 Công Nghiệp\nSmart Collection\n• 3D-PACO C++ Core\n• Google OR-Tools\n• Local OSRM đường bộ"]
-  B -->|Dữ liệu thu gom & GPS| C["🌿 Chí Nhân\nEcoPass Enterprise\n• MCP BI Copilot\n• Mô hình 4-WIN\n• Báo cáo kiểm toán EPR"]
+  B -->|Dữ liệu thu gom & GPS| C["🌿 Chí Nhân\nEcoPass Enterprise\n• MCP BI Copilot & EPR\n• AI Media Hub Auto-Post\n• Mô hình tuần hoàn 4-WIN"]
   C -->|Điểm thưởng voucher F&B| A
+  C -->|Auto-post ảnh & video 9:16| D["📢 Viral Đa Nền Tảng\n• Facebook Page\n• TikTok Studio\n• YouTube Shorts"]
+  D -.->|Lan tỏa & thu hút cư dân| A
 ```
 
 ---
@@ -68,7 +73,7 @@ graph LR
 2. **Đặt lịch & Chốt cọc:** Cư dân xác nhận khung giờ hẹn; đơn hàng được đóng gói theo schema chuẩn `BulkyOrderPayload`.
 3. **Tối ưu định tuyến 3D-PACO:** Động cơ VRP gộp đơn rác cồng kềnh cùng các thùng rác công cộng, tự động phân loại hình thức (xe vào tận nơi vs nhân viên gom bộ đầu hẻm).
 4. **Thu gom & Giám sát hiện trường:** Tài xế di chuyển theo lộ trình OSRM; cam kết không phát sinh phụ phí nếu sai lệch thực tế $\le \pm 10\%$.
-5. **Cấp điểm thưởng & Kiểm toán EPR:** Hệ thống cấp mã voucher Highlands Coffee/căn tin cho người dân; xuất dữ liệu tái chế sạch định vị GPS cho doanh nghiệp FMCG qua MCP Server.
+5. **Cấp điểm thưởng, Kiểm toán EPR & AI Đăng bài:** Hệ thống cấp voucher Highlands Coffee/căn tin cho người dân; xuất dữ liệu tái chế sạch định vị GPS cho doanh nghiệp FMCG qua MCP Server; kích hoạt AI tự động tạo ảnh/video tổng kết thành quả và xuất bản lên mạng xã hội.
 
 ---
 

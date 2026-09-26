@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>BÁO CÁO THUYẾT MINH SẢN PHẨM - DỰ ÁN NaN-EcoNet</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 18mm 18mm 18mm 18mm;
+      @bottom-right {
+        content: counter(page);
+        font-family: "Times New Roman", Times, serif;
+        font-size: 10pt;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 12pt;
+      line-height: 1.45;
+      color: #111111;
+      background: #ffffff;
+      padding: 0;
+    }
+
+    .header-box {
+      border-bottom: 2px solid #000000;
+      padding-bottom: 8px;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .header-left {
+      text-align: left;
+      font-size: 10.5pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      line-height: 1.3;
+    }
+
+    .header-right {
+      text-align: right;
+      font-size: 10.5pt;
+      font-style: italic;
+      line-height: 1.3;
+    }
+
+    .doc-title-block {
+      text-align: center;
+      margin: 12px 0 16px 0;
+    }
+
+    .doc-main-title {
+      font-size: 16.5pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+      color: #0b3d20;
+    }
+
+    .doc-sub-title {
+      font-size: 12.5pt;
+      font-weight: bold;
+      color: #1e5631;
+      margin-bottom: 6px;
+    }
+
+    .doc-meta {
+      font-size: 11pt;
+      font-style: italic;
+      color: #333333;
+    }
+
+    .section-title {
+      font-size: 13pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: #0b3d20;
+      border-left: 4px solid #0b3d20;
+      padding-left: 8px;
+      margin-top: 14px;
+      margin-bottom: 8px;
+      page-break-after: avoid;
+    }
+
+    .subsection-title {
+      font-size: 12pt;
+      font-weight: bold;
+      color: #1c4b27;
+      margin-top: 8px;
+      margin-bottom: 4px;
+      page-break-after: avoid;
+    }
+
+    p {
+      margin-bottom: 6px;
+      text-align: justify;
+    }
+
+    ul, ol {
+      margin-left: 20px;
+      margin-bottom: 8px;
+    }
+
+    li {
+      margin-bottom: 3px;
+      text-align: justify;
+    }
+
+    strong {
+      color: #000000;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 12px 0;
+      font-size: 10.5pt;
+    }
+
+    tr {
+      page-break-inside: avoid;
+    }
+
+    th, td {
+      border: 1px solid #333333;
+      padding: 5px 8px;
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    th {
+      background-color: #eaf3ed;
+      font-weight: bold;
+      text-align: center;
+      color: #0b3d20;
+    }
+
+    .table-center {
+      text-align: center;
+    }
+
+    .table-right {
+      text-align: right;
+    }
+
+    .highlight-box {
+      background-color: #f6faf7;
+      border: 1px solid #b7dcbf;
+      border-radius: 4px;
+      padding: 8px 12px;
+      margin: 8px 0;
+      font-size: 11.5pt;
+      page-break-inside: avoid;
+    }
+
+    .math-block {
+      background-color: #f9fbf9;
+      border-left: 3px solid #1e5631;
+      padding: 6px 12px;
+      margin: 6px 0;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 11pt;
+      page-break-inside: avoid;
+    }
+
+    .page-break {
+      page-break-before: always;
+    }
+
+    .tag {
+      display: inline-block;
+      background: #e1efe5;
+      color: #0b3d20;
+      font-weight: bold;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 9.5pt;
+      margin-right: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER INSTITUTION -->
+  <div class="header-box">
+    <div class="header-left">
+      BỘ GIÁO DỤC VÀ ĐÀO TẠO<br>
+      TRƯỜNG ĐẠI HỌC CÔNG NGHỆ TP. HỒ CHÍ MINH (HUTECH)<br>
+      KHOA CÔNG NGHỆ THÔNG TIN
+    </div>
+    <div class="header-right">
+      HUTECH INNOVATION 2026<br>
+      Lĩnh vực: Đô thị Thông minh & Công nghệ Môi trường<br>
+      Mã hồ sơ: <strong>NaN-EcoNet-2026</strong>
+    </div>
+  </div>
+
+  <!-- TITLE -->
+  <div class="doc-title-block">
+    <h1 class="doc-main-title">BÁO CÁO THUYẾT MINH SẢN PHẨM</h1>
+    <h2 class="doc-sub-title">DỰ ÁN: NaN-EcoNet – HỆ SINH THÁI TUẦN HOÀN THÔNG MINH CHO MÔI TRƯỜNG BỀN VỮNG</h2>
+    <div class="doc-meta">
+      <strong>Nhóm tác giả:</strong> NaN-Team | 
+      <strong>Thành viên:</strong> Bùi Nguyễn Công Nghiệp (2380601460), Lê Quốc Anh (2380600052), Nguyễn Chí Nhân (2380601523)<br>
+      <strong>Kho lưu trữ (Repository):</strong> https://github.com/chinhanxt/NaN-EcoNet (Giấy phép mã nguồn mở Apache License 2.0)
+    </div>
+  </div>
+
+  <!-- 1. BÀI TOÁN & VẤN ĐỀ THỰC TẾ CẦN GIẢI QUYẾT -->
+  <div class="section-title">1. BÀI TOÁN & VẤN ĐỀ THỰC TẾ CẦN GIẢI QUYẾT (4 PAIN POINTS CỦA 4 BÊN)</div>
+  <p>
+    Tại các đô thị loại đặc biệt như TP. Hồ Chí Minh (phát sinh hơn 64.000 tấn rác sinh hoạt mỗi ngày), quá trình thu gom và xử lý rác đang gặp 4 điểm nghẽn nghiêm trọng (Pain Points) tương ứng với 4 đối tượng cốt lõi:
+  </p>
+  <ul>
+    <li>
+      <strong>1. Phía Cư Dân & Hộ Gia Đình:</strong> Rác cồng kềnh (sofa cũ, nệm mút, tủ gỗ, bàn ghế hỏng) không có kênh thu gom chính thống của công ty môi trường đô thị. Người dân buộc phải gọi xe ba gác tự phát và thường xuyên bị ép giá tùy tiện tại hiện trường (phát sinh từ 300.000 đến 800.000 VNĐ do bốc xếp). Đồng thời, người dân chưa có động lực kinh tế rõ ràng để phân loại rác tái chế (vỏ lon, chai nhựa) tại nguồn.
+    </li>
+    <li>
+      <strong>2. Phía Đội Ngũ Thu Gom & Tài Xế:</strong> Lộ trình xe thu gom cố định, thiếu linh hoạt dẫn đến chạy trùng tuyến và lãng phí nhiên liệu Diesel. Xe tải ép vào các ngõ hẻm chật hẹp gây ùn tắc giao thông nghiêm trọng. Công nhân vệ sinh phải bới rác thủ công độc hại tại trạm trung chuyển; thời gian xử lý sự cố ngoài hiện trường (tắc đường, ngập nước) kéo dài từ 4 đến 6 giờ làm đình trệ toàn bộ ca làm việc.
+    </li>
+    <li>
+      <strong>3. Phía Cửa Hàng Bán Lẻ, Căn Tin & Chuỗi F&B:</strong> Lượng khách hàng (đặc biệt là sinh viên và nhân viên văn phòng) thưa thớt vào các khung giờ thấp điểm. Chi phí phát sampling và chạy quảng cáo khuyến mãi trên mạng xã hội tốn kém nhưng tỷ lệ khách thực tế đến cửa hàng thấp (chuyển đổi &lt; 5%).
+    </li>
+    <li>
+      <strong>4. Phía Doanh Nghiệp Sản Xuất Bao Bì & Nhãn Hàng FMCG:</strong> Đối mặt áp lực pháp lý bắt buộc tuân thủ định mức tái chế theo cơ chế Trách nhiệm Mở rộng của Nhà sản xuất (<strong>EPR</strong> - Nghị định 08/2022/NĐ-CP). Doanh nghiệp thiếu dữ liệu số định vị GPS chứng minh tỷ lệ bao bì được thu hồi sạch; chi phí thuê kiểm toán độc lập đắt đỏ hoặc đối mặt với mức phạt nộp tiền vào Quỹ Bảo vệ Môi trường Việt Nam.
+    </li>
+  </ul>
+
+  <!-- 2. GIẢI PHÁP VÀ CÁC CHỨC NĂNG CHÍNH CỦA SẢN PHẨM -->
+  <div class="section-title">2. GIẢI PHÁP VÀ CÁC CHỨC NĂNG CHÍNH (CHU TRÌNH KINH TẾ TUẦN HOÀN 4-WIN)</div>
+  <p>
+    NaN-EcoNet cung cấp một hệ thống giải pháp công nghệ toàn diện kết nối 3 phân hệ chuyên biệt theo luồng giá trị tuần hoàn khép kín <strong>4-WIN</strong>:
+  </p>
+
+  <div class="subsection-title">2.1. Ứng Dụng Di Động Cư Dân & Thu Gom Rác Cồng Kềnh AI (Citizen Bulky App)</div>
+  <ul>
+    <li>
+      <strong>AI Vision Scanner nhận diện đồ cồng kềnh tức thời:</strong> Người dân chụp ảnh đồ nội thất cũ bằng camera điện thoại; mô hình thị giác AI tự động vẽ hộp bao Bounding Box, bóc tách tỷ lệ vật liệu (gỗ, kim loại, mút xốp) và ước lượng kích thước 3D (Dài x Rộng x Cao).
+    </li>
+    <li>
+      <strong>Động cơ tính giá trực tiếp 4 thành phần (Live Dynamic Pricing):</strong> Giá cước minh bạch theo công thức: 
+      <em>P<sub>total</sub> = P<sub>items</sub> (loại vật phẩm) + P<sub>volume</sub> (thể tích m³) + P<sub>floor</sub> (tầng cao không thang máy) + P<sub>alley</sub> (hẻm sâu &gt; 50m)</em>.
+    </li>
+    <li>
+      <strong>Cam kết bảo vệ giá (Dung sai ≤ ±10% & Khóa giá 15 phút):</strong> Sau khi quét AI, khoảng giá Min-Max được khóa giữ chỗ trong 15 phút. Nếu kích thước/khối lượng kiểm tra tại hiện trường sai lệch trong biên độ ±10%, khách hàng được <strong>miễn phí 100% phụ thu phát sinh</strong>.
+    </li>
+    <li>
+      <strong>Ví điểm thưởng Eco Rewards:</strong> Cư dân quét mã tem nhiệt trên vỏ lon/chai tái chế để tích điểm, quy đổi trực tiếp thành mã voucher giảm giá đồ uống tại các chuỗi F&B đối tác (Highlands Coffee, Phúc Long, Katinat, Căn tin HUTECH).
+    </li>
+  </ul>
+
+  <div class="subsection-title">2.2. Động Cơ Định Tuyến Tối Ưu Đội Xe & Xử Lý Sự Cố Động (Smart Collection Engine)</div>
+  <ul>
+    <li>
+      <strong>Thuật toán lai 3D-PACO giải quyết bài toán CVRPTW:</strong> Tối ưu hóa phân bổ tuyến đường cho đội xe tải 1.5 tấn có ràng buộc tải trọng và khung giờ đón, tích hợp bản đồ số đường bộ thực tế (Local OSRM) bám sát các cung đường một chiều tại TP.HCM.
+    </li>
+    <li>
+      <strong>Mô hình quyết định nhị phân ngõ hẻm (Bi-Modal Decision):</strong> Mở rộng không gian tìm kiếm với biến nhị phân <em>o ∈ {0, 1}</em> (<em>o = 0</em>: xe tải gom tận nơi; <em>o = 1</em>: gom rác bằng bộ kéo tập kết tại đầu ngõ lớn), giải quyết triệt để vấn đề mạng lưới hẻm sâu đô thị.
+    </li>
+    <li>
+      <strong>Điều phối sự cố động thời gian thực (&lt; 350 ms):</strong> Tự động tính lộ trình vòng tránh đường ngập/rào chắn (Roadblock Detour), ứng cứu thùng rác tràn (Bin Overflow), và điều chuyển điểm gom khi xe gặp sự cố (Breakdown Transfer) mà không cần lập lịch lại từ đầu.
+    </li>
+    <li>
+      <strong>Giám sát Telemetry & ML chấm điểm tài xế:</strong> Thu thập tốc độ, gia tốc và chấm điểm hành vi lái xe an toàn, tiết kiệm nhiên liệu theo từng ca chạy.
+    </li>
+  </ul>
+
+  <div class="subsection-title">2.3. Nền Tảng Doanh Nghiệp & Tự Động Hóa Nội Dung (EcoPass Enterprise & Omni-Channel Hub)</div>
+  <ul>
+    <li>
+      <strong>AI Visual Synthesis Gateway:</strong> Cổng proxy trung gian kết nối các mô hình sinh ảnh chất lượng cao (FLUX, Gemini Imagen, Qwen-Image-2) kèm bộ đệm băm SHA-256 prompt cache chống trùng lặp.
+    </li>
+    <li>
+      <strong>Tự động hóa sản xuất & Đăng bài đa kênh (nan-team/scripts):</strong> Tự động sinh tiêu đề, kịch bản video tuyên truyền sống xanh, dùng FFmpeg chuyển đổi poster sang video ngắn tỷ lệ 9:16 có nhạc nền sinh thái và tự động xuất bản lên Facebook Page, TikTok Studio, YouTube Shorts.
+    </li>
+    <li>
+      <strong>Enterprise BI Copilot & MCP Tools:</strong> Ứng dụng giao thức Model Context Protocol (Anthropic) cho phép ban điều hành truy vấn số liệu tự nhiên bằng Text-to-SQL an toàn, tự động vẽ sơ đồ Mermaid.js và kết xuất báo cáo kiểm toán định mức tái chế EPR cho doanh nghiệp FMCG.
+    </li>
+  </ul>
+
+  <!-- 3. CÔNG NGHỆ SỬ DỤNG -->
+  <div class="section-title">3. CÔNG NGHỆ SỬ DỤNG (SYSTEM TOPOLOGY & TECH STACK)</div>
+  <p>
+    Dự án được triển khai theo kiến trúc <strong>Multi-Service Monorepo</strong> với các giao thức giao tiếp chuẩn hóa JSON Schema (<code>BulkyOrderPayload</code>, <code>EcoRewardPayload</code>):
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 18%;">Tầng Kiến Trúc</th>
+        <th style="width: 32%;">Phân Hệ / Thành Phần</th>
+        <th style="width: 35%;">Công Nghệ Sử Dụng</th>
+        <th style="width: 15%;">Cổng / Runtime</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td rowspan="2"><strong>1. Client & Edge (Giao diện)</strong></td>
+        <td>Citizen Bulky Mobile App</td>
+        <td>Flutter (Dart), Clean Architecture, Bounding Box Camera Stream</td>
+        <td>iOS / Android / Web</td>
+      </tr>
+      <tr>
+        <td>Citizen & Admin Web Portal<br>Dual-Map Interactive Dispatcher</td>
+        <td>React 18, Vite, Tailwind CSS<br>MapLibre GL JS, Leaflet, Streamlit (Python)</td>
+        <td>Port 3006<br>Port 8502, 8501</td>
+      </tr>
+      <tr>
+        <td rowspan="2"><strong>2. Processing & Algorithm (Lõi)</strong></td>
+        <td>3D-PACO C++ Solver Core</td>
+        <td>C++17 biên dịch cờ <code>-O3 -fopenmp -march=native</code> (8 threads)</td>
+        <td>C++ Native Core</td>
+      </tr>
+      <tr>
+        <td>VRP Solver API & Routing Engine</td>
+        <td>Python 3.11, FastAPI, Uvicorn, Google OR-Tools v9.9 (GLS)</td>
+        <td>Port 8000 / 8001</td>
+      </tr>
+      <tr>
+        <td><strong>3. Spatial Infrastructure</strong></td>
+        <td>Bản Đồ Số Local OSRM</td>
+        <td>Open Source Routing Machine, OpenStreetMap TP.HCM sạch không đường lưỡi bò, Cache không gian <code>route_cache.json</code></td>
+        <td>OSRM Server (Độ trễ &lt; 50ms)</td>
+      </tr>
+      <tr>
+        <td rowspan="2"><strong>4. Enterprise & Agentic</strong></td>
+        <td>Enterprise BI Copilot & MCP Hub</td>
+        <td>Node.js, TypeScript, Model Context Protocol (Anthropic MCP SDK)</td>
+        <td>Port 3011</td>
+      </tr>
+      <tr>
+        <td>AI Image Gateway & Auto Media</td>
+        <td>FastAPI, FLUX, Gemini Imagen, FFmpeg 9:16, Postiz Automation</td>
+        <td>Port 5002, 4200</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 4. CÁCH ỨNG DỤNG AI VÀ TỰ ĐỘNG HÓA TRONG SẢN PHẨM -->
+  <div class="section-title">4. CÁCH ỨNG DỤNG AI VÀ TỰ ĐỘNG HÓA TRONG SẢN PHẨM</div>
+  <p>
+    AI và Tự động hóa không chỉ là tính năng bổ trợ mà là <strong>bộ não vận hành xuyên suốt</strong> của toàn bộ dự án:
+  </p>
+
+  <div class="subsection-title">4.1. AI Thị Giác Máy Tính (Computer Vision) Trong Nhận Diện Rác Cồng Kềnh</div>
+  <ul>
+    <li>
+      <strong>Mô hình Gemini 2.5 Flash:</strong> Trích xuất hộp bao 2D chuẩn hóa <em>[y<sub>min</sub>, x<sub>min</sub>, y<sub>max</sub>, x<sub>max</sub>] ∈ [0, 1000]</em>. Nhận diện cùng lúc nhiều vật dụng trong 1 ảnh (ví dụ: 1 bàn ăn và 4 ghế tựa).
+    </li>
+    <li>
+      <strong>Ước lượng thể tích 3D & Bóc tách tỷ lệ vật liệu:</strong> Đối chiếu tỷ lệ phối cảnh để tính thể tích hình học <em>V = (L × W × H) / 1.000.000 (m³)</em>; tự động phân loại tỷ lệ gỗ tự nhiên/công nghiệp, đệm mút và kim loại để phục vụ tính cước và xếp tải trọng xe.
+    </li>
+  </ul>
+
+  <div class="subsection-title">4.2. AI Tối Ưu Hóa Bầy Đàn (3D-PACO) Trong Logistics Đô Thị</div>
+  <ul>
+    <li>
+      <strong>Cơ chế Pheromone 3 Chiều:</strong> Tích hợp ma trận vết mùi <em>τ(i, j, o)</em> và độ hấp dẫn heuristic <em>η(i, j, o) = (1 + γ · OdorLevel<sub>j</sub>) / c<sub>ij</sub></em> (ưu tiên các điểm bốc mùi/đầy ứ và cự ly ngắn).
+    </li>
+    <li>
+      <strong>Tốc độ tính toán vượt trội:</strong> Nhờ tối ưu hóa OpenMP 8 luồng song song trên C++, thuật toán 3D-PACO đạt tốc độ giải chỉ <strong>510 ms</strong> cho cụm 100 điểm, nhanh gấp <strong>4.2 lần</strong> so với thuật toán Google OR-Tools tuần tự (2.140 ms).
+    </li>
+  </ul>
+
+  <div class="subsection-title">4.3. AI Tự Động Hóa Sáng Tạo & Đăng Tải Truyền Thông Đa Nền Tảng (Omni-Channel)</div>
+  <ul>
+    <li>
+      <strong>AI Visual Generation:</strong> Tự động sản xuất poster nâng cao ý thức phân loại rác thông qua prompt presets chuyên sâu, tiết kiệm 100% chi phí thiết kế đồ họa thủ công.
+    </li>
+    <li>
+      <strong>Pipeline Render Video Tự Động (FFmpeg):</strong> Tự động ghép chuyển động, ghép nhạc nền bản quyền mở và xuất video định dạng dọc 9:16 tối ưu cho thuật toán lan truyền (viral) của TikTok và Shorts.
+    </li>
+    <li>
+      <strong>Auto-Publisher bền bỉ:</strong> Quản lý cơ chế khóa phiên trình duyệt (<code>acquireProfileLock</code>) và Exponential Backoff với jitter ngẫu nhiên, tự động lên lịch đăng bài xuyên suốt 24/7 mà không lo xung đột tiến độ.
+    </li>
+  </ul>
+
+  <div class="subsection-title">4.4. Trợ Lý BI Copilot Ứng Dụng Chuẩn Giao Thức Mở MCP</div>
+  <ul>
+    <li>
+      <strong>Khám phá công cụ tự động (MCP Tool Discovery):</strong> Mô hình LLM tự phân tích câu hỏi người quản lý để gọi chính xác các hàm nghiệp vụ: truy vấn số dư ngân sách ESG, kết xuất lượng rác thu gom theo phường/quận.
+    </li>
+    <li>
+      <strong>Biên dịch sơ đồ động (Dynamic Diagram):</strong> Tự động phân tích câu lệnh văn bản để xuất ra mã nguồn Mermaid.js / PlantUML và hiển thị trực tiếp sơ đồ trực quan hóa dữ liệu trên màn hình điều hành.
+    </li>
+  </ul>
+
+  <!-- 5. GIÁ TRỊ VÀ KHẢ NĂNG ỨNG DỤNG ĐỐI VỚI DOANH NGHIỆP -->
+  <div class="section-title">5. GIÁ TRỊ VÀ KHẢ NĂNG ỨNG DỤNG ĐỐI VỚI DOANH NGHIỆP (MA TRẬN LỢI ÍCH 4-WIN)</div>
+  <p>
+    Mô hình kinh tế tuần hoàn 4-WIN của NaN-EcoNet tạo ra dòng chảy giá trị kinh tế và dữ liệu khép kín, định lượng rõ ràng:
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 20%;">Đối Tượng Tham Gia</th>
+        <th style="width: 26%;">Lợi Ích Cốt Lõi Nhận Được</th>
+        <th style="width: 26%;">Nếu Thiếu EcoNet (Hiện Trạng Cũ)</th>
+        <th style="width: 28%;">Hiệu Quả Định Lượng Đo Lường Thực Tế</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>1. Cư Dân &amp; Sinh Viên</strong></td>
+        <td>Thu gom đồ cũ văn minh, minh bạch; tích điểm đổi voucher ăn uống/học tập.</td>
+        <td>Bị ép giá ba gác; vứt bừa bãi ra vỉa hè; không có động lực phân loại rác tại nguồn.</td>
+        <td><strong>Thu nhập tích lũy:</strong> 150.000 – 350.000 VNĐ/tháng; bảo vệ giá dung sai ≤ ±10%.</td>
+      </tr>
+      <tr>
+        <td><strong>2. Đội Xe Thu Gom &amp; Tài Xế</strong></td>
+        <td>Tuyến đường thông minh; chở đúng tải trọng; bảo vệ sức khỏe và an toàn công nhân.</td>
+        <td>Tuyến chạy chồng chéo; kẹt xe ngõ hẹp; bới rác thủ công độc hại tại điểm tập kết.</td>
+        <td><strong>Giảm 28.4% cự ly di chuyển</strong> (tiết kiệm 3.87 L dầu/ca); <strong>tăng 35% năng suất</strong> phục vụ.</td>
+      </tr>
+      <tr>
+        <td><strong>3. Cửa Hàng Bán Lẻ &amp; Căn Tin F&amp;B</strong></td>
+        <td>Đón nhận lượng khách hàng sinh viên mới đến đổi voucher; tăng doanh số bán kèm.</td>
+        <td>Chi phí quảng cáo cao nhưng không hiệu quả; bàn ghế trống vào các khung giờ thấp điểm.</td>
+        <td><strong>Tỷ lệ chuyển đổi voucher đạt 68.0%</strong>; tăng <strong>18% doanh thu</strong> từ các món bán kèm.</td>
+      </tr>
+      <tr>
+        <td><strong>4. Doanh Nghiệp Bao Bì &amp; Nhãn Hàng FMCG</strong></td>
+        <td>Tuân thủ 100% Nghị định 08/2022/NĐ-CP; sở hữu bộ dữ liệu sạch GPS phục vụ ESG.</td>
+        <td>Nguy cơ bị phạt vi phạm hành chính; truy thu nộp Quỹ Bảo vệ Môi trường Việt Nam.</td>
+        <td><strong>Tiết kiệm 35 – 45% chi phí tuân thủ EPR</strong> so với phương án nộp phạt hoặc thuê kiểm toán ngoài.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 6. LINK MÃ NGUỒN VÀ DEMO -->
+  <div class="section-title">6. LINK MÃ NGUỒN / REPOSITORY &amp; LINK SẢN PHẨM / VIDEO DEMO</div>
+  <ul>
+    <li>
+      <strong>Mã nguồn toàn bộ dự án (GitHub Monorepo):</strong> <br>
+      <a href="https://github.com/chinhanxt/NaN-EcoNet">https://github.com/chinhanxt/NaN-EcoNet</a> 
+      <em>(Mã nguồn mở chuẩn Apache License 2.0, hỗ trợ kiểm thử tự động CI qua Makefile)</em>
+    </li>
+    <li>
+      <strong>Link Video Demo &amp; Trình Diễn Toàn Bộ Hệ Thống:</strong> <br>
+      Trình diễn video thực tế 3 phân hệ (App Flutter Cư dân, Bản đồ điều phối Dual-Map 8502, BI Copilot 3011, MMO Automation) được tích hợp trực tiếp tại Slide số 13 trong file thuyết trình:
+      <code>presentation/index.html</code> (Mục <em>Demo Sản Phẩm Thực Tế</em>).
+    </li>
+  </ul>
+
+  <!-- 7. TÀI LIỆU LIÊN QUAN PHỤC VỤ ĐÁNH GIÁ -->
+  <div class="section-title">7. CÁC TÀI LIỆU LIÊN QUAN PHỤC VỤ VIỆC ĐÁNH GIÁ SẢN PHẨM</div>
+  <p>
+    Hồ sơ kỹ thuật của NaN-EcoNet được kiểm chứng bằng thực nghiệm đối đầu trực tiếp (Head-to-Head Solver Battle) trên bộ dữ liệu 100 điểm rác thực tế tại Quận 1 &amp; Quận 3 TP.HCM:
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Chỉ Số Đo Lường (Benchmark Metrics)</th>
+        <th>Baseline Tuyến Cố Định (Greedy)</th>
+        <th>Google OR-Tools Tiêu Chuẩn (GLS)</th>
+        <th>Đề Xuất 3D-PACO C++ (NaN-EcoNet)</th>
+        <th>Mức Độ Cải Thiện Của 3D-PACO</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Tổng Quãng Đường Đội Xe</strong></td>
+        <td>48.60 km</td>
+        <td>37.10 km</td>
+        <td><strong>34.80 km</strong></td>
+        <td><strong>Giảm 28.4%</strong> (Tối ưu nhất)</td>
+      </tr>
+      <tr>
+        <td><strong>Nhiên Liệu Tiêu Thụ (Diesel)</strong></td>
+        <td>13.61 Lít</td>
+        <td>10.39 Lít</td>
+        <td><strong>9.74 Lít</strong></td>
+        <td><strong>Tiết kiệm 28.4%</strong> (3.87 Lít/ca)</td>
+      </tr>
+      <tr>
+        <td><strong>Phát Thải Khí Nhà Kính (CO₂)</strong></td>
+        <td>36.47 kg CO₂</td>
+        <td>27.85 kg CO₂</td>
+        <td><strong>26.10 kg CO₂</strong></td>
+        <td><strong>Cắt giảm 10.37 kg CO₂/ca</strong></td>
+      </tr>
+      <tr>
+        <td><strong>Thời Gian Tính Toán (Latency)</strong></td>
+        <td>18 ms</td>
+        <td>2.140 ms</td>
+        <td><strong>510 ms (OpenMP 8 cores)</strong></td>
+        <td><strong>Nhanh hơn 4.2 lần</strong> so với OR-Tools</td>
+      </tr>
+      <tr>
+        <td><strong>Xử Lý Ngõ Hẻm (Walk-in Alley)</strong></td>
+        <td>0% (Bỏ sót các điểm hẻm sâu)</td>
+        <td>Cần căn chỉnh thủ công</td>
+        <td><strong>100% Tự động hóa</strong></td>
+        <td>Gom cụm tại 12 trạm đầu ngõ</td>
+      </tr>
+      <tr>
+        <td><strong>Khắc Phục Sự Cố Động Tại Chỗ</strong></td>
+        <td>4 - 6 giờ (Chờ ca hôm sau)</td>
+        <td>Phải giải lại từ đầu (&gt; 3s)</td>
+        <td><strong>&lt; 350 ms</strong> (Human-in-the-Loop)</td>
+        <td>Bảo toàn 100% các điểm đã gom</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="highlight-box">
+    <strong>Danh mục Tài liệu Kiến trúc &amp; Quyết định Kỹ thuật (Architecture Decision Records - ADRs):</strong>
+    <ol style="margin-top: 4px; margin-left: 18px;">
+      <li><code>docs/adr/ADR-001-vrp-optimization.md</code>: Tích hợp Đa mô hình 3D-PACO &amp; Google OR-Tools CVRPTW trên nền Local OSRM.</li>
+      <li><code>docs/adr/ADR-002-vision-scanner.md</code>: Ứng dụng Gemini 2.5 Flash cho Vision AI Scanner &amp; Cơ chế khóa giá dung sai ±10%.</li>
+      <li><code>docs/adr/ADR-003-mcp-copilot.md</code>: Chuẩn Model Context Protocol (MCP) cho Enterprise BI Copilot &amp; Quản trị tuần hoàn EPR.</li>
+      <li><code>docs/benchmarks/empirical-evaluation.md</code>: Phương pháp đo lường thực nghiệm, hệ số IPCC và đối chuẩn kỹ thuật.</li>
+    </ol>
+  </div>
+
+  <div style="margin-top: 18px; text-align: right; font-style: italic; font-size: 11pt;">
+    TP. Hồ Chí Minh, ngày 26 tháng 09 năm 2026<br>
+    <strong>ĐẠI DIỆN NHÓM TÁC GIẢ THỰC HIỆN DỰ ÁN</strong><br><br><br>
+    <strong>NaN-Team • Đại học Công nghệ TP.HCM (HUTECH)</strong>
+  </div>
+
+</body>
+</html>
