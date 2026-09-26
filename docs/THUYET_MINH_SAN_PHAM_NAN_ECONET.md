@@ -1,5 +1,5 @@
 # BÁO CÁO THUYẾT MINH SẢN PHẨM
-## DỰ ÁN: NaN-EcoNet – HỆ SINH THÁI TUẦN HOÀN THÔNG MINH CHO MÔI TRƯỜNG BỀN VỮNG
+## DỰ ÁN: NaN-EcoNet – HỆ SINH THÁI TUẦN HOÀN THÔNG MINH
 *(Autonomous Waste Logistics, Citizen Bulky Recycling & Circular 4-Win Economy)*
 
 * **Nhóm tác giả:** NaN-Team (Đại học Công nghệ TP. Hồ Chí Minh - HUTECH)
@@ -90,8 +90,9 @@ Dự án được triển khai theo kiến trúc **Multi-Service Monorepo** vớ
 
 * **Mã nguồn toàn bộ dự án (GitHub Monorepo):**  
   [https://github.com/chinhanxt/NaN-EcoNet](https://github.com/chinhanxt/NaN-EcoNet) *(Mã nguồn mở Apache License 2.0, kiểm thử tự động Makefile).*
-* **Link Video Demo & Trình Diễn Toàn Bộ Hệ Thống:**  
-  Video quay thực nghiệm màn hình hoạt động đồng thời của 3 phân hệ (App Flutter Cư dân, Bản đồ Dual-Map 8502, BI Copilot 3011, MMO Automation) được tích hợp trực tiếp tại Slide 13 của tệp thuyết trình: `presentation/index.html` (Mục *Demo Sản Phẩm Thực Tế*).
+* **Link Video Demo Thực Tế Hệ Thống (Google Drive):**  
+  [https://drive.google.com/file/d/1pFIl_UKL5z9TQ8UQB4PyLLOEf1ttDoX8/view?usp=sharing](https://drive.google.com/file/d/1pFIl_UKL5z9TQ8UQB4PyLLOEf1ttDoX8/view?usp=sharing)  
+  *(Video trình diễn thực tế 3 phân hệ: App Flutter Cư dân, Bản đồ Dual-Map 8502, BI Copilot 3011, MMO Automation).*
 
 ---
 
