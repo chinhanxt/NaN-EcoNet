@@ -1,0 +1,59 @@
+================================================================================
+          HƯỚNG DẪN MỞ VÀ TRẢI NGHIỆM HỒ SƠ DỰ THI ĐỀ TÀI:
+     NAN-ECONET - HỆ SINH THÁI TUẦN HOÀN THÔNG MINH CHO MÔI TRƯỜNG BỀN VỮNG
+================================================================================
+
+Kính gửi: QUÝ THẦY CÔ BAN GIÁM KHẢO & BAN TỔ CHỨC CUỘC THI
+Đơn vị: ĐỘI THI NaN - Team - EcoNet • HUTECH INNOVATION
+Trường Đại học Công nghệ TP.HCM (HUTECH)
+
+I. TỔNG QUAN DANH MỤC HỒ SƠ NỘP BÀI:
+--------------------------------------------------------------------------------
+Thư mục "NOP_BAI_NAN_ECONET" bao gồm các tài liệu sau:
+
+1. [index.html]
+   -> SLIDE THUYẾT TRÌNH BẢN QUYỀN TƯƠNG TÁC CAO CẤP (14 SLIDES).
+   -> Mở trực tiếp bằng bất kỳ trình duyệt web nào (Google Chrome, Microsoft Edge,
+      Safari, Mozilla Firefox, Brave, Cốc Cốc,...).
+   -> Chạy hoàn toàn OFFLINE, không yêu cầu cài đặt phần mềm phụ trợ hay kết nối internet.
+
+2. [THUYET_MINH_SAN_PHAM_NAN_ECONET.pdf]
+   -> BẢN THUYẾT MINH ĐỀ TÀI CHÍNH THỨC (Chuẩn in ấn A4, Font Times New Roman).
+   -> Cấu trúc 7 phần hoàn chỉnh: Bối cảnh, Kiến trúc hệ thống, Thuật toán tối ưu
+      đường đi 3D-PACO (Trích dẫn bài báo ISI/Scopus Q1 Elsevier), Hệ thống AI Content
+      Marketing tự động, Luồng 4-Win giải quyết 4 Pain Points, Lộ trình thương mại hóa.
+
+3. [THUYET_MINH_SAN_PHAM_NAN_ECONET.html] & [.md]
+   -> Bản sao lưu thuyết minh định dạng Web và Markdown để đọc linh hoạt trên thiết bị di động.
+
+4. [assets/]
+   -> Thư mục chứa tài nguyên đồ họa chất lượng cao phục vụ hiển thị Slide.
+
+II. HƯỚNG DẪN TRẢI NGHIỆM SLIDE THUYẾT TRÌNH (index.html):
+--------------------------------------------------------------------------------
+Để có trải nghiệm đánh giá trực quan và mượt mà nhất, Quý Thầy/Cô vui lòng:
+1. Nhấp đúp (Double-click) vào tệp "index.html" để mở trên trình duyệt.
+2. Sử dụng các PHÍM TẮT TIỆN ÍCH sau:
+   - Phím [ F ] hoặc [ f ]      : Bật/Tắt chế độ Toàn Màn Hình (Full Screen) chuyên nghiệp.
+   - Phím [ Q ] hoặc [ q ]      : Mở MENU ĐIỀU HƯỚNG NHANH ẨN (Quick Jump).
+                                 Cho phép BGK xem tổng quan 14 slides và nhảy ngay đến slide mong muốn.
+   - Phím [ Space ] / Phím [ -> ]: Chuyển sang slide tiếp theo.
+   - Phím [ <- ]               : Quay lại slide liền trước.
+   - Phím [ ESC ]              : Đóng Menu điều hướng nhanh hoặc thoát chế độ toàn màn hình.
+3. Thanh điều hướng cảm ứng/chuột ở góc dưới màn hình cũng hỗ trợ chuyển slide nhanh.
+
+III. CÁC ĐƯỜNG LIÊN KẾT TRỰC TUYẾN QUAN TRỌNG:
+--------------------------------------------------------------------------------
+1. Video Trình Diễn Sản Phẩm Thực Tế (Full HD Demo):
+   -> https://drive.google.com/file/d/1pFIl_UKL5z9TQ8UQB4PyLLOEf1ttDoX8/view?usp=sharing
+
+2. Kho Lưu Trữ Mã Nguồn Dự Án (GitHub Repository):
+   -> https://github.com/chinhanxt/NaN-EcoNet
+
+3. Bài Báo Khoa Học Nền Tảng (Trích dẫn Google Scholar - ISI/Scopus Q1 Elsevier):
+   -> https://scholar.google.com/citations?view_op=view_citation&hl=vi&user=vIowI28AAAAJ&citation_for_view=vIowI28AAAAJ:aqlVkmm33-oC
+
+--------------------------------------------------------------------------------
+NaN - Team - EcoNet xin chân thành cảm ơn Quý Ban Giám Khảo & Ban Tổ Chức!
+Kính chúc Quý Thầy/Cô dồi dào sức khỏe và Hội thi thành công rực rỡ!
+================================================================================
