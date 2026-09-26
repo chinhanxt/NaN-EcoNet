@@ -1313,45 +1313,63 @@ class CitizenHomeScreen extends StatelessWidget {
         final isEnabled = r['enabled'] as bool;
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
             color: BulkyColors.background,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: BulkyColors.border),
           ),
-          child: ListTile(
-            leading: Text(r['emoji'] as String, style: const TextStyle(fontSize: 24)),
-            title: Text(
-              r['title'] as String,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-            ),
-            subtitle: Text(
-              r['costText'] as String,
-              style: TextStyle(
-                fontSize: 11,
-                color: isEnabled ? BulkyColors.primary : BulkyColors.textSecondary,
-                fontWeight: isEnabled ? FontWeight.w600 : FontWeight.normal,
+          child: Row(
+            children: [
+              Text(r['emoji'] as String, style: const TextStyle(fontSize: 24)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      r['title'] as String,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      r['costText'] as String,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isEnabled ? BulkyColors.primary : BulkyColors.textSecondary,
+                        fontWeight: isEnabled ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            trailing: ElevatedButton(
-              onPressed: isEnabled
-                  ? () {
-                      Navigator.pop(ctx);
-                      ScaffoldMessenger.of(ctx).showSnackBar(
-                        SnackBar(
-                          content: Text('✓ Đã đổi ${r['title']} thành công!'),
-                          backgroundColor: BulkyColors.primary,
-                        ),
-                      );
-                    }
-                  : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isEnabled ? BulkyColors.primary : BulkyColors.border,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: isEnabled
+                    ? () {
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          SnackBar(
+                            content: Text('✓ Đã đổi ${r['title']} thành công!'),
+                            backgroundColor: BulkyColors.primary,
+                          ),
+                        );
+                      }
+                    : null,
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(76, 36),
+                  backgroundColor: isEnabled ? BulkyColors.primary : BulkyColors.border,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  elevation: 0,
+                ),
+                child: Text(
+                  isEnabled ? 'Đổi quà' : 'Chưa đủ',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                ),
               ),
-              child: Text(isEnabled ? 'Đổi quà' : 'Chưa đủ'),
-            ),
+            ],
           ),
         );
       }).toList(),
@@ -1576,6 +1594,7 @@ class CitizenHomeScreen extends StatelessWidget {
                       );
                     },
                     style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(100, 40),
                       backgroundColor: BulkyColors.primary,
                       foregroundColor: Colors.white,
                     ),
@@ -1586,6 +1605,7 @@ class CitizenHomeScreen extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () => Navigator.pop(ctx),
                     style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(80, 40),
                       backgroundColor: BulkyColors.primary,
                       foregroundColor: Colors.white,
                     ),
