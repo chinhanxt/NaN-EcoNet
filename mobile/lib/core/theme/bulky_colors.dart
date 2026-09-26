@@ -30,6 +30,38 @@ class BulkyColors {
   static const Color boxOther = Color(0xFF64748B); // Xám đá cho xà bần/phế thải
   static const Color boxHazardous = Color(0xFFDC2626); // Đỏ cảnh báo cho chất độc hại
 
+  // Phân loại rác sinh thái Eco-Tech (Deepthi N Anekal)
+  static const Color wasteOrganic = Color(0xFF16A34A); // Rác hữu cơ sinh hoạt
+  static const Color wasteRecyclable = Color(0xFF2563EB); // Rác tái chế (giấy, nhựa, kim loại)
+  static const Color wasteBulky = Color(0xFFEA580C); // Rác cồng kềnh đô thị
+  static const Color wasteHazardous = Color(0xFFDC2626); // Rác nguy hại & điện tử
+
+  // Gradient viễn thám IoT Telemetry (Nixtio)
+  static const LinearGradient iotSafeGradient = LinearGradient(
+    colors: [Color(0xFF059669), Color(0xFF10B981)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  static const LinearGradient iotWarnGradient = LinearGradient(
+    colors: [Color(0xFFD97706), Color(0xFFF59E0B)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  static const LinearGradient iotDangerGradient = LinearGradient(
+    colors: [Color(0xFFDC2626), Color(0xFFEF4444)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  // Soft ambient shadow (LazyInterface)
+  static const List<BoxShadow> softShadow = [
+    BoxShadow(
+      color: Color(0x0A0F172A),
+      blurRadius: 16,
+      offset: Offset(0, 4),
+    ),
+  ];
+
   /// Formats VND amount with dot thousands separator, e.g. 150000 -> "150.000 đ"
   static String formatCurrency(int amount) {
     final isNegative = amount < 0;
