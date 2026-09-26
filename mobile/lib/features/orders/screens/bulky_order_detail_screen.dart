@@ -1074,10 +1074,13 @@ class BulkyOrderDetailScreen extends StatelessWidget {
     switch (status) {
       case BulkyOrderStatus.DRAFT:
       case BulkyOrderStatus.AWAITING_PAYMENT:
+      case BulkyOrderStatus.PENDING_REVIEW:
+      case BulkyOrderStatus.DISCREPANCY_PENDING:
         return BulkyColors.warning;
       case BulkyOrderStatus.CONFIRMED:
       case BulkyOrderStatus.SCHEDULED:
       case BulkyOrderStatus.ASSIGNED:
+      case BulkyOrderStatus.APPROVED_AWAITING_PAYMENT:
         return BulkyColors.primary;
       case BulkyOrderStatus.IN_PROGRESS:
       case BulkyOrderStatus.COLLECTED:
@@ -1085,6 +1088,8 @@ class BulkyOrderDetailScreen extends StatelessWidget {
       case BulkyOrderStatus.COMPLETED:
         return BulkyColors.success;
       case BulkyOrderStatus.CANCELLED:
+      case BulkyOrderStatus.REJECTED_ON_SITE:
+      case BulkyOrderStatus.REJECTED:
         return BulkyColors.error;
     }
   }
@@ -1093,10 +1098,13 @@ class BulkyOrderDetailScreen extends StatelessWidget {
     switch (status) {
       case BulkyOrderStatus.DRAFT:
       case BulkyOrderStatus.AWAITING_PAYMENT:
+      case BulkyOrderStatus.PENDING_REVIEW:
+      case BulkyOrderStatus.DISCREPANCY_PENDING:
         return BulkyColors.warningBg;
       case BulkyOrderStatus.CONFIRMED:
       case BulkyOrderStatus.SCHEDULED:
       case BulkyOrderStatus.ASSIGNED:
+      case BulkyOrderStatus.APPROVED_AWAITING_PAYMENT:
         return BulkyColors.primaryLight.withValues(alpha: 0.12);
       case BulkyOrderStatus.IN_PROGRESS:
       case BulkyOrderStatus.COLLECTED:
@@ -1104,6 +1112,8 @@ class BulkyOrderDetailScreen extends StatelessWidget {
       case BulkyOrderStatus.COMPLETED:
         return BulkyColors.successBg;
       case BulkyOrderStatus.CANCELLED:
+      case BulkyOrderStatus.REJECTED_ON_SITE:
+      case BulkyOrderStatus.REJECTED:
         return BulkyColors.errorBg;
     }
   }
