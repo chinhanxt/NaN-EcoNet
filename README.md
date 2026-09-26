@@ -29,8 +29,9 @@
    - [Giao thức Dữ liệu Liên phân hệ (Data Contracts & Communication Protocol)](#giao-thức-dữ-liệu-liên-phân-hệ-data-contracts--communication-protocol)
 4. [Đi sâu vào Các Phân hệ Cốt lõi (Core Subsystems Deep Dive)](#-đi-sâu-vào-các-phân-hệ-cốt-lõi-core-subsystems-deep-dive)
    - [Phân hệ 1: Chí Nhân — EcoPass Enterprise & Omni-Channel Agentic Hub](#-phân-hệ-1-chí-nhân--ecopass-enterprise--omni-channel-agentic-hub)
-     - [Hệ thống Đặt lịch & Đăng bài Đa nền tảng (Omni-Channel Social Scheduler)](#hệ-thống-đặt-lịch--đăng-bài-đa-nền-tảng-omni-channel-social-scheduler)
-     - [AI Image Gateway & Thư viện Phong cách Thị giác](#ai-image-gateway--thư-viện-phong-cách-thị-giác)
+     - [AI Image Gateway & Thư viện Phong cách Thị giác (AI Visual Synthesis Engine)](#ai-image-gateway--thư-viện-phong-cách-thị-giác-ai-visual-synthesis-engine)
+     - [AI Content Engine & Kịch bản Tương tác Đa nền tảng (Facebook, TikTok, YouTube)](#ai-content-engine--kịch-bản-tương-tác-đa-nền-tảng-facebook-tiktok-youtube)
+     - [Hệ thống Đặt lịch & Đăng bài Đa nền tảng Tự động (Omni-Channel Autonomous Publishing)](#hệ-thống-đặt-lịch--đăng-bài-đa-nền-tảng-tự-động-omni-channel-autonomous-publishing)
      - [Enterprise BI Copilot & MCP Tool Execution](#enterprise-bi-copilot--mcp-tool-execution)
      - [Chatbot Biên dịch Sơ đồ Động (Dynamic Diagram Engine)](#chatbot-biên-dịch-sơ-đồ-động-dynamic-diagram-engine)
      - [Mô hình Kinh tế Tuần hoàn 4-WIN & Phân tích ROI](#mô-hình-kinh-tế-tuần-hoàn-4-win--phân-tích-roi)
@@ -216,19 +217,62 @@ graph LR
 ```
 </details>
 
-#### Hệ thống Đặt lịch & Đăng bài Đa nền tảng (Omni-Channel Social Scheduler)
-* **Kiến trúc Vi dịch vụ Hàng đợi (Redis BullMQ Queue):** Được xây dựng trên nền tảng NestJS và Next.js (`apps/ecopass-enterprise/nan-team`), hệ thống tự động hóa chiến dịch truyền thông tái chế đô thị. Hàng đợi Redis xử lý hàng trăm tác vụ đăng bài theo lịch trình chính xác tới từng giây.
-* **Cơ chế Token Rotation & Exponential Backoff:** Để tránh bị khóa tài khoản do chính sách Rate-Limit ngặt nghèo của Facebook Graph API, TikTok Creator Studio và YouTube API, hệ thống trang bị thuật toán xoay vòng Session/Token tự động kết hợp cơ chế thử lại lũy thừa có độ trễ ngẫu nhiên (*Exponential Backoff with Jitter*):
-  $$T_{\text{wait}} = \min(T_{\max}, T_{\text{base}} \times 2^{\text{retry\_count}}) + \text{Uniform}(0, \Delta_{\text{jitter}})$$
-* **Tự động hóa Đồng bộ Phiên (Headless Cookie/Profile Sync):** Sử dụng các script Playwright/Puppeteer chuyên dụng tự động duy trì phiên đăng nhập của các profile mạng xã hội mà không cần sự can thiệp thủ công của con người.
+#### AI Image Gateway & Thư viện Phong cách Thị giác (AI Visual Synthesis Engine)
+Cổng proxy sinh ảnh tập trung đóng vai trò hạ tầng thị giác cho toàn bộ hệ sinh thái, vận hành bởi máy chủ FastAPI (`apps/ecopass-enterprise/agy-image-gateway`):
+* **Định tuyến Mô hình Đa Nhà cung cấp (Multi-Provider Smart Routing):**
+  * **FLUX.1 Dev (LoRA / Black Forest Labs):** Tạo các hình ảnh siêu thực, giả lập chân thực không gian sống xanh, trạm thu gom rác thông minh và vật phẩm tái chế với ánh sáng quang học chuẩn studio.
+  * **Google Gemini Imagen 3 (Native Flash Image):** Xử lý các prompt trừu tượng có độ suy luận ngữ nghĩa phức tạp, am hiểu sâu sắc bối cảnh văn hóa và nếp sống đô thị Việt Nam.
+  * **Alibaba Qwen-Image-2 Pro:** Tối ưu hóa chuyên biệt cho kết xuất văn bản và typography, đảm bảo các khẩu hiệu tiếng Việt ("Đổi Rác Lấy Voucher", "Vì Một TP.HCM Xanh") hiển thị sắc nét, không bị biến dạng ký tự.
+* **Cơ chế Lưu đệm SHA-256 Prompt Hashing (Zero Redundant Cost):**
+  Mỗi yêu cầu sinh ảnh được băm thành mã khóa định danh: `Key = SHA256(Prompt + Model + AspectRatio + Seed)`. Nếu yêu cầu đã tồn tại trong bộ nhớ đệm hoặc ổ đĩa, gateway trả về URL hình ảnh ngay lập tức ($< 15\text{ ms}$), tiết kiệm $100\%$ chi phí API và tài nguyên GPU đối với các mẫu voucher hoặc banner lặp lại.
+* **Bộ Điều hợp Tỷ lệ Khung hình Tự động (Aspect Ratio Adapters):**
+  Tự động căn chỉnh và padding hình ảnh sang đúng chuẩn hiển thị của từng mạng xã hội:
+  * `1:1` (1080x1080px): Chuẩn vuông tối ưu cho Facebook Feed, Instagram Carousel và thẻ Voucher tại quầy POS.
+  * `9:16` (1080x1920px): Chuẩn dọc toàn màn hình cho video ngắn TikTok và YouTube Shorts.
+  * `16:9` (1920x1080px): Chuẩn ngang cho banner sự kiện Facebook và slide báo cáo ban giám đốc.
+* **Thư viện 500+ Phong cách Công nghiệp (`awesome-gpt-image-2`):**
+  Kho template prompt được chuẩn hóa theo các trường phái thiết kế cao cấp: *Organic Apple Minimalism* (tối giản, sang trọng), *Industrial Brutalism* (khung lưới kỹ thuật, bản vẽ kiến trúc đô thị), và *Cyberpunk ESG* (đô thị thông minh tương lai). Toàn bộ prompt được chèn các thẻ phủ định (*Negative Prompts*) nghiêm ngặt để loại bỏ triệt để lỗi thừa ngón tay, mắt lệch hoặc chữ vô nghĩa.
 
-#### AI Image Gateway & Thư viện Phong cách Thị giác
-* **Định tuyến Mô hình Thông minh (Multi-Provider AI Gateway):** Máy chủ FastAPI (`apps/ecopass-enterprise/agy-image-gateway`) cung cấp cổng proxy trung gian kết nối các mô hình sinh ảnh tiên tiến nhất hiện nay: **FLUX.1 Dev**, **Google Gemini Native Imagen 3**, và **Alibaba Qwen-Image-2 Pro**.
-* **Bộ điều hợp Tỷ lệ Khung hình (Aspect Ratio Adapters):** Tự động chuyển đổi hình ảnh quảng bá sang đúng chuẩn hiển thị:
-  * `1:1` vuông cho bài đăng Facebook Feed và thông tin voucher EcoPass.
-  * `9:16` dọc cho video ngắn TikTok và YouTube Shorts tuyên truyền.
-  * `16:9` ngang cho bài thuyết trình và báo cáo ban giám đốc.
-* **Thư viện 500+ Phong cách Công nghiệp (`awesome-gpt-image-2`):** Tích hợp sẵn hàng trăm công thức prompt thiết kế giao diện, poster môi trường theo trường phái *Organic Apple Minimalism* và *Industrial Brutalism*, loại bỏ hoàn toàn các lỗi vẽ hình AI biến dạng.
+#### AI Content Engine & Kịch bản Tương tác Đa nền tảng (Facebook, TikTok, YouTube)
+Nền tảng tích hợp AI Copywriting Engine tự động sinh nội dung truyền thông xanh chuyên biệt hóa theo thuật toán phân phối của từng mạng xã hội:
+* **Facebook Feed — Kể chuyện Dài & Dữ liệu Kiểm toán (Long-form Storytelling & ESG Infographics):**
+  * Tự động sinh bài viết truyền cảm hứng, nêu bật câu chuyện người thật việc thật: sinh viên gom vỏ lon tiết kiệm tiền uống cafe, cư dân phân loại sofa cũ giải phóng không gian sống.
+  * Đính kèm số liệu kiểm toán cụ thể trích xuất trực tiếp từ Enterprise BI Copilot (ví dụ: *"Tuần này, cộng đồng HUTECH đã giải cứu 1.450 ly nhựa, giảm 38.2 kg khí thải $\text{CO}_2$!"*).
+  * Chèn nút kêu gọi hành động (Call-to-Action) kèm đường dẫn định danh UTM dẫn thẳng về WebApp quét tem [`apps/ecopass/apps/client`](file:///home/chinhan/NaN-EcoNet/apps/ecopass-enterprise/ecopass/apps/client).
+* **TikTok — Viral Video Hook & Kịch bản Nhịp điệu Cao (Fast-Paced Video Scripting):**
+  * Tự động cấu trúc kịch bản theo công thức giữ chân người xem 3 giây đầu (*3-Second Retention Hook*): mở đầu bằng hình ảnh rác cồng kềnh ngổn ngang đối lập với căn phòng gọn gàng sau 15 phút đặt xe.
+  * Đề xuất âm thanh thịnh hành (*Trending Audios*), nhịp chuyển cảnh nhanh dưới 1.5 giây, văn phong trẻ trung, dí dỏm phù hợp với Gen Z.
+  * Tự động tối ưu cụm hashtag thịnh hành: `#ZeroWaste`, `#EcoPass`, `#SongXanh`, `#HUTECH`, `#TaiCheDoiQua`, `#GenZXanh`.
+* **YouTube Shorts — Chuẩn hóa Siêu dữ liệu SEO & Pinned Comment (Structured Video Metadata):**
+  * Tự động đặt tiêu đề giật tít chuẩn thuật toán gợi ý của YouTube kèm hashtag bắt buộc `#Shorts`.
+  * Tự động soạn mô tả video có phân đoạn thời gian (*Timestamp Chapters*), thẻ tags liên quan và thông tin bản quyền âm thanh.
+  * Tự động soạn bình luận ghim đầu trang (*Pinned Comment*) hướng dẫn chi tiết 3 bước: 1. Quét mã vỏ chai -> 2. Tích điểm EcoPass -> 3. Đổi voucher Highlands Coffee tại căn tin trường.
+
+#### Hệ thống Đặt lịch & Đăng bài Đa nền tảng Tự động (Omni-Channel Autonomous Publishing)
+Hệ thống giải quyết triệt để rào cản nhân sự vận hành bằng cách tự động hóa $100\%$ quy trình xuất bản nội dung lên cả 3 nền tảng lớn nhất hiện nay thông qua bộ công cụ mã nguồn mở tùy biến cao tại [`apps/ecopass-enterprise/nan-team/scripts`](file:///home/chinhan/NaN-EcoNet/apps/ecopass-enterprise/nan-team/scripts):
+* **Xuất bản Tự động lên Facebook Page (`facebook-page-upload.js`):**
+  * Sử dụng Playwright kết hợp Facebook Graph API để đăng tải bài viết, hình ảnh độ phân giải cao và video clip trực tiếp lên Fanpage đối tác.
+  * Giải quyết dứt điểm lỗi xung đột tiến trình Chrome trên môi trường headless Linux thông qua cơ chế khóa độc quyền `acquireProfileLock()` và dọn dẹp các tệp khóa treo `cleanStaleSingletonLock()` (`SingletonLock`, `SingletonSocket`).
+  * Tự động làm mới và hoán đổi Page Access Token dài hạn thông qua kịch bản `auto-facebook-token.js`.
+* **Đăng tải Video Lên TikTok Creator Center (`tiktok-creator-upload.js`):**
+  * Tự động điều hướng trình duyệt không đầu (*Headless Chromium*) vào trung tâm sáng tạo TikTok Studio (`/creator-center/upload`).
+  * **Tự động chuyển đổi Hình ảnh thành Video MP4 chuẩn TikTok:** Nếu tệp đầu vào là hình ảnh tĩnh từ AI Image Gateway, script sẽ tự động kích hoạt đường ống **FFmpeg**:
+    ```bash
+    ffmpeg -y -loop 1 -i input.png -c:v libx264 -t 5 -pix_fmt yuv420p \
+      -vf "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2" output.mp4
+    ```
+    Tạo ra video dọc 9:16 độ phân giải 1080x1920 chuẩn mực, tương thích $100\%$ với trình kiểm duyệt tệp của TikTok.
+  * Tự động điền Caption, chọn thẻ hashtag, căn chỉnh khung hình thumbnail và kích hoạt nút đăng ngay hoặc lên lịch phát sóng (*Scheduled Release*).
+* **Đăng tải Video Lên YouTube Studio (`youtube-studio-upload.js`):**
+  * Tương tác tự động hóa với `studio.youtube.com`, hỗ trợ cả video dài 16:9 và video ngắn 9:16 (#Shorts).
+  * Tự động trích xuất cookie xác thực Google từ cơ sở dữ liệu (`PrismaClient`) hoặc tệp cấu hình an toàn, loại bỏ việc phải quét mã xác thực 2 bước mỗi lần đăng.
+  * Tự động tải tệp lên qua DOM giả lập, điền Tiêu đề, Mô tả, gắn Tags, tự động tích chọn checkbox tuân thủ đạo luật COPPA ("Không dành cho trẻ em") và thiết lập quyền riêng tư (`PUBLIC` / `UNLISTED` / `SCHEDULED`).
+* **Cơ chế Chống Khóa Tài Khoản & Quản lý Phiên Bền vững (Anti-Ban & Session Resilience):**
+  * **Cách ly Profile Người dùng (`userDataDir`):** Mỗi nền tảng mạng xã hội sử dụng một thư mục cấu hình trình duyệt riêng biệt (`postiz-tiktok-profile`, `postiz-fb-profile`), tránh việc cookies hoặc session token bị rò rỉ chéo.
+  * **Thuật toán Thử lại Lũy thừa có Độ trễ Ngẫu nhiên (*Exponential Backoff with Jitter*):**
+    $$T_{\text{wait}} = \min(T_{\max}, T_{\text{base}} \times 2^{\text{retry\_count}}) + \text{Uniform}(0, \Delta_{\text{jitter}})$$
+    Giúp vượt qua các lớp kiểm soát lưu lượng nghiêm ngặt của mạng xã hội mà không bị đánh dấu là bot tự động.
+  * **Đồng bộ Phiên Tự động 24/7 (`sync-profile-cookies.js`):** Định kỳ kiểm tra tính sống còn của phiên đăng nhập; nếu phát hiện phiên sắp hết hạn, hệ thống tự động kích hoạt luồng gia hạn trong nền, bảo đảm các chiến dịch truyền thông không bao giờ bị gián đoạn.
 
 #### Enterprise BI Copilot & MCP Tool Execution
 * **Giao thức Chuẩn Model Context Protocol (MCP):** Bộ máy `enterprise-bi-copilot` hiện thực hóa giao thức MCP của Anthropic, cho phép AI Agent tự khám phá công cụ (*Dynamic Tool Discovery*), thực thi truy vấn cơ sở dữ liệu nội bộ trong môi trường an toàn (*Safety Sandbox*).
