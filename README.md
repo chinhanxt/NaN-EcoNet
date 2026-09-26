@@ -40,6 +40,19 @@ Cơ chế **Human-in-the-Loop** cho phép điều phối viên xử lý tức th
   * Lượng khí phát thải nhà kính cắt giảm ($\text{kg CO}_2$).
   * Tỷ lệ tối ưu hóa chi phí vận hành so với phương pháp thủ công.
 
+### 6. Bộ Dữ liệu Thực tế Đô thị Quy mô Lớn (Rich Urban Datasets)
+* **8 Kịch bản Mạng lưới Thu gom Rác Đô thị (28 - 67 Điểm Gom)**:
+  1. **Kịch bản 1: Mạng Lưới Toàn Diện Q.1 & Trung Tâm**: 55 điểm gom rác đô thị, 4 xe tải ép rác tải trọng 550kg.
+  2. **Kịch bản 2: Khu Ẩm Thực Phố Đi Bộ & Bến Thành - Bùi Viện**: 32 điểm gom rác & hẻm ăn uống đêm, 3 xe gom.
+  3. **Kịch bản 3: Tuyến Di Tích Lịch Sử, Văn Hóa & Công Viên Q.1 - Q.3**: 29 điểm gom tại các danh lam thắng cảnh, 3 xe.
+  4. **Kịch bản 4: Vành Đai Ven Sông Sài Gòn - Cầu Mống - Bến Vân Đồn**: 28 điểm gom ven sông và bờ kênh, 3 xe.
+  5. **Kịch bản 5: Giờ Cao Điểm Lễ Hội & Chợ Đêm Sài Gòn**: 36 điểm rác quá tải cần thu gom khẩn, 4 xe.
+  6. **Kịch bản 6: Tuyến Thu Gom Ngõ Hẻm Sâu & Xe Máy Điện / Đi Bộ**: 40 điểm gom trong ngõ hẻm sâu, đội 3 xe điện GreenFleet chuyên dụng luồn ngõ nhỏ.
+  7. **Kịch bản 7: Khu Vực Mở Rộng Tân Định - Nhiêu Lộc - Thị Nghè**: 38 điểm gom ven kênh và chợ đầu mối, 3 xe.
+  8. **Kịch bản 8: Đại Đô Thị TP.HCM - Mega Fleet Simulation**: 67 điểm gom toàn diện toàn bộ Quận 1, đội 5 xe tải ép rác chia 5 phân khu.
+* **5,300+ Bản ghi Telemetry Hành trình Tài xế**: Dữ liệu thực nghiệm qua 35 nút giao thông và ngõ cua hẹp, phục vụ huấn luyện mô hình ML đánh giá tài xế và tối ưu hóa chính sách định tuyến theo khung giờ.
+* **Đội xe 8 Tài xế Chuyên nghiệp**: Đa dạng các loại phương tiện (Isuzu 4.5T, Hino 4.5T, Hyundai 3.5T, Xe điện VinFast 2.5T, Thaco 5T, Piaggio Ape hẻm sâu, JAC 3.5T, Daewoo 6T).
+
 ---
 
 ## 🗺️ Giao diện Trực quan hóa (UI & Dashboards)

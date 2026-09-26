@@ -46,171 +46,7 @@ app.add_middleware(
 MAP_UI_DIR = Path(__file__).parent
 
 
-WASTE_PRESETS = [
-    {
-        "id": 1,
-        "name": "Mạng Lưới Toàn Q.1 (28 Thùng Rác Đô Thị)",
-        "theme_color": "#10b981",
-        "theme_gradient": "linear-gradient(135deg, #059669 0%, #10b981 100%)",
-        "depot": {"id": 0, "name": "Trạm tập kết Bến Nghé (Depot)", "lat": 10.7745, "lon": 106.7042, "address": "Bến Bạch Đằng, Q.1, TP.HCM"},
-        "bins": [
-            {"id": 1, "name": "Chợ Bến Thành (Cửa Nam)", "address": "Quảng trường Quách Thị Trang", "lat": 10.7722, "lon": 106.6985, "fill_level": 95, "demand": 48, "collection_type": "centralized", "type": 2},
-            {"id": 2, "name": "Chợ Bến Thành (Cửa Bắc)", "address": "Lê Thánh Tôn", "lat": 10.7730, "lon": 106.6982, "fill_level": 80, "demand": 40, "collection_type": "flexible", "type": 3},
-            {"id": 3, "name": "Hộ dân ngõ 42 Nguyễn Huệ", "address": "Hẻm 42 Nguyễn Huệ", "lat": 10.7735, "lon": 106.7032, "fill_level": 90, "demand": 45, "collection_type": "home", "type": 1},
-            {"id": 4, "name": "Phố đi bộ Nguyễn Huệ (Ngô Đức Kế)", "address": "Nguyễn Huệ", "lat": 10.7730, "lon": 106.7048, "fill_level": 80, "demand": 40, "collection_type": "flexible", "type": 3},
-            {"id": 5, "name": "Nhà hát Thành phố (Opera House)", "address": "Công trường Lam Sơn", "lat": 10.7767, "lon": 106.7032, "fill_level": 70, "demand": 35, "collection_type": "flexible", "type": 3},
-            {"id": 6, "name": "Trụ sở UBND Thành phố", "address": "Lê Thánh Tôn", "lat": 10.7768, "lon": 106.7008, "fill_level": 60, "demand": 30, "collection_type": "flexible", "type": 3},
-            {"id": 7, "name": "TTTM Vincom Center Đồng Khởi", "address": "72 Lê Thánh Tôn", "lat": 10.7780, "lon": 106.7020, "fill_level": 85, "demand": 42, "collection_type": "flexible", "type": 3},
-            {"id": 8, "name": "Bưu điện Trung tâm Sài Gòn", "address": "Công xã Paris", "lat": 10.7802, "lon": 106.7002, "fill_level": 75, "demand": 38, "collection_type": "flexible", "type": 3},
-            {"id": 9, "name": "Nhà thờ Đức Bà Sài Gòn", "address": "1 Công xã Paris", "lat": 10.7798, "lon": 106.6990, "fill_level": 85, "demand": 42, "collection_type": "flexible", "type": 3},
-            {"id": 10, "name": "Dinh Độc Lập (Cổng chính)", "address": "135 Nam Kỳ Khởi Nghĩa", "lat": 10.7770, "lon": 106.6955, "fill_level": 70, "demand": 35, "collection_type": "flexible", "type": 3},
-            {"id": 11, "name": "Hộ dân ngõ Huyền Trân Công Chúa", "address": "Huyền Trân Công Chúa", "lat": 10.7755, "lon": 106.6938, "fill_level": 85, "demand": 42, "collection_type": "home", "type": 1},
-            {"id": 12, "name": "Công viên Tao Đàn (Trương Định)", "address": "Trương Định", "lat": 10.7745, "lon": 106.6925, "fill_level": 80, "demand": 40, "collection_type": "flexible", "type": 3},
-            {"id": 13, "name": "Hộ dân hẻm CMT8", "address": "Cách Mạng Tháng 8", "lat": 10.7728, "lon": 106.6912, "fill_level": 90, "demand": 45, "collection_type": "home", "type": 1},
-            {"id": 14, "name": "Phố Tây Bùi Viện (Hẻm sâu)", "address": "Hẻm 20 Bùi Viện", "lat": 10.7672, "lon": 106.6922, "fill_level": 100, "demand": 50, "collection_type": "home", "type": 1},
-            {"id": 15, "name": "Trạm thu gom Đề Thám", "address": "Bùi Viện giao Đề Thám", "lat": 10.7678, "lon": 106.6948, "fill_level": 95, "demand": 48, "collection_type": "centralized", "type": 2},
-            {"id": 16, "name": "Khu ẩm thực Phạm Ngũ Lão", "address": "Phạm Ngũ Lão", "lat": 10.7680, "lon": 106.6930, "fill_level": 85, "demand": 42, "collection_type": "flexible", "type": 3},
-            {"id": 17, "name": "TTTM Saigon Centre / Takashimaya", "address": "65 Lê Lợi", "lat": 10.7735, "lon": 106.7010, "fill_level": 85, "demand": 42, "collection_type": "flexible", "type": 3},
-            {"id": 18, "name": "Hộ dân ngõ Hải Triều (Bitexco)", "address": "Hải Triều", "lat": 10.7715, "lon": 106.7042, "fill_level": 80, "demand": 40, "collection_type": "home", "type": 1},
-            {"id": 19, "name": "Bô rác Chợ Cũ Tôn Thất Đạm", "address": "Tôn Thất Đạm", "lat": 10.7720, "lon": 106.7030, "fill_level": 95, "demand": 48, "collection_type": "centralized", "type": 2},
-            {"id": 20, "name": "Trạm thu Bến Bạch Đằng Waterbus", "address": "Bến Bạch Đằng", "lat": 10.7738, "lon": 106.7058, "fill_level": 90, "demand": 45, "collection_type": "centralized", "type": 2},
-            {"id": 21, "name": "Công viên Bến Bạch Đằng (Thủ Ngữ)", "address": "Tôn Đức Thắng", "lat": 10.7682, "lon": 106.7068, "fill_level": 80, "demand": 40, "collection_type": "flexible", "type": 3},
-            {"id": 22, "name": "Khu ẩm thực Cầu Mống", "address": "Võ Văn Kiệt chân Cầu Mống", "lat": 10.7690, "lon": 106.7045, "fill_level": 85, "demand": 42, "collection_type": "flexible", "type": 3},
-            {"id": 23, "name": "Hộ dân ngõ Phó Đức Chính", "address": "Phó Đức Chính", "lat": 10.7695, "lon": 106.7005, "fill_level": 75, "demand": 38, "collection_type": "home", "type": 1},
-            {"id": 24, "name": "Chợ Dân Sinh (Yersin)", "address": "Yersin", "lat": 10.7655, "lon": 106.6965, "fill_level": 80, "demand": 40, "collection_type": "flexible", "type": 3},
-            {"id": 25, "name": "Hộ dân hẻm Cống Quỳnh", "address": "189C Cống Quỳnh", "lat": 10.7665, "lon": 106.6888, "fill_level": 85, "demand": 42, "collection_type": "home", "type": 1},
-            {"id": 26, "name": "Bô rác Hồ Con Rùa", "address": "Công trường Quốc Tế", "lat": 10.7825, "lon": 106.6965, "fill_level": 100, "demand": 50, "collection_type": "centralized", "type": 2},
-            {"id": 27, "name": "Trạm gom Cổng Thảo Cầm Viên", "address": "Nguyễn Bỉnh Khiêm", "lat": 10.7875, "lon": 106.7050, "fill_level": 85, "demand": 42, "collection_type": "centralized", "type": 2},
-            {"id": 28, "name": "Chợ Tân Định", "address": "Hai Bà Trưng", "lat": 10.7885, "lon": 106.6915, "fill_level": 95, "demand": 48, "collection_type": "flexible", "type": 3}
-        ],
-        "incidents": [],
-        "vehicles": [
-            {"id": 1, "name": "Xe rác số 1 (Đội Bắc)", "capacity": 450, "color": "#10b981", "lat": 10.7748, "lon": 106.7046},
-            {"id": 2, "name": "Xe rác số 2 (Đội Trung Tâm)", "capacity": 450, "color": "#3b82f6", "lat": 10.7742, "lon": 106.7038},
-            {"id": 3, "name": "Xe rác số 3 (Đội Đông)", "capacity": 450, "color": "#8b5cf6", "lat": 10.7750, "lon": 106.7040}
-        ]
-    },
-    {
-        "id": 2,
-        "name": "Khu Ẩm Thực Chợ Bến Thành - Bùi Viện",
-        "theme_color": "#8b5cf6",
-        "theme_gradient": "linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%)",
-        "depot": {"id": 0, "name": "Trạm tập kết Công viên 23/9", "lat": 10.7690, "lon": 106.6945, "address": "Công viên 23/9, Q.1, TP.HCM"},
-        "bins": [
-            {"id": 1, "name": "Bô rác Chợ Bến Thành cửa Nam", "address": "Chợ Bến Thành cửa Nam", "lat": 10.7720, "lon": 106.6982, "fill_level": 95, "demand": 48, "collection_type": "centralized", "type": 2},
-            {"id": 2, "name": "Hộ kinh doanh Phan Chu Trinh", "address": "Phan Chu Trinh", "lat": 10.7724, "lon": 106.6978, "fill_level": 80, "demand": 40, "collection_type": "flexible", "type": 3},
-            {"id": 3, "name": "Cửa hàng Chợ Bến Thành cửa Bắc", "address": "Chợ Bến Thành cửa Bắc", "lat": 10.7735, "lon": 106.6985, "fill_level": 70, "demand": 35, "collection_type": "flexible", "type": 3},
-            {"id": 4, "name": "Hộ dân hẻm 175 Bùi Viện", "address": "Hẻm 175 Bùi Viện", "lat": 10.7672, "lon": 106.6938, "fill_level": 100, "demand": 50, "collection_type": "home", "type": 1},
-            {"id": 5, "name": "Trạm thu gom tập trung Đề Thám", "address": "Khu ẩm thực đêm Đề Thám", "lat": 10.7665, "lon": 106.6925, "fill_level": 90, "demand": 45, "collection_type": "centralized", "type": 2},
-            {"id": 6, "name": "Quán bia Phạm Ngũ Lão", "address": "Phạm Ngũ Lão", "lat": 10.7670, "lon": 106.6928, "fill_level": 60, "demand": 30, "collection_type": "flexible", "type": 3},
-            {"id": 7, "name": "Hộ dân ngõ Cống Quỳnh (Hẻm cụt)", "address": "Hẻm Cống Quỳnh", "lat": 10.7660, "lon": 106.6895, "fill_level": 75, "demand": 38, "collection_type": "home", "type": 1},
-            {"id": 8, "name": "Cửa hàng Nguyễn Thái Học", "address": "Nguyễn Thái Học", "lat": 10.7650, "lon": 106.6960, "fill_level": 85, "demand": 42, "collection_type": "flexible", "type": 3},
-            {"id": 9, "name": "Trạm thu gom Trần Hưng Đạo", "address": "Trần Hưng Đạo", "lat": 10.7678, "lon": 106.6968, "fill_level": 65, "demand": 32, "collection_type": "centralized", "type": 2},
-            {"id": 10, "name": "Hộ dân Tôn Thất Tùng", "address": "Tôn Thất Tùng", "lat": 10.7705, "lon": 106.6890, "fill_level": 70, "demand": 35, "collection_type": "flexible", "type": 3},
-            {"id": 11, "name": "Hộ dân hẻm Trương Định", "address": "Trương Định", "lat": 10.7745, "lon": 106.6940, "fill_level": 80, "demand": 40, "collection_type": "home", "type": 1},
-            {"id": 12, "name": "Hộ dân Nguyễn Du", "address": "Nguyễn Du", "lat": 10.7760, "lon": 106.6965, "fill_level": 85, "demand": 42, "collection_type": "flexible", "type": 3},
-            {"id": 13, "name": "Nhà hàng Lý Tự Trọng", "address": "Lý Tự Trọng", "lat": 10.7740, "lon": 106.6995, "fill_level": 90, "demand": 45, "collection_type": "home", "type": 1},
-            {"id": 14, "name": "Hộ dân Nguyễn Thị Nghĩa", "address": "Nguyễn Thị Nghĩa", "lat": 10.7700, "lon": 106.6925, "fill_level": 60, "demand": 30, "collection_type": "flexible", "type": 3},
-            {"id": 15, "name": "Trạm gom Công viên 23/9 (Lê Lai)", "address": "Lê Lai mặt công viên", "lat": 10.7712, "lon": 106.6945, "fill_level": 75, "demand": 38, "collection_type": "centralized", "type": 2}
-        ],
-        "incidents": [],
-        "vehicles": [
-            {"id": 1, "name": "Xe rác số 1", "capacity": 300, "color": "#10b981", "lat": 10.7692, "lon": 106.6948},
-            {"id": 2, "name": "Xe rác số 2", "capacity": 300, "color": "#3b82f6", "lat": 10.7688, "lon": 106.6942},
-            {"id": 3, "name": "Xe rác số 3", "capacity": 300, "color": "#8b5cf6", "lat": 10.7695, "lon": 106.6950}
-        ]
-    },
-    {
-        "id": 3,
-        "name": "Di Tích Lịch Sử & Hồ Con Rùa",
-        "theme_color": "#f59e0b",
-        "theme_gradient": "linear-gradient(135deg, #d97706 0%, #f59e0b 100%)",
-        "depot": {"id": 0, "name": "Trạm tập kết Thảo Cầm Viên", "lat": 10.7885, "lon": 106.7045, "address": "Nguyễn Bỉnh Khiêm, Q.1, TP.HCM"},
-        "bins": [
-            {"id": 1, "name": "Trạm thu gom Cổng Thảo Cầm Viên", "address": "Cổng Thảo Cầm Viên", "lat": 10.7875, "lon": 106.7052, "fill_level": 90, "demand": 45, "collection_type": "centralized", "type": 2},
-            {"id": 2, "name": "Bảo tàng Lịch sử TP.HCM", "address": "Nguyễn Bỉnh Khiêm", "lat": 10.7869, "lon": 106.7046, "fill_level": 70, "demand": 35, "collection_type": "flexible", "type": 3},
-            {"id": 3, "name": "Đài truyền hình HTV", "address": "Nguyễn Thị Minh Khai", "lat": 10.7850, "lon": 106.7015, "fill_level": 80, "demand": 40, "collection_type": "home", "type": 1},
-            {"id": 4, "name": "Trạm thu gom Hồ Con Rùa", "address": "Công trường Quốc Tế", "lat": 10.7825, "lon": 106.6965, "fill_level": 95, "demand": 48, "collection_type": "centralized", "type": 2},
-            {"id": 5, "name": "Quán cà phê Nhà thờ Đức Bà", "address": "Công xã Paris", "lat": 10.7798, "lon": 106.6990, "fill_level": 85, "demand": 42, "collection_type": "flexible", "type": 3},
-            {"id": 6, "name": "Bưu điện Thành phố", "address": "Công xã Paris", "lat": 10.7802, "lon": 106.7001, "fill_level": 75, "demand": 38, "collection_type": "flexible", "type": 3},
-            {"id": 7, "name": "Đường sách Nguyễn Văn Bình", "address": "Nguyễn Văn Bình", "lat": 10.7805, "lon": 106.7010, "fill_level": 60, "demand": 30, "collection_type": "flexible", "type": 3},
-            {"id": 8, "name": "Dinh Độc Lập cổng chính", "address": "Nam Kỳ Khởi Nghĩa", "lat": 10.7770, "lon": 106.6955, "fill_level": 85, "demand": 42, "collection_type": "home", "type": 1},
-            {"id": 9, "name": "Hộ dân ngõ Huyền Trân Công Chúa", "address": "Cổng sau Dinh Độc Lập", "lat": 10.7755, "lon": 106.6935, "fill_level": 70, "demand": 35, "collection_type": "home", "type": 1},
-            {"id": 10, "name": "Trạm thu tập trung Công viên 30/4", "address": "Công viên 30/4", "lat": 10.7788, "lon": 106.6980, "fill_level": 90, "demand": 45, "collection_type": "centralized", "type": 2},
-            {"id": 11, "name": "Hộ dân Lê Duẩn - Hai Bà Trưng", "address": "Lê Duẩn giao Hai Bà Trưng", "lat": 10.7818, "lon": 106.7002, "fill_level": 65, "demand": 32, "collection_type": "flexible", "type": 3},
-            {"id": 12, "name": "Hộ dân hẻm Mạc Đĩnh Chi", "address": "Hẻm Mạc Đĩnh Chi", "lat": 10.7855, "lon": 106.6985, "fill_level": 70, "demand": 35, "collection_type": "home", "type": 1},
-            {"id": 13, "name": "Hộ dân Nguyễn Đình Chiểu", "address": "Nguyễn Đình Chiểu", "lat": 10.7840, "lon": 106.6945, "fill_level": 80, "demand": 40, "collection_type": "flexible", "type": 3}
-        ],
-        "incidents": [],
-        "vehicles": [
-            {"id": 1, "name": "Xe rác số 1", "capacity": 300, "color": "#10b981", "lat": 10.7888, "lon": 106.7048},
-            {"id": 2, "name": "Xe rác số 2", "capacity": 300, "color": "#3b82f6", "lat": 10.7882, "lon": 106.7042}
-        ]
-    },
-    {
-        "id": 4,
-        "name": "Tuyến Ven Sông Sài Gòn & Cầu Mống",
-        "theme_color": "#06b6d4",
-        "theme_gradient": "linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)",
-        "depot": {"id": 0, "name": "Trạm tập kết Cảng Bến Nghé", "lat": 10.7680, "lon": 106.7070, "address": "Bến Bạch Đằng, Q.1, TP.HCM"},
-        "bins": [
-            {"id": 1, "name": "Trạm thu gom Bến Nhà Rồng", "address": "Bến Nhà Rồng", "lat": 10.7682, "lon": 106.7068, "fill_level": 85, "demand": 42, "collection_type": "centralized", "type": 2},
-            {"id": 2, "name": "Hộ dân ven Cầu Mống", "address": "Chân Cầu Mống", "lat": 10.7688, "lon": 106.7058, "fill_level": 95, "demand": 48, "collection_type": "flexible", "type": 3},
-            {"id": 3, "name": "Hộ dân mặt tiền Võ Văn Kiệt", "address": "Võ Văn Kiệt", "lat": 10.7705, "lon": 106.7035, "fill_level": 75, "demand": 38, "collection_type": "flexible", "type": 3},
-            {"id": 4, "name": "Trạm thu Bến Bạch Đằng Waterbus", "address": "Bến Bạch Đằng Waterbus", "lat": 10.7735, "lon": 106.7058, "fill_level": 90, "demand": 45, "collection_type": "centralized", "type": 2},
-            {"id": 5, "name": "Quán nước Tôn Đức Thắng", "address": "Tôn Đức Thắng giao Hàm Nghi", "lat": 10.7728, "lon": 106.7052, "fill_level": 80, "demand": 40, "collection_type": "flexible", "type": 3},
-            {"id": 6, "name": "Bô rác Hàm Nghi chợ cũ", "address": "Hàm Nghi chợ cũ", "lat": 10.7720, "lon": 106.7020, "fill_level": 100, "demand": 50, "collection_type": "centralized", "type": 2},
-            {"id": 7, "name": "Tòa nhà Bitexco (Thu gom riêng)", "address": "Hải Triều, Bitexco", "lat": 10.7715, "lon": 106.7040, "fill_level": 70, "demand": 35, "collection_type": "home", "type": 1},
-            {"id": 8, "name": "Hộ dân hẻm Pasteur ven bờ kênh", "address": "Hẻm Pasteur", "lat": 10.7690, "lon": 106.7025, "fill_level": 65, "demand": 32, "collection_type": "home", "type": 1},
-            {"id": 9, "name": "Hộ dân Phó Đức Chính", "address": "Phó Đức Chính", "lat": 10.7695, "lon": 106.7005, "fill_level": 75, "demand": 38, "collection_type": "flexible", "type": 3},
-            {"id": 10, "name": "Hộ dân hẻm Calmette", "address": "Hẻm Calmette", "lat": 10.7680, "lon": 106.6995, "fill_level": 80, "demand": 40, "collection_type": "home", "type": 1},
-            {"id": 11, "name": "Trạm thu gom Cầu Ông Lãnh", "address": "Chân Cầu Ông Lãnh", "lat": 10.7655, "lon": 106.6975, "fill_level": 90, "demand": 45, "collection_type": "centralized", "type": 2},
-            {"id": 12, "name": "Hộ dân Bến Vân Đồn ven sông", "address": "Bến Vân Đồn", "lat": 10.7665, "lon": 106.7005, "fill_level": 70, "demand": 35, "collection_type": "flexible", "type": 3},
-            {"id": 13, "name": "Hộ dân Nguyễn Thái Bình", "address": "Nguyễn Thái Bình", "lat": 10.7700, "lon": 106.6990, "fill_level": 60, "demand": 30, "collection_type": "flexible", "type": 3},
-            {"id": 14, "name": "Hộ dân Nam Kỳ Khởi Nghĩa ven kênh", "address": "Nam Kỳ Khởi Nghĩa", "lat": 10.7710, "lon": 106.7015, "fill_level": 85, "demand": 42, "collection_type": "flexible", "type": 3}
-        ],
-        "incidents": [],
-        "vehicles": [
-            {"id": 1, "name": "Xe rác số 1", "capacity": 300, "color": "#10b981", "lat": 10.7682, "lon": 106.7072},
-            {"id": 2, "name": "Xe rác số 2", "capacity": 300, "color": "#3b82f6", "lat": 10.7678, "lon": 106.7068},
-            {"id": 3, "name": "Xe rác số 3", "capacity": 300, "color": "#06b6d4", "lat": 10.7685, "lon": 106.7075}
-        ]
-    },
-    {
-        "id": 5,
-        "name": "Giờ Cao Điểm Lễ Hội (Toàn Quận 1)",
-        "theme_color": "#ec4899",
-        "theme_gradient": "linear-gradient(135deg, #db2777 0%, #ec4899 100%)",
-        "depot": {"id": 0, "name": "Trạm tập kết Bến Nghé (Depot)", "lat": 10.7745, "lon": 106.7042, "address": "Bến Bạch Đằng, Q.1, TP.HCM"},
-        "bins": [
-            {"id": 1, "name": "Hộ dân ngõ 42 Nguyễn Huệ", "address": "Hẻm 42 Nguyễn Huệ", "lat": 10.7735, "lon": 106.7032, "fill_level": 100, "demand": 50, "collection_type": "home", "type": 1},
-            {"id": 2, "name": "Cửa hàng quà Bạch Đằng", "address": "Bến Bạch Đằng", "lat": 10.7726, "lon": 106.7060, "fill_level": 80, "demand": 40, "collection_type": "flexible", "type": 3},
-            {"id": 3, "name": "Hộ dân hẻm Đồng Khởi", "address": "Đồng Khởi", "lat": 10.7768, "lon": 106.7035, "fill_level": 100, "demand": 50, "collection_type": "home", "type": 1},
-            {"id": 4, "name": "Trạm thu gom Bến Bạch Đằng", "address": "Công viên Bến Bạch Đằng", "lat": 10.7720, "lon": 106.7065, "fill_level": 90, "demand": 45, "collection_type": "centralized", "type": 2},
-            {"id": 5, "name": "Trạm thu gom Chợ Bến Thành", "address": "Chợ Bến Thành", "lat": 10.7725, "lon": 106.6980, "fill_level": 95, "demand": 48, "collection_type": "centralized", "type": 2},
-            {"id": 6, "name": "Hộ dân hẻm sâu Bùi Viện", "address": "Phố Tây Bùi Viện", "lat": 10.7675, "lon": 106.6935, "fill_level": 100, "demand": 50, "collection_type": "home", "type": 1},
-            {"id": 7, "name": "Dinh Độc Lập", "address": "Nam Kỳ Khởi Nghĩa", "lat": 10.7770, "lon": 106.6955, "fill_level": 70, "demand": 35, "collection_type": "home", "type": 1},
-            {"id": 8, "name": "Trạm thu gom Hồ Con Rùa", "address": "Hồ Con Rùa", "lat": 10.7825, "lon": 106.6965, "fill_level": 100, "demand": 50, "collection_type": "centralized", "type": 2},
-            {"id": 9, "name": "Quán cà phê Nhà thờ Đức Bà", "address": "Công xã Paris", "lat": 10.7798, "lon": 106.6990, "fill_level": 85, "demand": 42, "collection_type": "flexible", "type": 3},
-            {"id": 10, "name": "Bưu điện Thành phố", "address": "Công xã Paris", "lat": 10.7802, "lon": 106.7001, "fill_level": 90, "demand": 45, "collection_type": "flexible", "type": 3},
-            {"id": 11, "name": "Đường sách Nguyễn Văn Bình", "address": "Nguyễn Văn Bình", "lat": 10.7805, "lon": 106.7010, "fill_level": 65, "demand": 32, "collection_type": "flexible", "type": 3},
-            {"id": 12, "name": "Trạm thu gom Bến Nhà Rồng", "address": "Bến Nhà Rồng", "lat": 10.7682, "lon": 106.7068, "fill_level": 80, "demand": 40, "collection_type": "centralized", "type": 2},
-            {"id": 13, "name": "Hộ dân ngõ Đề Thám", "address": "Hẻm Đề Thám", "lat": 10.7665, "lon": 106.6925, "fill_level": 95, "demand": 48, "collection_type": "home", "type": 1},
-            {"id": 14, "name": "Quán ăn Hàm Nghi", "address": "Hàm Nghi", "lat": 10.7720, "lon": 106.7020, "fill_level": 85, "demand": 42, "collection_type": "flexible", "type": 3},
-            {"id": 15, "name": "Hộ dân Trương Định", "address": "Trương Định", "lat": 10.7745, "lon": 106.6940, "fill_level": 75, "demand": 38, "collection_type": "home", "type": 1},
-            {"id": 16, "name": "Điểm tham quan Cầu Mống", "address": "Cầu Mống", "lat": 10.7695, "lon": 106.7045, "fill_level": 90, "demand": 45, "collection_type": "flexible", "type": 3},
-            {"id": 17, "name": "Hộ dân ngõ Mạc Đĩnh Chi", "address": "Mạc Đĩnh Chi", "lat": 10.7855, "lon": 106.6985, "fill_level": 70, "demand": 35, "collection_type": "home", "type": 1},
-            {"id": 18, "name": "Quán ăn Phan Chu Trinh", "address": "Phan Chu Trinh", "lat": 10.7728, "lon": 106.6975, "fill_level": 80, "demand": 40, "collection_type": "flexible", "type": 3}
-        ],
-        "incidents": [],
-        "vehicles": [
-            {"id": 1, "name": "Xe rác số 1", "capacity": 300, "color": "#10b981", "lat": 10.7748, "lon": 106.7046},
-            {"id": 2, "name": "Xe rác số 2", "capacity": 300, "color": "#3b82f6", "lat": 10.7742, "lon": 106.7038},
-            {"id": 3, "name": "Xe rác số 3", "capacity": 300, "color": "#ec4899", "lat": 10.7750, "lon": 106.7040}
-        ]
-    }
-]
-
+from waste_presets import WASTE_PRESETS
 
 @app.get("/api/waste/preset")
 def get_waste_preset(id: Optional[int] = None, random_pick: bool = False):
@@ -404,6 +240,18 @@ def engine_page():
     html_path = MAP_UI_DIR / "engine.html"
     with open(html_path, "r", encoding="utf-8") as f:
         return f.read()
+
+
+@app.get("/api/driver-telemetry/comparison")
+def get_route_comparison():
+    """Return datasets comparing Theoretical vs Actual routes with 28 waste bins."""
+    comp_file = MAP_UI_DIR / "comparison_datasets.json"
+    if not comp_file.exists():
+        comp_file = MAP_UI_DIR / "comparison_route_data.json"
+    if comp_file.exists():
+        with open(comp_file, "r", encoding="utf-8") as f:
+            return JSONResponse(content=json.load(f))
+    return JSONResponse(content={"error": "Data not found"}, status_code=404)
 
 
 @app.get("/api/driver-telemetry")

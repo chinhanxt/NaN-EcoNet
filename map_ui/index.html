@@ -520,6 +520,18 @@
       transform: translateY(-1px);
     }
 
+    .select-preset {
+      background: #ffffff; color: #1e293b; border: 1.5px solid #cbd5e1;
+      border-radius: 8px; padding: 5px 8px; font-size: 11.5px; font-weight: 600;
+      cursor: pointer; outline: none; transition: all 0.2s ease; max-width: 215px;
+    }
+    body.dark .select-preset {
+      background: #1e293b; color: #f8fafc; border-color: #475569;
+    }
+    .select-preset:hover {
+      border-color: #10b981;
+    }
+
     .btn-preset {
       background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;
       padding: 5px 9px; font-size: 11.5px;
@@ -1213,10 +1225,20 @@
       </div>
       <div class="nav-divider"></div>
       <div class="preset-group">
+        <select id="preset-selector" onchange="loadPresetData(parseInt(this.value))" class="select-preset" title="Chọn kịch bản mạng lưới thu gom">
+          <option value="1">Kịch bản 1: Toàn Q.1 Đô Thị (55 Thùng - 4 Xe)</option>
+          <option value="2">Kịch bản 2: Ẩm Thực Bến Thành - Bùi Viện (32 Thùng - 3 Xe)</option>
+          <option value="3">Kịch bản 3: Di Tích & Công Viên (29 Thùng - 3 Xe)</option>
+          <option value="4">Kịch bản 4: Tuyến Ven Sông & Cầu Mống (28 Thùng - 3 Xe)</option>
+          <option value="5">Kịch bản 5: Giờ Cao Điểm Lễ Hội (36 Thùng - 4 Xe)</option>
+          <option value="6">Kịch bản 6: Ngõ Hẻm Sâu & Xe Điện (40 Thùng - 3 Xe)</option>
+          <option value="7">Kịch bản 7: Tân Định - Nhiêu Lộc (38 Thùng - 3 Xe)</option>
+          <option value="8">Kịch bản 8: Đại Đô Thị Mega Fleet (67 Thùng - 5 Xe)</option>
+        </select>
         <button class="btn-action btn-preset" id="btn-preset" onclick="loadRandomPreset()" title="Ngẫu nhiên độ đầy thùng rác cố định (không đổi vị trí)">
           <i class="fa-solid fa-dice"></i> <span id="btn-preset-text">Random Độ Đầy</span>
         </button>
-        <button class="btn-action btn-secondary btn-icon-only" id="btn-cycle-preset" onclick="cycleNextPreset()" title="Chuyển kịch bản Quận 1 kế tiếp (Mẫu 1 -> 5)">
+        <button class="btn-action btn-secondary btn-icon-only" id="btn-cycle-preset" onclick="cycleNextPreset()" title="Chuyển kịch bản kế tiếp (Mẫu 1 -> 8)">
           <i class="fa-solid fa-layer-group"></i>
         </button>
         <button class="btn-action btn-secondary btn-icon-only" id="btn-reset" onclick="resetAll()" title="Làm mới bản đồ (Xóa lộ trình)">
@@ -2006,14 +2028,14 @@
     // Đảm bảo khi nhấn nút Random / Xúc xắc thì chỉ random độ đầy thùng rác cố định
     const loadRandomPreset = randomizeBinsFillLevel;
 
-    // Chuyển kịch bản Quận 1 kế tiếp (Mẫu 1 -> 5)
+    // Chuyển kịch bản Quận 1 kế tiếp (Mẫu 1 -> 8)
     async function cycleNextPreset() {
-      let nextId = (currentPresetId % 5) + 1;
+      let nextId = (currentPresetId % 8) + 1;
       currentPresetId = nextId;
       await loadPresetData(nextId);
     }
 
-    // Load Preset Data (Hỗ trợ 5 kịch bản mẫu đa dạng, nhiều màu sắc)
+    // Load Preset Data (Hỗ trợ 8 kịch bản mẫu đa dạng, nhiều màu sắc)
     async function loadPresetData(presetId = 1) {
       stopIoTSimulation();
       dismissWaterToast();
@@ -2036,6 +2058,10 @@
             status: "Sẵn sàng"
           };
         });
+
+        // Đồng bộ giá trị dropdown chọn kịch bản
+        const selector = document.getElementById('preset-selector');
+        if (selector) selector.value = String(currentPresetId);
 
         // Cập nhật màu sắc nút Mẫu sinh động theo theme màu của từng kịch bản
         const btnPreset = document.getElementById('btn-preset');

@@ -401,6 +401,240 @@ CORNER_NODES = [
         "turn_direction": "Rẽ trái cắt mặt dòng xe Hai Bà Trưng"
     },
     {
+        "id": "NODE_C23",
+        "code": "C23",
+        "name": "Giao lộ Đinh Tiên Hoàng - Điện Biên Phủ",
+        "address": "Đa Kao, Quận 1",
+        "lat": 10.7910,
+        "lon": 106.6960,
+        "alley_type": "arterial",
+        "alley_label": "Trục giao thông Đa Kao",
+        "width_m": 16.0,
+        "turn_difficulty": "Khó",
+        "turn_difficulty_score": 3,
+        "baseline_delay_sec": 18,
+        "peak_hour_delay_sec": 110,
+        "peak_hours": [7.0, 8.5, 17.0, 18.5],
+        "connected_bins": [56, 57],
+        "turn_direction": "Ngã 4 đèn tín hiệu rẽ vào kênh"
+    },
+    {
+        "id": "NODE_C24",
+        "code": "C24",
+        "name": "Giao Lộ Cầu Bông - Hoàng Sa",
+        "address": "Hoàng Sa chân Cầu Bông",
+        "lat": 10.7930,
+        "lon": 106.6960,
+        "alley_type": "canal_drive",
+        "alley_label": "Đường ven kênh Nhiêu Lộc",
+        "width_m": 9.0,
+        "turn_difficulty": "Trung bình",
+        "turn_difficulty_score": 2,
+        "baseline_delay_sec": 15,
+        "peak_hour_delay_sec": 85,
+        "peak_hours": [7.0, 8.5, 16.5, 18.0],
+        "connected_bins": [62],
+        "turn_direction": "Ôm cua dạ cầu ven kênh"
+    },
+    {
+        "id": "NODE_C25",
+        "code": "C25",
+        "name": "Cổng Chợ Đa Kao - Nguyễn Huy Tự",
+        "address": "Nguyễn Huy Tự, Đa Kao",
+        "lat": 10.7915,
+        "lon": 106.6995,
+        "alley_type": "market_alley",
+        "alley_label": "Chợ sáng Đa Kao đông xe",
+        "width_m": 7.0,
+        "turn_difficulty": "Cực khó (Sáng)",
+        "turn_difficulty_score": 5,
+        "baseline_delay_sec": 25,
+        "peak_hour_delay_sec": 180,
+        "peak_hours": [6.0, 7.5, 8.5, 11.5],
+        "connected_bins": [61],
+        "turn_direction": "Rẽ hẹp vào cổng chợ"
+    },
+    {
+        "id": "NODE_C26",
+        "code": "C26",
+        "name": "Nút Giao Cầu Thị Nghè - Nguyễn Thị Minh Khai",
+        "address": "Chân Cầu Thị Nghè",
+        "lat": 10.7910,
+        "lon": 106.7050,
+        "alley_type": "bridge_ramp",
+        "alley_label": "Dốc cầu huyết mạch Q1 - Bình Thạnh",
+        "width_m": 15.0,
+        "turn_difficulty": "Rất khó (Cao điểm)",
+        "turn_difficulty_score": 4,
+        "baseline_delay_sec": 20,
+        "peak_hour_delay_sec": 160,
+        "peak_hours": [7.0, 8.5, 17.0, 19.0],
+        "connected_bins": [64],
+        "turn_direction": "Rẽ nhánh lên chân cầu"
+    },
+    {
+        "id": "NODE_C27",
+        "code": "C27",
+        "name": "Khúc Cua Hẻm 189 Cống Quỳnh",
+        "address": "Hẻm 189 Cống Quỳnh, Nguyễn Cư Trinh",
+        "lat": 10.7665,
+        "lon": 106.6888,
+        "alley_type": "residential_alley",
+        "alley_label": "Hẻm dân cư hẹp sâu",
+        "width_m": 3.2,
+        "turn_difficulty": "Rất khó",
+        "turn_difficulty_score": 5,
+        "baseline_delay_sec": 30,
+        "peak_hour_delay_sec": 190,
+        "peak_hours": [6.5, 8.0, 17.5, 19.0],
+        "connected_bins": [28, 29],
+        "turn_direction": "Cua 90 độ xe ba gác khó lọt"
+    },
+    {
+        "id": "NODE_C28",
+        "code": "C28",
+        "name": "Ngã 4 Cô Bắc - Cô Giang",
+        "address": "Phường Cô Giang, Quận 1",
+        "lat": 10.7630,
+        "lon": 106.6935,
+        "alley_type": "market_street",
+        "alley_label": "Phố buôn bán & ẩm thực bình dân",
+        "width_m": 6.5,
+        "turn_difficulty": "Khó",
+        "turn_difficulty_score": 3,
+        "baseline_delay_sec": 20,
+        "peak_hour_delay_sec": 120,
+        "peak_hours": [6.5, 8.0, 16.5, 18.0],
+        "connected_bins": [44, 45],
+        "turn_direction": "Giao lộ đường hẹp không đèn"
+    },
+    {
+        "id": "NODE_C29",
+        "code": "C29",
+        "name": "Chân Cầu Calmette - Võ Văn Kiệt",
+        "address": "Đại lộ Võ Văn Kiệt, Nguyễn Thái Bình",
+        "lat": 10.7670,
+        "lon": 106.6995,
+        "alley_type": "arterial",
+        "alley_label": "Đại lộ huyết mạch ven kênh",
+        "width_m": 24.0,
+        "turn_difficulty": "Dễ",
+        "turn_difficulty_score": 1,
+        "baseline_delay_sec": 12,
+        "peak_hour_delay_sec": 65,
+        "peak_hours": [7.0, 8.5, 17.0, 18.5],
+        "connected_bins": [41],
+        "turn_direction": "Rẽ nhánh từ Võ Văn Kiệt vào Calmette"
+    },
+    {
+        "id": "NODE_C30",
+        "code": "C30",
+        "name": "Chân Cầu Ông Lãnh - Võ Văn Kiệt",
+        "address": "Chân Cầu Ông Lãnh, Q1",
+        "lat": 10.7645,
+        "lon": 106.6965,
+        "alley_type": "arterial",
+        "alley_label": "Nút giao gom rác Cầu Ông Lãnh",
+        "width_m": 20.0,
+        "turn_difficulty": "Trung bình",
+        "turn_difficulty_score": 2,
+        "baseline_delay_sec": 15,
+        "peak_hour_delay_sec": 85,
+        "peak_hours": [7.0, 8.5, 17.0, 18.5],
+        "connected_bins": [42, 43],
+        "turn_direction": "Nhánh rẽ dạ cầu"
+    },
+    {
+        "id": "NODE_C31",
+        "code": "C31",
+        "name": "Ngã 3 Trần Hưng Đạo - Nguyễn Văn Cừ",
+        "address": "Cửa ngõ Tây Nam Quận 1",
+        "lat": 10.7580,
+        "lon": 106.6850,
+        "alley_type": "arterial",
+        "alley_label": "Cửa ngõ giao thông liên quận",
+        "width_m": 20.0,
+        "turn_difficulty": "Khó",
+        "turn_difficulty_score": 3,
+        "baseline_delay_sec": 18,
+        "peak_hour_delay_sec": 135,
+        "peak_hours": [7.0, 9.0, 16.5, 19.0],
+        "connected_bins": [48],
+        "turn_direction": "Ngã 3 đèn tín hiệu mật độ cao"
+    },
+    {
+        "id": "NODE_C32",
+        "code": "C32",
+        "name": "Cổng Công viên Lê Văn Tám - Hai Bà Trưng",
+        "address": "Hai Bà Trưng, Đa Kao",
+        "lat": 10.7870,
+        "lon": 106.6950,
+        "alley_type": "park_gate",
+        "alley_label": "Cổng công viên cây xanh",
+        "width_m": 12.0,
+        "turn_difficulty": "Trung bình",
+        "turn_difficulty_score": 2,
+        "baseline_delay_sec": 15,
+        "peak_hour_delay_sec": 95,
+        "peak_hours": [6.0, 7.5, 17.0, 18.5],
+        "connected_bins": [56],
+        "turn_direction": "Tấp lề điểm tập kết công viên"
+    },
+    {
+        "id": "NODE_C33",
+        "code": "C33",
+        "name": "Nút Giao Bến Vân Đồn - Cầu Mống",
+        "address": "Bến Vân Đồn, giáp ranh Quận 4",
+        "lat": 10.7668,
+        "lon": 106.7065,
+        "alley_type": "canal_drive",
+        "alley_label": "Bờ nam Kênh Bến Nghé",
+        "width_m": 10.0,
+        "turn_difficulty": "Dễ",
+        "turn_difficulty_score": 1,
+        "baseline_delay_sec": 12,
+        "peak_hour_delay_sec": 60,
+        "peak_hours": [7.0, 8.5, 17.0, 18.5],
+        "connected_bins": [49, 50],
+        "turn_direction": "Rẽ dọc theo đường bờ kênh"
+    },
+    {
+        "id": "NODE_C34",
+        "code": "C34",
+        "name": "Giao Lộ Mạc Đĩnh Chi - Nguyễn Thị Minh Khai",
+        "address": "Bến Nghé, Quận 1",
+        "lat": 10.7850,
+        "lon": 106.6990,
+        "alley_type": "office_quarter",
+        "alley_label": "Khu văn phòng lãnh sự quán",
+        "width_m": 10.0,
+        "turn_difficulty": "Trung bình",
+        "turn_difficulty_score": 2,
+        "baseline_delay_sec": 16,
+        "peak_hour_delay_sec": 90,
+        "peak_hours": [7.5, 8.5, 17.0, 18.0],
+        "connected_bins": [52, 53],
+        "turn_direction": "Ngã tư đường 1 chiều"
+    },
+    {
+        "id": "NODE_C35",
+        "code": "C35",
+        "name": "Hẻm 120 Nguyễn Trãi (Khu Mua Sắm)",
+        "address": "Hẻm 120 Nguyễn Trãi, Bến Thành",
+        "lat": 10.7695,
+        "lon": 106.6905,
+        "alley_type": "shopping_alley",
+        "alley_label": "Hẻm shop thời trang sầm uất",
+        "width_m": 3.8,
+        "turn_difficulty": "Rất khó (Tối)",
+        "turn_difficulty_score": 4,
+        "baseline_delay_sec": 28,
+        "peak_hour_delay_sec": 170,
+        "peak_hours": [18.0, 19.5, 20.5, 21.5],
+        "connected_bins": [32],
+        "turn_direction": "Rẽ phải né xe máy đậu trước shop"
+    },
+    {
         "id": "NODE_C22",
         "code": "C22",
         "name": "Cổng Depot Trung Tâm Bến Nghé",
@@ -432,7 +666,7 @@ DRIVERS_FLEET = [
         "color": "#10b981",
         "experience_years": 8,
         "rating": 4.9,
-        "capacity": 450
+        "capacity": 550
     },
     {
         "id": 2,
@@ -443,7 +677,7 @@ DRIVERS_FLEET = [
         "color": "#3b82f6",
         "experience_years": 5,
         "rating": 4.7,
-        "capacity": 450
+        "capacity": 550
     },
     {
         "id": 3,
@@ -452,9 +686,64 @@ DRIVERS_FLEET = [
         "vehicle_id": 3,
         "vehicle_name": "Xe Hyundai Ép Nhẹ 3.5T",
         "color": "#8b5cf6",
-        "experience_years": 3,
+        "experience_years": 4,
         "rating": 4.8,
         "capacity": 450
+    },
+    {
+        "id": 4,
+        "name": "Phạm Quốc Tuấn",
+        "plate": "51D-891.02",
+        "vehicle_id": 4,
+        "vehicle_name": "Xe Điện GreenFleet 2.5T",
+        "color": "#14b8a6",
+        "experience_years": 6,
+        "rating": 4.9,
+        "capacity": 350
+    },
+    {
+        "id": 5,
+        "name": "Đỗ Minh Trí",
+        "plate": "51C-312.45",
+        "vehicle_id": 5,
+        "vehicle_name": "Xe Thaco Ollin Ép Rác 5T",
+        "color": "#f59e0b",
+        "experience_years": 9,
+        "rating": 4.85,
+        "capacity": 600
+    },
+    {
+        "id": 6,
+        "name": "Vũ Đức Thắng",
+        "plate": "51C-982.11",
+        "vehicle_id": 6,
+        "vehicle_name": "Xe Gom Hẻm Piaggio Compact",
+        "color": "#ec4899",
+        "experience_years": 3,
+        "rating": 4.65,
+        "capacity": 300
+    },
+    {
+        "id": 7,
+        "name": "Hoàng Trọng Nghĩa",
+        "plate": "51C-567.89",
+        "vehicle_id": 7,
+        "vehicle_name": "Xe Tải JAC Đô Thị 3.5T",
+        "color": "#06b6d4",
+        "experience_years": 7,
+        "rating": 4.75,
+        "capacity": 450
+    },
+    {
+        "id": 8,
+        "name": "Bùi Quang Huy",
+        "plate": "51C-223.78",
+        "vehicle_id": 8,
+        "vehicle_name": "Xe Daewoo Chuyên Dụng 6T",
+        "color": "#6366f1",
+        "experience_years": 10,
+        "rating": 4.95,
+        "capacity": 650
     }
 ]
 
@@ -499,7 +788,7 @@ def get_hourly_congestion_multiplier(hour: float, node_meta: dict) -> float:
     return round(base, 2)
 
 
-def generate_seed_historical_runs(num_runs: int = 240) -> List[Dict[str, Any]]:
+def generate_seed_historical_runs(num_runs: int = 650) -> List[Dict[str, Any]]:
     """
     Generates rich historical trajectory telemetry logs representing real-world driver runs
     across 7 days, capturing corner turn delays, traffic peaks, and bin collection events.
@@ -509,12 +798,18 @@ def generate_seed_historical_runs(num_runs: int = 240) -> List[Dict[str, Any]]:
     
     # Representative sequences of corner nodes forming collection loops
     routes_templates = [
-        # Loop 1: Central Commercial (Depot -> C01 -> C05 -> C02 -> C04 -> C19 -> C22)
+        # Loop 1: Central Commercial (Depot -> C01 -> C10 -> C11 -> C02 -> C04 -> C19 -> C09 -> C22)
         ["NODE_C22", "NODE_C01", "NODE_C10", "NODE_C11", "NODE_C02", "NODE_C04", "NODE_C19", "NODE_C09", "NODE_C22"],
-        # Loop 2: Historic & Park (Depot -> C12 -> C13 -> C14 -> C06 -> C07 -> C18 -> C22)
+        # Loop 2: Historic & Park (Depot -> C12 -> C13 -> C14 -> C21 -> C06 -> C07 -> C18 -> C22)
         ["NODE_C22", "NODE_C12", "NODE_C13", "NODE_C14", "NODE_C21", "NODE_C06", "NODE_C07", "NODE_C18", "NODE_C22"],
         # Loop 3: South & Nightlife (Depot -> C09 -> C16 -> C20 -> C15 -> C17 -> C03 -> C08 -> C05 -> C22)
         ["NODE_C22", "NODE_C09", "NODE_C16", "NODE_C20", "NODE_C15", "NODE_C17", "NODE_C03", "NODE_C08", "NODE_C05", "NODE_C22"],
+        # Loop 4: North & Canal Route (Depot -> C14 -> C23 -> C24 -> C25 -> C26 -> C32 -> C21 -> C22)
+        ["NODE_C22", "NODE_C14", "NODE_C23", "NODE_C24", "NODE_C25", "NODE_C26", "NODE_C32", "NODE_C21", "NODE_C22"],
+        # Loop 5: Deep Alleys & Residential (Depot -> C05 -> C18 -> C27 -> C35 -> C28 -> C30 -> C29 -> C22)
+        ["NODE_C22", "NODE_C05", "NODE_C18", "NODE_C27", "NODE_C35", "NODE_C28", "NODE_C30", "NODE_C29", "NODE_C22"],
+        # Loop 6: Riverside Waterfront (Depot -> C09 -> C16 -> C20 -> C29 -> C30 -> C31 -> C33 -> C22)
+        ["NODE_C22", "NODE_C09", "NODE_C16", "NODE_C20", "NODE_C29", "NODE_C30", "NODE_C31", "NODE_C33", "NODE_C22"],
     ]
 
     base_date = datetime(2026, 9, 20, 5, 0, 0)
@@ -1064,7 +1359,7 @@ class TelemetryManager:
 
     def _ensure_data_seeded(self):
         if not TELEMETRY_FILE.exists() or os.path.getsize(TELEMETRY_FILE) < 100:
-            seed_data = generate_seed_historical_runs(num_runs=180)
+            seed_data = generate_seed_historical_runs(num_runs=650)
             with open(TELEMETRY_FILE, "w", encoding="utf-8") as f:
                 json.dump(seed_data, f, ensure_ascii=False, indent=2)
             GLOBAL_ML_ENGINE.train(seed_data)
