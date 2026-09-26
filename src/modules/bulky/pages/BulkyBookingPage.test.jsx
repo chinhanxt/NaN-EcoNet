@@ -73,61 +73,14 @@ describe('BulkyBookingPage', () => {
     expect(screen.getAllByText(/Ảnh đồ vật & AI Quét/i).length).toBeGreaterThanOrEqual(1);
   });
 
-  it('displays material selection chips and live range pricing in booking wizard', async () => {
+  it('requires a size choice, shows one tariff price and does not infer kilograms', async () => {
     renderWithStore(<BulkyBookingPage />);
-
-    // Step 1 should show material options
-    expect(screen.getByText(/Gỗ MDF \/ Tiêu chuẩn/i)).toBeInTheDocument();
-    expect(screen.getByText(/Gỗ đặc \/ Mặt đá/i)).toBeInTheDocument();
-    expect(screen.getByText(/Khoảng giá dự toán/i)).toBeInTheDocument();
-  });
-
-  it('updates estimated weight when clicking different material chips and shows material in review step', async () => {
-    renderWithStore(
-      <BulkyBookingPage
-        serviceLocations={[{ id: 'loc-1', address: '123 Test St', serviceArea: { code: 'D1' } }]}
-      />,
-    );
-
-    // Initial Sofa has baseWeight 45kg -> ~45 kg / chiếc
-    expect(screen.getByText(/~45 kg \/ chiếc/i)).toBeInTheDocument();
-
-    // Click heavy material chip: 🪨 Gỗ đặc / Mặt đá / Kính
-    const heavyChip = screen.getByText(/Gỗ đặc \/ Mặt đá/i);
-    fireEvent.click(heavyChip);
-
-    // 45 * 1.8 = 81 kg
-    expect(screen.getByText(/~81 kg \/ chiếc/i)).toBeInTheDocument();
-
-    // Add photo
-    const presetBtn = screen.getByRole('button', { name: /Sofa da phòng khách/i });
-    fireEvent.click(presetBtn);
-
-    // Go to step 2
-    fireEvent.click(screen.getByRole('button', { name: /Tiếp theo/i }));
-    await waitFor(() => {
-      expect(screen.getByText(/2. Địa điểm & Điều kiện bốc xếp/i)).toBeInTheDocument();
-    });
-
-    // Fill date & location
-    const dateInput = screen.getByLabelText(/Ngày thu gom mong muốn/i);
-    fireEvent.change(dateInput, { target: { value: '2026-09-25' } });
-    const locSelect = screen.getByTestId('service-location-input');
-    fireEvent.change(locSelect, { target: { value: 'loc-1' } });
-
-    // Go to step 3
-    fireEvent.click(screen.getByRole('button', { name: /Tiếp theo/i }));
-    await waitFor(() => {
-      expect(screen.getByText(/3. Xem lại & Báo giá minh bạch/i)).toBeInTheDocument();
-    });
-
-    // Step 3 shows selected material label, 2-tier price box, and guarantee banner
-    expect(screen.getAllByText(/Gỗ đặc \/ Mặt đá/i).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText(/Khoảng giá dự toán toàn đơn/i)).toBeInTheDocument();
-    expect(screen.getByText(/Số tiền tạm giữ chỗ/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(/Cam kết Nghiệm thu & Dung sai Minh bạch Smartbin/i),
-    ).toBeInTheDocument();
+    expect(screen.queryByText(/kg \/ chiếc/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Chờ nhân viên báo giá/)).toBeInTheDocument();
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: /Kích thước món 1/ }));
+    fireEvent.click(screen.getByRole('option', { name: 'Sofa 3 chỗ' }));
+    expect(screen.getAllByText(/275.000/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Chờ nhân viên báo giá/)).not.toBeInTheDocument();
   });
 
   it('validates required fields before proceeding to step 2', async () => {
@@ -232,7 +185,7 @@ describe('BulkyBookingPage', () => {
     expect(screen.getByTestId('bbox-rect-0')).toHaveAttribute('stroke-width', '3');
   });
 
-  it('applies suggestedMaterial and updates estimated weight when AI scans images', async () => {
+  it('keeps AI size suggestions unconfirmed until the citizen chooses a size', async () => {
     const mockAnalyze = vi.fn().mockResolvedValue({
       decision: 'SUGGESTED',
       items: [
@@ -283,8 +236,8 @@ describe('BulkyBookingPage', () => {
     });
 
     // Estimated weight for CABINET (base 40kg) with HEAVY (x1.8) -> ~72 kg / chiếc
-    expect(screen.getByText(/~72 kg \/ chiếc/i)).toBeInTheDocument();
+    expect(screen.queryByText(/kg \/ chiếc/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Chờ nhân viên báo giá/)).toBeInTheDocument();
     expect(screen.getByTestId('bbox-rect-0')).toBeInTheDocument();
   });
 });
-

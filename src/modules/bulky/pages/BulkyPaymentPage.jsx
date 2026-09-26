@@ -57,7 +57,14 @@ export function BulkyPaymentPage({ thunks, onPaymentSuccess }) {
       }
     };
     ensurePaymentAttempt();
-  }, [orderId, order?.activeQuoteId, order?.acceptedQuote?.quoteId, paymentsById, thunks, dispatch]);
+  }, [
+    orderId,
+    order?.activeQuoteId,
+    order?.acceptedQuote?.quoteId,
+    paymentsById,
+    thunks,
+    dispatch,
+  ]);
 
   const handleSimulate = async (result) => {
     setIsLoading(true);
@@ -69,7 +76,7 @@ export function BulkyPaymentPage({ thunks, onPaymentSuccess }) {
         if (targetQuoteId && thunks?.startOrderPayment && dispatch) {
           try {
             const newAttempt = await dispatch(
-              thunks.startOrderPayment({ orderId, quoteId: targetQuoteId })
+              thunks.startOrderPayment({ orderId, quoteId: targetQuoteId }),
             );
             targetAttemptId = newAttempt?.paymentAttemptId;
           } catch (e) {
@@ -133,7 +140,15 @@ export function BulkyPaymentPage({ thunks, onPaymentSuccess }) {
 
   if (!canManage) {
     return (
-      <Box sx={{ minHeight: '100vh', width: '100%', backgroundColor: '#f8fafc', color: '#0f172a', py: { xs: 2, sm: 4 } }}>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          width: '100%',
+          backgroundColor: '#f8fafc',
+          color: '#0f172a',
+          py: { xs: 2, sm: 4 },
+        }}
+      >
         <Container maxWidth="md">
           <Alert severity="error">
             Bạn không có quyền quản lý thanh toán đơn này (Yêu cầu quyền MANAGE_BULKY_ORDERS).
@@ -145,7 +160,15 @@ export function BulkyPaymentPage({ thunks, onPaymentSuccess }) {
 
   if (!order) {
     return (
-      <Box sx={{ minHeight: '100vh', width: '100%', backgroundColor: '#f8fafc', color: '#0f172a', py: { xs: 2, sm: 4 } }}>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          width: '100%',
+          backgroundColor: '#f8fafc',
+          color: '#0f172a',
+          py: { xs: 2, sm: 4 },
+        }}
+      >
         <Container maxWidth="md">
           <Alert severity="info">Không tìm thấy đơn hàng cần thanh toán.</Alert>
         </Container>
@@ -158,7 +181,15 @@ export function BulkyPaymentPage({ thunks, onPaymentSuccess }) {
   const isCancelled = order.orderStatus === ORDER_STATUS.CANCELLED;
 
   return (
-    <Box sx={{ minHeight: '100vh', width: '100%', backgroundColor: '#f8fafc', color: '#0f172a', py: { xs: 2, sm: 4 } }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        width: '100%',
+        backgroundColor: '#f8fafc',
+        color: '#0f172a',
+        py: { xs: 2, sm: 4 },
+      }}
+    >
       <Container maxWidth="md">
         {/* Navigation Breadcrumb */}
         <Box sx={{ mb: 2 }}>
@@ -177,7 +208,13 @@ export function BulkyPaymentPage({ thunks, onPaymentSuccess }) {
         </Box>
 
         <Box sx={{ mb: 3 }}>
-          <Typography variant="h4" component="h1" gutterBottom fontWeight="bold" sx={{ color: '#0f172a', letterSpacing: '-0.02em' }}>
+          <Typography
+            variant="h4"
+            component="h1"
+            gutterBottom
+            fontWeight="bold"
+            sx={{ color: '#0f172a', letterSpacing: '-0.02em' }}
+          >
             Thanh Toán Dịch Vụ Thu Gom
           </Typography>
           <Typography variant="body1" sx={{ color: '#64748b' }}>
@@ -193,17 +230,28 @@ export function BulkyPaymentPage({ thunks, onPaymentSuccess }) {
         )}
 
         {isCancelled ? (
-          <Card variant="outlined" sx={{ p: 3, textAlign: 'center', borderColor: '#f59e0b', backgroundColor: '#ffffff', borderRadius: 2.5, boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <Card
+            variant="outlined"
+            sx={{
+              p: 3,
+              textAlign: 'center',
+              borderColor: '#f59e0b',
+              backgroundColor: '#ffffff',
+              borderRadius: 2.5,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+            }}
+          >
             <CardContent>
               <Typography variant="h5" color="warning.main" fontWeight="bold" gutterBottom>
                 Đã Hủy Đơn & Yêu Cầu Hoàn Tiền Thành Công!
               </Typography>
               <Typography variant="body1" sx={{ mb: 2, color: '#475569' }}>
-                Yêu cầu hoàn tiền toàn phần cho đơn thu gom rác cồng kềnh đã được hệ thống tiếp nhận.
+                Yêu cầu hoàn tiền toàn phần cho đơn thu gom rác cồng kềnh đã được hệ thống tiếp
+                nhận.
               </Typography>
               <Alert severity="info" sx={{ my: 2, textAlign: 'left' }}>
-                Khoản thanh toán <strong>{formatVnd(amountVnd)}</strong> sẽ được hoàn trả về tài khoản /
-                ví điện tử của bạn.
+                Khoản thanh toán <strong>{formatVnd(amountVnd)}</strong> sẽ được hoàn trả về tài
+                khoản / ví điện tử của bạn.
               </Alert>
               <Button
                 variant="contained"
@@ -216,7 +264,17 @@ export function BulkyPaymentPage({ thunks, onPaymentSuccess }) {
             </CardContent>
           </Card>
         ) : isConfirmed ? (
-          <Card variant="outlined" sx={{ p: 3, textAlign: 'center', borderColor: '#22c55e', backgroundColor: '#ffffff', borderRadius: 2.5, boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <Card
+            variant="outlined"
+            sx={{
+              p: 3,
+              textAlign: 'center',
+              borderColor: '#22c55e',
+              backgroundColor: '#ffffff',
+              borderRadius: 2.5,
+              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+            }}
+          >
             <CardContent>
               <Typography variant="h5" color="success.main" fontWeight="bold" gutterBottom>
                 Xác Nhận & Thanh Toán Thành Công!
@@ -244,7 +302,16 @@ export function BulkyPaymentPage({ thunks, onPaymentSuccess }) {
           </Card>
         ) : (
           <Stack spacing={3}>
-            <Card variant="outlined" sx={{ p: 2, backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: 2.5, boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+            <Card
+              variant="outlined"
+              sx={{
+                p: 2,
+                backgroundColor: '#ffffff',
+                borderColor: '#e2e8f0',
+                borderRadius: 2.5,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+              }}
+            >
               <CardContent>
                 <Typography variant="h6" fontWeight="bold" sx={{ color: '#0f172a' }} gutterBottom>
                   Tóm Tắt Khoản Phí Cần Thanh Toán
@@ -258,16 +325,26 @@ export function BulkyPaymentPage({ thunks, onPaymentSuccess }) {
                     py: 1,
                   }}
                 >
-                  <Typography variant="body1" sx={{ color: '#475569' }}>Phí thu gom & vận chuyển rác cồng kềnh:</Typography>
+                  <Typography variant="body1" sx={{ color: '#475569' }}>
+                    Phí thu gom & vận chuyển rác cồng kềnh:
+                  </Typography>
                   <Typography variant="h5" fontWeight="bold" sx={{ color: '#1d4ed8' }}>
                     {formatVnd(amountVnd)}
                   </Typography>
                 </Box>
-                {(targetQuote?.estimatedRange || order?.acceptedQuote?.estimatedRange) && (
-                  <Alert severity="info" sx={{ mt: 2, borderRadius: 2 }}>
-                    Bạn đang thanh toán số tiền tạm giữ chỗ <strong>{formatVnd(depositHoldVnd)}</strong>. Quyết toán thực tế dựa trên nghiệm thu khi bàn giao (dung sai ±15% không phụ thu).
+                {['ITEM_SIZE', 'MANUAL'].includes(targetQuote?.pricingBasis) && (
+                  <Alert severity="info" sx={{ mt: 2 }}>
+                    Thanh toán toàn bộ phí theo báo giá đã xác nhận. {targetQuote.priceChangeNotice}
                   </Alert>
                 )}
+                {!['ITEM_SIZE', 'MANUAL'].includes(targetQuote?.pricingBasis) &&
+                  (targetQuote?.estimatedRange || order?.acceptedQuote?.estimatedRange) && (
+                    <Alert severity="info" sx={{ mt: 2, borderRadius: 2 }}>
+                      Bạn đang thanh toán số tiền tạm giữ chỗ{' '}
+                      <strong>{formatVnd(depositHoldVnd)}</strong>. Quyết toán thực tế dựa trên
+                      nghiệm thu khi bàn giao (dung sai ±15% không phụ thu).
+                    </Alert>
+                  )}
               </CardContent>
             </Card>
 

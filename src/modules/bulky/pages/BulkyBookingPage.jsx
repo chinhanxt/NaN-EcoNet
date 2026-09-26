@@ -27,6 +27,27 @@ export function BulkyBookingPage({
 
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [submitError, setSubmitError] = useState(null);
+  const [priceBook, setPriceBook] = useState(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (services?.catalog?.getPriceBook) {
+      services.catalog
+        .getPriceBook()
+        .then((book) => {
+          if (!cancelled) setPriceBook(book);
+        })
+        .catch(() => {
+          if (!cancelled)
+            setSubmitError(
+              'Không thể tải bảng giá. Báo giá chính thức sẽ được kiểm tra ở bước giữ chỗ.',
+            );
+        });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [services]);
 
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
@@ -56,11 +77,12 @@ export function BulkyBookingPage({
             serviceLocationId: formData.serviceLocationId,
             requestedDate: formData.requestedDate,
             imageMetadata: formData.imageMetadata,
+            recognitionResult: formData.recognitionResult,
             handlingConditions: formData.handlingConditions,
           }),
         );
         if (createdOrder?.orderId && thunks?.confirmOrderItems) {
-          await dispatch(
+          createdOrder = await dispatch(
             thunks.confirmOrderItems(createdOrder.orderId, {
               confirmedItems: formData.confirmedItems,
               handlingConditions: formData.handlingConditions,
@@ -72,7 +94,11 @@ export function BulkyBookingPage({
       if (onBookingCreated) {
         onBookingCreated(createdOrder || formData);
       } else if (createdOrder?.orderId) {
-        navigate(`/bulky/quote/${createdOrder.orderId}`);
+        navigate(
+          createdOrder.orderStatus === 'MANUAL_REVIEW'
+            ? `/bulky/orders/${createdOrder.orderId}`
+            : `/bulky/quote/${createdOrder.orderId}`,
+        );
       }
     } catch (err) {
       setSubmitError(err.message || 'Không thể tạo đơn đặt thu gom');
@@ -81,7 +107,15 @@ export function BulkyBookingPage({
 
   if (!canManage) {
     return (
-      <Box sx={{ minHeight: '100vh', width: '100%', backgroundColor: '#f8fafc', color: '#0f172a', py: { xs: 2, sm: 4 } }}>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          width: '100%',
+          backgroundColor: '#f8fafc',
+          color: '#0f172a',
+          py: { xs: 2, sm: 4 },
+        }}
+      >
         <Container maxWidth="md">
           <Alert severity="error">
             Bạn không có quyền quản lý đơn đặt thu gom rác cồng kềnh (Yêu cầu quyền
@@ -93,7 +127,15 @@ export function BulkyBookingPage({
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', width: '100%', backgroundColor: '#f8fafc', color: '#0f172a', py: { xs: 2, sm: 4 } }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        width: '100%',
+        backgroundColor: '#f8fafc',
+        color: '#0f172a',
+        py: { xs: 2, sm: 4 },
+      }}
+    >
       <Container maxWidth="md">
         {/* Navigation Breadcrumb */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -150,6 +192,7 @@ export function BulkyBookingPage({
 
         <BulkyRequestWizard
           serviceLocations={serviceLocations}
+          priceBook={priceBook}
           initialDraft={currentDraft}
           onAnalyzeImages={handleAnalyzeImages}
           onSubmit={handleSubmit}

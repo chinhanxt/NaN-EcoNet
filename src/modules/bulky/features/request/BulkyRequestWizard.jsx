@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -19,12 +19,11 @@ import {
   Divider,
   IconButton,
 } from '@mui/material';
-import {
-  validateRequestItems,
-  validateCanProceedToQuote,
-  validateStepLogistics,
-} from './requestValidation.js';
-import { ACCEPTED_ITEM_TYPES, MATERIAL_TYPES, MATERIAL_FACTORS } from '../../domain/constants.js';
+import { validateRequestItems, validateStepLogistics } from './requestValidation.js';
+import { ACCEPTED_ITEM_TYPES } from '../../domain/constants.js';
+import { ITEM_SIZES, needsItemReview, PRICE_CHANGE_NOTICE } from '../../domain/itemSizes.js';
+import { calculateQuote } from '../../domain/pricing.js';
+import { DEFAULT_PRICE_BOOK } from '../../services/mock/mockSeed.js';
 import {
   SofaIcon,
   BedIcon,
@@ -56,33 +55,18 @@ const STEPS = [
 
 const ITEM_TYPE_INFO = {
   SOFA: { label: 'Sofa / Ghế salon', icon: <SofaIcon size={18} /> },
-  MATTRESS: { label: 'Nệm / Giường ngủ', icon: <BedIcon size={18} /> },
-  CABINET: { label: 'Tủ / Kệ các loại', icon: <CabinetIcon size={18} /> },
-  TABLE: { label: 'Bàn / Ghế các loại', icon: <TableIcon size={18} /> },
-  OTHER: { label: 'Đồ cồng kềnh khác', icon: <BoxIcon size={18} /> },
+  MATTRESS: { label: 'Nệm / Giường', icon: <BedIcon size={18} /> },
+  CABINET: { label: 'Tủ / Kệ sách', icon: <CabinetIcon size={18} /> },
+  TABLE: { label: 'Bàn / Ghế rời', icon: <TableIcon size={18} /> },
+  OTHER: { label: 'Đồ khác (cần nhân viên duyệt)', icon: <BoxIcon size={18} /> },
 };
 
-const BASE_WEIGHTS = {
-  SOFA: 45,
-  MATTRESS: 30,
-  CABINET: 40,
-  TABLE: 20,
-  OTHER: 15,
+const ITEM_NAME_SUGGESTIONS = {
+  SOFA: ['Sofa đơn', 'Sofa băng', 'Sofa góc chữ L'],
+  MATTRESS: ['Nệm đơn', 'Nệm đôi', 'Khung giường'],
+  CABINET: ['Tủ quần áo', 'Tủ bếp', 'Kệ sách'],
+  TABLE: ['Bàn ăn', 'Bàn trà', 'Ghế rời'],
 };
-
-const BASE_ITEM_PRICES = {
-  SOFA: 150000,
-  MATTRESS: 120000,
-  CABINET: 100000,
-  TABLE: 80000,
-  OTHER: 60000,
-};
-
-function calculateItemEstimatedWeightKg(item) {
-  const base = item.baseWeightKg || item.baseWeight || BASE_WEIGHTS[item.catalogItemCode] || 30;
-  const factor = MATERIAL_FACTORS[item.material || 'STANDARD']?.weightFactor || 1;
-  return Math.round(base * factor);
-}
 
 function formatCurrency(vnd) {
   return `${(vnd || 0).toLocaleString('vi-VN')} đ`;
@@ -94,6 +78,7 @@ export function BulkyRequestWizard({
   onAnalyzeImages,
   initialDraft = null,
   isOffline = false,
+  priceBook = DEFAULT_PRICE_BOOK,
 }) {
   const [activeStep, setActiveStep] = useState(0);
   const [errors, setErrors] = useState({});
@@ -107,18 +92,22 @@ export function BulkyRequestWizard({
     return d.toISOString().split('T')[0];
   };
 
-  const [formData, setFormData] = useState({
-    serviceLocationId: initialDraft?.serviceLocation?.id || initialDraft?.serviceLocationId || (serviceLocations?.[0]?.id || ''),
+  const [previewTime] = useState(() => new Date().toISOString());
+  const [formData, setFormData] = useState(() => ({
+    serviceLocationId:
+      initialDraft?.serviceLocation?.id ||
+      initialDraft?.serviceLocationId ||
+      serviceLocations?.[0]?.id ||
+      '',
     requestedDate: initialDraft?.requestedDate || tomorrowDateStr(),
     imageMetadata: initialDraft?.imageMetadata || [],
     confirmedItems: initialDraft?.confirmedItems?.length
-      ? initialDraft.confirmedItems
+      ? initialDraft.confirmedItems.map((item) => ({ ...item }))
       : [
           {
             catalogItemCode: 'SOFA',
             displayName: 'Sofa da 3 chỗ',
             quantity: 1,
-            dimensionsCm: { length: 200, width: 90, height: 85 },
           },
         ],
     handlingConditions: initialDraft?.handlingConditions || {
@@ -127,33 +116,26 @@ export function BulkyRequestWizard({
       hasLift: true,
       requiresDisassembly: false,
     },
-  });
+  }));
 
-  let itemsMinVnd = 0;
-  let totalEstimatedWeightKg = 0;
-  for (const it of formData.confirmedItems) {
-    const basePrice = BASE_ITEM_PRICES[it.catalogItemCode] || 80000;
-    const mat = it.material || 'STANDARD';
-    const priceFactor = MATERIAL_FACTORS[mat]?.priceFactor || 1;
-    const unitPrice = Math.round(basePrice * priceFactor);
-    itemsMinVnd += unitPrice * (it.quantity || 1);
-
-    const baseWeight = it.baseWeightKg || it.baseWeight || BASE_WEIGHTS[it.catalogItemCode] || 30;
-    const weightFactor = MATERIAL_FACTORS[mat]?.weightFactor || 1;
-    totalEstimatedWeightKg += Math.round(baseWeight * weightFactor) * (it.quantity || 1);
+  const requiresManualReview = needsItemReview(formData.confirmedItems, aiResult || {});
+  let previewQuote = null;
+  let previewError = '';
+  if (!requiresManualReview) {
+    try {
+      previewQuote = calculateQuote({
+        confirmedItems: formData.confirmedItems,
+        handlingConditions: formData.handlingConditions,
+        serviceArea: serviceLocations.find((location) => location.id === formData.serviceLocationId)
+          ?.serviceArea,
+        priceBook,
+        now: previewTime,
+      });
+    } catch (error) {
+      previewError = error.message;
+    }
   }
-
-  let handlingFees = 0;
-  if (formData.handlingConditions?.floorNumber > 0) {
-    handlingFees += 20000 * formData.handlingConditions.floorNumber;
-  }
-  if (formData.handlingConditions?.requiresDisassembly) {
-    handlingFees += 30000;
-  }
-  const areaFee = 25000;
-  const minVnd = itemsMinVnd + handlingFees + areaFee;
-  const maxVnd = Math.round(minVnd * 1.3);
-  const depositHoldVnd = minVnd;
+  const priceLabel = previewQuote ? formatCurrency(previewQuote.totalVnd) : 'Chờ nhân viên báo giá';
 
   useEffect(() => {
     if (!formData.serviceLocationId && serviceLocations && serviceLocations.length > 0) {
@@ -162,7 +144,7 @@ export function BulkyRequestWizard({
         serviceLocationId: prev.serviceLocationId || serviceLocations[0].id,
       }));
     }
-  }, [serviceLocations]);
+  }, [serviceLocations, formData.serviceLocationId]);
 
   // Mẫu ảnh chụp sẵn để kiểm thử nhanh
   const samplePresets = [
@@ -295,13 +277,6 @@ export function BulkyRequestWizard({
       if (itemErrors.confirmedItems) {
         stepErrors.confirmedItems = itemErrors.confirmedItems;
       }
-      const quoteCheck = validateCanProceedToQuote({
-        confirmedItems: formData.confirmedItems,
-        aiResult: aiResult || {},
-      });
-      if (!quoteCheck.allowed) {
-        stepErrors.quoteCheck = quoteCheck.reason;
-      }
     } else if (activeStep === 1) {
       stepErrors = validateStepLogistics(formData);
     }
@@ -314,7 +289,7 @@ export function BulkyRequestWizard({
     setErrors({});
     if (activeStep === STEPS.length - 1) {
       if (onSubmit) {
-        onSubmit(formData);
+        await onSubmit({ ...formData, recognitionResult: aiResult });
       }
     } else {
       setActiveStep((prev) => prev + 1);
@@ -339,33 +314,27 @@ export function BulkyRequestWizard({
         setFormData((prev) => ({
           ...prev,
           confirmedItems: res.items.map((item) => {
-            const material = item.suggestedMaterial || 'STANDARD';
             const catalogItemCode = item.catalogItemCode || item.itemType || 'OTHER';
-            const estimatedWeightKg = calculateItemEstimatedWeightKg({
-              ...item,
-              catalogItemCode,
-              material,
-            });
-
             return {
               catalogItemCode,
               displayName: item.displayName || item.itemType,
               quantity: item.suggestedQuantity || 1,
-              dimensionsCm: item.dimensionsCm || { length: 150, width: 80, height: 80 },
-              material,
-              estimatedWeightKg,
+              sizeCode: '',
               box_2d: item.box_2d,
               confidence: item.confidence,
             };
           }),
           handlingConditions: {
             ...prev.handlingConditions,
-            requiresDisassembly: hasDisassemblyNeeded || prev.handlingConditions.requiresDisassembly,
+            requiresDisassembly:
+              hasDisassemblyNeeded || prev.handlingConditions.requiresDisassembly,
           },
         }));
       }
-    } catch {
-      setErrors({ ai: 'Có lỗi xảy ra khi gọi AI nhận diện' });
+    } catch (error) {
+      setErrors({
+        ai: error.message || 'Không nhận diện được ảnh bằng Gemini Vision.',
+      });
     } finally {
       setIsAnalyzing(false);
     }
@@ -393,7 +362,6 @@ export function BulkyRequestWizard({
         : [];
   })();
 
-
   return (
     <Box sx={{ width: '100%', maxWidth: 740, mx: 'auto' }}>
       {isOffline && (
@@ -402,6 +370,22 @@ export function BulkyRequestWizard({
         </Alert>
       )}
 
+      <Alert severity="info" sx={{ mb: 2 }}>
+        Báo giá theo loại đồ, kích thước và điều kiện bốc xếp. Không tính kg từ ảnh.
+        {priceBook.isDemo &&
+          ' Bảng giá minh họa, cần đơn vị thu gom phê duyệt trước khi áp dụng thực tế.'}
+      </Alert>
+      {requiresManualReview && activeStep > 0 && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          Yêu cầu sẽ được gửi cho nhân viên kiểm tra và báo giá. Chưa thu tiền hoặc xác nhận lịch.
+          Rác nguy hại và phế thải xây dựng không nhận chung.
+        </Alert>
+      )}
+      {previewError && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          {previewError}
+        </Alert>
+      )}
       {/* Modern Segmented Progress Bar */}
       <Box
         sx={{
@@ -502,7 +486,11 @@ export function BulkyRequestWizard({
                 >
                   <CameraIcon size={24} />
                 </Box>
-                <Typography variant="subtitle1" fontWeight="bold" sx={{ color: '#0f172a', fontSize: '0.95rem' }}>
+                <Typography
+                  variant="subtitle1"
+                  fontWeight="bold"
+                  sx={{ color: '#0f172a', fontSize: '0.95rem' }}
+                >
                   Chụp ảnh hoặc tải lên đồ cồng kềnh
                 </Typography>
                 <Typography variant="caption" sx={{ color: '#64748b', mt: 0.3 }}>
@@ -586,7 +574,10 @@ export function BulkyRequestWizard({
               {/* Photos List Preview */}
               {formData.imageMetadata.length > 0 && (
                 <Box>
-                  <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, display: 'block', mb: 1 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: '#64748b', fontWeight: 600, display: 'block', mb: 1 }}
+                  >
                     Ảnh đã chọn ({formData.imageMetadata.length}):
                   </Typography>
                   <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', gap: 1 }}>
@@ -634,7 +625,6 @@ export function BulkyRequestWizard({
                 </Box>
               )}
 
-
               {/* AI Action Banner */}
               <Box
                 sx={{
@@ -667,7 +657,7 @@ export function BulkyRequestWizard({
                       Trợ lý AI Phân Loại
                     </Typography>
                     <Typography variant="caption" sx={{ color: '#15803d', display: 'block' }}>
-                      Tự động nhận diện đồ vật &amp; đo kích thước ước tính
+                      AI gợi ý loại đồ; bạn xác nhận số lượng và chọn kích thước
                     </Typography>
                   </Box>
                 </Box>
@@ -675,7 +665,13 @@ export function BulkyRequestWizard({
                   variant="contained"
                   disabled={isAnalyzing}
                   onClick={handleRunAi}
-                  startIcon={isAnalyzing ? <CircularProgress size={16} color="inherit" /> : <SparklesIcon size={16} />}
+                  startIcon={
+                    isAnalyzing ? (
+                      <CircularProgress size={16} color="inherit" />
+                    ) : (
+                      <SparklesIcon size={16} />
+                    )
+                  }
                   sx={{
                     backgroundColor: '#16a34a',
                     fontWeight: 600,
@@ -697,7 +693,9 @@ export function BulkyRequestWizard({
                 <Box>
                   {aiResult.containsHazardousWaste ? (
                     <Alert severity="error" sx={{ borderRadius: 2 }}>
-                      Phát hiện rác không thuộc danh mục: <strong>{aiResult.hazardousReason || 'Chất cấm'}</strong>. Đơn cần xem xét thủ công.
+                      Phát hiện rác không thuộc danh mục:{' '}
+                      <strong>{aiResult.hazardousReason || 'Chất cấm'}</strong>. Đơn cần xem xét thủ
+                      công.
                     </Alert>
                   ) : aiResult.requiresManualReview && aiResult.explanation ? (
                     <Alert severity="warning" sx={{ borderRadius: 2 }}>
@@ -731,7 +729,6 @@ export function BulkyRequestWizard({
                           catalogItemCode: 'TABLE',
                           displayName: 'Bàn / Ghế',
                           quantity: 1,
-                          dimensionsCm: { length: 100, width: 80, height: 75 },
                         },
                       ],
                     }))
@@ -769,9 +766,7 @@ export function BulkyRequestWizard({
                       backgroundColor: selectedBoxIndex === idx ? '#f8faff' : '#ffffff',
                       borderColor: selectedBoxIndex === idx ? '#1d4ed8' : '#e2e8f0',
                       boxShadow:
-                        selectedBoxIndex === idx
-                          ? '0 0 0 2px rgba(29, 78, 216, 0.15)'
-                          : 'none',
+                        selectedBoxIndex === idx ? '0 0 0 2px rgba(29, 78, 216, 0.15)' : 'none',
                       transition: 'all 0.2s ease',
                       '&:hover': {
                         borderColor: selectedBoxIndex === idx ? '#1d4ed8' : '#cbd5e1',
@@ -809,12 +804,41 @@ export function BulkyRequestWizard({
                                 return { ...prev, confirmedItems: nextItems };
                               });
                             }}
-                            placeholder="Tên đồ vật (ví dụ: Sofa da, Nệm đôi...)"
+                            placeholder="Tên đồ vật cụ thể"
                             sx={{
-                              '& .MuiInputBase-input': { py: 0.9, px: 1.2, color: '#0f172a', fontWeight: 600 },
+                              '& .MuiInputBase-input': {
+                                py: 0.9,
+                                px: 1.2,
+                                color: '#0f172a',
+                                fontWeight: 600,
+                              },
                               '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e2e8f0' },
                             }}
                           />
+                          {(ITEM_NAME_SUGGESTIONS[item.catalogItemCode] || []).length > 0 && (
+                            <Stack
+                              direction="row"
+                              spacing={0.75}
+                              useFlexGap
+                              sx={{ mt: 0.75, flexWrap: 'wrap' }}
+                            >
+                              {ITEM_NAME_SUGGESTIONS[item.catalogItemCode].map((name) => (
+                                <Chip
+                                  key={name}
+                                  label={name}
+                                  size="small"
+                                  variant="outlined"
+                                  onClick={() => {
+                                    setFormData((prev) => {
+                                      const nextItems = [...prev.confirmedItems];
+                                      nextItems[idx] = { ...nextItems[idx], displayName: name };
+                                      return { ...prev, confirmedItems: nextItems };
+                                    });
+                                  }}
+                                />
+                              ))}
+                            </Stack>
+                          )}
                         </Box>
                         {formData.confirmedItems.length > 1 && (
                           <IconButton
@@ -833,9 +857,15 @@ export function BulkyRequestWizard({
                         )}
                       </Box>
 
-
                       {/* Item Controls Row */}
-                      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1.4fr 1fr' }, gap: 2, alignItems: 'center' }}>
+                      <Box
+                        sx={{
+                          display: 'grid',
+                          gridTemplateColumns: { xs: '1fr', sm: '1.4fr 1fr' },
+                          gap: 2,
+                          alignItems: 'center',
+                        }}
+                      >
                         {/* Category Selector */}
                         <FormControl size="small" fullWidth>
                           <Select
@@ -844,7 +874,12 @@ export function BulkyRequestWizard({
                               const val = e.target.value;
                               setFormData((prev) => {
                                 const nextItems = [...prev.confirmedItems];
-                                nextItems[idx].catalogItemCode = val;
+                                nextItems[idx] = {
+                                  ...nextItems[idx],
+                                  catalogItemCode: val,
+                                  sizeCode: '',
+                                  oversize: false,
+                                };
                                 return { ...prev, confirmedItems: nextItems };
                               });
                             }}
@@ -856,7 +891,11 @@ export function BulkyRequestWizard({
                             }}
                           >
                             {ACCEPTED_ITEM_TYPES.map((type) => (
-                              <MenuItem key={type} value={type} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <MenuItem
+                                key={type}
+                                value={type}
+                                sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                              >
                                 {ITEM_TYPE_INFO[type]?.icon}
                                 <span>{ITEM_TYPE_INFO[type]?.label || type}</span>
                               </MenuItem>
@@ -865,31 +904,56 @@ export function BulkyRequestWizard({
                         </FormControl>
 
                         {/* Quantity Counter */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: { xs: 'flex-start', sm: 'flex-end' }, gap: 1 }}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+                            gap: 1,
+                          }}
+                        >
                           <Typography variant="body2" sx={{ color: '#64748b', mr: 0.5 }}>
                             Số lượng:
                           </Typography>
                           <Button
                             variant="outlined"
                             size="small"
-                            sx={{ minWidth: 32, height: 32, p: 0, borderColor: '#e2e8f0', color: '#0f172a' }}
+                            sx={{
+                              minWidth: 32,
+                              height: 32,
+                              p: 0,
+                              borderColor: '#e2e8f0',
+                              color: '#0f172a',
+                            }}
                             onClick={() => {
                               setFormData((prev) => {
                                 const nextItems = [...prev.confirmedItems];
-                                nextItems[idx].quantity = Math.max(1, (nextItems[idx].quantity || 1) - 1);
+                                nextItems[idx].quantity = Math.max(
+                                  1,
+                                  (nextItems[idx].quantity || 1) - 1,
+                                );
                                 return { ...prev, confirmedItems: nextItems };
                               });
                             }}
                           >
                             <MinusIcon size={14} />
                           </Button>
-                          <Typography variant="body2" sx={{ fontWeight: 700, minWidth: 24, textAlign: 'center' }}>
+                          <Typography
+                            variant="body2"
+                            sx={{ fontWeight: 700, minWidth: 24, textAlign: 'center' }}
+                          >
                             {item.quantity}
                           </Typography>
                           <Button
                             variant="outlined"
                             size="small"
-                            sx={{ minWidth: 32, height: 32, p: 0, borderColor: '#e2e8f0', color: '#0f172a' }}
+                            sx={{
+                              minWidth: 32,
+                              height: 32,
+                              p: 0,
+                              borderColor: '#e2e8f0',
+                              color: '#0f172a',
+                            }}
                             onClick={() => {
                               setFormData((prev) => {
                                 const nextItems = [...prev.confirmedItems];
@@ -903,102 +967,33 @@ export function BulkyRequestWizard({
                         </Box>
                       </Box>
 
-                      {/* Dimensions Row */}
-                      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1.5, pt: 0.5 }}>
-                        <TextField
-                          size="small"
-                          label="Dài (cm)"
-                          type="number"
-                          value={item.dimensionsCm?.length || 0}
-                          onChange={(e) => {
-                            const val = Number(e.target.value);
-                            setFormData((prev) => {
-                              const nextItems = [...prev.confirmedItems];
-                              nextItems[idx].dimensionsCm = { ...nextItems[idx].dimensionsCm, length: val };
-                              return { ...prev, confirmedItems: nextItems };
-                            });
-                          }}
-                          sx={{ '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e2e8f0' } }}
-                        />
-                        <TextField
-                          size="small"
-                          label="Rộng (cm)"
-                          type="number"
-                          value={item.dimensionsCm?.width || 0}
-                          onChange={(e) => {
-                            const val = Number(e.target.value);
-                            setFormData((prev) => {
-                              const nextItems = [...prev.confirmedItems];
-                              nextItems[idx].dimensionsCm = { ...nextItems[idx].dimensionsCm, width: val };
-                              return { ...prev, confirmedItems: nextItems };
-                            });
-                          }}
-                          sx={{ '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e2e8f0' } }}
-                        />
-                        <TextField
-                          size="small"
-                          label="Cao (cm)"
-                          type="number"
-                          value={item.dimensionsCm?.height || 0}
-                          onChange={(e) => {
-                            const val = Number(e.target.value);
-                            setFormData((prev) => {
-                              const nextItems = [...prev.confirmedItems];
-                              nextItems[idx].dimensionsCm = { ...nextItems[idx].dimensionsCm, height: val };
-                              return { ...prev, confirmedItems: nextItems };
-                            });
-                          }}
-                          sx={{ '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e2e8f0' } }}
-                        />
-                      </Box>
-
-                      {/* 1-Click Material Survey Chips */}
-                      <Box sx={{ pt: 1.5, borderTop: '1px dashed #e2e8f0' }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.75 }}>
-                          <Typography variant="caption" sx={{ color: '#475569', fontWeight: 600 }}>
-                            Chất liệu chế tạo & Trọng lượng ước tính:
-                          </Typography>
-                          <Typography variant="caption" sx={{ color: '#1d4ed8', fontWeight: 700 }}>
-                            ~{calculateItemEstimatedWeightKg(item)} kg / chiếc
-                          </Typography>
-                        </Box>
-                        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
-                          {Object.values(MATERIAL_FACTORS).map((mat) => {
-                            const isSelected = (item.material || MATERIAL_TYPES.STANDARD) === mat.code;
-                            return (
-                              <Chip
-                                key={mat.code}
-                                label={mat.label}
-                                size="small"
-                                onClick={() => {
-                                  setFormData((prev) => {
-                                    const nextItems = [...prev.confirmedItems];
-                                    nextItems[idx] = {
-                                      ...nextItems[idx],
-                                      material: mat.code,
-                                      estimatedWeightKg: calculateItemEstimatedWeightKg({
-                                        ...nextItems[idx],
-                                        material: mat.code,
-                                      }),
-                                    };
-                                    return { ...prev, confirmedItems: nextItems };
-                                  });
-                                }}
-                                color={isSelected ? 'primary' : 'default'}
-                                variant={isSelected ? 'filled' : 'outlined'}
-                                sx={{
-                                  cursor: 'pointer',
-                                  fontWeight: isSelected ? 700 : 500,
-                                  borderRadius: 1.5,
-                                  ...(isSelected
-                                    ? { backgroundColor: '#1d4ed8', color: '#ffffff' }
-                                    : { borderColor: '#cbd5e1', color: '#475569' }),
-                                }}
-                              />
-                            );
-                          })}
-                        </Stack>
-                      </Box>
+                      <TextField
+                        select
+                        label={`Kích thước món ${idx + 1}`}
+                        value={item.sizeCode || ''}
+                        onChange={(event) => {
+                          const sizeCode = event.target.value;
+                          setFormData((prev) => ({
+                            ...prev,
+                            confirmedItems: prev.confirmedItems.map((entry, index) =>
+                              index === idx
+                                ? { ...entry, sizeCode, oversize: sizeCode === 'OVERSIZE' }
+                                : entry,
+                            ),
+                          }));
+                        }}
+                        helperText="Bạn tự xác nhận kích thước thực tế. Nếu chưa rõ hoặc quá khổ, nhân viên sẽ báo giá."
+                      >
+                        <MenuItem value="">Chưa rõ kích thước</MenuItem>
+                        {Object.entries(ITEM_SIZES[item.catalogItemCode] || {}).map(
+                          ([code, label]) => (
+                            <MenuItem key={code} value={code}>
+                              {label}
+                            </MenuItem>
+                          ),
+                        )}
+                        <MenuItem value="OVERSIZE">Quá khổ / cần nhân viên kiểm tra</MenuItem>
+                      </TextField>
                     </Stack>
                   </Card>
                 ))}
@@ -1020,19 +1015,28 @@ export function BulkyRequestWizard({
                   }}
                 >
                   <Box>
-                    <Typography variant="caption" sx={{ color: '#1e40af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, display: 'block' }}>
-                      Khoảng giá dự toán (Dựa trên vật liệu & thể tích):
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: '#1e40af',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: 0.5,
+                        display: 'block',
+                      }}
+                    >
+                      Phí theo loại đồ và kích thước:
                     </Typography>
                     <Typography variant="h6" sx={{ color: '#1d4ed8', fontWeight: 800 }}>
-                      {formatCurrency(minVnd)} – {formatCurrency(maxVnd)}
+                      {priceLabel}
                     </Typography>
                   </Box>
                   <Box sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
                     <Typography variant="caption" sx={{ color: '#64748b', display: 'block' }}>
-                      Giữ chỗ ước tính:
+                      Thanh toán sau khi chốt báo giá:
                     </Typography>
                     <Typography variant="subtitle1" sx={{ color: '#16a34a', fontWeight: 700 }}>
-                      {formatCurrency(depositHoldVnd)}
+                      {previewQuote ? formatCurrency(previewQuote.totalVnd) : 'Chưa thu tiền'}
                     </Typography>
                   </Box>
                 </Box>
@@ -1051,7 +1055,9 @@ export function BulkyRequestWizard({
                 <Select
                   inputProps={{ 'data-testid': 'service-location-input' }}
                   value={formData.serviceLocationId}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, serviceLocationId: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, serviceLocationId: e.target.value }))
+                  }
                   sx={{
                     borderRadius: 2,
                     '& .MuiSelect-select': { py: 1.2, color: '#0f172a', fontWeight: 500 },
@@ -1059,7 +1065,11 @@ export function BulkyRequestWizard({
                   }}
                 >
                   {serviceLocations.map((loc) => (
-                    <MenuItem key={loc.id} value={loc.id} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <MenuItem
+                      key={loc.id}
+                      value={loc.id}
+                      sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                    >
                       <MapPinIcon size={16} color="#1d4ed8" />
                       <span>{loc.address}</span>
                     </MenuItem>
@@ -1074,7 +1084,10 @@ export function BulkyRequestWizard({
 
               {/* Date Select */}
               <FormControl fullWidth error={Boolean(errors.requestedDate)}>
-                <FormLabel htmlFor="requested-date-input" sx={{ fontWeight: 600, mb: 1, color: '#0f172a', fontSize: '0.875rem' }}>
+                <FormLabel
+                  htmlFor="requested-date-input"
+                  sx={{ fontWeight: 600, mb: 1, color: '#0f172a', fontSize: '0.875rem' }}
+                >
                   Ngày thu gom mong muốn
                 </FormLabel>
                 <TextField
@@ -1084,7 +1097,9 @@ export function BulkyRequestWizard({
                   type="date"
                   fullWidth
                   value={formData.requestedDate}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, requestedDate: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, requestedDate: e.target.value }))
+                  }
                   error={Boolean(errors.requestedDate)}
                   helperText={errors.requestedDate}
                   sx={{
@@ -1093,9 +1108,24 @@ export function BulkyRequestWizard({
                   }}
                 />
                 <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                  <Chip label="Ngày mai" size="small" onClick={() => setQuickDate(1)} sx={{ cursor: 'pointer', borderRadius: 2 }} />
-                  <Chip label="Ngày kia" size="small" onClick={() => setQuickDate(2)} sx={{ cursor: 'pointer', borderRadius: 2 }} />
-                  <Chip label="+3 ngày" size="small" onClick={() => setQuickDate(3)} sx={{ cursor: 'pointer', borderRadius: 2 }} />
+                  <Chip
+                    label="Ngày mai"
+                    size="small"
+                    onClick={() => setQuickDate(1)}
+                    sx={{ cursor: 'pointer', borderRadius: 2 }}
+                  />
+                  <Chip
+                    label="Ngày kia"
+                    size="small"
+                    onClick={() => setQuickDate(2)}
+                    sx={{ cursor: 'pointer', borderRadius: 2 }}
+                  />
+                  <Chip
+                    label="+3 ngày"
+                    size="small"
+                    onClick={() => setQuickDate(3)}
+                    sx={{ cursor: 'pointer', borderRadius: 2 }}
+                  />
                 </Box>
               </FormControl>
 
@@ -1103,14 +1133,37 @@ export function BulkyRequestWizard({
 
               {/* Visual Placement Cards */}
               <Box>
-                <FormLabel sx={{ fontWeight: 600, mb: 1.5, color: '#0f172a', fontSize: '0.875rem', display: 'block' }}>
+                <FormLabel
+                  sx={{
+                    fontWeight: 600,
+                    mb: 1.5,
+                    color: '#0f172a',
+                    fontSize: '0.875rem',
+                    display: 'block',
+                  }}
+                >
                   Vị trí để đồ vật
                 </FormLabel>
                 <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1.5 }}>
                   {[
-                    { id: 'CURBSIDE', title: 'Mặt đường / Vỉa hè', sub: 'Xe tải bốc ngay', icon: <RoadIcon size={22} /> },
-                    { id: 'GROUND_FLOOR', title: 'Tầng trệt trong nhà', sub: 'Bê vác nhẹ', icon: <HomeIcon size={22} /> },
-                    { id: 'UPPER_FLOOR', title: 'Tầng lầu / Chung cư', sub: 'Cần vận chuyển lầu', icon: <BuildingIcon size={22} /> },
+                    {
+                      id: 'CURBSIDE',
+                      title: 'Mặt đường / Vỉa hè',
+                      sub: 'Xe tải bốc ngay',
+                      icon: <RoadIcon size={22} />,
+                    },
+                    {
+                      id: 'GROUND_FLOOR',
+                      title: 'Tầng trệt trong nhà',
+                      sub: 'Bê vác nhẹ',
+                      icon: <HomeIcon size={22} />,
+                    },
+                    {
+                      id: 'UPPER_FLOOR',
+                      title: 'Tầng lầu / Chung cư',
+                      sub: 'Cần vận chuyển lầu',
+                      icon: <BuildingIcon size={22} />,
+                    },
                   ].map((p) => {
                     const isSelected = formData.handlingConditions.placement === p.id;
                     return (
@@ -1120,7 +1173,14 @@ export function BulkyRequestWizard({
                         onClick={() =>
                           setFormData((prev) => ({
                             ...prev,
-                            handlingConditions: { ...prev.handlingConditions, placement: p.id },
+                            handlingConditions: {
+                              ...prev.handlingConditions,
+                              placement: p.id,
+                              floorNumber:
+                                p.id === 'UPPER_FLOOR'
+                                  ? Math.max(1, prev.handlingConditions.floorNumber || 1)
+                                  : 0,
+                            },
                           }))
                         }
                         sx={{
@@ -1134,11 +1194,20 @@ export function BulkyRequestWizard({
                           '&:hover': { borderColor: '#1d4ed8' },
                         }}
                       >
-                        <Box sx={{ color: isSelected ? '#1d4ed8' : '#64748b', mb: 1 }}>{p.icon}</Box>
-                        <Typography variant="body2" fontWeight={isSelected ? 700 : 600} sx={{ color: '#0f172a', fontSize: '0.825rem' }}>
+                        <Box sx={{ color: isSelected ? '#1d4ed8' : '#64748b', mb: 1 }}>
+                          {p.icon}
+                        </Box>
+                        <Typography
+                          variant="body2"
+                          fontWeight={isSelected ? 700 : 600}
+                          sx={{ color: '#0f172a', fontSize: '0.825rem' }}
+                        >
                           {p.title}
                         </Typography>
-                        <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mt: 0.2 }}>
+                        <Typography
+                          variant="caption"
+                          sx={{ color: '#64748b', display: 'block', mt: 0.2 }}
+                        >
                           {p.sub}
                         </Typography>
                       </Card>
@@ -1149,9 +1218,19 @@ export function BulkyRequestWizard({
 
               {/* Extra upper floor options */}
               {formData.handlingConditions.placement === 'UPPER_FLOOR' && (
-                <Stack spacing={2} sx={{ p: 2, borderRadius: 2.5, backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                <Stack
+                  spacing={2}
+                  sx={{
+                    p: 2,
+                    borderRadius: 2.5,
+                    backgroundColor: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                  }}
+                >
                   <TextField
                     label="Số tầng lầu"
+                    error={Boolean(errors.floorNumber)}
+                    helperText={errors.floorNumber}
                     type="number"
                     size="small"
                     value={formData.handlingConditions.floorNumber}
@@ -1162,7 +1241,10 @@ export function BulkyRequestWizard({
                         handlingConditions: { ...prev.handlingConditions, floorNumber: val },
                       }));
                     }}
-                    sx={{ width: 140, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e2e8f0' } }}
+                    sx={{
+                      width: 140,
+                      '& .MuiOutlinedInput-notchedOutline': { borderColor: '#e2e8f0' },
+                    }}
                   />
                   <FormControlLabel
                     control={
@@ -1171,7 +1253,10 @@ export function BulkyRequestWizard({
                         onChange={(e) =>
                           setFormData((prev) => ({
                             ...prev,
-                            handlingConditions: { ...prev.handlingConditions, hasLift: e.target.checked },
+                            handlingConditions: {
+                              ...prev.handlingConditions,
+                              hasLift: e.target.checked,
+                            },
                           }))
                         }
                       />
@@ -1180,7 +1265,7 @@ export function BulkyRequestWizard({
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <ElevatorIcon size={18} color="#1d4ed8" />
                         <Typography variant="body2" fontWeight={500}>
-                          Có thang máy vận chuyển
+                          Có thang máy đủ chỗ vận chuyển đồ
                         </Typography>
                       </Box>
                     }
@@ -1189,7 +1274,14 @@ export function BulkyRequestWizard({
               )}
 
               {/* Disassembly Switch */}
-              <Box sx={{ p: 2, borderRadius: 2.5, backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+              <Box
+                sx={{
+                  p: 2,
+                  borderRadius: 2.5,
+                  backgroundColor: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                }}
+              >
                 <FormControlLabel
                   control={
                     <Switch
@@ -1197,7 +1289,10 @@ export function BulkyRequestWizard({
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
-                          handlingConditions: { ...prev.handlingConditions, requiresDisassembly: e.target.checked },
+                          handlingConditions: {
+                            ...prev.handlingConditions,
+                            requiresDisassembly: e.target.checked,
+                          },
                         }))
                       }
                     />
@@ -1227,7 +1322,15 @@ export function BulkyRequestWizard({
                 }}
               >
                 <Stack spacing={2}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1.5, borderBottom: '1px solid #e2e8f0' }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      pb: 1.5,
+                      borderBottom: '1px solid #e2e8f0',
+                    }}
+                  >
                     <CalendarIcon size={18} color="#1d4ed8" />
                     <Box sx={{ flex: 1 }}>
                       <Typography variant="caption" sx={{ color: '#64748b', display: 'block' }}>
@@ -1239,19 +1342,38 @@ export function BulkyRequestWizard({
                     </Box>
                   </Box>
 
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1.5, borderBottom: '1px solid #e2e8f0' }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      pb: 1.5,
+                      borderBottom: '1px solid #e2e8f0',
+                    }}
+                  >
                     <MapPinIcon size={18} color="#1d4ed8" />
                     <Box sx={{ flex: 1 }}>
                       <Typography variant="caption" sx={{ color: '#64748b', display: 'block' }}>
                         Điểm thu gom
                       </Typography>
                       <Typography variant="body2" fontWeight="bold" sx={{ color: '#0f172a' }}>
-                        {serviceLocations.find((l) => l.id === formData.serviceLocationId)?.address || formData.serviceLocationId || 'Địa chỉ tiêu chuẩn'}
+                        {serviceLocations.find((l) => l.id === formData.serviceLocationId)
+                          ?.address ||
+                          formData.serviceLocationId ||
+                          'Địa chỉ tiêu chuẩn'}
                       </Typography>
                     </Box>
                   </Box>
 
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pb: 1.5, borderBottom: '1px solid #e2e8f0' }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      pb: 1.5,
+                      borderBottom: '1px solid #e2e8f0',
+                    }}
+                  >
                     <TruckIcon size={18} color="#1d4ed8" />
                     <Box sx={{ flex: 1 }}>
                       <Typography variant="caption" sx={{ color: '#64748b', display: 'block' }}>
@@ -1271,22 +1393,43 @@ export function BulkyRequestWizard({
                   <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
                     <BoxIcon size={18} color="#1d4ed8" />
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="caption" sx={{ color: '#64748b', display: 'block', mb: 0.5 }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: '#64748b', display: 'block', mb: 0.5 }}
+                      >
                         Danh mục ({formData.confirmedItems.length} món)
                       </Typography>
                       {formData.confirmedItems.map((item, i) => {
-                        const mat = item.material || MATERIAL_TYPES.STANDARD;
-                        const matObj = MATERIAL_FACTORS[mat] || MATERIAL_FACTORS.STANDARD;
                         return (
-                          <Box key={i} sx={{ py: 0.5, borderBottom: i < formData.confirmedItems.length - 1 ? '1px dashed #e2e8f0' : 'none' }}>
+                          <Box
+                            key={i}
+                            sx={{
+                              py: 0.5,
+                              borderBottom:
+                                i < formData.confirmedItems.length - 1
+                                  ? '1px dashed #e2e8f0'
+                                  : 'none',
+                            }}
+                          >
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                               {getItemSvgIcon(item, 16, '#64748b')}
-                              <Typography variant="body2" fontWeight={600} sx={{ color: '#0f172a' }}>
+                              <Typography
+                                variant="body2"
+                                fontWeight={600}
+                                sx={{ color: '#0f172a' }}
+                              >
                                 {item.quantity}x {item.displayName || item.catalogItemCode}
                               </Typography>
                             </Box>
-                            <Typography variant="caption" sx={{ color: '#64748b', ml: 3, display: 'block' }}>
-                              Chất liệu: <strong>{matObj.label}</strong> (~{calculateItemEstimatedWeightKg(item)} kg / chiếc)
+                            <Typography
+                              variant="caption"
+                              sx={{ color: '#64748b', ml: 3, display: 'block' }}
+                            >
+                              Kích thước:{' '}
+                              <strong>
+                                {ITEM_SIZES[item.catalogItemCode]?.[item.sizeCode] ||
+                                  'Cần nhân viên kiểm tra'}
+                              </strong>
                             </Typography>
                           </Box>
                         );
@@ -1310,10 +1453,10 @@ export function BulkyRequestWizard({
                     sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                   >
                     <Typography variant="subtitle2" sx={{ color: '#475569', fontWeight: 600 }}>
-                      Khoảng giá dự toán toàn đơn:
+                      Phí theo thông tin đã xác nhận:
                     </Typography>
                     <Typography variant="subtitle1" sx={{ color: '#1d4ed8', fontWeight: 800 }}>
-                      {formatCurrency(minVnd)} – {formatCurrency(maxVnd)}
+                      {priceLabel}
                     </Typography>
                   </Box>
                   <Divider sx={{ my: 0.5, borderColor: '#e2e8f0' }} />
@@ -1322,14 +1465,14 @@ export function BulkyRequestWizard({
                   >
                     <Box>
                       <Typography variant="subtitle1" sx={{ color: '#0f172a', fontWeight: 700 }}>
-                        Số tiền tạm giữ chỗ:
+                        Số tiền thanh toán trước:
                       </Typography>
                       <Typography variant="caption" sx={{ color: '#64748b' }}>
-                        (Thanh toán trước để điều phối xe, quyết toán theo nghiệm thu bàn giao)
+                        (Chỉ thanh toán khi đã có báo giá và giữ chỗ hợp lệ)
                       </Typography>
                     </Box>
                     <Typography variant="h6" sx={{ color: '#16a34a', fontWeight: 800 }}>
-                      {formatCurrency(depositHoldVnd)}
+                      {previewQuote ? formatCurrency(previewQuote.totalVnd) : 'Chưa thu tiền'}
                     </Typography>
                   </Box>
                 </Stack>
@@ -1346,12 +1489,10 @@ export function BulkyRequestWizard({
                 }}
               >
                 <Typography variant="subtitle2" fontWeight="bold" sx={{ color: '#166534' }}>
-                  Cam kết Nghiệm thu & Dung sai Minh bạch Smartbin:
+                  Xác nhận phí trước khi thu gom:
                 </Typography>
                 <Typography variant="body2" sx={{ color: '#15803d', mt: 0.5 }}>
-                  Tài xế sẽ kiểm tra nhanh chất liệu và kích thước khi nhận đồ. Nếu sai lệch thực tế
-                  nằm trong ngưỡng <strong>±15%</strong>, đơn hàng giữ nguyên mức thanh toán tạm
-                  tính ban đầu, tuyệt đối không phụ thu phát sinh.
+                  {PRICE_CHANGE_NOTICE}
                 </Typography>
               </Alert>
             </Stack>

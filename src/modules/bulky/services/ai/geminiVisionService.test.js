@@ -56,9 +56,8 @@ describe('geminiVisionService', () => {
 
   it('fallbacks gracefully when no base64 images provided', async () => {
     const res = await analyzeBulkyWasteWithGemini({ images: [] });
-    expect(res.decision).toBe(AI_DECISION.SUGGESTED);
-    expect(res.items.length).toBeGreaterThan(0);
-    expect(res.items[0].box_2d).toBeDefined();
+    expect(res.decision).toBe(AI_DECISION.MANUAL_REVIEW);
+    expect(res.items).toEqual([]);
     expect(res.boundingBoxes).toBeDefined();
   });
 

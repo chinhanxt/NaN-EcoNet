@@ -1,7 +1,15 @@
 export const DEFAULT_REPOSITORY_VERSION = 'smartbin:bulky:v3';
 
 export const DEFAULT_PRICE_BOOK = Object.freeze({
-  version: '2026.1',
+  version: '2026.2-item-size-demo',
+  pricingBasis: 'ITEM_SIZE',
+  isDemo: true,
+  sizePrices: {
+    SOFA: { SMALL: 150000, MEDIUM: 200000, LARGE: 250000 },
+    MATTRESS: { SMALL: 100000, MEDIUM: 130000, LARGE: 160000 },
+    CABINET: { SMALL: 120000, MEDIUM: 180000, LARGE: 240000 },
+    TABLE: { SMALL: 80000, MEDIUM: 120000, LARGE: 160000 },
+  },
   items: {
     SOFA: 150000,
     MATTRESS: 100000,

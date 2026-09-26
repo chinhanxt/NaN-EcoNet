@@ -38,11 +38,16 @@ export function BulkyQuotePage({ thunks, onProceedToPayment }) {
   const formatVnd = (val) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
 
-  const estimatedRange = activeQuote?.estimatedRange || (activeQuote?.totalVnd ? {
-    minVnd: activeQuote.totalVnd,
-    maxVnd: Math.round(activeQuote.totalVnd * 1.3),
-    depositHoldVnd: activeQuote.totalVnd,
-  } : null);
+  const estimatedRange = ['ITEM_SIZE', 'MANUAL'].includes(activeQuote?.pricingBasis)
+    ? null
+    : activeQuote?.estimatedRange ||
+      (activeQuote?.totalVnd
+        ? {
+            minVnd: activeQuote.totalVnd,
+            maxVnd: Math.round(activeQuote.totalVnd * 1.3),
+            depositHoldVnd: activeQuote.totalVnd,
+          }
+        : null);
 
   const tolerancePolicy = activeQuote?.tolerancePolicy || {
     allowedPercent: 15,
@@ -89,7 +94,15 @@ export function BulkyQuotePage({ thunks, onProceedToPayment }) {
 
   if (!canManage) {
     return (
-      <Box sx={{ minHeight: '100vh', width: '100%', backgroundColor: '#f8fafc', color: '#0f172a', py: { xs: 2, sm: 4 } }}>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          width: '100%',
+          backgroundColor: '#f8fafc',
+          color: '#0f172a',
+          py: { xs: 2, sm: 4 },
+        }}
+      >
         <Container maxWidth="md">
           <Alert severity="error">
             Bạn không có quyền quản lý đơn đặt thu gom này (Yêu cầu quyền MANAGE_BULKY_ORDERS).
@@ -101,7 +114,15 @@ export function BulkyQuotePage({ thunks, onProceedToPayment }) {
 
   if (!order) {
     return (
-      <Box sx={{ minHeight: '100vh', width: '100%', backgroundColor: '#f8fafc', color: '#0f172a', py: { xs: 2, sm: 4 } }}>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          width: '100%',
+          backgroundColor: '#f8fafc',
+          color: '#0f172a',
+          py: { xs: 2, sm: 4 },
+        }}
+      >
         <Container maxWidth="md">
           <Alert severity="info">Không tìm thấy thông tin đơn thu gom rác cồng kềnh.</Alert>
         </Container>
@@ -109,8 +130,27 @@ export function BulkyQuotePage({ thunks, onProceedToPayment }) {
     );
   }
 
+  if (order.orderStatus === 'MANUAL_REVIEW') {
+    return (
+      <Container maxWidth="md" sx={{ py: 4 }}>
+        <Alert severity="info">
+          Đơn đang chờ nhân viên kiểm tra và báo giá. Chưa thu tiền hoặc xác nhận lịch thu gom.
+        </Alert>
+        <Button onClick={() => navigate(`/bulky/orders/${orderId}`)}>Xem yêu cầu</Button>
+      </Container>
+    );
+  }
+
   return (
-    <Box sx={{ minHeight: '100vh', width: '100%', backgroundColor: '#f8fafc', color: '#0f172a', py: { xs: 2, sm: 4 } }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        width: '100%',
+        backgroundColor: '#f8fafc',
+        color: '#0f172a',
+        py: { xs: 2, sm: 4 },
+      }}
+    >
       <Container maxWidth="md">
         {/* Navigation Breadcrumb */}
         <Box sx={{ mb: 2 }}>
@@ -129,11 +169,18 @@ export function BulkyQuotePage({ thunks, onProceedToPayment }) {
         </Box>
 
         <Box sx={{ mb: 3 }}>
-          <Typography variant="h4" component="h1" gutterBottom fontWeight="bold" sx={{ color: '#0f172a', letterSpacing: '-0.02em' }}>
+          <Typography
+            variant="h4"
+            component="h1"
+            gutterBottom
+            fontWeight="bold"
+            sx={{ color: '#0f172a', letterSpacing: '-0.02em' }}
+          >
             Báo Giá & Giữ Chỗ Thu Gom
           </Typography>
           <Typography variant="body1" sx={{ color: '#64748b' }}>
-            Mã đơn: <strong style={{ color: '#0f172a' }}>{order.orderId}</strong> • Địa chỉ: {order.serviceLocation?.address}
+            Mã đơn: <strong style={{ color: '#0f172a' }}>{order.orderId}</strong> • Địa chỉ:{' '}
+            {order.serviceLocation?.address}
           </Typography>
         </Box>
 
@@ -182,11 +229,18 @@ export function BulkyQuotePage({ thunks, onProceedToPayment }) {
                           }}
                         >
                           <Box>
-                            <Typography variant="subtitle2" sx={{ color: '#0369a1', fontWeight: 700 }}>
+                            <Typography
+                              variant="subtitle2"
+                              sx={{ color: '#0369a1', fontWeight: 700 }}
+                            >
                               📊 Khoảng giá dự toán:
                             </Typography>
-                            <Typography variant="h6" sx={{ color: '#0284c7', fontWeight: 800, mt: 0.5 }}>
-                              {formatVnd(estimatedRange?.minVnd)} – {formatVnd(estimatedRange?.maxVnd)}
+                            <Typography
+                              variant="h6"
+                              sx={{ color: '#0284c7', fontWeight: 800, mt: 0.5 }}
+                            >
+                              {formatVnd(estimatedRange?.minVnd)} –{' '}
+                              {formatVnd(estimatedRange?.maxVnd)}
                             </Typography>
                           </Box>
                           <Chip
@@ -206,11 +260,15 @@ export function BulkyQuotePage({ thunks, onProceedToPayment }) {
                           }}
                         >
                           <Box>
-                            <Typography variant="subtitle1" sx={{ color: '#0f172a', fontWeight: 700 }}>
+                            <Typography
+                              variant="subtitle1"
+                              sx={{ color: '#0f172a', fontWeight: 700 }}
+                            >
                               💳 Số tiền tạm giữ chỗ:
                             </Typography>
                             <Typography variant="caption" sx={{ color: '#64748b' }}>
-                              (Thanh toán trước để điều phối xe, quyết toán theo nghiệm thu thực tế khi bàn giao)
+                              (Thanh toán trước để điều phối xe, quyết toán theo nghiệm thu thực tế
+                              khi bàn giao)
                             </Typography>
                           </Box>
                           <Typography variant="h5" sx={{ color: '#16a34a', fontWeight: 800 }}>

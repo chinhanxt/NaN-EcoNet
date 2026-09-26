@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { useDispatch } from 'react-redux';
+import { useEffect, useMemo } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { BulkyBookingPage } from './pages/BulkyBookingPage.jsx';
 import { BulkyQuotePage } from './pages/BulkyQuotePage.jsx';
 import { BulkyPaymentPage } from './pages/BulkyPaymentPage.jsx';
@@ -9,7 +9,7 @@ import { BulkyHeader } from './components/BulkyHeader.jsx';
 import { createMockBulkyServices } from './services/mock/createMockBulkyServices.js';
 import { createBulkyThunks } from './store/index.js';
 import { setBulkyCapabilities } from './store/bulkySlice.js';
-import { BULKY_CAPABILITIES } from './services/bulkyServiceContract.js';
+import { BULKY_PERSONAS } from './services/bulkyServiceContract.js';
 
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { Box } from '@mui/material';
@@ -28,18 +28,15 @@ const defaultHousehold = {
   ],
 };
 
-const defaultServices = createMockBulkyServices({
-  userId: 'citizen-demo-user',
-  membershipResolver: async () => ({
-    status: 'ACTIVE',
-    capabilities: [
-      BULKY_CAPABILITIES.VIEW_BULKY_ORDERS,
-      BULKY_CAPABILITIES.MANAGE_BULKY_ORDERS,
-    ],
-    household: defaultHousehold,
-  }),
-});
-const defaultThunks = createBulkyThunks(defaultServices);
+const createPersonaServices = (persona) =>
+  createMockBulkyServices({
+    userId: persona.id,
+    membershipResolver: async () => ({
+      status: 'ACTIVE',
+      capabilities: persona.capabilities,
+      household: defaultHousehold,
+    }),
+  });
 
 export const bulkyLightTheme = createTheme({
   palette: {
@@ -110,18 +107,17 @@ export const bulkyLightTheme = createTheme({
 
 function BulkyRouteWrapper({ Component }) {
   const dispatch = useDispatch();
+  const activeUserId = useSelector((state) => state.bulky?.activeUser?.id);
+  const persona = BULKY_PERSONAS.find((user) => user.id === activeUserId) || BULKY_PERSONAS[0];
+  const defaultServices = useMemo(() => createPersonaServices(persona), [persona]);
+  const defaultThunks = useMemo(() => createBulkyThunks(defaultServices), [defaultServices]);
 
   useEffect(() => {
-    dispatch(
-      setBulkyCapabilities([
-        BULKY_CAPABILITIES.VIEW_BULKY_ORDERS,
-        BULKY_CAPABILITIES.MANAGE_BULKY_ORDERS,
-      ]),
-    );
+    dispatch(setBulkyCapabilities(persona.capabilities));
     dispatch(defaultThunks.fetchCatalog()).catch(() => {});
     dispatch(defaultThunks.fetchOrders()).catch(() => {});
     dispatch(defaultThunks.fetchNotifications()).catch(() => {});
-  }, [dispatch]);
+  }, [dispatch, defaultThunks, persona]);
 
   return (
     <ThemeProvider theme={bulkyLightTheme}>

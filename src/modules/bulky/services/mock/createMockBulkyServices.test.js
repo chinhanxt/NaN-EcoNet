@@ -110,6 +110,98 @@ describe('createMockBulkyServices', () => {
       scenario: options.scenario,
     });
 
+  describe('Size pricing and manual review', () => {
+    it('requires staff permission to price an exceptional item and keeps customer payment separate', async () => {
+      const citizen = getServices();
+      const draft = await citizen.orders.createDraft(
+        { serviceLocationId: 'loc-1', requestedDate: '2026-09-25' },
+        'staff-draft',
+      );
+      await citizen.orders.confirmItems(
+        draft.orderId,
+        {
+          confirmedItems: [{ catalogItemCode: 'OTHER', sizeCode: 'OVERSIZE', quantity: 1 }],
+        },
+        'staff-confirm',
+      );
+      const offer = { totalVnd: 450000, note: 'Thu gom tủ quá khổ, gồm vận chuyển và bốc xếp' };
+      await expect(
+        citizen.reviews.setPrice(draft.orderId, offer, 'denied-price'),
+      ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+      membershipMap['staff:hh-1'] = {
+        ...membershipMap['user-1:hh-1'],
+        capabilities: [
+          BULKY_CAPABILITIES.VIEW_BULKY_ORDERS,
+          BULKY_CAPABILITIES.DISPATCH_BULKY_ORDERS,
+        ],
+      };
+      const staff = getServices('staff');
+      const reviewed = await staff.reviews.setPrice(draft.orderId, offer, 'staff-price');
+      expect(reviewed.orderStatus).toBe(ORDER_STATUS.NEEDS_INFO);
+      expect(reviewed.paymentStatus).toBe(PAYMENT_STATUS.UNPAID);
+      const { quote } = await citizen.quotes.reserveAndCreate(
+        draft.orderId,
+        '2026-09-25',
+        'staff-quote',
+      );
+      expect(quote.totalVnd).toBe(450000);
+      expect(quote.pricingBasis).toBe('MANUAL');
+      expect(quote.estimatedRange).toBeUndefined();
+    });
+    it('persists selected size and holds unknown items for staff without allowing payment quotes', async () => {
+      const services = getServices();
+      const draft = await services.orders.createDraft(
+        { serviceLocationId: 'loc-1', requestedDate: '2026-09-25' },
+        'size-draft',
+      );
+      const confirmed = await services.orders.confirmItems(
+        draft.orderId,
+        {
+          confirmedItems: [{ catalogItemCode: 'SOFA', sizeCode: 'LARGE', quantity: 1 }],
+        },
+        'size-confirm',
+      );
+      expect(confirmed.confirmedItems[0].sizeCode).toBe('LARGE');
+      const review = await services.orders.confirmItems(
+        draft.orderId,
+        {
+          confirmedItems: [{ catalogItemCode: 'OTHER', sizeCode: 'OVERSIZE', quantity: 1 }],
+        },
+        'review-confirm',
+      );
+      expect(review.orderStatus).toBe(ORDER_STATUS.MANUAL_REVIEW);
+      expect((await services.orders.get(draft.orderId)).manualReviewReasons.length).toBeGreaterThan(
+        0,
+      );
+      await expect(
+        services.quotes.reserveAndCreate(draft.orderId, '2026-09-25', 'review-quote'),
+      ).rejects.toMatchObject({ code: 'MANUAL_REVIEW' });
+    });
+
+    it('preserves recognition flags when confirming otherwise standard furniture', async () => {
+      const services = getServices();
+      const draft = await services.orders.createDraft(
+        {
+          serviceLocationId: 'loc-1',
+          requestedDate: '2026-09-25',
+          recognitionResult: { containsConstructionWaste: true },
+        },
+        'unsafe-draft',
+      );
+      const order = await services.orders.confirmItems(
+        draft.orderId,
+        {
+          confirmedItems: [{ catalogItemCode: 'SOFA', sizeCode: 'SMALL', quantity: 1 }],
+        },
+        'unsafe-confirm',
+      );
+      expect(order.orderStatus).toBe(ORDER_STATUS.MANUAL_REVIEW);
+      await expect(
+        services.quotes.reserveAndCreate(order.orderId, '2026-09-25', 'unsafe-quote'),
+      ).rejects.toMatchObject({ code: 'MANUAL_REVIEW' });
+    });
+  });
+
   describe('Authorization and Session', () => {
     it('throws UNAUTHENTICATED when userId is missing or session was cleared', async () => {
       expect(() =>
@@ -258,6 +350,7 @@ describe('createMockBulkyServices', () => {
           confirmedItems: [
             {
               catalogItemCode: 'SOFA',
+              sizeCode: 'SMALL',
               displayName: 'Sofa da 3 chỗ',
               quantity: 1,
               dimensionsCm: { length: 200, width: 90, height: 85 },
@@ -302,6 +395,7 @@ describe('createMockBulkyServices', () => {
           confirmedItems: [
             {
               catalogItemCode: 'SOFA',
+              sizeCode: 'SMALL',
               displayName: 'Sofa da 3 chỗ',
               quantity: 1,
               dimensionsCm: { length: 200, width: 90, height: 85 },
@@ -348,6 +442,7 @@ describe('createMockBulkyServices', () => {
           confirmedItems: [
             {
               catalogItemCode: 'MATTRESS',
+              sizeCode: 'MEDIUM',
               quantity: 1,
               dimensionsCm: { length: 180, width: 160, height: 20 },
             },
@@ -391,6 +486,7 @@ describe('createMockBulkyServices', () => {
           confirmedItems: [
             {
               catalogItemCode: 'SOFA',
+              sizeCode: 'SMALL',
               quantity: 1,
               dimensionsCm: { length: 200, width: 90, height: 85 },
             },
@@ -446,6 +542,7 @@ describe('createMockBulkyServices', () => {
           confirmedItems: [
             {
               catalogItemCode: 'SOFA',
+              sizeCode: 'SMALL',
               quantity: 1,
               dimensionsCm: { length: 200, width: 90, height: 85 },
             },
@@ -491,6 +588,7 @@ describe('createMockBulkyServices', () => {
           confirmedItems: [
             {
               catalogItemCode: 'SOFA',
+              sizeCode: 'SMALL',
               quantity: 1,
               dimensionsCm: { length: 200, width: 90, height: 85 },
             },
@@ -537,6 +635,7 @@ describe('createMockBulkyServices', () => {
           confirmedItems: [
             {
               catalogItemCode: 'SOFA',
+              sizeCode: 'SMALL',
               quantity: 1,
               dimensionsCm: { length: 200, width: 90, height: 85 },
             },
@@ -575,12 +674,16 @@ describe('createMockBulkyServices', () => {
       await services.orders.confirmItems(
         draft.orderId,
         {
-          confirmedItems: [{ catalogItemCode: 'SOFA', quantity: 1 }],
+          confirmedItems: [{ catalogItemCode: 'SOFA', sizeCode: 'SMALL', quantity: 1 }],
           handlingConditions: { placement: 'CURBSIDE' },
         },
         'k-notif-2',
       );
-      const { quote } = await services.quotes.reserveAndCreate(draft.orderId, '2026-09-20', 'k-notif-3');
+      const { quote } = await services.quotes.reserveAndCreate(
+        draft.orderId,
+        '2026-09-20',
+        'k-notif-3',
+      );
       const attempt = await services.payments.start(draft.orderId, quote.quoteId, 'k-notif-4');
       await services.payments.simulateResult(attempt.paymentAttemptId, 'SUCCESS', 'k-notif-5');
 
@@ -595,13 +698,25 @@ describe('createMockBulkyServices', () => {
 
       // Check dispatcher notifications
       const dispNotifs = await services.notifications.list('DISPATCHER');
-      const reviewNotif = dispNotifs.find((n) => n.changeRequestId === res.changeRequest.changeRequestId);
+      const reviewNotif = dispNotifs.find(
+        (n) => n.changeRequestId === res.changeRequest.changeRequestId,
+      );
       expect(reviewNotif).toBeDefined();
       expect(reviewNotif.type).toBe('RESCHEDULE_REQUESTED');
       expect(reviewNotif.read).toBe(false);
 
       // Dispatcher accepts offer
-      await services.changes.acceptOffer(res.changeRequest.changeRequestId, 'k-notif-7');
+      membershipMap['staff:hh-1'] = {
+        ...membershipMap['user-1:hh-1'],
+        capabilities: [
+          BULKY_CAPABILITIES.VIEW_BULKY_ORDERS,
+          BULKY_CAPABILITIES.DISPATCH_BULKY_ORDERS,
+        ],
+      };
+      await getServices('staff').changes.acceptOffer(
+        res.changeRequest.changeRequestId,
+        'k-notif-7',
+      );
 
       // Dispatcher notification should now be read
       const updatedDispNotifs = await services.notifications.list('DISPATCHER');

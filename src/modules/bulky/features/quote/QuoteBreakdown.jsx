@@ -62,16 +62,26 @@ export function QuoteBreakdown({ quote, hold, now }) {
             <TableHead>
               <TableRow sx={{ backgroundColor: '#f8fafc' }}>
                 <TableCell sx={{ color: '#475569', fontWeight: 600 }}>Hạng mục</TableCell>
-                <TableCell align="right" sx={{ color: '#475569', fontWeight: 600 }}>Số lượng</TableCell>
-                <TableCell align="right" sx={{ color: '#475569', fontWeight: 600 }}>Thành tiền</TableCell>
+                <TableCell align="right" sx={{ color: '#475569', fontWeight: 600 }}>
+                  Số lượng
+                </TableCell>
+                <TableCell align="right" sx={{ color: '#475569', fontWeight: 600 }}>
+                  Thành tiền
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {(quote.lineItems || []).map((item, idx) => (
                 <TableRow key={idx} sx={{ '&:hover': { backgroundColor: '#f8fafc' } }}>
-                  <TableCell sx={{ color: '#0f172a', fontWeight: 500 }}>{item.label || item.code}</TableCell>
-                  <TableCell align="right" sx={{ color: '#0f172a', fontWeight: 600 }}>{item.quantity}</TableCell>
-                  <TableCell align="right" sx={{ color: '#0f172a', fontWeight: 600 }}>{formatVnd(item.amountVnd)}</TableCell>
+                  <TableCell sx={{ color: '#0f172a', fontWeight: 500 }}>
+                    {item.label || item.code}
+                  </TableCell>
+                  <TableCell align="right" sx={{ color: '#0f172a', fontWeight: 600 }}>
+                    {item.quantity}
+                  </TableCell>
+                  <TableCell align="right" sx={{ color: '#0f172a', fontWeight: 600 }}>
+                    {formatVnd(item.amountVnd)}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -79,12 +89,21 @@ export function QuoteBreakdown({ quote, hold, now }) {
 
           <Divider />
 
+          {['ITEM_SIZE', 'MANUAL'].includes(quote?.pricingBasis) && (
+            <Alert severity="info">
+              Thanh toán toàn bộ phí theo thông tin đã xác nhận. {quote.priceChangeNotice}
+              {quote.isDemo && ' Bảng giá minh họa, chưa phải biểu phí chính thức.'}
+            </Alert>
+          )}
+
           <Stack spacing={1} sx={{ pt: 1 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography variant="body2" sx={{ color: '#64748b' }}>
                 Tạm tính:
               </Typography>
-              <Typography variant="body2" sx={{ color: '#0f172a', fontWeight: 500 }}>{formatVnd(quote.subtotalVnd)}</Typography>
+              <Typography variant="body2" sx={{ color: '#0f172a', fontWeight: 500 }}>
+                {formatVnd(quote.subtotalVnd)}
+              </Typography>
             </Box>
             {Boolean(quote.discountVnd) && (
               <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -101,7 +120,9 @@ export function QuoteBreakdown({ quote, hold, now }) {
                 <Typography variant="body2" sx={{ color: '#64748b' }}>
                   Thuế (VAT):
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#0f172a' }}>{formatVnd(quote.taxVnd)}</Typography>
+                <Typography variant="body2" sx={{ color: '#0f172a' }}>
+                  {formatVnd(quote.taxVnd)}
+                </Typography>
               </Box>
             )}
             <Box

@@ -40,6 +40,21 @@ const executeThunk = async (dispatch, requestKey, fn) => {
 
 export function createBulkyThunks(services) {
   return {
+    resolveSafetyReview: (orderId, input, key) => async (dispatch) => {
+      return executeThunk(dispatch, `reviews/resolveSafetyReview/${orderId}`, async () => {
+        const order = await services.reviews.resolveSafetyReview(orderId, input, key);
+        dispatch(upsertOrder(order));
+        return order;
+      });
+    },
+
+    setManualPrice: (orderId, input) => async (dispatch) => {
+      return executeThunk(dispatch, `reviews/setPrice/${orderId}`, async () => {
+        const order = await services.reviews.setPrice(orderId, input);
+        dispatch(upsertOrder(order));
+        return order;
+      });
+    },
     fetchCatalog: () => async (dispatch) => {
       return executeThunk(dispatch, 'catalog/fetchCatalog', async () => {
         const items = await services.catalog.listAcceptedItems();
@@ -240,39 +255,33 @@ export function createBulkyThunks(services) {
         );
       },
 
-    fetchNotifications:
-      (role) =>
-      async (dispatch) => {
-        return executeThunk(dispatch, 'notifications/fetchNotifications', async () => {
-          if (!services.notifications) return [];
-          const notifs = await services.notifications.list(role);
-          dispatch(setNotifications(notifs));
-          return notifs;
-        });
-      },
+    fetchNotifications: (role) => async (dispatch) => {
+      return executeThunk(dispatch, 'notifications/fetchNotifications', async () => {
+        if (!services.notifications) return [];
+        const notifs = await services.notifications.list(role);
+        dispatch(setNotifications(notifs));
+        return notifs;
+      });
+    },
 
-    markNotificationRead:
-      (notificationId) =>
-      async (dispatch) => {
-        return executeThunk(dispatch, `notifications/markRead/${notificationId}`, async () => {
-          if (services.notifications) {
-            await services.notifications.markAsRead(notificationId);
-          }
-          dispatch(markNotificationRead(notificationId));
-          return { success: true };
-        });
-      },
+    markNotificationRead: (notificationId) => async (dispatch) => {
+      return executeThunk(dispatch, `notifications/markRead/${notificationId}`, async () => {
+        if (services.notifications) {
+          await services.notifications.markAsRead(notificationId);
+        }
+        dispatch(markNotificationRead(notificationId));
+        return { success: true };
+      });
+    },
 
-    markAllNotificationsRead:
-      (role) =>
-      async (dispatch) => {
-        return executeThunk(dispatch, 'notifications/markAllRead', async () => {
-          if (services.notifications) {
-            await services.notifications.markAllAsRead(role);
-          }
-          dispatch(markAllNotificationsRead());
-          return { success: true };
-        });
-      },
+    markAllNotificationsRead: (role) => async (dispatch) => {
+      return executeThunk(dispatch, 'notifications/markAllRead', async () => {
+        if (services.notifications) {
+          await services.notifications.markAllAsRead(role);
+        }
+        dispatch(markAllNotificationsRead());
+        return { success: true };
+      });
+    },
   };
 }

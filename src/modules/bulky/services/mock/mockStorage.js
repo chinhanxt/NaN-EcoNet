@@ -1,4 +1,4 @@
-import { createDefaultSeed, DEFAULT_REPOSITORY_VERSION } from './mockSeed.js';
+import { createDefaultSeed, DEFAULT_REPOSITORY_VERSION, DEFAULT_PRICE_BOOK } from './mockSeed.js';
 
 export const REPOSITORY_STORAGE_KEY = 'smartbin:bulky:v1:repository';
 
@@ -40,6 +40,10 @@ export function createMockStorage({
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed) {
+          if (parsed.priceBook?.version === '2026.1') {
+            parsed.priceBook = clone(DEFAULT_PRICE_BOOK);
+            backing.setItem(REPOSITORY_STORAGE_KEY, JSON.stringify(parsed));
+          }
           if (!parsed.priceBook?.items?.OTHER) {
             parsed.priceBook = {
               ...(parsed.priceBook || {}),

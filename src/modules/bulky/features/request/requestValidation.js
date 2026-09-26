@@ -47,6 +47,8 @@ export function validateHandlingConditions(conditions = {}) {
   if (conditions.hasLift !== undefined && typeof conditions.hasLift !== 'boolean') {
     errors.hasLift = 'Thông tin thang máy phải là giá trị đúng/sai';
   }
+  if (conditions.placement === 'UPPER_FLOOR' && !(Number(conditions.floorNumber) >= 1))
+    errors.floorNumber = 'Vui lòng nhập tầng lầu từ 1 trở lên';
   return errors;
 }
 

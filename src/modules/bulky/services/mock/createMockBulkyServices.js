@@ -3,11 +3,15 @@ import {
   PAYMENT_STATUS,
   HOLD_STATUS,
   REFUND_STATUS,
-  AI_DECISION,
   CHANGE_DECISION,
 } from '../../domain/constants.js';
 import { BulkyServiceError } from '../../domain/errors.js';
 import { calculateQuote, isQuoteExpired } from '../../domain/pricing.js';
+import { needsItemReview, PRICE_CHANGE_NOTICE } from '../../domain/itemSizes.js';
+import {
+  validateRequestItems,
+  validateHandlingConditions,
+} from '../../features/request/requestValidation.js';
 import { evaluateAiResult, evaluateChangePolicy } from '../../domain/policies.js';
 import { createDispatchEvent } from '../../domain/dispatchMapper.js';
 import { BULKY_CAPABILITIES, BULKY_ERROR_CODES } from '../bulkyServiceContract.js';
@@ -104,6 +108,10 @@ export function createMockBulkyServices({
 
   // 1. Catalog
   const catalog = {
+    async getPriceBook(signal) {
+      checkAbort(signal);
+      return clone(mockStorage.getRepository().priceBook);
+    },
     async listAcceptedItems(signal) {
       checkAbort(signal);
       const repo = mockStorage.getRepository();
@@ -172,6 +180,7 @@ export function createMockBulkyServices({
             requiresDisassembly: false,
           },
           imageMetadata: input.imageMetadata || [],
+          recognitionResult: input.recognitionResult || null,
           timeline: [
             {
               event: 'DRAFT_CREATED',
@@ -225,11 +234,28 @@ export function createMockBulkyServices({
     async confirmItems(orderId, input, idempotencyKey, signal) {
       checkAbort(signal);
       return withIdempotency(idempotencyKey, async () => {
-        await getAuthorizedOrder(orderId, BULKY_CAPABILITIES.MANAGE_BULKY_ORDERS, signal);
-        if (!Array.isArray(input.confirmedItems) || !input.confirmedItems.length) {
+        const { order } = await getAuthorizedOrder(
+          orderId,
+          BULKY_CAPABILITIES.MANAGE_BULKY_ORDERS,
+          signal,
+        );
+        if (
+          ![ORDER_STATUS.DRAFT, ORDER_STATUS.NEEDS_INFO, ORDER_STATUS.MANUAL_REVIEW].includes(
+            order.orderStatus,
+          )
+        )
+          throw new BulkyServiceError(
+            BULKY_ERROR_CODES.CONFLICT,
+            'Không thể đổi vật dụng sau khi đã giữ chỗ.',
+          );
+        const errors = {
+          ...validateRequestItems(input.confirmedItems),
+          ...validateHandlingConditions(input.handlingConditions || order.handlingConditions),
+        };
+        if (Object.keys(errors).length) {
           throw new BulkyServiceError(
             BULKY_ERROR_CODES.VALIDATION,
-            'confirmedItems must be a non-empty array',
+            Object.values(errors).join('. '),
           );
         }
 
@@ -239,14 +265,49 @@ export function createMockBulkyServices({
           o.confirmedItems = input.confirmedItems.map((item, idx) => ({
             itemId: item.itemId || `item-${idx + 1}`,
             catalogItemCode: item.catalogItemCode,
+            sizeCode: item.sizeCode || '',
             displayName: item.displayName || item.catalogItemCode,
             quantity: Number(item.quantity) || 1,
             dimensionsCm: item.dimensionsCm || { length: 0, width: 0, height: 0 },
             oversize: Boolean(item.oversize),
             citizenConfirmedAt: getNow(),
           }));
+          delete o.manualPrice;
+          delete o.safetyReview;
           if (input.handlingConditions) {
             o.handlingConditions = { ...o.handlingConditions, ...input.handlingConditions };
+          }
+          const requiresReview = needsItemReview(o.confirmedItems, o.recognitionResult || {});
+          o.orderStatus = requiresReview ? ORDER_STATUS.MANUAL_REVIEW : ORDER_STATUS.DRAFT;
+          const hasProhibitedWasteFlag = Boolean(
+            o.recognitionResult?.containsHazardousWaste ||
+            o.recognitionResult?.containsConstructionWaste,
+          );
+          o.manualReviewReasons = requiresReview
+            ? [
+                hasProhibitedWasteFlag
+                  ? 'AI gắn cờ rác nguy hại hoặc phế thải xây dựng. Điều phối viên cần kiểm tra ảnh trước khi báo giá.'
+                  : 'Nhân viên cần kiểm tra ảnh, loại đồ và kích thước trước khi báo giá.',
+              ]
+            : [];
+          if (requiresReview) {
+            o.timeline.push({
+              event: 'MANUAL_REVIEW_REQUESTED',
+              occurredAt: getNow(),
+              actor: userId,
+            });
+            draft.notifications = draft.notifications || {};
+            const notificationId = `review-${orderId}`;
+            draft.notifications[notificationId] = {
+              id: notificationId,
+              targetRole: 'DISPATCHER',
+              type: 'BULKY_MANUAL_REVIEW',
+              title: 'Yêu cầu báo giá đồ cồng kềnh',
+              message: o.manualReviewReasons[0],
+              orderId,
+              createdAt: getNow(),
+              read: false,
+            };
           }
           o.updatedAt = getNow();
           o.timeline.push({ event: 'ITEMS_CONFIRMED', occurredAt: getNow(), actor: userId });
@@ -289,6 +350,125 @@ export function createMockBulkyServices({
 
   // 4. Reviews
   const reviews = {
+    async resolveSafetyReview(orderId, input, idempotencyKey, signal) {
+      const { order } = await getAuthorizedOrder(
+        orderId,
+        BULKY_CAPABILITIES.DISPATCH_BULKY_ORDERS,
+        signal,
+      );
+      return withIdempotency(idempotencyKey, async () => {
+        if (order.orderStatus !== ORDER_STATUS.MANUAL_REVIEW)
+          throw new BulkyServiceError(
+            BULKY_ERROR_CODES.CONFLICT,
+            'Đơn không ở trạng thái chờ kiểm tra.',
+          );
+        if (
+          !order.recognitionResult?.containsHazardousWaste &&
+          !order.recognitionResult?.containsConstructionWaste
+        )
+          throw new BulkyServiceError(
+            BULKY_ERROR_CODES.CONFLICT,
+            'Đơn không có cờ an toàn cần xác minh.',
+          );
+        if (order.safetyReview?.status === 'CLEARED')
+          throw new BulkyServiceError(
+            BULKY_ERROR_CODES.CONFLICT,
+            'Cờ an toàn của đơn này đã được điều phối viên xác minh.',
+          );
+        if (!input.note?.trim() || input.note.trim().length < 10)
+          throw new BulkyServiceError(
+            BULKY_ERROR_CODES.VALIDATION,
+            'Ghi chú xác minh cần có ít nhất 10 ký tự.',
+          );
+
+        let updatedOrder;
+        mockStorage.updateRepository((repo) => {
+          const current = repo.orders[orderId];
+          current.safetyReview = {
+            status: 'CLEARED',
+            note: input.note.trim(),
+            reviewedBy: userId,
+            reviewedAt: getNow(),
+            reviewedFlags: {
+              hazardous: Boolean(current.recognitionResult?.containsHazardousWaste),
+              construction: Boolean(current.recognitionResult?.containsConstructionWaste),
+            },
+          };
+          current.updatedAt = getNow();
+          current.timeline.push({
+            event: 'SAFETY_FLAG_CLEARED_BY_DISPATCH',
+            occurredAt: getNow(),
+            actor: userId,
+            note: input.note.trim(),
+          });
+          updatedOrder = current;
+        });
+        return updatedOrder;
+      });
+    },
+
+    async setPrice(orderId, input, idempotencyKey, signal) {
+      const { order } = await getAuthorizedOrder(
+        orderId,
+        BULKY_CAPABILITIES.DISPATCH_BULKY_ORDERS,
+        signal,
+      );
+      return withIdempotency(idempotencyKey, async () => {
+        if (order.orderStatus !== ORDER_STATUS.MANUAL_REVIEW)
+          throw new BulkyServiceError(
+            BULKY_ERROR_CODES.CONFLICT,
+            'Đơn không ở trạng thái chờ báo giá.',
+          );
+        if (
+          (order.recognitionResult?.containsHazardousWaste ||
+            order.recognitionResult?.containsConstructionWaste) &&
+          order.safetyReview?.status !== 'CLEARED'
+        )
+          throw new BulkyServiceError(
+            BULKY_ERROR_CODES.VALIDATION,
+            'Điều phối viên cần kiểm tra ảnh và xác nhận cờ an toàn trước khi báo giá.',
+          );
+        if (!Number.isSafeInteger(input.totalVnd) || input.totalVnd <= 0 || !input.note?.trim())
+          throw new BulkyServiceError(
+            BULKY_ERROR_CODES.VALIDATION,
+            'Nhập tổng phí VND nguyên dương và nội dung báo giá.',
+          );
+        let updatedOrder;
+        mockStorage.updateRepository((repo) => {
+          const current = repo.orders[orderId];
+          current.manualPrice = {
+            totalVnd: input.totalVnd,
+            note: input.note.trim(),
+            reviewedBy: userId,
+            reviewedAt: getNow(),
+          };
+          current.orderStatus = ORDER_STATUS.NEEDS_INFO;
+          current.updatedAt = getNow();
+          current.timeline.push({
+            event: 'MANUAL_PRICE_PROPOSED',
+            occurredAt: getNow(),
+            actor: userId,
+            totalVnd: input.totalVnd,
+          });
+          repo.notifications = repo.notifications || {};
+          if (repo.notifications[`review-${orderId}`])
+            repo.notifications[`review-${orderId}`].read = true;
+          const id = `price-${orderId}`;
+          repo.notifications[id] = {
+            id,
+            orderId,
+            targetRole: 'CITIZEN',
+            type: 'MANUAL_PRICE_PROPOSED',
+            title: 'Đã có báo giá thu gom',
+            message: input.note.trim(),
+            createdAt: getNow(),
+            read: false,
+          };
+          updatedOrder = current;
+        });
+        return updatedOrder;
+      });
+    },
     async refresh(orderId, signal) {
       checkAbort(signal);
       const { order } = await getAuthorizedOrder(
@@ -345,15 +525,54 @@ export function createMockBulkyServices({
           throw new BulkyServiceError(BULKY_ERROR_CODES.VALIDATION, 'No confirmed items for quote');
         }
 
-        const quote = calculateQuote({
-          confirmedItems: order.confirmedItems,
-          handlingConditions: order.handlingConditions,
-          serviceArea: order.serviceLocation.serviceArea,
-          priceBook: repo.priceBook,
-          now: getNow(),
-          serviceWindow: { date: requestedDate },
-          quoteTtlMinutes: 30,
-        });
+        if (
+          order.orderStatus === ORDER_STATUS.MANUAL_REVIEW ||
+          (!order.manualPrice &&
+            needsItemReview(order.confirmedItems, order.recognitionResult || {}))
+        )
+          throw new BulkyServiceError(
+            'MANUAL_REVIEW',
+            'Đơn đang chờ nhân viên kiểm tra và báo giá.',
+          );
+
+        const quote = order.manualPrice
+          ? {
+              quoteId: `quote-${Date.now()}-${orderId}`,
+              priceBookVersion: 'manual-v1',
+              pricingBasis: 'MANUAL',
+              totalVnd: order.manualPrice.totalVnd,
+              subtotalVnd: order.manualPrice.totalVnd,
+              taxVnd: 0,
+              discountVnd: 0,
+              lineItems: [
+                {
+                  code: 'MANUAL',
+                  label: order.manualPrice.note,
+                  quantity: 1,
+                  unitPriceVnd: order.manualPrice.totalVnd,
+                  amountVnd: order.manualPrice.totalVnd,
+                },
+              ],
+              priceChangeNotice: PRICE_CHANGE_NOTICE,
+              reviewedBy: order.manualPrice.reviewedBy,
+              scope: ['Báo giá trọn gói theo nội dung nhân viên xác nhận'],
+              exclusions: repo.priceBook.exclusions,
+              cancellationPolicyVersion: repo.priceBook.cancellationPolicyVersion,
+              currency: 'VND',
+              status: 'ACTIVE',
+              createdAt: getNow(),
+              expiresAt: new Date(new Date(getNow()).getTime() + 30 * 60000).toISOString(),
+              serviceWindow: { date: requestedDate },
+            }
+          : calculateQuote({
+              confirmedItems: order.confirmedItems,
+              handlingConditions: order.handlingConditions,
+              serviceArea: order.serviceLocation.serviceArea,
+              priceBook: repo.priceBook,
+              now: getNow(),
+              serviceWindow: { date: requestedDate },
+              quoteTtlMinutes: 30,
+            });
 
         const holdId = `hold-${Date.now()}`;
         const hold = {
@@ -472,8 +691,7 @@ export function createMockBulkyServices({
           const order = repo.orders?.[possibleOrderId];
           if (order) {
             const quote =
-              repo.quotes?.[order.activeQuoteId] ||
-              repo.quotes?.[order.acceptedQuote?.quoteId];
+              repo.quotes?.[order.activeQuoteId] || repo.quotes?.[order.acceptedQuote?.quoteId];
             const hold = repo.holds?.[order.activeHoldId];
             payment = {
               paymentAttemptId,
@@ -1005,7 +1223,7 @@ export function createMockBulkyServices({
         if (!cr) {
           throw new BulkyServiceError(BULKY_ERROR_CODES.NOT_FOUND, 'Change request not found');
         }
-        await getAuthorizedOrder(cr.orderId, BULKY_CAPABILITIES.MANAGE_BULKY_ORDERS, signal);
+        await getAuthorizedOrder(cr.orderId, BULKY_CAPABILITIES.DISPATCH_BULKY_ORDERS, signal);
 
         let updatedOrder;
         let updatedCr;
@@ -1106,7 +1324,7 @@ export function createMockBulkyServices({
         if (!cr) {
           throw new BulkyServiceError(BULKY_ERROR_CODES.NOT_FOUND, 'Change request not found');
         }
-        await getAuthorizedOrder(cr.orderId, BULKY_CAPABILITIES.MANAGE_BULKY_ORDERS, signal);
+        await getAuthorizedOrder(cr.orderId, BULKY_CAPABILITIES.DISPATCH_BULKY_ORDERS, signal);
 
         let updatedOrder;
         let updatedCr;

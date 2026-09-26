@@ -166,16 +166,15 @@ export async function analyzeBulkyWasteWithGemini(input, options = {}) {
 
   // 3. Nếu không có ảnh Base64 nào (ví dụ chạy mock test hoặc chưa upload file thực)
   if (imageParts.length === 0) {
-    // Fallback thông minh dựa trên tên file hoặc trả về default sofa
-    const firstImg = images[0];
-    const fname = (firstImg?.filename || '').toLowerCase();
-    if (fname.includes('tu') || fname.includes('cabinet')) {
-      return PRESET_MAPPINGS['tu_go_3_canh.jpg'];
-    }
-    if (fname.includes('nem') || fname.includes('mattress') || fname.includes('dem')) {
-      return PRESET_MAPPINGS['nem_lo_xo_1m8.jpg'];
-    }
-    return PRESET_MAPPINGS['sofa_da_phong_khach.jpg'];
+    return {
+      decision: AI_DECISION.MANUAL_REVIEW,
+      requiresManualReview: true,
+      items: [],
+      boundingBoxes: [],
+      confidence: 0,
+      explanation:
+        'Chưa có dữ liệu ảnh để nhận diện. Vui lòng tải ảnh rõ hơn hoặc gửi nhân viên kiểm tra.',
+    };
   }
 
   // 4. Chuẩn bị prompt chuyên biệt cho thẩm định rác cồng kềnh Smartbin
@@ -189,7 +188,7 @@ CÁC QUY TẮC THẨM ĐỊNH BẮT BUỘC:
    - "MATTRESS": Đệm lò xo, đệm cao su, đệm mút bông ép
    - "CABINET": Tủ quần áo, tủ chén, kệ sách lớn, tủ giày dép, tủ tài liệu
    - "TABLE": Bàn ăn, bàn tròn, bàn trà, ghế ăn, ghế tựa, ghế cafe, ghế văn phòng
-   - "OTHER": TẤT CẢ các loại đồ cồng kềnh và phế thải khác, bao gồm: gạch ngói vỡ, phế thải xây dựng/xà bần sinh hoạt, tấm ván gỗ/gỗ cốp pha thừa, gương kính lớn, chậu cây, thiết bị vệ sinh (bồn cầu, lavabo, bồn tắm), phế thải hỗn hợp.
+   - "OTHER": Đồ cồng kềnh ngoài các loại trên, luôn cần nhân viên kiểm tra và báo giá riêng.
 
 2. TÊN ĐỒ VẬT CỤ THỂ (displayName - RẤT QUAN TRỌNG):
    - Tự động đặt tên tiếng Việt rõ ràng, cụ thể cho từng món đồ hoặc phế thải phát hiện được: ví dụ "Đệm lò xo cũ", "Tấm ván gỗ ép", "Phế thải gạch ngói / xà bần", "Bàn trà gỗ", "Ghế sofa đơn".
@@ -201,10 +200,10 @@ CÁC QUY TẮC THẨM ĐỊNH BẮT BUỘC:
      -> Đặt "containsHazardousWaste": true
      -> "hazardousReason": ghi rõ lý do và chất nguy hại phát hiện được
      -> "decision": "MANUAL_REVIEW"
-   - CÁC LOẠI PHẾ THẢI DÂN DỤNG NHƯ: gạch ngói vỡ, bê tông vụn, xà bần sinh hoạt, tấm ván gỗ, kính vỡ... ĐƯỢC CHẤP NHẬN THU GOM và tự động phân loại vào nhóm "OTHER" với chất liệu phù hợp (HEAVY hoặc STANDARD), TUYỆT ĐỐI KHÔNG đánh dấu là rác nguy hại ("containsHazardousWaste": false, "decision": "SUGGESTED").
+   - Phế thải xây dựng/xà bần không được thu gom chung. Đặt "containsConstructionWaste": true và "decision": "MANUAL_REVIEW". Không coi đây là vật dụng thông thường được báo giá tự động.
 
 4. ƯỚC LƯỢNG KÍCH THƯỚC 3D VÀ ĐIỀU KIỆN BỐC XẾP:
-   - Ước lượng kích thước tham khảo (Dài x Rộng x Cao tính bằng cm).
+   - Không suy đoán kích thước tuyệt đối từ ảnh. Người dân sẽ tự chọn nhóm kích thước sau khi nhận diện.
    - Đánh giá "disassemblyNeeded": true nếu đồ vật quá khổ (ví dụ tủ cao >1.8m, bàn lớn, giường gỗ) cần tháo rời để đưa qua cửa hoặc xuống cầu thang.
    - Tuyệt đối không đoán trọng lượng (kg).
 
@@ -220,13 +219,14 @@ CÁC QUY TẮC THẨM ĐỊNH BẮT BUỘC:
 7. QUYẾT ĐỊNH (decision):
    - "SUGGESTED": Nhận diện rõ ràng, tự tin cao (confidence >= 0.7) và không có rác nguy hại cháy nổ/hóa chất độc.
    - "NEEDS_CONFIRMATION": Ảnh hơi mờ, góc chụp khuất (confidence từ 0.5 đến 0.69).
-   - "MANUAL_REVIEW": Chỉ khi có chất nguy hại cháy nổ/hóa chất độc, hoặc confidence < 0.5, hoặc ảnh không chứa đồ vật rõ ràng.
+   - "MANUAL_REVIEW": Có rác nguy hại, phế thải xây dựng, loại OTHER, confidence < 0.5 hoặc ảnh không rõ đồ vật.
 
 ĐỊNH DẠNG TRẢ VỀ: Trả về DUY NHẤT một chuỗi JSON hợp lệ với cấu trúc sau:
 {
   "decision": "SUGGESTED" | "NEEDS_CONFIRMATION" | "MANUAL_REVIEW",
   "confidence": 0.95,
   "containsHazardousWaste": false,
+  "containsConstructionWaste": false,
   "hazardousReason": "",
   "explanation": "Mô tả ngắn gọn bằng tiếng Việt về đồ vật phát hiện được",
   "items": [
@@ -299,14 +299,21 @@ CÁC QUY TẮC THẨM ĐỊNH BẮT BUỘC:
             }
           } else {
             const errText = await res.text();
-            console.warn(`Gemini API ${model} (attempt ${attempt + 1}) returned status:`, res.status, errText);
+            console.warn(
+              `Gemini API ${model} (attempt ${attempt + 1}) returned status:`,
+              res.status,
+              errText,
+            );
             lastError = new Error(`Gemini API ${model} returned HTTP ${res.status}`);
             if (res.status !== 503 && res.status !== 429) {
               break;
             }
           }
         } catch (err) {
-          console.warn(`Error calling Gemini model ${model} (attempt ${attempt + 1}):`, err.message);
+          console.warn(
+            `Error calling Gemini model ${model} (attempt ${attempt + 1}):`,
+            err.message,
+          );
           lastError = err;
         }
       }
@@ -340,7 +347,12 @@ CÁC QUY TẮC THẨM ĐỊNH BẮT BUỘC:
     const items = (parsed.items || []).map((it) => {
       let type = (it.itemType || 'OTHER').toUpperCase().trim();
       if (!ACCEPTED_ITEM_TYPES.includes(type)) {
-        if (type.includes('MATTRESS') || type.includes('DEM') || type.includes('NEM') || type.includes('BED')) {
+        if (
+          type.includes('MATTRESS') ||
+          type.includes('DEM') ||
+          type.includes('NEM') ||
+          type.includes('BED')
+        ) {
           type = 'MATTRESS';
         } else if (type.includes('SOFA') || type.includes('COUCH')) {
           type = 'SOFA';
@@ -381,7 +393,9 @@ CÁC QUY TẮC THẨM ĐỊNH BẮT BUỘC:
         const fallbackDefault = [100, 100, 900, 900];
         const normalized = it.box_2d.map((val, idx) => {
           const num = Number(val);
-          return Number.isFinite(num) ? Math.max(0, Math.min(1000, Math.round(num))) : fallbackDefault[idx];
+          return Number.isFinite(num)
+            ? Math.max(0, Math.min(1000, Math.round(num)))
+            : fallbackDefault[idx];
         });
         box_2d = normalized;
       }
@@ -414,9 +428,14 @@ CÁC QUY TẮC THẨM ĐỊNH BẮT BUỘC:
     });
 
     const isHazardous = Boolean(parsed.containsHazardousWaste);
-    const decision = isHazardous
-      ? AI_DECISION.MANUAL_REVIEW
-      : parsed.decision || AI_DECISION.SUGGESTED;
+    const isConstruction = Boolean(parsed.containsConstructionWaste);
+    const decision =
+      isHazardous ||
+      isConstruction ||
+      !items.length ||
+      items.some((item) => item.itemType === 'OTHER' || item.confidence < 0.5)
+        ? AI_DECISION.MANUAL_REVIEW
+        : parsed.decision || AI_DECISION.SUGGESTED;
 
     const finalItems = items.length > 0 ? items : [];
 
@@ -443,7 +462,9 @@ CÁC QUY TẮC THẨM ĐỊNH BẮT BUỘC:
               const hazFallback = [150, 150, 850, 850];
               bBox = b.box_2d.map((val, idx) => {
                 const n = Number(val);
-                return Number.isFinite(n) ? Math.max(0, Math.min(1000, Math.round(n))) : hazFallback[idx];
+                return Number.isFinite(n)
+                  ? Math.max(0, Math.min(1000, Math.round(n)))
+                  : hazFallback[idx];
               });
             }
             boundingBoxes.push({
@@ -473,6 +494,7 @@ CÁC QUY TẮC THẨM ĐỊNH BẮT BUỘC:
       requiresManualReview: decision === AI_DECISION.MANUAL_REVIEW || isHazardous,
       confidence: parsed.confidence || 0.9,
       containsHazardousWaste: isHazardous,
+      containsConstructionWaste: isConstruction,
       hazardousReason: parsed.hazardousReason || '',
       explanation: parsed.explanation || 'AI đã hoàn tất nhận diện ảnh chụp.',
       items: finalItems,

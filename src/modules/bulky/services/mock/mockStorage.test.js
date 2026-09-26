@@ -59,6 +59,23 @@ describe('mockStorage', () => {
     expect(repo3.households['hh-saved']).toBeDefined();
   });
 
+  it('upgrades only the active demo tariff while preserving accepted quotes and orders', () => {
+    const storage = createMockStorage({ storage: memory });
+    storage.updateRepository((repo) => {
+      repo.priceBook = { version: '2026.1', items: { SOFA: 150000, OTHER: 60000 } };
+      repo.orders.saved = {
+        orderId: 'saved',
+        acceptedQuote: { priceBookVersion: '2026.1', totalVnd: 175000 },
+      };
+    });
+    const repo = storage.getRepository();
+    expect(repo.priceBook.pricingBasis).toBe('ITEM_SIZE');
+    expect(repo.orders.saved.acceptedQuote).toEqual({
+      priceBookVersion: '2026.1',
+      totalVnd: 175000,
+    });
+  });
+
   it('clears only per-user keys on clearUserSession, preserving durable repository and other users', () => {
     const storage = createMockStorage({ storage: memory });
     const u1CacheKey = getUserCacheKey('user-1');
