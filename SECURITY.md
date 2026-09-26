@@ -22,8 +22,8 @@ Nếu bạn phát hiện một vấn đề hoặc nguy cơ bảo mật trong b�
 ### 2.1. Kênh Tiếp Nhận Bảo Mật
 * **KHÔNG** tạo Public Issue hoặc thảo luận công khai trên GitHub về lỗ hổng bảo mật chưa được khắc phục.
 * Vui lòng gửi thông tin chi tiết qua email tới Hội đồng Kỹ thuật dự án:
-  * **Email chính**: `buinguyencongnghiep@gmail.com`
-  * **Email đồng thuận**: `lequocanh125@gmail.com`
+  * **Email chính (Lead Architect)**: `chinhanxt@gmail.com`
+  * **Email đồng thuận**: `buinguyencongnghiep@gmail.com`, `lequocanh125@gmail.com`
 * Tiêu đề email quy ước: `[SECURITY-VULNERABILITY] <Tên thành phần bị ảnh hưởng> - <Mô tả ngắn>`
 
 ### 2.2. Nội Dung Cần Cung Cấp

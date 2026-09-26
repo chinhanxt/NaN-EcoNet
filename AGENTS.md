@@ -128,4 +128,4 @@ AI Agent khi làm việc trong kho mã nguồn này **TUYỆT ĐỐI TUÂN THỦ
 
 ---
 
-> Khi nghi ngờ hoặc gặp mâu thuẫn về yêu cầu nghiệp vụ, hãy ưu tiên tham khảo các hồ sơ quyết định kiến trúc tại [docs/adr/](file:///home/chinhan/NaN-EcoNet/docs/adr/) trước khi đưa ra quyết định thay đổi mã nguồn.
+> Khi nghi ngờ hoặc gặp mâu thuẫn về yêu cầu nghiệp vụ, hãy ưu tiên tham khảo các hồ sơ quyết định kiến trúc tại [docs/adr/](docs/adr/) trước khi đưa ra quyết định thay đổi mã nguồn.

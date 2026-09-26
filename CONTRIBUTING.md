@@ -163,7 +163,7 @@ pnpm test
 2. **Kiểm tra Secret & Bảo Mật**: Tuyệt đối không commit file `.env`, API Keys (Google Gemini API, Mapbox, Supabase, JWT secret, v.v.). Chạy rà soát bảo mật trước khi commit.
 3. **Mở Pull Request**:
    * Đặt tiêu đề rõ ràng theo chuẩn Conventional Commits (ví dụ: `feat(engine): add dynamic fleet capacity constraint to 3D-PACO`).
-   * Điền đầy đủ thông tin vào mẫu [`.github/pull_request_template.md`](file:///home/chinhan/NaN-EcoNet/.github/pull_request_template.md).
+   * Điền đầy đủ thông tin vào mẫu [`.github/pull_request_template.md`](.github/pull_request_template.md).
    * Đính kèm hình ảnh hoặc video ngắn minh họa nếu có thay đổi giao diện (UI/UX).
 4. **Quy tắc Kiểm Duyệt (Code Review Policy)**:
    * Mỗi PR cần ít nhất **1 Core Maintainer phê duyệt (Approved)** trước khi gộp code.
@@ -175,7 +175,7 @@ pnpm test
 ## 🤝 6. Cam Kết Bản Quyền & Giấy Phép (License & CLA)
 
 Khi gửi mã nguồn đóng góp vào NaN-EcoNet:
-* Bạn đồng ý rằng toàn bộ mã nguồn của bạn được cấp phép dưới điều khoản của [Apache License, Version 2.0](file:///home/chinhan/NaN-EcoNet/LICENSE).
+* Bạn đồng ý rằng toàn bộ mã nguồn của bạn được cấp phép dưới điều khoản của [Apache License, Version 2.0](LICENSE).
 * Bạn xác nhận rằng đóng góp là do chính bạn tạo ra hoặc bạn có toàn quyền pháp lý để cấp phép theo tiêu chuẩn nguồn mở.
 
 Cảm ơn bạn đã đồng hành kiến tạo hệ sinh thái số vì một Việt Nam xanh và thông minh hơn!

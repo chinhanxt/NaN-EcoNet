@@ -60,7 +60,7 @@ representative at an online or offline event.
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the project leadership responsible for enforcement at:
-**buinguyencongnghiep@gmail.com** or **lequocanh125@gmail.com**.
+**chinhanxt@gmail.com**, **buinguyencongnghiep@gmail.com**, or **lequocanh125@gmail.com**.
 All complaints will be reviewed and investigated promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the

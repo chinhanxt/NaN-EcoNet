@@ -168,7 +168,7 @@ Hệ sinh thái sử dụng kiến trúc giao tiếp lai (*Hybrid IPC / Network 
 ---
 
 ### 🌿 Phân hệ 1: Chí Nhân — EcoPass Enterprise & Omni-Channel Agentic Hub
-**Thư mục mã nguồn:** [`apps/ecopass-enterprise`](file:///home/chinhan/NaN-EcoNet/apps/ecopass-enterprise)  
+**Thư mục mã nguồn:** [`apps/ecopass-enterprise`](apps/ecopass-enterprise)  
 **Tác giả phụ trách:** **Nguyễn Chí Nhân** (`chinhanxt`)
 
 Phân hệ Enterprise đóng vai trò hạt nhân vận hành của toàn bộ nền kinh tế tuần hoàn, kết nối trực tiếp dòng tiền từ doanh nghiệp FMCG tới quầy thu ngân của các cửa hàng bán lẻ và chiếc ví số của sinh viên/người tiêu dùng.
@@ -234,7 +234,7 @@ Nền tảng tích hợp AI Copywriting Engine tự động sinh nội dung truy
 * **Facebook Feed — Kể chuyện Dài & Dữ liệu Kiểm toán (Long-form Storytelling & ESG Infographics):**
   * Tự động sinh bài viết truyền cảm hứng, nêu bật câu chuyện người thật việc thật: sinh viên gom vỏ lon tiết kiệm tiền uống cafe, cư dân phân loại sofa cũ giải phóng không gian sống.
   * Đính kèm số liệu kiểm toán cụ thể trích xuất trực tiếp từ Enterprise BI Copilot (ví dụ: *"Tuần này, cộng đồng HUTECH đã giải cứu 1.450 ly nhựa, giảm 38.2 kg khí thải $\text{CO}_2$!"*).
-  * Chèn nút kêu gọi hành động (Call-to-Action) kèm đường dẫn định danh UTM dẫn thẳng về WebApp quét tem [`apps/ecopass/apps/client`](file:///home/chinhan/NaN-EcoNet/apps/ecopass-enterprise/ecopass/apps/client).
+  * Chèn nút kêu gọi hành động (Call-to-Action) kèm đường dẫn định danh UTM dẫn thẳng về WebApp quét tem [`apps/ecopass-enterprise/ecopass/client-scanner`](apps/ecopass-enterprise/ecopass/client-scanner).
 * **TikTok — Viral Video Hook & Kịch bản Nhịp điệu Cao (Fast-Paced Video Scripting):**
   * Tự động cấu trúc kịch bản theo công thức giữ chân người xem 3 giây đầu (*3-Second Retention Hook*): mở đầu bằng hình ảnh rác cồng kềnh ngổn ngang đối lập với căn phòng gọn gàng sau 15 phút đặt xe.
   * Đề xuất âm thanh thịnh hành (*Trending Audios*), nhịp chuyển cảnh nhanh dưới 1.5 giây, văn phong trẻ trung, dí dỏm phù hợp với Gen Z.
@@ -245,7 +245,7 @@ Nền tảng tích hợp AI Copywriting Engine tự động sinh nội dung truy
   * Tự động soạn bình luận ghim đầu trang (*Pinned Comment*) hướng dẫn chi tiết 3 bước: 1. Quét mã vỏ chai -> 2. Tích điểm EcoPass -> 3. Đổi voucher Highlands Coffee tại căn tin trường.
 
 #### Hệ thống Đặt lịch & Đăng bài Đa nền tảng Tự động (Omni-Channel Autonomous Publishing)
-Hệ thống giải quyết triệt để rào cản nhân sự vận hành bằng cách tự động hóa $100\%$ quy trình xuất bản nội dung lên cả 3 nền tảng lớn nhất hiện nay thông qua bộ công cụ mã nguồn mở tùy biến cao tại [`apps/ecopass-enterprise/nan-team/scripts`](file:///home/chinhan/NaN-EcoNet/apps/ecopass-enterprise/nan-team/scripts):
+Hệ thống giải quyết triệt để rào cản nhân sự vận hành bằng cách tự động hóa $100\%$ quy trình xuất bản nội dung lên cả 3 nền tảng lớn nhất hiện nay thông qua bộ công cụ mã nguồn mở tùy biến cao tại [`apps/ecopass-enterprise/nan-team/scripts`](apps/ecopass-enterprise/nan-team/scripts):
 * **Xuất bản Tự động lên Facebook Page (`facebook-page-upload.js`):**
   * Sử dụng Playwright kết hợp Facebook Graph API để đăng tải bài viết, hình ảnh độ phân giải cao và video clip trực tiếp lên Fanpage đối tác.
   * Giải quyết dứt điểm lỗi xung đột tiến trình Chrome trên môi trường headless Linux thông qua cơ chế khóa độc quyền `acquireProfileLock()` và dọn dẹp các tệp khóa treo `cleanStaleSingletonLock()` (`SingletonLock`, `SingletonSocket`).
@@ -317,7 +317,7 @@ graph TD
 ---
 
 ### 🚛 Phân hệ 2: Công Nghiệp — Smart Collection & 3D-PACO Routing Engine
-**Thư mục mã nguồn:** [`apps/smart-collection-engine`](file:///home/chinhan/NaN-EcoNet/apps/smart-collection-engine)  
+**Thư mục mã nguồn:** [`apps/smart-collection-engine`](apps/smart-collection-engine)  
 **Tác giả phụ trách:** **Bùi Nguyễn Công Nghiệp** (`congnghip`)
 
 Trái tim của bài toán logistics thông minh là phân hệ giải quyết bài toán định tuyến xe thu gom rác nhiều tải trọng có khung thời gian phục vụ (**CVRPTW**), kết hợp giữa thuật toán đàn kiến đa quyết định song song 3 chiều và thư viện quy hoạch ràng buộc chuẩn công nghiệp Google OR-Tools.
@@ -430,7 +430,7 @@ $$P_{ij}^k(o) = \frac{\left[\tau(i, j, o)\right]^\alpha \cdot \left[\eta(i, j, o
 ---
 
 ### 📱 Phân hệ 3: Quốc Anh — Citizen Bulky Waste & AI Vision Platform
-**Thư mục mã nguồn:** [`apps/citizen-bulky-app`](file:///home/chinhan/NaN-EcoNet/apps/citizen-bulky-app)  
+**Thư mục mã nguồn:** [`apps/citizen-bulky-app`](apps/citizen-bulky-app)  
 **Tác giả phụ trách:** **Lê Quốc Anh** (`EnglandLee`)
 
 Phân hệ đóng vai trò giao diện tiền tuyến tiếp xúc trực tiếp với hàng triệu hộ gia đình đô thị. Bằng việc kết hợp camera trí tuệ nhân tạo và quy trình đặt dịch vụ đơn giản hóa, người dân có thể giải quyết các món đồ cũ cồng kềnh chỉ trong vài lượt chạm.
@@ -692,7 +692,7 @@ xychart-beta
 Dự án NaN-EcoNet được phát hành theo giấy phép nguồn mở **[Apache License 2.0](LICENSE)**. Bạn hoàn toàn có quyền sử dụng, sửa đổi, phân phối và tích hợp vào các giải pháp thương mại với điều kiện giữ nguyên thông báo bản quyền gốc.
 
 ### Trích dẫn Nghiên cứu Khoa học (BibTeX Citation)
-Nếu bạn sử dụng mã nguồn, kiến trúc hệ thống hoặc các thuật toán đề xuất trong dự án này cho các công trình nghiên cứu khoa học, khóa luận tốt nghiệp hoặc bài báo hội thảo, xin vui lòng trích dẫn theo định dạng BibTeX chuẩn hóa từ file [`CITATION.cff`](file:///home/chinhan/NaN-EcoNet/CITATION.cff):
+Nếu bạn sử dụng mã nguồn, kiến trúc hệ thống hoặc các thuật toán đề xuất trong dự án này cho các công trình nghiên cứu khoa học, khóa luận tốt nghiệp hoặc bài báo hội thảo, xin vui lòng trích dẫn theo định dạng BibTeX chuẩn hóa từ file [`CITATION.cff`](CITATION.cff):
 
 ```bibtex
 @software{Nguyen_NaN-EcoNet_2026,
@@ -712,9 +712,9 @@ Nếu bạn sử dụng mã nguồn, kiến trúc hệ thống hoặc các thu�
 
 | Thành viên | Vai trò & Trách nhiệm Chính | Phân hệ Phụ trách | Kênh Liên hệ |
 | :--- | :--- | :--- | :--- |
-| **Nguyễn Chí Nhân** | **System Architect & Enterprise Lead**<br/>Kiến trúc hệ sinh thái, Nền tảng EcoPass 4-Win, MCP BI Copilot, AI Image Gateway, Omni-Channel Automation. | [`apps/ecopass-enterprise`](file:///home/chinhan/NaN-EcoNet/apps/ecopass-enterprise) | [![GitHub](https://img.shields.io/badge/GitHub-chinhanxt-181717.svg?style=flat&logo=github)](https://github.com/chinhanxt) |
-| **Bùi Nguyễn Công Nghiệp** | **Logistics & Metaheuristics Specialist**<br/>Thuật toán 3D-PACO song song C++, Bộ giải Google OR-Tools CVRPTW, Bản đồ số OSRM, Dynamic Incident Rerouting. | [`apps/smart-collection-engine`](file:///home/chinhan/NaN-EcoNet/apps/smart-collection-engine) | [![Email](https://img.shields.io/badge/Email-buinguyencongnghiep%40gmail.com-D14836.svg?style=flat&logo=gmail)](mailto:buinguyencongnghiep@gmail.com) |
-| **Lê Quốc Anh** | **Frontend & Computer Vision Engineer**<br/>Ứng dụng di động Flutter đa nền tảng, AI Vision Scanner (Gemini 2.5 Flash), Live Dynamic Pricing Engine. | [`apps/citizen-bulky-app`](file:///home/chinhan/NaN-EcoNet/apps/citizen-bulky-app) | [![Email](https://img.shields.io/badge/Email-lequocanh125%40gmail.com-D14836.svg?style=flat&logo=gmail)](mailto:lequocanh125@gmail.com) |
+| **Nguyễn Chí Nhân** | **System Architect & Enterprise Lead**<br/>Kiến trúc hệ sinh thái, Nền tảng EcoPass 4-Win, MCP BI Copilot, AI Image Gateway, Omni-Channel Automation. | [`apps/ecopass-enterprise`](apps/ecopass-enterprise) | [![GitHub](https://img.shields.io/badge/GitHub-chinhanxt-181717.svg?style=flat&logo=github)](https://github.com/chinhanxt) |
+| **Bùi Nguyễn Công Nghiệp** | **Logistics & Metaheuristics Specialist**<br/>Thuật toán 3D-PACO song song C++, Bộ giải Google OR-Tools CVRPTW, Bản đồ số OSRM, Dynamic Incident Rerouting. | [`apps/smart-collection-engine`](apps/smart-collection-engine) | [![Email](https://img.shields.io/badge/Email-buinguyencongnghiep%40gmail.com-D14836.svg?style=flat&logo=gmail)](mailto:buinguyencongnghiep@gmail.com) |
+| **Lê Quốc Anh** | **Frontend & Computer Vision Engineer**<br/>Ứng dụng di động Flutter đa nền tảng, AI Vision Scanner (Gemini 2.5 Flash), Live Dynamic Pricing Engine. | [`apps/citizen-bulky-app`](apps/citizen-bulky-app) | [![Email](https://img.shields.io/badge/Email-lequocanh125%40gmail.com-D14836.svg?style=flat&logo=gmail)](mailto:lequocanh125@gmail.com) |
 
 <br/>
 
