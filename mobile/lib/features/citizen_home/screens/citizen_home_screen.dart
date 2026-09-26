@@ -627,7 +627,7 @@ class CitizenHomeScreen extends StatelessWidget {
                 key: const Key('quick_action_rewards'),
                 emoji: '🎁',
                 title: 'ĐỔI ĐIỂM XANH',
-                subtitle: '$points điểm • Hạng Bạc',
+                subtitle: '$points điểm • Voucher cafe, trà sữa',
                 accentColor: BulkyColors.warning,
                 bgColor: BulkyColors.warningBg,
                 onTap: () => _showEcoRewardsSheet(context, points),
@@ -1214,7 +1214,7 @@ class CitizenHomeScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: ChoiceChip(
-                      label: const Center(child: Text('Kho quà sinh thái')),
+                      label: const Center(child: Text('Voucher đồ uống hot (6)')),
                       selected: activeTab == 0,
                       selectedColor: BulkyColors.warningBg,
                       backgroundColor: BulkyColors.background,
@@ -1272,107 +1272,184 @@ class CitizenHomeScreen extends StatelessWidget {
   Widget _buildRewardsCatalogTab(BuildContext ctx) {
     final rewards = [
       {
-        'emoji': '🛍️',
-        'title': '1 Cuộn túi rác sinh học tự phân hủy',
-        'cost': 50,
-        'costText': '50 Điểm Xanh',
-        'enabled': true,
-      },
-      {
-        'emoji': '🎟️',
-        'title': 'Voucher giảm 30k cước xe thu gom rác cồng kềnh',
-        'cost': 100,
-        'costText': '100 Điểm Xanh',
-        'enabled': true,
-      },
-      {
-        'emoji': '🪴',
-        'title': 'Cây sen đá để bàn lọc không khí',
-        'cost': 80,
-        'costText': '80 Điểm Xanh',
-        'enabled': true,
-      },
-      {
-        'emoji': '🧤',
-        'title': 'Găng tay phân loại rác bảo hộ cao cấp',
+        'emoji': '☕',
+        'brand': 'Highlands Coffee',
+        'title': 'Voucher giảm 20.000 đ (Freeze & Trà Sen Vàng)',
         'cost': 40,
         'costText': '40 Điểm Xanh',
+        'code': 'HL-XANH20K',
         'enabled': true,
       },
       {
-        'emoji': '🗑️',
-        'title': 'Thùng rác mini phân loại 2 ngăn gia đình',
-        'cost': 200,
-        'costText': '200 Điểm Xanh (Cần thêm 80 điểm)',
+        'emoji': '🧋',
+        'brand': 'Phúc Long Tea & Coffee',
+        'title': 'Voucher giảm 30.000 đ (Trà Sữa & Trà Đào Ô Long)',
+        'cost': 60,
+        'costText': '60 Điểm Xanh',
+        'code': 'PL-RECYCLE30K',
+        'enabled': true,
+      },
+      {
+        'emoji': '🥤',
+        'brand': 'Katinat Saigon Kafe',
+        'title': 'Voucher giảm 25.000 đ (Trà Sữa Chôm Chôm & Bơ Già)',
+        'cost': 50,
+        'costText': '50 Điểm Xanh',
+        'code': 'KATINAT-ECO25K',
+        'enabled': true,
+      },
+      {
+        'emoji': '🧃',
+        'brand': 'The Coffee House',
+        'title': 'Voucher giảm 20% menu đồ uống CloudFee & Trà trái cây',
+        'cost': 70,
+        'costText': '70 Điểm Xanh',
+        'code': 'TCH-SMARTBIN20',
+        'enabled': true,
+      },
+      {
+        'emoji': '🍵',
+        'brand': 'Gong Cha',
+        'title': 'Voucher E-Gift 35.000 đ (Alisan Trà Sữa trân châu)',
+        'cost': 80,
+        'costText': '80 Điểm Xanh',
+        'code': 'GC-GREEN35K',
+        'enabled': true,
+      },
+      {
+        'emoji': '👑',
+        'brand': 'Phúc Long Premium',
+        'title': 'E-Voucher 100.000 đ combo trà bánh cao cấp',
+        'cost': 180,
+        'costText': '180 Điểm Xanh (Cần thêm 60 điểm)',
+        'code': 'PL-VIP100K',
         'enabled': false,
       },
     ];
 
     return Column(
-      children: rewards.map((r) {
-        final isEnabled = r['enabled'] as bool;
-        return Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      children: [
+        Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: BulkyColors.background,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: BulkyColors.border),
+            color: BulkyColors.successBg,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: BulkyColors.success.withValues(alpha: 0.3)),
           ),
-          child: Row(
+          child: const Row(
             children: [
-              Text(r['emoji'] as String, style: const TextStyle(fontSize: 24)),
-              const SizedBox(width: 12),
+              Text('🌱', style: TextStyle(fontSize: 18)),
+              SizedBox(width: 8),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      r['title'] as String,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      r['costText'] as String,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isEnabled ? BulkyColors.primary : BulkyColors.textSecondary,
-                        fontWeight: isEnabled ? FontWeight.w600 : FontWeight.normal,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton(
-                onPressed: isEnabled
-                    ? () {
-                        Navigator.pop(ctx);
-                        ScaffoldMessenger.of(ctx).showSnackBar(
-                          SnackBar(
-                            content: Text('✓ Đã đổi ${r['title']} thành công!'),
-                            backgroundColor: BulkyColors.primary,
-                          ),
-                        );
-                      }
-                    : null,
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(76, 36),
-                  backgroundColor: isEnabled ? BulkyColors.primary : BulkyColors.border,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  elevation: 0,
-                ),
                 child: Text(
-                  isEnabled ? 'Đổi quà' : 'Chưa đủ',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  'Phân loại rác tại nguồn - Tích điểm nhận Voucher Highlands, Phúc Long, Katinat miễn phí!',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: BulkyColors.success,
+                  ),
                 ),
               ),
             ],
           ),
-        );
-      }).toList(),
+        ),
+        ...rewards.map((r) {
+          final isEnabled = r['enabled'] as bool;
+          return Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: BulkyColors.background,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: BulkyColors.border),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: isEnabled
+                        ? BulkyColors.primaryLight.withValues(alpha: 0.15)
+                        : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(r['emoji'] as String, style: const TextStyle(fontSize: 24)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: BulkyColors.surface,
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: BulkyColors.border),
+                        ),
+                        child: Text(
+                          r['brand'] as String,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: BulkyColors.primary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        r['title'] as String,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        r['costText'] as String,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isEnabled ? BulkyColors.primary : BulkyColors.textSecondary,
+                          fontWeight: isEnabled ? FontWeight.w600 : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: isEnabled
+                      ? () {
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            SnackBar(
+                              content: Text('✓ Đã đổi Voucher ${r['brand']} thành công! Mã ưu đãi: ${r['code']}'),
+                              backgroundColor: BulkyColors.primary,
+                              duration: const Duration(seconds: 4),
+                            ),
+                          );
+                        }
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(76, 36),
+                    backgroundColor: isEnabled ? BulkyColors.primary : BulkyColors.border,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    isEnabled ? 'Đổi quà' : 'Chưa đủ',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
     );
   }
 
@@ -1380,8 +1457,9 @@ class CitizenHomeScreen extends StatelessWidget {
     final history = [
       {'desc': 'Phân loại rác tái chế tuần qua', 'pts': '+20 điểm', 'date': '24/09/2026', 'isAdd': true},
       {'desc': 'Đặt xe thu gom sofa cồng kềnh đúng chuẩn', 'pts': '+30 điểm', 'date': '20/09/2026', 'isAdd': true},
+      {'desc': 'Đã đổi Voucher Highlands Coffee giảm 20k', 'pts': '-40 điểm', 'date': '18/09/2026', 'isAdd': false},
       {'desc': 'Cư dân sống xanh tiêu biểu Tháng 08', 'pts': '+50 điểm', 'date': '01/09/2026', 'isAdd': true},
-      {'desc': 'Đã đổi 1 Cuộn túi rác sinh học', 'pts': '-50 điểm', 'date': '15/09/2026', 'isAdd': false},
+      {'desc': 'Đã đổi Voucher Phúc Long 30k', 'pts': '-60 điểm', 'date': '28/08/2026', 'isAdd': false},
     ];
 
     return Column(

@@ -162,8 +162,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('🎁 Đổi Điểm Xanh'), findsOneWidget);
-      expect(find.text('1 Cuộn túi rác sinh học tự phân hủy'), findsOneWidget);
-      expect(find.text('Voucher giảm 30k cước xe thu gom rác cồng kềnh'), findsOneWidget);
+      expect(find.text('Highlands Coffee'), findsOneWidget);
+      expect(find.text('Phúc Long Tea & Coffee'), findsOneWidget);
 
       // Tap exchange
       await tester.tap(find.text('Đổi quà').first);
