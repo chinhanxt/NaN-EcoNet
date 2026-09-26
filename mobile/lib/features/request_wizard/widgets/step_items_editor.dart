@@ -77,41 +77,121 @@ class StepItemsEditor extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 1. Camera / Photo Preview
-          BulkyCameraPreview(
-            previewHeight: 220,
-            onBoxSelected: (index) {
-              scanProvider.selectBox(index);
-            },
+          // 1. Modern Viewfinder Camera / Photo Card (bo 20px)
+          Container(
+            decoration: BoxDecoration(
+              color: BulkyColors.surface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: BulkyColors.border),
+              boxShadow: BulkyColors.softShadow,
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              children: [
+                BulkyCameraPreview(
+                  previewHeight: 230,
+                  onBoxSelected: (index) {
+                    scanProvider.selectBox(index);
+                  },
+                ),
+                // Corner viewfinder decorative accents
+                Positioned(
+                  top: 10,
+                  left: 10,
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        top: BorderSide(color: BulkyColors.primary, width: 2.5),
+                        left: BorderSide(color: BulkyColors.primary, width: 2.5),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        top: BorderSide(color: BulkyColors.primary, width: 2.5),
+                        right: BorderSide(color: BulkyColors.primary, width: 2.5),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 10,
+                  left: 10,
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(color: BulkyColors.primary, width: 2.5),
+                        left: BorderSide(color: BulkyColors.primary, width: 2.5),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 10,
+                  right: 10,
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(color: BulkyColors.primary, width: 2.5),
+                        right: BorderSide(color: BulkyColors.primary, width: 2.5),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
           // 2. AI Scan Trigger & Banner
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: scanProvider.hasResult
                   ? BulkyColors.successBg
-                  : BulkyColors.primaryLight.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+                  : BulkyColors.primaryContainer,
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: scanProvider.hasResult
                     ? BulkyColors.success.withValues(alpha: 0.4)
-                    : BulkyColors.primaryLight.withValues(alpha: 0.3),
+                    : BulkyColors.primary.withValues(alpha: 0.3),
               ),
+              boxShadow: BulkyColors.softShadow,
             ),
             child: Row(
               children: [
-                Icon(
-                  scanProvider.hasResult
-                      ? Icons.check_circle_rounded
-                      : Icons.auto_awesome_rounded,
-                  color: scanProvider.hasResult
-                      ? BulkyColors.success
-                      : BulkyColors.primary,
-                  size: 24,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: scanProvider.hasResult
+                        ? BulkyColors.success.withValues(alpha: 0.15)
+                        : BulkyColors.primary.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    scanProvider.hasResult
+                        ? Icons.check_circle_rounded
+                        : Icons.auto_awesome_rounded,
+                    color: scanProvider.hasResult
+                        ? BulkyColors.success
+                        : BulkyColors.primary,
+                    size: 22,
+                  ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -163,11 +243,11 @@ class StepItemsEditor extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: BulkyColors.primary,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                 ),
@@ -216,28 +296,36 @@ class StepItemsEditor extends StatelessWidget {
           ),
           const SizedBox(height: 8),
 
-          // 4. Empty state or Items list
+          // 5. Empty state or Items list
           if (wizard.items.isEmpty)
             Container(
               padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
               decoration: BoxDecoration(
                 color: BulkyColors.surface,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: BulkyColors.border),
+                boxShadow: BulkyColors.softShadow,
               ),
               child: Column(
                 children: [
-                  Icon(
-                    Icons.inventory_2_outlined,
-                    size: 40,
-                    color: BulkyColors.textSecondary.withValues(alpha: 0.6),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: BulkyColors.primaryContainer,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.inventory_2_outlined,
+                      size: 36,
+                      color: BulkyColors.primary,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   const Text(
                     'Chưa có đồ vật nào',
                     style: TextStyle(
                       fontSize: 15,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                       color: BulkyColors.textPrimary,
                     ),
                   ),
@@ -356,12 +444,12 @@ class _ItemCardState extends State<_ItemCard> {
       onTap: widget.onSelect,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: widget.isHighlighted
               ? BulkyColors.primaryLight.withValues(alpha: 0.05)
               : BulkyColors.surface,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: widget.isHighlighted ? BulkyColors.primary : BulkyColors.border,
             width: widget.isHighlighted ? 2 : 1,
@@ -369,10 +457,10 @@ class _ItemCardState extends State<_ItemCard> {
           boxShadow: [
             BoxShadow(
               color: widget.isHighlighted
-                  ? BulkyColors.primary.withValues(alpha: 0.1)
+                  ? BulkyColors.primary.withValues(alpha: 0.12)
                   : Colors.black.withValues(alpha: 0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -383,10 +471,10 @@ class _ItemCardState extends State<_ItemCard> {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
                     color: BulkyColors.background,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: BulkyColors.border),
                   ),
                   child: Row(
@@ -429,7 +517,7 @@ class _ItemCardState extends State<_ItemCard> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
 
             // Item Name & Quantity Stepper
             Row(
@@ -438,11 +526,12 @@ class _ItemCardState extends State<_ItemCard> {
                 Expanded(
                   child: TextFormField(
                     controller: _nameController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       isDense: true,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(8)),
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: BulkyColors.border),
                       ),
                       labelText: 'Tên món đồ',
                     ),
@@ -454,11 +543,12 @@ class _ItemCardState extends State<_ItemCard> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Stepper: [-] qty [+]
+                // Elegant circular stepper: [-] qty [+]
                 Container(
+                  padding: const EdgeInsets.all(3),
                   decoration: BoxDecoration(
                     color: BulkyColors.background,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: BulkyColors.border),
                   ),
                   child: Row(
@@ -466,14 +556,21 @@ class _ItemCardState extends State<_ItemCard> {
                     children: [
                       InkWell(
                         onTap: () => widget.onQuantityChanged(item.quantity - 1),
-                        borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                          child: Icon(Icons.remove, size: 16, color: BulkyColors.textPrimary),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          width: 28,
+                          height: 28,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: BulkyColors.surface,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: BulkyColors.border),
+                          ),
+                          child: const Icon(Icons.remove, size: 15, color: BulkyColors.textPrimary),
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
                         child: Text(
                           '${item.quantity}',
                           style: const TextStyle(
@@ -485,10 +582,16 @@ class _ItemCardState extends State<_ItemCard> {
                       ),
                       InkWell(
                         onTap: () => widget.onQuantityChanged(item.quantity + 1),
-                        borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                          child: Icon(Icons.add, size: 16, color: BulkyColors.textPrimary),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          width: 28,
+                          height: 28,
+                          alignment: Alignment.center,
+                          decoration: const BoxDecoration(
+                            color: BulkyColors.primary,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.add, size: 15, color: Colors.white),
                         ),
                       ),
                     ],
@@ -496,7 +599,7 @@ class _ItemCardState extends State<_ItemCard> {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
 
             // 1-Click Material Survey Chips
             const Text(
@@ -512,28 +615,29 @@ class _ItemCardState extends State<_ItemCard> {
               selectedMaterial: item.material,
               onMaterialChanged: widget.onMaterialChanged,
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
 
-            // Estimated Weight & Line Subtotal
+            // Estimated Weight & Line Subtotal Footer Badge
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: BulkyColors.background,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: BulkyColors.border),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.scale_outlined, size: 15, color: BulkyColors.textSecondary),
-                      const SizedBox(width: 4),
+                      const Icon(Icons.scale_outlined, size: 16, color: BulkyColors.primary),
+                      const SizedBox(width: 6),
                       Text(
                         '~${item.totalEstimatedWeightKg.toStringAsFixed(1)} kg',
                         style: const TextStyle(
                           fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: BulkyColors.textSecondary,
+                          fontWeight: FontWeight.w700,
+                          color: BulkyColors.textPrimary,
                         ),
                       ),
                     ],
@@ -541,8 +645,8 @@ class _ItemCardState extends State<_ItemCard> {
                   Text(
                     BulkyColors.formatCurrency(item.totalPriceVnd),
                     style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
                       color: BulkyColors.primary,
                     ),
                   ),

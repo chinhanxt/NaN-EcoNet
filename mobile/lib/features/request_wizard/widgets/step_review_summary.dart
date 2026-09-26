@@ -50,15 +50,23 @@ class StepReviewSummary extends StatelessWidget {
         children: [
           // 1. Vehicle Readiness Banner
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: BulkyColors.successBg,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(color: BulkyColors.success.withValues(alpha: 0.3)),
+              boxShadow: BulkyColors.softShadow,
             ),
             child: Row(
               children: [
-                const Icon(Icons.check_circle_rounded, color: BulkyColors.success, size: 22),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: BulkyColors.success.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check_circle_rounded, color: BulkyColors.success, size: 20),
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -75,7 +83,7 @@ class StepReviewSummary extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // 2. Items Breakdown Card
+          // 2. Items Breakdown Card (Itemized Receipt)
           _buildCard(
             title: 'Danh mục đồ vật (${wizard.totalItemsCount} món - ~${wizard.totalEstimatedWeightKg.toStringAsFixed(1)} kg)',
             icon: Icons.inventory_2_outlined,
@@ -88,12 +96,19 @@ class StepReviewSummary extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '${line.quantity}x',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                            color: BulkyColors.primary,
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: BulkyColors.primaryContainer,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '${line.quantity}x',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                              color: BulkyColors.primaryDark,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -109,7 +124,7 @@ class StepReviewSummary extends StatelessWidget {
                                   color: BulkyColors.textPrimary,
                                 ),
                               ),
-                              const SizedBox(height: 2),
+                              const SizedBox(height: 3),
                               Row(
                                 children: [
                                   Container(
@@ -254,12 +269,12 @@ class StepReviewSummary extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: BulkyColors.warningBg.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: BulkyColors.warning.withValues(alpha: 0.3)),
                   ),
                   child: Row(
@@ -306,15 +321,9 @@ class StepReviewSummary extends StatelessWidget {
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: BulkyColors.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: BulkyColors.primary.withValues(alpha: 0.3)),
-              boxShadow: [
-                BoxShadow(
-                  color: BulkyColors.primary.withValues(alpha: 0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: BulkyColors.primary.withValues(alpha: 0.35)),
+              boxShadow: BulkyColors.softShadow,
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -322,7 +331,7 @@ class StepReviewSummary extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: BulkyColors.primaryLight.withValues(alpha: 0.15),
+                    color: BulkyColors.primaryContainer,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -372,32 +381,42 @@ class StepReviewSummary extends StatelessWidget {
   }) {
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: BulkyColors.border),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: BulkyColors.softShadow,
       ),
       child: Material(
         color: BulkyColors.surface,
-        borderRadius: BorderRadius.circular(14),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: BulkyColors.border),
+        ),
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Icon(icon, size: 18, color: BulkyColors.primary),
-                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: const BoxDecoration(
+                      color: BulkyColors.primaryContainer,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(icon, size: 18, color: BulkyColors.primary),
+                  ),
+                  const SizedBox(width: 10),
                   Text(
                     title,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 15,
                       fontWeight: FontWeight.bold,
                       color: BulkyColors.textPrimary,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               child,
             ],
           ),

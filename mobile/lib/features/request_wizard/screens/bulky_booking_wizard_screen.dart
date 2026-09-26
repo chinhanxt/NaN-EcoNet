@@ -97,23 +97,33 @@ class BulkyBookingWizardScreen extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: BulkyColors.surface,
-        border: Border(
+        border: const Border(
           bottom: BorderSide(color: BulkyColors.border, width: 1),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: List.generate(steps.length * 2 - 1, (index) {
           if (index.isOdd) {
-            // Divider line between steps
+            // Divider connector line between steps
             final prevStepIndex = index ~/ 2;
             final isCompleted = currentStep > prevStepIndex;
             return Expanded(
               child: Container(
-                height: 2,
-                color: isCompleted ? BulkyColors.primary : BulkyColors.border,
-                margin: const EdgeInsets.symmetric(horizontal: 4),
+                height: 2.5,
+                margin: const EdgeInsets.symmetric(horizontal: 6),
+                decoration: BoxDecoration(
+                  color: isCompleted ? BulkyColors.primary : BulkyColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             );
           }
@@ -123,41 +133,62 @@ class BulkyBookingWizardScreen extends StatelessWidget {
           final isCompleted = currentStep > stepIndex;
 
           return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               color: isActive
-                  ? BulkyColors.primaryLight.withValues(alpha: 0.15)
-                  : (isCompleted ? BulkyColors.successBg : Colors.transparent),
-              borderRadius: BorderRadius.circular(8),
+                  ? BulkyColors.primaryContainer
+                  : (isCompleted ? BulkyColors.successBg : BulkyColors.surface),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: isActive
                     ? BulkyColors.primary
                     : (isCompleted ? BulkyColors.success : BulkyColors.border),
                 width: isActive ? 1.5 : 1,
               ),
+              boxShadow: isActive
+                  ? [
+                      BoxShadow(
+                        color: BulkyColors.primary.withValues(alpha: 0.15),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : null,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (isCompleted)
-                  const Icon(Icons.check, size: 14, color: BulkyColors.success)
+                  const Icon(Icons.check_circle_rounded, size: 15, color: BulkyColors.success)
                 else
-                  Text(
-                    '${stepIndex + 1}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: isActive ? BulkyColors.primary : BulkyColors.textSecondary,
+                  Container(
+                    width: 18,
+                    height: 18,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: isActive ? BulkyColors.primary : Colors.transparent,
+                      shape: BoxShape.circle,
+                      border: isActive
+                          ? null
+                          : Border.all(color: BulkyColors.textSecondary, width: 1.2),
+                    ),
+                    child: Text(
+                      '${stepIndex + 1}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: isActive ? Colors.white : BulkyColors.textSecondary,
+                      ),
                     ),
                   ),
-                const SizedBox(width: 4),
+                const SizedBox(width: 6),
                 Text(
                   steps[stepIndex],
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: isActive || isCompleted ? FontWeight.bold : FontWeight.w500,
                     color: isActive
-                        ? BulkyColors.primary
+                        ? BulkyColors.primaryDark
                         : (isCompleted ? BulkyColors.success : BulkyColors.textSecondary),
                   ),
                 ),

@@ -110,7 +110,7 @@ class BulkyCategoryQuickSelector extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         SizedBox(
-          height: 110,
+          height: 118,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: _quickCategories.length,
@@ -129,18 +129,18 @@ class BulkyCategoryQuickSelector extends StatelessWidget {
     return InkWell(
       key: Key('quick_add_${cat.category.name.toLowerCase()}_button'),
       onTap: () => _handleQuickAdd(context, cat),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         width: 104,
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
         decoration: BoxDecoration(
           color: BulkyColors.surface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: BulkyColors.border),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 4,
+              blurRadius: 6,
               offset: const Offset(0, 2),
             ),
           ],
@@ -149,9 +149,16 @@ class BulkyCategoryQuickSelector extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              cat.emoji,
-              style: const TextStyle(fontSize: 22),
+            Container(
+              padding: const EdgeInsets.all(5),
+              decoration: const BoxDecoration(
+                color: BulkyColors.primaryContainer,
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                cat.emoji,
+                style: const TextStyle(fontSize: 18),
+              ),
             ),
             const SizedBox(height: 4),
             Text(
@@ -171,7 +178,7 @@ class BulkyCategoryQuickSelector extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 10,
                 color: BulkyColors.primary,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],

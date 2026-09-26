@@ -29,8 +29,7 @@ class MaterialSurveyChips extends StatelessWidget {
                 emoji: '🪶',
                 label: 'Nhựa / Mút xốp',
                 deltaText: '-20%',
-                selectedColor: BulkyColors.success,
-                selectedBg: BulkyColors.successBg,
+                badgeColor: BulkyColors.success,
               ),
             ),
             const SizedBox(width: 8),
@@ -41,8 +40,7 @@ class MaterialSurveyChips extends StatelessWidget {
                 emoji: '🪵',
                 label: 'Gỗ ép / Tiêu chuẩn',
                 deltaText: 'Gốc',
-                selectedColor: BulkyColors.primary,
-                selectedBg: BulkyColors.primaryLight.withValues(alpha: 0.12),
+                badgeColor: BulkyColors.primary,
               ),
             ),
             const SizedBox(width: 8),
@@ -51,10 +49,9 @@ class MaterialSurveyChips extends StatelessWidget {
                 context,
                 type: MaterialType.HEAVY,
                 emoji: '🪨',
-                label: 'Gỗ đặc / Đá / Rất nặng',
+                label: 'Gỗ đặc / Rất nặng',
                 deltaText: '+30%',
-                selectedColor: BulkyColors.warning,
-                selectedBg: BulkyColors.warningBg,
+                badgeColor: BulkyColors.warning,
               ),
             ),
           ],
@@ -69,8 +66,7 @@ class MaterialSurveyChips extends StatelessWidget {
     required String emoji,
     required String label,
     required String deltaText,
-    required Color selectedColor,
-    required Color selectedBg,
+    required Color badgeColor,
   }) {
     final isSelected = selectedMaterial == type;
 
@@ -82,26 +78,32 @@ class MaterialSurveyChips extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: () => onMaterialChanged(type),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
             decoration: BoxDecoration(
-              color: isSelected ? selectedBg : BulkyColors.surface,
-              borderRadius: BorderRadius.circular(12),
+              color: isSelected ? BulkyColors.primaryContainer : BulkyColors.surface,
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isSelected ? selectedColor : BulkyColors.border,
+                color: isSelected ? BulkyColors.primary : BulkyColors.border,
                 width: isSelected ? 2 : 1,
               ),
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: selectedColor.withValues(alpha: 0.15),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
+                        color: BulkyColors.primary.withValues(alpha: 0.18),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
                       ),
                     ]
-                  : null,
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.02),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -118,20 +120,20 @@ class MaterialSurveyChips extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 5,
-                        vertical: 1.5,
+                        vertical: 2,
                       ),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? selectedColor.withValues(alpha: 0.2)
+                            ? badgeColor.withValues(alpha: 0.2)
                             : Colors.grey.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         deltaText,
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 10,
                           fontWeight: FontWeight.bold,
-                          color: isSelected ? selectedColor : BulkyColors.textSecondary,
+                          color: isSelected ? badgeColor : BulkyColors.textSecondary,
                         ),
                       ),
                     ),
@@ -146,9 +148,9 @@ class MaterialSurveyChips extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 11,
-                    height: 1.2,
+                    height: 1.25,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    color: isSelected ? selectedColor : BulkyColors.textPrimary,
+                    color: isSelected ? BulkyColors.primaryDark : BulkyColors.textPrimary,
                   ),
                 ),
               ],

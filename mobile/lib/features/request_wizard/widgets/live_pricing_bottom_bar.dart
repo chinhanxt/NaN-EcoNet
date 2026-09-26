@@ -245,23 +245,23 @@ class LivePricingBottomBar extends StatelessWidget {
         final maxVnd = hasQuote ? quote.maxVnd : 0;
         final depositHoldVnd = hasQuote ? quote.depositHoldVnd : 0;
 
-        return Container(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-          decoration: BoxDecoration(
-            color: BulkyColors.surface,
-            border: const Border(
-              top: BorderSide(color: BulkyColors.border, width: 1),
+        return SafeArea(
+          top: false,
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            decoration: BoxDecoration(
+              color: BulkyColors.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: BulkyColors.border),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 16,
+                  offset: const Offset(0, -4),
+                ),
+              ],
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.06),
-                blurRadius: 10,
-                offset: const Offset(0, -3),
-              ),
-            ],
-          ),
-          child: SafeArea(
-            top: false,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -269,7 +269,7 @@ class LivePricingBottomBar extends StatelessWidget {
                 InkWell(
                   key: const Key('price_breakdown_trigger'),
                   onTap: hasQuote ? () => _showPriceBreakdownSheet(context, wizard) : null,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -354,17 +354,20 @@ class LivePricingBottomBar extends StatelessWidget {
                       if (hasQuote)
                         Container(
                           key: const Key('price_breakdown_drawer_button'),
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
-                            color: BulkyColors.primaryLight.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(6),
+                            color: BulkyColors.primaryContainer,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: BulkyColors.primaryLight.withValues(alpha: 0.3),
+                            ),
                           ),
                           child: const Text(
                             'Chi tiết ℹ️',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
-                              color: BulkyColors.primary,
+                              color: BulkyColors.primaryDark,
                             ),
                           ),
                         ),
@@ -372,7 +375,7 @@ class LivePricingBottomBar extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                // Navigation Buttons
+                // Navigation Buttons (height 52px)
                 Row(
                   children: [
                     if (currentStep > 0) ...[
@@ -382,11 +385,12 @@ class LivePricingBottomBar extends StatelessWidget {
                         icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 16),
                         label: const Text('Quay lại'),
                         style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(100, 52),
                           foregroundColor: BulkyColors.textPrimary,
                           side: const BorderSide(color: BulkyColors.border),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
                       ),
@@ -406,13 +410,13 @@ class LivePricingBottomBar extends StatelessWidget {
                                 })
                             : null,
                         style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          minimumSize: const Size.fromHeight(52),
                           backgroundColor: BulkyColors.primary,
                           foregroundColor: Colors.white,
                           disabledBackgroundColor: BulkyColors.border,
                           disabledForegroundColor: BulkyColors.textSecondary,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           elevation: canGoNext ? 2 : 0,
                         ),
@@ -420,7 +424,7 @@ class LivePricingBottomBar extends StatelessWidget {
                           currentStep == 2 ? 'Xác nhận & Báo giá' : 'Tiếp tục',
                           style: const TextStyle(
                             fontSize: 15,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),

@@ -86,25 +86,41 @@ class _StepLogisticsEditorState extends State<StepLogisticsEditor> {
               children: [
                 TextFormField(
                   controller: _addressController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Địa chỉ cụ thể (Số nhà, tên đường, phường, quận)',
-                    prefixIcon: Icon(Icons.home_outlined),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10)),
+                    prefixIcon: const Icon(Icons.home_outlined, color: BulkyColors.primary),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.my_location_rounded, color: BulkyColors.primary),
+                      tooltip: 'Định vị GPS hiện tại',
+                      onPressed: () {
+                        _addressController.text = kSampleAddress;
+                        wizard.setCustomerInfo(address: kSampleAddress);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('📍 Đã định vị vị trí hộ gia đình của bạn'),
+                            duration: Duration(seconds: 1),
+                            backgroundColor: BulkyColors.primary,
+                          ),
+                        );
+                      },
+                    ),
+                    border: const OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(12)),
                     ),
                   ),
                   onChanged: (val) => wizard.setCustomerInfo(address: val),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Wrap(
                   spacing: 8,
                   children: [
                     ActionChip(
-                      avatar: const Icon(Icons.flash_on, size: 14, color: BulkyColors.primary),
+                      avatar: const Icon(Icons.home_work_outlined, size: 14, color: BulkyColors.primary),
                       label: const Text(kSampleAddress),
-                      labelStyle: const TextStyle(fontSize: 12, color: BulkyColors.textPrimary),
-                      backgroundColor: BulkyColors.background,
-                      side: const BorderSide(color: BulkyColors.border),
+                      labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: BulkyColors.textPrimary),
+                      backgroundColor: BulkyColors.primaryContainer,
+                      side: BorderSide(color: BulkyColors.primaryLight.withValues(alpha: 0.3)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       onPressed: () {
                         _addressController.text = kSampleAddress;
                         wizard.setCustomerInfo(address: kSampleAddress);
@@ -128,9 +144,9 @@ class _StepLogisticsEditorState extends State<StepLogisticsEditor> {
                     controller: _nameController,
                     decoration: const InputDecoration(
                       labelText: 'Họ và tên',
-                      prefixIcon: Icon(Icons.badge_outlined),
+                      prefixIcon: Icon(Icons.badge_outlined, color: BulkyColors.primary),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
                       ),
                     ),
                     onChanged: (val) => wizard.setCustomerInfo(name: val),
@@ -143,9 +159,9 @@ class _StepLogisticsEditorState extends State<StepLogisticsEditor> {
                     keyboardType: TextInputType.phone,
                     decoration: const InputDecoration(
                       labelText: 'Số điện thoại',
-                      prefixIcon: Icon(Icons.phone_outlined),
+                      prefixIcon: Icon(Icons.phone_outlined, color: BulkyColors.primary),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
                       ),
                     ),
                     onChanged: (val) => wizard.setCustomerInfo(phone: val),
@@ -171,13 +187,13 @@ class _StepLogisticsEditorState extends State<StepLogisticsEditor> {
                         readOnly: true,
                         decoration: InputDecoration(
                           labelText: 'Ngày thu gom',
-                          prefixIcon: const Icon(Icons.event_outlined),
+                          prefixIcon: const Icon(Icons.event_outlined, color: BulkyColors.primary),
                           suffixIcon: IconButton(
-                            icon: const Icon(Icons.edit_calendar_outlined),
+                            icon: const Icon(Icons.edit_calendar_outlined, color: BulkyColors.primary),
                             onPressed: _selectDate,
                           ),
                           border: const OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(10)),
+                            borderRadius: BorderRadius.all(Radius.circular(12)),
                           ),
                         ),
                         onTap: _selectDate,
@@ -185,15 +201,31 @@ class _StepLogisticsEditorState extends State<StepLogisticsEditor> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Wrap(
                   spacing: 8,
                   children: [
                     ActionChip(
-                      label: const Text('Ngày mai'),
-                      labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      avatar: const Icon(Icons.bolt, size: 14, color: BulkyColors.primary),
+                      label: const Text('Hôm nay'),
+                      labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: BulkyColors.textPrimary),
                       backgroundColor: BulkyColors.background,
                       side: const BorderSide(color: BulkyColors.border),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      onPressed: () {
+                        final today = DateTime.now();
+                        final dStr = _formatDate(today);
+                        _dateController.text = dStr;
+                        wizard.setCustomerInfo(date: dStr);
+                      },
+                    ),
+                    ActionChip(
+                      avatar: const Icon(Icons.calendar_today, size: 13, color: BulkyColors.primary),
+                      label: const Text('Ngày mai'),
+                      labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: BulkyColors.textPrimary),
+                      backgroundColor: BulkyColors.background,
+                      side: const BorderSide(color: BulkyColors.border),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       onPressed: () {
                         final tomorrow = DateTime.now().add(const Duration(days: 1));
                         final dStr = _formatDate(tomorrow);
@@ -203,9 +235,10 @@ class _StepLogisticsEditorState extends State<StepLogisticsEditor> {
                     ),
                     ActionChip(
                       label: const Text('Ngày kia'),
-                      labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: BulkyColors.textPrimary),
                       backgroundColor: BulkyColors.background,
                       side: const BorderSide(color: BulkyColors.border),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       onPressed: () {
                         final afterTomorrow = DateTime.now().add(const Duration(days: 2));
                         final dStr = _formatDate(afterTomorrow);
@@ -233,15 +266,16 @@ class _StepLogisticsEditorState extends State<StepLogisticsEditor> {
                     return ChoiceChip(
                       label: Text(slot),
                       selected: isSelected,
-                      selectedColor: BulkyColors.primaryLight.withValues(alpha: 0.15),
+                      selectedColor: BulkyColors.primaryContainer,
                       labelStyle: TextStyle(
                         fontSize: 12,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        color: isSelected ? BulkyColors.primary : BulkyColors.textPrimary,
+                        color: isSelected ? BulkyColors.primaryDark : BulkyColors.textPrimary,
                       ),
                       side: BorderSide(
                         color: isSelected ? BulkyColors.primary : BulkyColors.border,
                       ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       onSelected: (selected) {
                         if (selected) {
                           wizard.setCustomerInfo(timeSlot: slot);
@@ -434,19 +468,15 @@ class _StepLogisticsEditorState extends State<StepLogisticsEditor> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: BulkyColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: BulkyColors.softShadow,
       ),
       child: Material(
         color: BulkyColors.surface,
-        borderRadius: BorderRadius.circular(14),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: BulkyColors.border),
+        ),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -454,8 +484,15 @@ class _StepLogisticsEditorState extends State<StepLogisticsEditor> {
             children: [
               Row(
                 children: [
-                  Icon(icon, size: 18, color: BulkyColors.primary),
-                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: const BoxDecoration(
+                      color: BulkyColors.primaryContainer,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(icon, size: 18, color: BulkyColors.primary),
+                  ),
+                  const SizedBox(width: 10),
                   Text(
                     title,
                     style: const TextStyle(
@@ -466,7 +503,7 @@ class _StepLogisticsEditorState extends State<StepLogisticsEditor> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               child,
             ],
           ),
@@ -486,45 +523,54 @@ class _StepLogisticsEditorState extends State<StepLogisticsEditor> {
     return InkWell(
       key: key,
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(14),
       child: Container(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isSelected
-              ? BulkyColors.primaryLight.withValues(alpha: 0.1)
+              ? BulkyColors.primaryContainer
               : BulkyColors.background,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isSelected ? BulkyColors.primary : BulkyColors.border,
             width: isSelected ? 1.5 : 1,
           ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: BulkyColors.primary.withValues(alpha: 0.12),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Text(emoji, style: const TextStyle(fontSize: 18)),
-                const SizedBox(width: 6),
+                Text(emoji, style: const TextStyle(fontSize: 20)),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     title,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: FontWeight.bold,
-                      color: isSelected ? BulkyColors.primary : BulkyColors.textPrimary,
+                      color: isSelected ? BulkyColors.primaryDark : BulkyColors.textPrimary,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Text(
               desc,
               style: const TextStyle(
-                fontSize: 10,
+                fontSize: 11,
                 color: BulkyColors.textSecondary,
-                height: 1.2,
+                height: 1.25,
               ),
             ),
           ],
