@@ -407,12 +407,12 @@ $$\min \mathcal{Z} = \sum_{k \in K} \sum_{i \in V} \sum_{j \in V} c_{ij} \cdot x
 ##### 3. Quy tắc Xác suất Di chuyển trong 3D-PACO:
 Xác suất để kiến chọn chuyển dời từ điểm $i$ sang điểm $j$ với phương thức phục vụ $o \in \{0, 1\}$ được xác định bởi:
 
-$$P_{ij}^k(o) = \frac{\left[\tau(i, j, o)\right]^\eta \cdot \left[\eta(i, j, o)\right]^\mu}{\sum_{l \in \mathcal{N}_i^k} \sum_{m \in \{0, 1\}} \left[\tau(i, l, m)\right]^\eta \cdot \left[\eta(i, l, m)\right]^\mu}$$
+$$P_{ij}^k(o) = \frac{\left[\tau(i, j, o)\right]^\alpha \cdot \left[\eta(i, j, o)\right]^\beta}{\sum_{l \in \mathcal{N}_i^k} \sum_{m \in \{0, 1\}} \left[\tau(i, l, m)\right]^\alpha \cdot \left[\eta(i, l, m)\right]^\beta}$$
 
 *Trong đó:*
 * $\tau(i, j, o)$: Mật độ vết mùi pheromone trên cạnh $(i, j)$ tương ứng với hình thức $o$.
-* $\eta(i, j, o) = \frac{1}{c_{ij} + \gamma \cdot \text{OdorLevel}_j}$: Độ hấp dẫn heuristic, ưu tiên các điểm có khoảng cách ngắn và chỉ số mùi hôi/đầy rác cao ($\text{OdorLevel}_j \ge 80\%$).
-* $\eta, \mu$: Các tham số điều khiển mức độ ảnh hưởng của pheromone và heuristic.
+* $\eta(i, j, o) = \frac{1 + \gamma \cdot \text{OdorLevel}_j}{c_{ij}}$: Độ hấp dẫn heuristic, ưu tiên các điểm có khoảng cách ngắn ($c_{ij}$ nhỏ) và chỉ số mùi hôi/đầy rác cao ($\text{OdorLevel}_j \ge 80\%$).
+* $\alpha, \beta$: Các tham số điều khiển mức độ ảnh hưởng của pheromone ($\alpha = 1.2$) và heuristic ($\beta = 2.5$).
 
 #### Hạ tầng Bản đồ OSRM, Caching Tọa độ & Điều phối Sự cố Động
 * **Định tuyến Đường bộ Thực tế (Local OSRM):** Toàn bộ lộ trình xe bám sát 100% mạng lưới giao thông TP.HCM, tự động né đường một chiều và các tuyến phố cấm xe tải theo khung giờ.
@@ -654,7 +654,7 @@ Hiệu quả vận hành của NaN-EcoNet đã được đối chuẩn nghiêm n
 | Chỉ số Đo lường (Benchmark Metrics) | Baseline Truyền thống (Fixed Greedy Routes) | Tiêu chuẩn Công nghiệp (Google OR-Tools GLS) | Đề xuất NaN-EcoNet (3D-PACO Multi-Decision) | Mức Cải thiện của 3D-PACO |
 | :--- | :--- | :--- | :--- | :--- |
 | **Tổng Quãng đường (Total Distance)** | 48.60 km | 37.10 km | **34.80 km** | **Giảm 28.4%** so với Baseline (Tốt nhất) |
-| **Tiêu thụ Nhiên liệu (Diesel Fuel)** | 13.61 Lít | 10.39 Lít | **9.74 Lít** | **Tiết kiệm 22.0%** chi phí nhiên liệu |
+| **Tiêu thụ Nhiên liệu (Diesel Fuel)** | 13.61 Lít | 10.39 Lít | **9.74 Lít** | **Tiết kiệm 28.4%** chi phí nhiên liệu |
 | **Phát thải Khí nhà kính ($\text{CO}_2$)** | 36.47 kg $\text{CO}_2$ | 27.85 kg $\text{CO}_2$ | **26.10 kg $\text{CO}_2$** | **Cắt giảm 10.37 kg $\text{CO}_2$** mỗi ca chạy |
 | **Thời gian Tính toán (Execution Time)** | 18 ms (Heuristic nông) | 2,140 ms (Tuần tự 1 core) | **510 ms (OpenMP 8 cores)** | **Nhanh hơn 4.2 lần** so với Google OR-Tools |
 | **Khả năng Xử lý Hẻm sâu (Walk-in)** | 0% (Bỏ sót các điểm trong hẻm) | Cần tinh chỉnh tay | **100% Tự động hóa** qua 3D Decision Modality | Gom cụm thông minh tại 12 đầu hẻm |

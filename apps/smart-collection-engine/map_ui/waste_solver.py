@@ -639,6 +639,31 @@ def solve_ortools_vrp(
             "Capacity"
         )
 
+        # Time Window Dimension: speed ~ 18 km/h (5 m/s) with 3-minute dwell service time
+        speed_mps = 5.0
+        service_time_sec = 180
+        def time_callback(from_index: int, to_index: int) -> int:
+            from_node = manager.IndexToNode(from_index)
+            to_node = manager.IndexToNode(to_index)
+            travel_time = int(dist_fn(from_node, to_node) / speed_mps)
+            serv = service_time_sec if from_node != 0 else 0
+            return travel_time + serv
+
+        time_callback_index = routing.RegisterTransitCallback(time_callback)
+        routing.AddDimension(
+            time_callback_index,
+            1800,   # Maximum waiting slack (30 minutes)
+            28800,  # Max shift horizon: 8 hours (28,800 seconds)
+            False,  # Start cumul not forced to 0
+            "Time"
+        )
+        time_dimension = routing.GetDimensionOrDie("Time")
+        for node_idx, bin_obj in enumerate(active_bins, start=1):
+            index = manager.NodeToIndex(node_idx)
+            tw = bin_obj.get("time_window", None)
+            if tw and isinstance(tw, (list, tuple)) and len(tw) == 2:
+                time_dimension.CumulVar(index).SetRange(int(tw[0]), int(tw[1]))
+
         search_parameters = pywrapcp.DefaultRoutingSearchParameters()
         search_parameters.first_solution_strategy = (
             routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
@@ -756,9 +781,7 @@ def solve_baseline_vrp(
         vehicles=vehicles,
         vehicle_capacity=vehicle_capacity
     )
-    total_dist_km = round(total_dist_km * 1.34, 2)
-    for r in routes_details:
-        r["distance_km"] = round(r["distance_km"] * 1.34, 2)
+    total_dist_km = round(total_dist_km, 2)
 
     elapsed_ms = (time.perf_counter() - t0) * 1000.0
     fuel_liters = round(total_dist_km * 0.28, 2)

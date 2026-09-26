@@ -29,10 +29,12 @@ class SolverResult:
             error_message=data.get("error_message", "")
         )
 
+import os
+
 # Constants
 AVAILABLE_SOLVERS = ["paco", "sa"]
 SIZE_OPTIONS = ["small", "medium", "large"]
-API_URL = "http://localhost:8000"
+API_URL = os.getenv("SOLVER_API_URL", "http://localhost:8000")
 
 def get_params_path(solver: str) -> str:
     # This is a bit tricky since params are now on the backend.

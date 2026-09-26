@@ -17,6 +17,7 @@ authors:
   - family-names: "Nguyen"
     given-names: "Chi Nhan"
     alias: "chinhanxt"
+    email: "chinhanxt@gmail.com"
     affiliation: "NaN-EcoNet Core Team"
   - family-names: "Bui"
     given-names: "Nguyen Cong Nghiep"
@@ -41,6 +42,20 @@ identifiers:
   - type: url
     value: "https://github.com/chinhanxt/NaN-EcoNet"
     description: "Source code and release artifacts"
+references:
+  - type: article
+    authors:
+      - family-names: "Chau"
+        given-names: "An Phu"
+      - family-names: "Nguyen"
+        given-names: "L. T. T."
+      - family-names: "Pedrycz"
+        given-names: "W."
+      - family-names: "Vo"
+        given-names: "B."
+    title: "Parallel Metaheuristics and Ant Colony Approaches for Large-Scale Vehicle Routing Problems"
+    year: 2024
+    journal: "VNU-HCM International University Research Publication"
 preferred-citation:
   type: software
   title: "NaN-EcoNet: The Agentic Green Ecosystem for Autonomous Waste Logistics & Circular 4-Win Economy"
