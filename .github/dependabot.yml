@@ -11,7 +11,7 @@ updates:
     commit-message:
       prefix: "chore(ci)"
       include: "scope"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
 
   # ----------------------------------------------------------------------------
   # Python Dependencies (Smart Collection Engine & AI Gateway)
@@ -23,7 +23,7 @@ updates:
     commit-message:
       prefix: "chore(deps-engine)"
       include: "scope"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
 
   - package-ecosystem: "pip"
     directory: "/apps/smart-collection-engine/streamlit"
@@ -32,7 +32,7 @@ updates:
     commit-message:
       prefix: "chore(deps-streamlit)"
       include: "scope"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
 
   - package-ecosystem: "pip"
     directory: "/apps/ecopass-enterprise/agy-image-gateway"
@@ -41,7 +41,7 @@ updates:
     commit-message:
       prefix: "chore(deps-gateway)"
       include: "scope"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
 
   # ----------------------------------------------------------------------------
   # Node.js & npm / pnpm Dependencies (Citizen Bulky Web & EcoPass Portals)
@@ -53,7 +53,7 @@ updates:
     commit-message:
       prefix: "chore(deps-bulky)"
       include: "scope"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
 
   - package-ecosystem: "npm"
     directory: "/apps/ecopass-enterprise/enterprise-bi-copilot"
@@ -62,7 +62,7 @@ updates:
     commit-message:
       prefix: "chore(deps-bi)"
       include: "scope"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
 
   - package-ecosystem: "npm"
     directory: "/apps/ecopass-enterprise/awesome-gpt-image-2"
@@ -71,7 +71,7 @@ updates:
     commit-message:
       prefix: "chore(deps-image2)"
       include: "scope"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
 
   # ----------------------------------------------------------------------------
   # Dart / Flutter Ecosystem (Citizen Bulky Mobile App)
@@ -83,7 +83,7 @@ updates:
     commit-message:
       prefix: "chore(deps-mobile)"
       include: "scope"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
 
   # ----------------------------------------------------------------------------
   # Docker Container Ecosystem
@@ -95,4 +95,4 @@ updates:
     commit-message:
       prefix: "chore(deps-docker)"
       include: "scope"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
