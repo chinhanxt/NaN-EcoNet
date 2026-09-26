@@ -34,18 +34,18 @@ def generate_instance_content(
         
     # Nodes
     # Depot (type 0)
-    lines.append(f"{depot['x']} {depot['y']} {depot.get('earliest', 0)} {depot.get('latest', 1000)} 0 0")
+    lines.append(f"{depot['x']} {depot['y']} {depot.get('earliest', 0)} {depot.get('latest', 1000000)} 0 0")
     
     # Customers
     for c in customers:
         lines.append(
-            f"{c['x']} {c['y']} {c['earliest']} {c['latest']} {c['service_time']} {c['type']}"
+            f"{c['x']} {c['y']} {c.get('earliest', 0)} {c.get('latest', 1000000)} {c.get('service_time', 5)} {c.get('type', 1)}"
         )
         
     # Lockers (type 4)
     for l in lockers:
         lines.append(
-            f"{l['x']} {l['y']} {l['earliest']} {l['latest']} {l['service_time']} 4"
+            f"{l['x']} {l['y']} {l.get('earliest', 0)} {l.get('latest', 1000000)} {l.get('service_time', 5)} 4"
         )
         
     # Assignment Matrix (Default: all lockers accessible to all customers)

@@ -7,6 +7,7 @@ Manages the execution of the C++ VRP solver binary.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import tempfile
 from dataclasses import dataclass, field, asdict
@@ -39,14 +40,30 @@ class SolverService:
     @staticmethod
     def get_solver_binary_path() -> Path:
         """Get path to the solver binary."""
-        # Assuming structure: backend/service.py, backend/bin/test
-        return Path(__file__).parent / "bin" / "test"
+        candidates = [
+            Path("/app/backend/bin/test"),
+            Path(__file__).resolve().parent / "bin" / "test",
+            Path.cwd() / "backend" / "bin" / "test",
+            Path("/home/congnghip/project/routing-PL/backend/bin/test"),
+        ]
+        for c in candidates:
+            if c.is_file():
+                return c
+        return candidates[1]
 
     @staticmethod
     def get_params_path(solver: str) -> Path:
         """Get path to solver parameter file."""
-        # Assuming structure: backend/service.py, backend/parameters/solver.param.yaml
-        return Path(__file__).parent / "parameters" / f"{solver}.param.yaml"
+        candidates = [
+            Path("/app/backend/parameters") / f"{solver}.param.yaml",
+            Path(__file__).resolve().parent / "parameters" / f"{solver}.param.yaml",
+            Path.cwd() / "backend" / "parameters" / f"{solver}.param.yaml",
+            Path(f"/home/congnghip/project/routing-PL/backend/parameters/{solver}.param.yaml"),
+        ]
+        for c in candidates:
+            if c.is_file():
+                return c
+        return candidates[1]
 
     def run_solver(
         self,
@@ -120,11 +137,14 @@ class SolverService:
                 ]
                 print("[INFO]: Running command:", cmd)
                 # Run solver
+                env = os.environ.copy()
+                env["LD_LIBRARY_PATH"] = f"{solver_path.parent}:{env.get('LD_LIBRARY_PATH', '')}"
                 result = subprocess.run(
                     cmd,
                     capture_output=True,
                     text=True,
                     timeout=300,  # 5 minute timeout
+                    env=env
                 )
                 
                 if result.returncode != 0:

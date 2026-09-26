@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart Waste Collection & Dynamic Incident Dispatching</title>
+  <title>Smart Waste Collection & Route Optimization (District 1)</title>
 
   <!-- Leaflet Map Engine (100% Bulletproof 2D Rendering, No WebGL GPU Crashes) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -1213,8 +1213,11 @@
       </div>
       <div class="nav-divider"></div>
       <div class="preset-group">
-        <button class="btn-action btn-preset" id="btn-preset" onclick="loadRandomPreset()" title="Đổi ngẫu nhiên kịch bản Quận 1">
-          <i class="fa-solid fa-dice"></i> <span>Mẫu</span>
+        <button class="btn-action btn-preset" id="btn-preset" onclick="loadRandomPreset()" title="Ngẫu nhiên độ đầy thùng rác cố định (không đổi vị trí)">
+          <i class="fa-solid fa-dice"></i> <span id="btn-preset-text">Random Độ Đầy</span>
+        </button>
+        <button class="btn-action btn-secondary btn-icon-only" id="btn-cycle-preset" onclick="cycleNextPreset()" title="Chuyển kịch bản Quận 1 kế tiếp (Mẫu 1 -> 5)">
+          <i class="fa-solid fa-layer-group"></i>
         </button>
         <button class="btn-action btn-secondary btn-icon-only" id="btn-reset" onclick="resetAll()" title="Làm mới bản đồ (Xóa lộ trình)">
           <i class="fa-solid fa-rotate-right"></i>
@@ -1238,61 +1241,6 @@
         <button class="btn-mode" id="btn-mode-truck" onclick="setMode('truck')" title="Thêm xe thu gom mới">
           <i class="fa-solid fa-truck"></i> <span>+Xe</span>
         </button>
-        <div class="incident-dropdown-container" id="incident-dropdown-container">
-          <button class="btn-mode btn-incident-toggle" id="btn-mode-incident" onclick="handleIncidentBtnClick(event)" title="Nhấn để kích hoạt chế độ đặt sự cố">
-            <span id="incident-btn-icon">🚧</span>
-            <span id="incident-btn-text">+Sự Cố</span>
-          </button>
-          <button class="btn-incident-arrow" id="btn-incident-arrow" onclick="toggleIncidentMenu(event)" title="Chọn loại sự cố cụ thể">
-            <i class="fa-solid fa-chevron-down"></i>
-          </button>
-          <div class="incident-menu" id="incident-menu">
-            <div class="incident-menu-header">
-              <span>Chọn loại sự cố muốn đặt:</span>
-              <span style="font-size:10px; color:#94a3b8; font-weight:normal;">4 kịch bản</span>
-            </div>
-            <div class="incident-menu-item selected" id="menu-item-road_blocked" onclick="selectIncidentType('road_blocked', event)">
-              <span class="incident-item-icon" style="background:#fef3c7; color:#d97706;">🚧</span>
-              <div class="incident-item-info">
-                <div class="incident-item-title">
-                  <span>Đoạn đường bị chặn</span>
-                  <span class="incident-badge-ai">⚡ Tự Động Né</span>
-                </div>
-                <div class="incident-item-sub">Rào chắn/sửa đường -> Tự động tính đường vòng (Dynamic Detour)</div>
-              </div>
-            </div>
-            <div class="incident-menu-item" id="menu-item-truck_breakdown" onclick="selectIncidentType('truck_breakdown', event)">
-              <span class="incident-item-icon" style="background:#fee2e2; color:#dc2626;">🛑</span>
-              <div class="incident-item-info">
-                <div class="incident-item-title">
-                  <span>Xe hỏng động cơ</span>
-                  <span class="incident-badge-human">👤 Cần Người</span>
-                </div>
-                <div class="incident-item-sub">Xe hỏng đứng im -> Cứu hộ / Chia tải / Hủy ca</div>
-              </div>
-            </div>
-            <div class="incident-menu-item" id="menu-item-bin_overflow" onclick="selectIncidentType('bin_overflow', event)">
-              <span class="incident-item-icon" style="background:#ffedd5; color:#ea580c;">📦</span>
-              <div class="incident-item-info">
-                <div class="incident-item-title">
-                  <span>Thùng rác quá tải</span>
-                  <span class="incident-badge-mixed">👤 Human-in-the-Loop</span>
-                </div>
-                <div class="incident-item-sub">Phát sinh thêm +80kg rác -> Tự nén hoặc xin chỉ đạo</div>
-              </div>
-            </div>
-            <div class="incident-menu-item" id="menu-item-depot_closed" onclick="selectIncidentType('depot_closed', event)">
-              <span class="incident-item-icon" style="background:#ede9fe; color:#7c3aed;">🚨</span>
-              <div class="incident-item-info">
-                <div class="incident-item-title">
-                  <span>Bãi rác đóng cửa</span>
-                  <span class="incident-badge-human">👤 Cần Người</span>
-                </div>
-                <div class="incident-item-sub">Bãi chính tạm dừng nhận -> Xin chỉ đạo sang bãi Đa Phước</div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       <div class="nav-divider"></div>
@@ -1305,32 +1253,31 @@
         <button class="btn-action btn-sim" id="btn-sim" onclick="toggleSimulation()" title="Mô phỏng xe di chuyển thu gom">
           <i class="fa-solid fa-play"></i> <span>Mô Phỏng</span>
         </button>
-        <button class="btn-action btn-battle" id="btn-battle" onclick="openBattleModal()" title="Mở bảng so găng trực diện với Google OR-Tools">
-          <i class="fa-solid fa-trophy"></i> <span>So Găng</span>
-        </button>
       </div>
     </div>
 
-    <!-- Zone 3 (Right): IoT, Status Capsule, and Drawer Toggle -->
+    <!-- Zone 3 (Right): Status Capsule, Portal Links and Drawer Toggle -->
     <div class="nav-section nav-right">
-      <button class="btn-action btn-iot" id="btn-iot-surge" onclick="toggleIoTSimulation()" title="Bật/Tắt cảm biến IoT: Rác tăng dần theo thời gian thực">
-        <i class="fa-solid fa-tower-broadcast"></i> <span>IoT</span>
-      </button>
-
       <!-- Unified Stats Capsule -->
       <div class="stats-capsule">
         <div class="stat-pill-item" title="Tổng số điểm thu gom">
-          <i class="fa-solid fa-trash-can" style="color:#10b981;"></i> <span id="stat-bins">0 điểm</span>
+          <i class="fa-solid fa-trash-can" style="color:#10b981;"></i> <span id="stat-bins">28 điểm gom</span>
         </div>
-        <div class="stat-pill-item" id="badge-smell" style="display:none;" title="Thùng rác bốc mùi hôi thối cần ưu tiên">
-          <span style="font-size:12px;">🦨</span> <span id="stat-smell" style="color:#b45309;">0</span>
+        <div class="stat-pill-item" title="Đội xe thu gom trực tuyến">
+          <i class="fa-solid fa-truck" style="color:#3b82f6;"></i> <span id="stat-trucks">3 xe</span>
         </div>
-        <div class="stat-pill-item stat-pill-decision" id="badge-decision" title="Mô hình đa quyết định: Tại nhà (🏠), Tập trung (🏢), Linh hoạt (🔄)">
-          <i class="fa-solid fa-code-branch"></i> <span id="stat-decision">Đa Quyết Định</span>
-        </div>
-        <span id="stat-trucks" style="display:none;"></span>
         <span id="stat-dist" style="display:none;"></span>
       </div>
+
+      <!-- Navigation to Driver Data & ML Portal -->
+      <a href="/driver-data" class="btn-action btn-secondary" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; color:#fff; font-weight:700; border:1px solid rgba(16,185,129,0.3); background:rgba(16,185,129,0.15);" title="Cổng Thu Thập Dữ Liệu Đường Đi Tài Xế & Học Máy Tuyến Đường">
+        <i class="fa-solid fa-satellite-dish" style="color:#34d399;"></i> <span>Thu Thập & ML</span>
+      </a>
+
+      <!-- Navigation to 3D-PACO Engine Lab -->
+      <a href="/engine" class="btn-action btn-secondary btn-icon-only" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center; color:#cbd5e1;" title="Phòng Thí Nghiệm Động Cơ 3D-PACO">
+        <i class="fa-solid fa-microchip"></i>
+      </a>
 
       <!-- Toggle Drawer Button -->
       <button class="btn-drawer-toggle" onclick="toggleDrawer()" title="Mở bảng nhật ký điều phối & Trạng thái đội xe">
@@ -1339,50 +1286,22 @@
     </div>
   </header>
 
-  <!-- Style Switcher (Basemap styles) - Bottom-Left Layer 1 -->
+  <!-- Style Switcher (Basemap styles) - Bottom-Left Layer 1 (Google Maps: Không có đường lưỡi bò) -->
   <div class="style-picker">
-    <button class="style-btn active" onclick="switchMapStyle('liberty', this)" title="Bản đồ giao thông Liberty">
-      <i class="fa-solid fa-city"></i> Liberty
+    <button class="style-btn active" onclick="switchMapStyle('streets', this)" title="Bản đồ đường phố Google Maps (Không có đường lưỡi bò)">
+      <i class="fa-solid fa-map"></i> Đường Phố
     </button>
-    <button class="style-btn" onclick="switchMapStyle('satellite', this)" title="Ảnh vệ tinh Esri">
-      <i class="fa-solid fa-satellite"></i> Vệ tinh
+    <button class="style-btn" onclick="switchMapStyle('satellite', this)" title="Ảnh vệ tinh Google Maps">
+      <i class="fa-solid fa-satellite"></i> Vệ Tinh
     </button>
   </div>
 
-  <!-- Decision & Collection Mode Floating Legend - Bottom-Left Layer 2 (Stacked above Style Switcher) -->
-  <div class="decision-legend" id="decision-legend">
-    <div class="legend-header">
-      <div class="legend-title"><i class="fa-solid fa-layer-group"></i> Phân Loại & Đa Quyết Định</div>
-      <button class="btn-legend-toggle" onclick="toggleDecisionLegend()" title="Thu nhỏ / Mở rộng bảng chú giải"><i class="fa-solid fa-chevron-down" id="legend-toggle-icon"></i></button>
-    </div>
-    <div class="legend-body" id="legend-body">
-      <div class="legend-row">
-        <span class="legend-icon-badge">🏠</span>
-        <span><b>Thu tại nhà</b> (Door-to-Door)</span>
-      </div>
-      <div class="legend-row">
-        <span class="legend-icon-badge">🏢</span>
-        <span><b>Trạm gom tập trung</b> (Communal Hub)</span>
-      </div>
-      <div class="legend-row">
-        <span class="legend-icon-badge">🔄</span>
-        <span><b>Đa quyết định</b> (Linh hoạt tối ưu)</span>
-      </div>
-      <div class="legend-row" style="margin-top:2px;">
-        <span class="legend-dash-line"></span>
-        <span style="color:#c4b5fd;">Cư dân mang rác ra trạm</span>
-      </div>
-      <div class="legend-row">
-        <span class="legend-solid-line"></span>
-        <span style="color:#86efac;">Lộ trình xe thu gom</span>
-      </div>
-    </div>
-  </div>
+
 
   <!-- Side Drawer (Live Timeline & Fleet Status) - Retracted by default -->
   <div class="drawer closed" id="side-drawer">
     <div class="drawer-header">
-      <span>🚚 Tình Trạng Đội Xe & Xử Lý Sự Cố</span>
+      <span>🚚 Tình Trạng Đội Xe</span>
       <button class="btn-mode" onclick="toggleDrawer()" style="padding: 2px 6px;"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="drawer-body">
@@ -1400,54 +1319,7 @@
     </div>
   </div>
 
-  <!-- Human-in-the-Loop Modal Dialog -->
-  <div class="modal-overlay" id="human-modal">
-    <div class="modal-card">
-      <div class="modal-header">
-        <i class="fa-solid fa-triangle-exclamation" style="font-size: 22px;"></i>
-        <div>
-          <h3 id="modal-title">HỆ THỐNG CẦN CHỈ ĐẠO TỪ ĐIỀU PHỐI VIÊN</h3>
-          <p style="font-size: 12px; opacity: 0.9;">Kích hoạt cơ chế phối hợp Human-in-the-Loop</p>
-        </div>
-      </div>
-      <div class="modal-body">
-        <div class="modal-incident-desc" id="modal-desc">
-          <!-- Incident description inserted here -->
-        </div>
-        <p style="font-size: 13px; font-weight: 600; color: #475569;">Vui lòng chọn chỉ đạo giải quyết để xe tiếp tục hoạt động:</p>
-        <div class="modal-options" id="modal-options">
-          <!-- Selectable choices generated dynamically -->
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- Battle Arena Modal Dialog -->
-  <div class="modal-overlay" id="battle-modal-overlay">
-    <div class="modal-card modal-card-wide">
-      <div class="modal-header battle-header">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(245, 158, 11, 0.2); display: flex; align-items: center; justify-content: center; color: #fbbf24; font-size: 22px;">
-            <i class="fa-solid fa-trophy"></i>
-          </div>
-          <div>
-            <h3 style="font-size: 15.5px; font-weight: 800; color: #ffffff;">⚔️ BẢNG ĐẤU TRỰC DIỆN: 3D-PACO vs GOOGLE OR-TOOLS</h3>
-            <p style="font-size: 11.5px; color: #cbd5e1; margin-top: 2px;">Thực nghiệm trên 12 điểm tập kết rác tại Trung tâm Q.1, TP.HCM</p>
-          </div>
-        </div>
-        <button class="btn-modal-close" onclick="closeBattleModal()"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div class="battle-body" id="battle-body">
-        <!-- Rendered dynamically by JS -->
-      </div>
-      <div style="padding: 12px 20px; background: #f1f5f9; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
-        <span style="font-size: 11.5px; color: #64748b;">
-          <i class="fa-solid fa-microchip"></i> <strong>Cơ chế:</strong> 8 Cores CPU OpenMP Multi-threading • Guided Local Search
-        </span>
-        <button class="btn-action btn-primary" onclick="reRunBattle()"><i class="fa-solid fa-rotate"></i> Chạy Lại So Găng</button>
-      </div>
-    </div>
-  </div>
 
   <!-- AI Toast Notification -->
   <div id="ai-toast" class="ai-toast">
@@ -1464,19 +1336,19 @@
     // Chế độ Chia Đôi Màn Hình (Split Screen Dual Map)
     let isSplitMode = true;
 
-    // Helper tạo TileLayer cho từng bản đồ (tránh lỗi xung đột layer instance trong Leaflet)
+    // Helper tạo TileLayer cho từng bản đồ sử dụng Google Maps (Sạch, không có đường lưỡi bò)
     function createTileLayer(key) {
       const isSat = (key === 'satellite');
       const url = isSat
-        ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-        : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+        ? 'https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'
+        : 'https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}';
       return L.tileLayer(url, {
-        subdomains: isSat ? [] : ['a', 'b', 'c'],
-        maxZoom: 19,
+        subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+        maxZoom: 20,
         keepBuffer: 6,
         updateWhenIdle: true,
         updateWhenZooming: false,
-        attribution: isSat ? '&copy; Esri World Imagery' : '&copy; OpenStreetMap contributors'
+        attribution: isSat ? '&copy; Google Maps Vệ Tinh' : '&copy; Google Maps'
       });
     }
 
@@ -1625,8 +1497,9 @@
     let binMarkers = {};
     let incidents = [];
     let vehicles = [
-      { id: 1, name: "Xe rác số 1", capacity: 300, currentLoad: 0, color: '#10b981', status: "Sẵn sàng" },
-      { id: 2, name: "Xe rác số 2", capacity: 300, currentLoad: 0, color: '#3b82f6', status: "Sẵn sàng" }
+      { id: 1, name: "Xe rác số 1 (Đội Bắc)", capacity: 450, currentLoad: 0, color: '#10b981', status: "Sẵn sàng" },
+      { id: 2, name: "Xe rác số 2 (Đội Trung Tâm)", capacity: 450, currentLoad: 0, color: '#3b82f6', status: "Sẵn sàng" },
+      { id: 3, name: "Xe rác số 3 (Đội Đông)", capacity: 450, currentLoad: 0, color: '#8b5cf6', status: "Sẵn sàng" }
     ];
     let computedRoutes = [];
     let truckMarkers = [];
@@ -1636,122 +1509,14 @@
     let isSimulating = false;
     let simInterval = null;
 
-    // Incident Configurations
-    const INCIDENT_CONFIGS = {
-      road_blocked: {
-        type: 'road_blocked',
-        name: '🚧 Đoạn đường bị phong tỏa',
-        shortName: 'Đường chặn',
-        icon: '🚧',
-        color: '#f59e0b',
-        description: 'Đoạn đường có rào chắn/sửa chữa, xe không thể đi qua',
-        can_ai_resolve: true,
-        badgeText: '⚡ Tự Động Né (Detour)'
-      },
-      truck_breakdown: {
-        type: 'truck_breakdown',
-        name: '🛑 Xe gặp sự cố hỏng hóc',
-        shortName: 'Xe hỏng',
-        icon: '🛑',
-        color: '#ef4444',
-        description: 'Xe rác hỏng động cơ/thủy lực, không thể tiếp tục',
-        can_ai_resolve: false,
-        badgeText: '👤 Cần Người Chỉ Đạo'
-      },
-      bin_overflow: {
-        type: 'bin_overflow',
-        name: '⚠️ Thùng rác phát sinh quá tải',
-        shortName: 'Quá tải',
-        icon: '📦',
-        color: '#ea580c',
-        extra_demand: 80,
-        description: 'Lượng rác phát sinh đột xuất thêm +80kg',
-        can_ai_resolve: false,
-        badgeText: '👤 Human-in-the-Loop'
-      },
-      depot_closed: {
-        type: 'depot_closed',
-        name: '🚨 Bãi rác trung tâm tạm đóng cửa',
-        shortName: 'Bãi rác đóng',
-        icon: '🚨',
-        color: '#8b5cf6',
-        description: 'Bãi tập kết bảo trì trạm cân / tạm dừng tiếp nhận',
-        can_ai_resolve: false,
-        badgeText: '👤 Chuyển Bãi Dự Phòng'
-      }
-    };
-    let selectedIncidentType = 'road_blocked';
-
-    function handleIncidentBtnClick(e) {
-      if (currentMode === 'incident') {
-        toggleIncidentMenu(e);
-      } else {
-        setMode('incident');
-        closeIncidentMenu();
-      }
-    }
-
-    function toggleIncidentMenu(e) {
-      if (e) e.stopPropagation();
-      const menu = document.getElementById('incident-menu');
-      if (menu) {
-        menu.classList.toggle('show');
-      }
-      setMode('incident');
-    }
-
-    function closeIncidentMenu() {
-      const menu = document.getElementById('incident-menu');
-      if (menu) menu.classList.remove('show');
-    }
-
-    function selectIncidentType(type, e) {
-      if (e) e.stopPropagation();
-      selectedIncidentType = type;
-      const cfg = INCIDENT_CONFIGS[type] || INCIDENT_CONFIGS['road_blocked'];
-
-      // Update button visual
-      const iconEl = document.getElementById('incident-btn-icon');
-      const textEl = document.getElementById('incident-btn-text');
-      if (iconEl) iconEl.textContent = cfg.icon;
-      if (textEl) textEl.textContent = `+Sự Cố (${cfg.shortName})`;
-
-      // Update active selection highlight in dropdown menu
-      document.querySelectorAll('.incident-menu-item').forEach(el => el.classList.remove('selected'));
-      const activeItem = document.getElementById(`menu-item-${type}`);
-      if (activeItem) activeItem.classList.add('selected');
-
-      closeIncidentMenu();
-      setMode('incident');
-      logTimeline(`🎯 Đã chọn sự cố: "${cfg.name}". Hãy nhấn lên vị trí mong muốn trên bản đồ để cắm mốc!`, 'incident');
-    }
-
-    // Close dropdown menu when clicking outside
-    document.addEventListener('click', function(e) {
-      const container = document.getElementById('incident-dropdown-container');
-      if (container && !container.contains(e.target)) {
-        closeIncidentMenu();
-      }
-    });
-
     // Mode Switcher
     function setMode(mode) {
       currentMode = mode;
       document.querySelectorAll('.btn-mode').forEach(b => {
-        b.classList.remove('active', 'active-bin', 'active-depot', 'active-truck', 'active-incident');
+        b.classList.remove('active', 'active-bin', 'active-depot', 'active-truck');
       });
-      const incContainer = document.getElementById('incident-dropdown-container');
-      if (incContainer) incContainer.classList.remove('active');
-
-      if (mode === 'incident') {
-        if (incContainer) incContainer.classList.add('active');
-        const incBtn = document.getElementById('btn-mode-incident');
-        if (incBtn) incBtn.classList.add('active', 'active-incident');
-      } else {
-        closeIncidentMenu();
-        const activeBtn = document.getElementById(`btn-mode-${mode}`);
-        if (activeBtn) activeBtn.classList.add('active', `active-${mode}`);
-      }
+      const activeBtn = document.getElementById(`btn-mode-${mode}`);
+      if (activeBtn) activeBtn.classList.add('active', `active-${mode}`);
     }
 
     // Switch Basemap Style
@@ -1815,14 +1580,12 @@
         const newId = bins.length > 0 ? Math.max(...bins.map(b => b.id)) + 1 : 1;
         const fillLevel = Math.floor(Math.random() * 50) + 50; // 50 - 100%
         const demand = Math.round(fillLevel * 0.5);
-        const hasSmell = fillLevel >= 85 ? (Math.random() > 0.6) : false;
         const newBin = {
           id: newId,
           name: `Thùng #${newId}`,
           lat: lat, lon: lng,
           fill_level: fillLevel,
           demand: demand,
-          has_smell: hasSmell,
           collected: false,
           collectedGoogle: false,
           inaccessible: false,
@@ -1834,8 +1597,7 @@
           type: 3
         };
         bins.push(newBin);
-        const smellNotice = hasSmell ? ' 🦨 (Bốc mùi)' : '';
-        logTimeline(`📍 Đã thêm Thùng rác #${newId} (${fillLevel}% đầy, ${demand}kg)${smellNotice} trên cả 2 bản đồ`, hasSmell ? 'incident' : 'collected');
+        logTimeline(`📍 Đã thêm Thùng rác #${newId} (${fillLevel}% đầy, ${demand}kg) trên cả 2 bản đồ`, 'collected');
         updateAll();
         checkBinAccessibility(newBin);
       } else if (currentMode === 'depot') {
@@ -1853,22 +1615,6 @@
         updateAll();
       } else if (currentMode === 'truck') {
         addVehicle(lat, lng);
-      } else if (currentMode === 'incident') {
-        const newId = incidents.length + 1;
-        const cfg = INCIDENT_CONFIGS[selectedIncidentType] || INCIDENT_CONFIGS['road_blocked'];
-        incidents.push({
-          id: newId,
-          type: selectedIncidentType,
-          name: cfg.name,
-          description: cfg.description,
-          extra_demand: cfg.extra_demand || 80,
-          lat: lat, lon: lng,
-          can_ai_resolve: cfg.can_ai_resolve,
-          triggered: false,
-          discovered: false
-        });
-        logTimeline(`⚠️ Đã đặt mốc sự cố mới: ${cfg.name} tại [${lat.toFixed(4)}, ${lng.toFixed(4)}] (Đồng bộ cả 2 bản đồ)`, 'incident');
-        updateAll();
       }
     }
 
@@ -2210,21 +1956,59 @@
       updateAll();
     }
 
-    function removeIncident(incId) {
-      incidents = incidents.filter(i => i.id !== incId);
-      map.closePopup();
-      logTimeline(`🗑️ Đã xóa mốc Sự cố #${incId}`, 'incident');
-      updateAll();
-    }
-
     let currentPresetId = 1;
 
-    async function loadRandomPreset() {
-      // Chọn ngẫu nhiên 1 trong các mẫu (1..5) khác với mẫu hiện tại
-      let nextId;
-      do {
-        nextId = Math.floor(Math.random() * 5) + 1;
-      } while (nextId === currentPresetId);
+    // Random độ đầy của các thùng rác CỐ ĐỊNH (giữ nguyên vị trí các thùng rác, chỉ random độ đầy & cập nhật mùi hôi)
+    async function randomizeBinsFillLevel() {
+      if (!bins || bins.length === 0) {
+        await loadPresetData(currentPresetId || 1);
+        return;
+      }
+
+      if (isSimulating) {
+        isSimulating = false;
+        if (simInterval) clearInterval(simInterval);
+        const simBtn = document.getElementById('btn-sim');
+        if (simBtn) {
+          simBtn.innerHTML = '<i class="fa-solid fa-play"></i> Bắt Đầu Thu Gom';
+          simBtn.classList.remove('simulating');
+        }
+      }
+
+      // Giữ nguyên vị trí cố định của toàn bộ thùng rác hiện tại
+      // Chỉ random lại độ đầy (fill_level) và nhu cầu (demand)
+      let totalDemand = 0;
+      bins.forEach(b => {
+        // Random độ đầy từ 20% đến 100%
+        const fill = Math.floor(Math.random() * 81) + 20;
+        b.fill_level = fill;
+        b.demand = Math.round(fill * 0.5);
+        delete b.has_smell;
+        totalDemand += b.demand;
+        b.collected = false;
+        b.collectedGoogle = false;
+      });
+
+      // Reset tải trọng và trạng thái đội xe
+      vehicles.forEach(v => {
+        v.currentLoad = 0;
+        v.status = "Sẵn sàng";
+      });
+
+      updateAll();
+
+      logTimeline(`🎲 [Random độ đầy]: Giữ nguyên vị trí ${bins.length} thùng rác cố định, random độ đầy mới (Tổng rác: ${totalDemand} kg) & tối ưu lại lộ trình!`, 'ai');
+
+      // Tự động giải lại lộ trình tối ưu cho cả 3D-PACO AI và Google OR-Tools
+      solveRoutes();
+    }
+
+    // Đảm bảo khi nhấn nút Random / Xúc xắc thì chỉ random độ đầy thùng rác cố định
+    const loadRandomPreset = randomizeBinsFillLevel;
+
+    // Chuyển kịch bản Quận 1 kế tiếp (Mẫu 1 -> 5)
+    async function cycleNextPreset() {
+      let nextId = (currentPresetId % 5) + 1;
       currentPresetId = nextId;
       await loadPresetData(nextId);
     }
@@ -2260,10 +2044,9 @@
           btnPreset.style.boxShadow = `0 4px 14px ${data.theme_color || '#10b981'}77`;
         }
 
-        const smellCount = bins.filter(b => b.has_smell).length;
         const presetTitle = data.name || `Kịch bản #${data.id}`;
-        logTimeline(`🎲 [${presetTitle}]: Đã nạp ${bins.length} thùng rác (${smellCount} bốc mùi), ${vehicles.length} xe gom!`, 'ai');
-        showAiToast(`🎲 [MẪU DỮ LIỆU: ${presetTitle}]: Nạp thành công ${bins.length} thùng (${smellCount} bốc mùi) & ${vehicles.length} xe gom.`);
+        logTimeline(`🎲 [${presetTitle}]: Đã nạp ${bins.length} thùng rác, ${vehicles.length} xe gom!`, 'ai');
+        showAiToast(`🎲 [MẪU DỮ LIỆU: ${presetTitle}]: Nạp thành công ${bins.length} thùng & ${vehicles.length} xe gom.`);
 
         // Di chuyển góc nhìn camera đến vị trí trạm tập kết mới
         if (depot && map) {
@@ -2277,381 +2060,14 @@
         console.error('Error loading preset:', err);
       }
     }
-
-    // Solver and Battle Arena State
     let activeSolver = 'paco';
-    let lastBattleData = null;
-
-    function updateEsgHud(res) {
-      // ESG HUD removed
-    }
 
     function switchActiveSolver(solverKey) {
       activeSolver = solverKey || 'paco';
       solveRoutes();
     }
 
-    async function openBattleModal() {
-      const overlay = document.getElementById('battle-modal-overlay');
-      overlay.classList.add('open');
-      await reRunBattle();
-    }
-
-    function closeBattleModal() {
-      const overlay = document.getElementById('battle-modal-overlay');
-      overlay.classList.remove('open');
-    }
-
-    async function reRunBattle() {
-      const body = document.getElementById('battle-body');
-      body.innerHTML = `
-        <div style="grid-column: 1/-1; text-align: center; padding: 40px 0;">
-          <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 32px; color: #f59e0b; margin-bottom: 12px;"></i>
-          <div style="font-weight: 700; color: #1e293b; font-size: 15px;">Đang chạy song song 2 bộ giải trên cùng tập dữ liệu...</div>
-          <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Khởi chạy C++ OpenMP 3D-PACO • Google OR-Tools</div>
-        </div>
-      `;
-
-      try {
-        const cleanDepot = { id: depot.id, name: depot.name, lat: depot.lat, lon: depot.lon };
-        const cleanBins = bins.map(b => ({
-          id: b.id, name: b.name, lat: b.lat, lon: b.lon,
-          fill_level: b.fill_level, demand: b.demand, address: b.address || "",
-          has_smell: !!b.has_smell,
-          collection_type: b.collection_type || (b.type === 1 ? 'home' : (b.type === 2 ? 'centralized' : 'flexible')),
-          type: b.type || (b.collection_type === 'home' ? 1 : (b.collection_type === 'centralized' ? 2 : 3))
-        }));
-        const cleanVehicles = vehicles.map(v => ({
-          id: v.id, name: v.name, capacity: v.capacity, color: v.color, lat: v.lat, lon: v.lon
-        }));
-
-        const resp = await fetch('/api/waste/compare', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            depot: cleanDepot,
-            bins: cleanBins,
-            vehicles: cleanVehicles
-          })
-        });
-        const data = await resp.json();
-        lastBattleData = data;
-        renderBattleScoreboard(data);
-      } catch (err) {
-        body.innerHTML = `<div style="grid-column: 1/-1; color: #ef4444; padding: 20px;">Lỗi khi chạy so găng: ${err.message}</div>`;
-      }
-    }
-
-    function renderBattleScoreboard(data) {
-      const paco = data.solvers.paco;
-      const ortools = data.solvers.ortools;
-      const baseline = (data.solvers && data.solvers.baseline) || {
-        total_distance_km: (paco.total_distance_km * 1.35).toFixed(1),
-        co2_kg: (paco.co2_kg * 1.35).toFixed(1),
-        runtime_ms: 1.2
-      };
-      const summary = data.summary;
-      const dec = summary.decision_summary || (paco && paco.decision_summary) || {};
-
-      const costSavedText = summary.cost_saved_vnd
-        ? Number(summary.cost_saved_vnd).toLocaleString('vi-VN') + ' đ'
-        : 'Tiết kiệm nhiên liệu';
-
-      const html = `
-        <!-- Multi-Decision Highlights Banner -->
-        <div style="grid-column: 1 / -1; background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); border: 1.5px solid #c4b5fd; border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: #5b21b6; flex-wrap: wrap; gap: 8px;">
-          <div>
-            <span style="font-weight: 800; font-size: 13.5px;"><i class="fa-solid fa-code-branch"></i> Mô hình Đa Quyết Định (Multi-Decision Collection)</span>
-            <div style="font-size: 12px; color: #6d28d9; margin-top: 4px; display: flex; gap: 12px; flex-wrap: wrap;">
-              <span>🏠 Thu tại nhà: <b>${dec.home_collection_count || 0} điểm</b></span>
-              <span>🏢 Trạm gom tập trung: <b>${dec.centralized_hub_count || 0} trạm</b></span>
-              <span>🚶 Cư dân mang rác ra trạm: <b>${dec.bundled_dropoffs_count || 0} điểm</b> (${dec.bundled_waste_kg || 0} kg)</span>
-            </div>
-          </div>
-          <div style="text-align: right;">
-            <span style="background: #10b981; color: #fff; font-weight: 800; padding: 4px 9px; border-radius: 6px; font-size: 11.5px;">
-              Cắt giảm: ${summary.distance_saved_pct} km xe vào hẻm
-            </span>
-            <div style="font-size: 11px; color: #059669; font-weight: 700; margin-top: 3px;">
-              Giảm ${summary.co2_saved_kg || 0} kg CO2 • Tiết kiệm ${costSavedText}
-            </div>
-          </div>
-        </div>
-
-        <!-- Column 1: 3D-PACO (Thuật toán của tác giả) -->
-        <div class="battle-col battle-col-highlight">
-          <div class="battle-col-title">
-            <span style="color:#059669;"><i class="fa-solid fa-bolt"></i> 3D-PACO (Đề Xuất)</span>
-            <span class="battle-winner-badge">🏆 TOP 1 WINNER</span>
-          </div>
-          <div class="battle-metric-row">
-            <span class="battle-metric-label">Lõi giải thuật:</span>
-            <span class="battle-metric-val" style="color:#059669; font-size:11px;">3D-PACO Parallel OpenMP</span>
-          </div>
-          <div class="battle-metric-row">
-            <span class="battle-metric-label">Thời gian tính:</span>
-            <span class="battle-metric-val text-green" style="font-size:14px;">${paco.runtime_ms} ms</span>
-          </div>
-          <div class="battle-metric-row">
-            <span class="battle-metric-label">Tốc độ vs Google:</span>
-            <span class="battle-metric-val text-green">⚡ ${summary.speedup_vs_google}</span>
-          </div>
-          <div class="battle-metric-row">
-            <span class="battle-metric-label">Khai thác CPU:</span>
-            <span class="battle-metric-val">8 Cores (Đa luồng C++)</span>
-          </div>
-          <div class="battle-metric-row">
-            <span class="battle-metric-label">Đa Quyết Định:</span>
-            <span class="battle-metric-val" style="color:#7c3aed;">Tối ưu tự động</span>
-          </div>
-          <div class="battle-metric-row">
-            <span class="battle-metric-label">Tổng quãng đường:</span>
-            <span class="battle-metric-val" style="color:#059669; font-size:13px;">${paco.total_distance_km} km</span>
-          </div>
-          <div class="battle-metric-row">
-            <span class="battle-metric-label">Cắt giảm phát thải:</span>
-            <span class="battle-metric-val text-emerald">-${summary.distance_saved_pct}</span>
-          </div>
-          <div class="battle-metric-row">
-            <span class="battle-metric-label">Xử lý mùi hôi:</span>
-            <span class="battle-metric-val text-green">100% Cấp Bách</span>
-          </div>
-        </div>
-
-        <!-- Column 2: Google OR-Tools -->
-        <div class="battle-col">
-          <div class="battle-col-title">
-            <span style="color:#2563eb;"><i class="fa-brands fa-google"></i> Google OR-Tools</span>
-            <span style="font-size:10px; font-weight:700; color:#64748b; background:#f1f5f9; padding:2px 6px; border-radius:4px;">Chuẩn ngành</span>
-          </div>
-          <div class="battle-metric-row">
-            <span class="battle-metric-label">Lõi giải thuật:</span>
-            <span class="battle-metric-val" style="font-size:11px;">Guided Local Search</span>
-          </div>
-          <div class="battle-metric-row">
-            <span class="battle-metric-label">Thời gian tính:</span>
-            <span class="battle-metric-val text-blue" style="font-size:14px;">${ortools.runtime_ms} ms</span>
-          </div>
-          <div class="battle-metric-row">
-            <span class="battle-metric-label">Tốc độ vs 3D-PACO:</span>
-            <span class="battle-metric-val" style="color:#64748b;">Chậm hơn ${summary.speedup_vs_google}</span>
-          </div>
-          <div class="battle-metric-row">
-            <span class="battle-metric-label">Khai thác CPU:</span>
-            <span class="battle-metric-val">1 Core (Đơn luồng)</span>
-          </div>
-          <div class="battle-metric-row">
-            <span class="battle-metric-label">Đa Quyết Định:</span>
-            <span class="battle-metric-val" style="color:#7c3aed;">Áp dụng sau gộp</span>
-          </div>
-          <div class="battle-metric-row">
-            <span class="battle-metric-label">Tổng quãng đường:</span>
-            <span class="battle-metric-val">${ortools.total_distance_km} km</span>
-          </div>
-          <div class="battle-metric-row">
-            <span class="battle-metric-label">Phát thải CO2:</span>
-            <span class="battle-metric-val">${ortools.co2_kg} kg</span>
-          </div>
-          <div class="battle-metric-row">
-            <span class="battle-metric-label">Xử lý mùi hôi:</span>
-            <span class="battle-metric-val">65% (Không ưu tiên)</span>
-          </div>
-        </div>
-
-        <!-- Column 3: Baseline Truyền Thống (Không Đa Quyết Định) -->
-        <div class="battle-col">
-          <div class="battle-col-title">
-            <span style="color:#64748b;"><i class="fa-solid fa-calendar-days"></i> Truyền Thống (Cố Định)</span>
-            <span style="font-size:10px; font-weight:700; color:#ef4444; background:#fef2f2; padding:2px 6px; border-radius:4px;">URENCO Cũ</span>
-          </div>
-          <div class="battle-metric-row">
-            <span class="battle-metric-label">Lõi giải thuật:</span>
-            <span class="battle-metric-val" style="font-size:11px;">Lịch trình tuyến cố định</span>
-          </div>
-          <div class="battle-metric-row">
-            <span class="battle-metric-label">Thời gian tính:</span>
-            <span class="battle-metric-val" style="font-size:13px; color:#64748b;">${baseline.runtime_ms} ms</span>
-          </div>
-          <div class="battle-metric-row">
-            <span class="battle-metric-label">Khai thác CPU:</span>
-            <span class="battle-metric-val">Tĩnh (Không tối ưu)</span>
-          </div>
-          <div class="battle-metric-row">
-            <span class="battle-metric-label">Đa Quyết Định:</span>
-            <span class="battle-metric-val" style="color:#ef4444;">Không (100% vào hẻm)</span>
-          </div>
-          <div class="battle-metric-row">
-            <span class="battle-metric-label">Tổng quãng đường:</span>
-            <span class="battle-metric-val" style="color:#dc2626; font-size:13px;">${baseline.total_distance_km} km</span>
-          </div>
-          <div class="battle-metric-row">
-            <span class="battle-metric-label">Chênh lệch km:</span>
-            <span class="battle-metric-val" style="color:#dc2626;">+${summary.distance_saved_pct}</span>
-          </div>
-          <div class="battle-metric-row">
-            <span class="battle-metric-label">Phát thải CO2:</span>
-            <span class="battle-metric-val" style="color:#dc2626;">${baseline.co2_kg} kg</span>
-          </div>
-          <div class="battle-metric-row">
-            <span class="battle-metric-label">Ùn tắc ngõ hẻm:</span>
-            <span class="battle-metric-val" style="color:#dc2626;">Nguy cơ rất cao</span>
-          </div>
-        </div>
-      `;
-      document.getElementById('battle-body').innerHTML = html;
-    }
-
-    function applySolverFromBattle(solverKey) {
-      closeBattleModal();
-      if (solverKey === 'ortools') {
-        logTimeline("🔍 Đang đối chiếu song song: Màn hình Phải hiển thị lộ trình Google OR-Tools.", "default");
-      } else if (solverKey === 'paco') {
-        logTimeline("🏆 Đang đối chiếu song song: Màn hình Trái hiển thị lộ trình tối ưu 3D-PACO Engine.", "ai");
-      } else {
-        logTimeline("ℹ️ Duy trì 2 màn hình đối chiếu song song 3D-PACO vs Google OR-Tools.", "default");
-      }
-      solveRoutes();
-    }
-
-    // IoT Live Telemetry Simulation State & Handlers
-    let isIoTSimulating = false;
-    let iotSimInterval = null;
-
-    function toggleIoTSimulation() {
-      if (isIoTSimulating) {
-        stopIoTSimulation();
-      } else {
-        startIoTSimulation();
-      }
-    }
-
-    // Giữ alias cho simulateIoTSurge để tương thích
-    function simulateIoTSurge() {
-      toggleIoTSimulation();
-    }
-
-    function startIoTSimulation() {
-      if (bins.length === 0) {
-        alert("Vui lòng nạp dữ liệu mẫu trước hoặc tạo thùng rác!");
-        return;
-      }
-      isIoTSimulating = true;
-      const btn = document.getElementById('btn-iot-surge');
-      if (btn) {
-        btn.classList.add('active');
-        btn.innerHTML = '<i class="fa-solid fa-tower-broadcast fa-fade"></i> Dừng IoT';
-        btn.title = 'Nhấn để tắt mô phỏng IoT tăng rác';
-      }
-
-      showAiToast('📡 [CẢM BIẾN IoT BẬT]: Đã kích hoạt luồng telemetry! Các thùng rác đang tăng độ đầy dần dần theo thời gian thực.');
-      logTimeline('📡 [IoT Telemetry]: Bắt đầu nhận dữ liệu luồng - Rác tại các điểm thu gom đang tăng dần...', 'incident');
-
-      if (iotSimInterval) clearInterval(iotSimInterval);
-      // Nhịp tăng mỗi 2 giây
-      iotSimInterval = setInterval(stepIoTSimulation, 2000);
-    }
-
-    function stopIoTSimulation() {
-      if (!isIoTSimulating && !iotSimInterval) return;
-      isIoTSimulating = false;
-      if (iotSimInterval) {
-        clearInterval(iotSimInterval);
-        iotSimInterval = null;
-      }
-      const btn = document.getElementById('btn-iot-surge');
-      if (btn) {
-        btn.classList.remove('active');
-        btn.innerHTML = '<i class="fa-solid fa-tower-broadcast"></i> Giả Lập IoT';
-        btn.title = 'Giả lập cảm biến IoT: Bật/Tắt tăng độ đầy rác dần dần theo thời gian thực';
-      }
-      logTimeline('⏸️ [IoT Telemetry]: Đã dừng mô phỏng cảm biến IoT rác tăng dần.', 'default');
-    }
-
-    function stepIoTSimulation() {
-      if (bins.length === 0) {
-        stopIoTSimulation();
-        return;
-      }
-
-      let anyIncreased = false;
-      let newlyFullBins = [];
-      let newlySmellBins = [];
-
-      bins.forEach(b => {
-        // Chỉ tăng nếu thùng chưa đầy 100%
-        if ((b.fill_level || 0) < 100) {
-          anyIncreased = true;
-          // Tốc độ tăng: ngẫu nhiên 4% - 8% mỗi nhịp
-          // Thùng trọng điểm đông đúc (id 1, 3, 6) tăng nhanh hơn: 7% - 12%
-          const isHotspot = (b.id === 1 || b.id === 3 || b.id === 6);
-          const inc = isHotspot 
-            ? Math.floor(Math.random() * 6) + 7 
-            : Math.floor(Math.random() * 5) + 4;
-
-          const oldLevel = b.fill_level || 0;
-          b.fill_level = Math.min(100, oldLevel + inc);
-          b.demand = Math.round(b.fill_level * 0.5);
-
-          // Nếu thùng rác từng được thu gom nhưng rác mới phát sinh nhiều (>25%), mở lại trạng thái chờ gom
-          if (b.collected && b.fill_level > 25) {
-            b.collected = false;
-            b.collectedGoogle = false;
-          }
-
-          // Khi thùng đạt trên 85% và chưa bốc mùi, xác suất phát sinh mùi hôi
-          if (b.fill_level >= 85 && !b.has_smell) {
-            if (Math.random() < 0.4 || b.fill_level === 100) {
-              b.has_smell = true;
-              newlySmellBins.push(b.name || `Thùng #${b.id}`);
-            }
-          }
-
-          if (oldLevel < 100 && b.fill_level === 100) {
-            newlyFullBins.push(b.name || `Thùng #${b.id}`);
-          }
-
-          updateBinMarkerVisual(b);
-
-          // Cập nhật popup nếu đang mở hoặc được gán
-          const valEl = document.getElementById(`fill-val-${b.id}`);
-          if (valEl) {
-            valEl.textContent = `${b.fill_level}% (${b.demand} kg)`;
-            valEl.style.color = b.fill_level >= 85 ? '#ea580c' : (b.fill_level >= 60 ? '#d97706' : '#10b981');
-          }
-          const sliderEl = document.getElementById(`fill-slider-${b.id}`);
-          if (sliderEl) {
-            sliderEl.value = b.fill_level;
-          }
-          const smellBadgeEl = document.getElementById(`popup-smell-badge-${b.id}`);
-          if (smellBadgeEl && b.has_smell && !b.collected) {
-            smellBadgeEl.innerHTML = `
-              <span style="background:#fef3c7; color:#b45309; padding:2px 7px; border-radius:12px; font-size:10.5px; font-weight:700; border:1px solid #fde68a; display:inline-flex; align-items:center; gap:3px;">
-                🦨 Bốc mùi
-              </span>
-            `;
-          }
-
-          if (binMarkers[b.id]) binMarkers[b.id].setPopupContent(getBinPopupHtml(b));
-          if (binMarkersGoogle[b.id]) binMarkersGoogle[b.id].setPopupContent(getBinPopupHtml(b));
-        }
-      });
-
-      updateStatsBar();
-
-      if (newlySmellBins.length > 0) {
-        logTimeline(`🦨 [IoT Cảm Biến Mùi]: Phát hiện mùi hôi tại ${newlySmellBins.join(', ')} do ứ đọng rác!`, 'incident');
-      }
-
-      if (newlyFullBins.length > 0) {
-        logTimeline(`⚠️ [IoT Cảnh Báo]: ${newlyFullBins.join(', ')} đã đầy quá tải 100%!`, 'incident');
-      }
-
-      const allFull = bins.every(b => (b.fill_level || 0) >= 100);
-      if (allFull && anyIncreased) {
-        showAiToast('🚨 [IoT Telemetry]: Toàn bộ thùng rác trong khu vực đã đạt 100% quá tải!');
-      }
-    }
-
+    function stopIoTSimulation() {}
     // Solve Waste VRP Routes
     async function solveRoutes(overrideSolver) {
       if (!depot || bins.length === 0) {
@@ -2710,7 +2126,6 @@
         const cleanBins = targetBins.map(b => ({
           id: b.id, name: b.name, lat: b.lat, lon: b.lon,
           fill_level: b.fill_level, demand: b.demand, address: b.address || "",
-          has_smell: !!b.has_smell,
           collection_type: b.collection_type || (b.type === 1 ? 'home' : (b.type === 2 ? 'centralized' : 'flexible')),
           type: b.type || (b.collection_type === 'home' ? 1 : (b.collection_type === 'centralized' ? 2 : 3))
         }));
@@ -2740,7 +2155,6 @@
               lastWalkingLinks = resPaco.walking_links || [];
               lastDecisionSummary = resPaco.decision_summary || null;
               document.getElementById('stat-dist').textContent = `${resPaco.total_distance_km} km`;
-              updateEsgHud(resPaco);
               updateStatsBar();
               await fetchRoadGeometries(computedRoutes);
               renderRoutesOnMap();
@@ -2814,7 +2228,6 @@
             lastDecisionSummary = res.decision_summary || null;
             logTimeline(`⚡ [${res.name || '3D-PACO'}]: Tối ưu hoàn tất trong ${res.runtime_ms}ms! Quãng đường ${res.total_distance_km} km (CO2: ${res.co2_kg}kg)`, 'ai');
             document.getElementById('stat-dist').textContent = `${res.total_distance_km} km`;
-            updateEsgHud(res);
             updateStatsBar();
             await fetchRoadGeometries(computedRoutes);
             renderRoutesOnMap();
@@ -2846,50 +2259,6 @@
 
     // Fetch Turn-by-Turn Road Polylines from OSRM (Parallelized with Caching)
     const routeGeomCache = new Map();
-
-    // -------------------------------------------------------------
-    // ROADBLOCK AVOIDANCE & DYNAMIC DETOUR ENGINE
-    // -------------------------------------------------------------
-    const BLOCK_AVOID_RADIUS = 55; // meters clearance to ensure vehicle detours onto parallel streets and never skims roadblock
-
-    // Accurate point-to-segment distance in meters
-    function pointToSegmentDistMeters(pLat, pLon, aLat, aLon, bLat, bLon) {
-      const cosLat = 0.9824; // cos(10.77 deg for HCMC)
-      const ax = aLon * 111320 * cosLat;
-      const ay = aLat * 110540;
-      const bx = bLon * 111320 * cosLat;
-      const by = bLat * 110540;
-      const px = pLon * 111320 * cosLat;
-      const py = pLat * 110540;
-
-      const vx = bx - ax;
-      const vy = by - ay;
-      const wx = px - ax;
-      const wy = py - ay;
-
-      const c1 = wx * vx + wy * vy;
-      const c2 = vx * vx + vy * vy;
-      if (c2 === 0) return Math.hypot(px - ax, py - ay);
-      if (c1 <= 0) return Math.hypot(px - ax, py - ay);
-      if (c2 <= c1) return Math.hypot(px - bx, py - by);
-      const t = c1 / c2;
-      return Math.hypot(px - (ax + t * vx), py - (ay + t * vy));
-    }
-
-    // Check min distance from an incident to a route polyline (array of [lon, lat])
-    function minDistanceToPolyline(incLat, incLon, coords) {
-      if (!coords || coords.length < 2) return 1e9;
-      let minDist = 1e9;
-      for (let i = 0; i < coords.length - 1; i++) {
-        const d = pointToSegmentDistMeters(
-          incLat, incLon,
-          coords[i][1], coords[i][0],
-          coords[i+1][1], coords[i+1][0]
-        );
-        if (d < minDist) minDist = d;
-      }
-      return minDist;
-    }
 
     // High-speed Multi-Mirror Route Fetcher with LocalStorage + Server Proxy + Fallback
     async function fetchFastRouteGeometry(coordsStr, waypoints) {
@@ -2968,189 +2337,25 @@
       return waypoints;
     }
 
-    // Query OSRM for an array of waypoints [[lon, lat], ...]
-    async function queryOsrmRoute(waypoints) {
-      if (!waypoints || waypoints.length < 2) return waypoints || [];
-      const coordsStr = waypoints.map(c => `${c[0].toFixed(5)},${c[1].toFixed(5)}`).join(';');
-      return await fetchFastRouteGeometry(coordsStr, waypoints);
-    }
-
-    // Dynamic Local Street-Network Detour Engine (Parallelized & Ultra-Fast, 55m Clearance)
-    async function getSafeLegCoordinates(startPt, endPt, blockedList) {
-      const directPath = await queryOsrmRoute([startPt, endPt]);
-      if (!blockedList || blockedList.length === 0) return directPath;
-
-      const hittingInc = blockedList.find(inc => minDistanceToPolyline(inc.lat, inc.lon, directPath) < BLOCK_AVOID_RADIUS);
-      if (!hittingInc) {
-        return directPath;
-      }
-
-      // Calculate direction and perpendicular vector relative to road blockage
-      const cosLat = 0.9824;
-      const m_lon = 111320 * cosLat;
-      const m_lat = 110540;
-
-      const dx = (hittingInc.lon - startPt[0]) * m_lon;
-      const dy = (hittingInc.lat - startPt[1]) * m_lat;
-      let len = Math.hypot(dx, dy);
-      if (len === 0) len = 1;
-      const ux = dx / len;
-      const uy = dy / len;
-      const nx = -uy;
-      const ny = ux;
-
-      // Realistic urban street offsets (140m, 200m, 260m, 320m) for actual parallel avenues
-      const offsets = [140, 200, 260, 320];
-      const candidateWaypoints = [];
-      offsets.forEach(off => {
-        // Lateral parallel streets on both sides
-        candidateWaypoints.push([hittingInc.lon + nx * off / m_lon, hittingInc.lat + ny * off / m_lat]);
-        candidateWaypoints.push([hittingInc.lon - nx * off / m_lon, hittingInc.lat - ny * off / m_lat]);
-        // Pre-turn intersections before roadblock
-        candidateWaypoints.push([hittingInc.lon + (nx * off - ux * 45) / m_lon, hittingInc.lat + (ny * off - uy * 45) / m_lat]);
-        candidateWaypoints.push([hittingInc.lon - (nx * off + ux * 45) / m_lon, hittingInc.lat - (ny * off + uy * 45) / m_lat]);
-        // Forward lateral bypass
-        candidateWaypoints.push([hittingInc.lon + (nx * off + ux * 55) / m_lon, hittingInc.lat + (ny * off + uy * 55) / m_lat]);
-        candidateWaypoints.push([hittingInc.lon - (nx * off - uy * 55) / m_lon, hittingInc.lat - (ny * off - uy * 55) / m_lat]);
-      });
-      // Mid-segment lateral bypass
-      const midLon = (startPt[0] + endPt[0]) / 2;
-      const midLat = (startPt[1] + endPt[1]) / 2;
-      candidateWaypoints.push([midLon + nx * 200 / m_lon, midLat + ny * 200 / m_lat]);
-      candidateWaypoints.push([midLon - nx * 200 / m_lon, midLat - ny * 200 / m_lat]);
-
-      // Query all candidate routes concurrently with Promise.all for instant response (< 300ms)
-      const candPaths = await Promise.all(
-        candidateWaypoints.map(candPt => queryOsrmRoute([startPt, candPt, endPt]).catch(() => null))
-      );
-
-      let bestSafeRoute = null;
-      let minScore = Infinity;
-      let maxClearanceRoute = null;
-      let maxClearance = -1;
-
-      for (const candPath of candPaths) {
-        if (!candPath || candPath.length < 2) continue;
-        const candDist = Math.min(...blockedList.map(inc => minDistanceToPolyline(inc.lat, inc.lon, candPath)));
-        if (candDist > maxClearance) {
-          maxClearance = candDist;
-          maxClearanceRoute = candPath;
-        }
-
-        if (candDist >= BLOCK_AVOID_RADIUS) {
-          let pathDist = 0;
-          for (let p = 0; p < candPath.length - 1; p++) {
-            pathDist += Math.hypot((candPath[p+1][0] - candPath[p][0]) * m_lon, (candPath[p+1][1] - candPath[p][1]) * m_lat);
-          }
-          // Backtracking penalty: heavily penalize routes that reverse backwards along initial street
-          let minProgress = 0;
-          for (let p = 0; p < candPath.length; p++) {
-            const prog = (candPath[p][0] - startPt[0]) * m_lon * ux + (candPath[p][1] - startPt[1]) * m_lat * uy;
-            if (prog < minProgress) minProgress = prog;
-          }
-          const backtrackPenalty = Math.max(0, -minProgress) * 2;
-          const score = pathDist + backtrackPenalty;
-          if (score < minScore) {
-            minScore = score;
-            bestSafeRoute = candPath;
-          }
-        }
-      }
-
-      if (bestSafeRoute) {
-        return bestSafeRoute;
-      }
-
-      // If no candidate achieved >= BLOCK_AVOID_RADIUS, pick max clearance (NEVER return directPath 0m!)
-      if (maxClearanceRoute && maxClearance > 15) {
-        return maxClearanceRoute;
-      }
-
-      // Fallback: cardinal grid directions
-      const cardinalCandidates = [
-        [hittingInc.lon + 180 / m_lon, hittingInc.lat],
-        [hittingInc.lon - 180 / m_lon, hittingInc.lat],
-        [hittingInc.lon, hittingInc.lat + 180 / m_lat],
-        [hittingInc.lon, hittingInc.lat - 180 / m_lat]
-      ];
-      const cardinalPaths = await Promise.all(
-        cardinalCandidates.map(cPt => queryOsrmRoute([startPt, cPt, endPt]).catch(() => null))
-      );
-      for (const cPath of cardinalPaths) {
-        if (cPath && cPath.length >= 2) {
-          const cDist = Math.min(...blockedList.map(inc => minDistanceToPolyline(inc.lat, inc.lon, cPath)));
-          if (cDist >= BLOCK_AVOID_RADIUS) {
-            return cPath;
-          }
-        }
-      }
-
-      return maxClearanceRoute || directPath;
-    }
-
-    // Build full road geometry for a sequence of stops [ [lon, lat], ... ] avoiding roadblocks
-    async function buildSafeFullRouteGeometry(stopsCoords, blockedList) {
-      if (!stopsCoords || stopsCoords.length < 2) return stopsCoords || [];
-      if (!blockedList || blockedList.length === 0) {
-        return await queryOsrmRoute(stopsCoords);
-      }
-
-      // Detour each leg that hits a roadblock while preserving correct waypoint order
-      let fullSafeCoords = [];
-      for (let i = 0; i < stopsCoords.length - 1; i++) {
-        const legCoords = await getSafeLegCoordinates(stopsCoords[i], stopsCoords[i+1], blockedList);
-        if (i === 0) {
-          fullSafeCoords = fullSafeCoords.concat(legCoords);
-        } else {
-          fullSafeCoords = fullSafeCoords.concat(legCoords.slice(1));
-        }
-      }
-
-      return fullSafeCoords;
-    }
-
     async function fetchRoadGeometries(routesList) {
       const targetRoutes = routesList || computedRoutes;
       if (!targetRoutes || targetRoutes.length === 0) return;
-      let anyStatusChanged = false;
-      // All existing road_blocked incidents on map are avoided immediately upon solving!
-      const activeRoadBlocks = incidents.filter(i => i.type === 'road_blocked');
 
       await Promise.all(targetRoutes.map(async (route) => {
         try {
           const coordsStr = route.coordinates.map(c => `${c[0].toFixed(5)},${c[1].toFixed(5)}`).join(';');
           let roadCoordinates = null;
-
-          // Check if existing route hits any roadblock
-          const testPath = route.street_geometry || route.coordinates;
-          const hitsBlock = activeRoadBlocks.some(inc => minDistanceToPolyline(inc.lat, inc.lon, testPath) < BLOCK_AVOID_RADIUS);
-
-          if (hitsBlock && activeRoadBlocks.length > 0) {
-            // Avoid roadblocks immediately during route generation!
-            roadCoordinates = await buildSafeFullRouteGeometry(route.coordinates, activeRoadBlocks);
-          } else if (route.street_geometry && route.street_geometry.length > 2) {
+          if (route.street_geometry && route.street_geometry.length > 2) {
             roadCoordinates = route.street_geometry;
-            if (activeRoadBlocks.some(inc => minDistanceToPolyline(inc.lat, inc.lon, roadCoordinates) < BLOCK_AVOID_RADIUS)) {
-              roadCoordinates = await buildSafeFullRouteGeometry(route.coordinates, activeRoadBlocks);
-            }
           } else {
             roadCoordinates = await fetchFastRouteGeometry(coordsStr, route.coordinates);
-            if (activeRoadBlocks.some(inc => minDistanceToPolyline(inc.lat, inc.lon, roadCoordinates) < BLOCK_AVOID_RADIUS)) {
-              roadCoordinates = await buildSafeFullRouteGeometry(route.coordinates, activeRoadBlocks);
-            }
           }
-
           route.streetGeometry = roadCoordinates || route.street_geometry || route.coordinates;
         } catch (e) {
           console.warn('Error applying road geometry:', e);
           route.streetGeometry = route.street_geometry || route.coordinates;
         }
       }));
-
-      if (anyStatusChanged) {
-        renderMarkers();
-        updateFleetCards();
-      }
     }
 
     // Render Routes on Left Leaflet Map (3D-PACO)
@@ -3357,30 +2562,9 @@
           iconContent = '<i class="fa-solid fa-water"></i>';
         }
 
-        const bType = b.collection_type || (b.type === 1 ? 'home' : (b.type === 2 ? 'centralized' : 'flexible'));
-        let typeBadgeHtml = '';
-        let typeRingClass = '';
-        if (bType === 'centralized' || b.type === 2) {
-          typeRingClass = 'bin-hub-ring';
-          typeBadgeHtml = '<div class="bin-type-badge" title="Trạm gom tập trung (Hub)">🏢</div>';
-        } else if (bType === 'home' || b.type === 1) {
-          typeRingClass = 'bin-home-ring';
-          typeBadgeHtml = '<div class="bin-type-badge" title="Thu gom tại nhà (Door-to-door)">🏠</div>';
-        } else {
-          typeRingClass = 'bin-flex-ring';
-          typeBadgeHtml = '<div class="bin-type-badge" title="Điểm đa quyết định (Linh hoạt tối ưu)">🔄</div>';
-        }
-
-        const smellBadgeHtml = b.has_smell && !b.collected ? `
-          <div class="bin-smelly-badge" title="Đang bốc mùi hôi thối!">🦨</div>
-          <div class="bin-smelly-aura"></div>
-        ` : '';
-
         const bIcon = L.divIcon({
           html: `<div class="marker-bin-wrap" id="bin-marker-wrap-${b.id}">
-                   ${smellBadgeHtml}
-                   ${typeBadgeHtml}
-                   <div class="marker-bin-inner ${fillClass} ${typeRingClass}">${iconContent}</div>
+                   <div class="marker-bin-inner ${fillClass}">${iconContent}</div>
                  </div>`,
           className: '',
           iconSize: [32, 32],
@@ -3397,9 +2581,7 @@
         let iconContentG = b.collectedGoogle ? '<i class="fa-solid fa-check"></i>' : iconContent;
         const bIconG = L.divIcon({
           html: `<div class="marker-bin-wrap" id="bin-marker-wrap-g-${b.id}">
-                   ${smellBadgeHtml}
-                   ${typeBadgeHtml}
-                   <div class="marker-bin-inner ${fillClassG} ${typeRingClass}">${iconContentG}</div>
+                   <div class="marker-bin-inner ${fillClassG}">${iconContentG}</div>
                  </div>`,
           className: '',
           iconSize: [32, 32],
@@ -3472,48 +2654,7 @@
         bMarkerGoogle.bindPopup(getBinPopupHtml(b), { maxWidth: 320 });
       });
 
-      // 3. Incidents (Mốc sự cố)
-      incidents.forEach(inc => {
-        allBounds.push([inc.lat, inc.lon]);
-        const cfg = INCIDENT_CONFIGS[inc.type] || {
-          icon: inc.type === 'road_blocked' ? '🚧' : '🛑',
-          color: inc.type === 'road_blocked' ? '#f59e0b' : '#ef4444',
-          name: inc.name
-        };
-        const iIcon = L.divIcon({
-          html: `<div class="marker-incident-wrap"><div class="marker-incident-inner" style="background:${cfg.color}; font-size:16px;">${cfg.icon}</div></div>`,
-          className: '',
-          iconSize: [34, 34],
-          iconAnchor: [17, 17],
-          popupAnchor: [0, -17]
-        });
 
-        const incPopupHtml = `
-          <div style="font-family:'Inter',sans-serif; min-width:240px;">
-            <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
-              <span style="font-size:16px;">${cfg.icon}</span>
-              <b style="font-size:13px; color:#0f172a;">${inc.name}</b>
-            </div>
-            <div style="font-size:12px; color:#475569; margin-bottom:6px;">${inc.description || 'Sự cố phát sinh trên tuyến đường'}</div>
-            <div style="font-size:11.5px; margin-bottom:8px; color:${inc.can_ai_resolve ? '#059669' : '#dc2626'}; font-weight:600; display:flex; align-items:center; gap:4px;">
-              <i class="fa-solid ${inc.can_ai_resolve ? 'fa-wand-magic-sparkles' : 'fa-user-gear'}"></i>
-              <span>${inc.can_ai_resolve ? '⚡ Khả năng: Tự Động Tái Định Tuyến' : '👤 Khả năng: Cần Điều Phối Viên Quyết Định (HITL)'}</span>
-            </div>
-            <div style="border-top:1px solid #f1f5f9; padding-top:6px; display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:11px; color:#94a3b8;">Mã: #${inc.id}</span>
-              <button onclick="removeIncident(${inc.id})" style="background:#fee2e2; color:#ef4444; border:none; padding:4px 8px; border-radius:5px; font-size:11px; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
-                <i class="fa-solid fa-trash"></i> Xóa sự cố
-              </button>
-            </div>
-          </div>
-        `;
-
-        const iMarker1 = L.marker([inc.lat, inc.lon], { icon: iIcon }).addTo(markersGroup);
-        iMarker1.bindPopup(incPopupHtml, { maxWidth: 300 });
-
-        const iMarker2 = L.marker([inc.lat, inc.lon], { icon: iIcon }).addTo(markersGroupGoogle);
-        iMarker2.bindPopup(incPopupHtml, { maxWidth: 300 });
-      });
 
       // 4. Vehicles (Xe rác lúc nghỉ / chưa mô phỏng)
       if (!isSimulating) {
@@ -3708,11 +2849,6 @@
 
       const fillPercent = b.fill_level || 0;
       const demandKg = b.demand || Math.round(fillPercent * 0.5);
-      const smellTag = b.has_smell && !b.collected ? `
-        <span style="background:#fef3c7; color:#b45309; padding:2px 7px; border-radius:12px; font-size:10.5px; font-weight:700; border:1px solid #fde68a; display:inline-flex; align-items:center; gap:3px;">
-          🦨 Bốc mùi
-        </span>
-      ` : '';
 
       return `
         <div class="bin-popup-card" style="min-width: 255px; font-family: 'Inter', sans-serif;">
@@ -3722,12 +2858,10 @@
               <i class="fa-solid ${b.inaccessible ? 'fa-water' : 'fa-trash-can'}"></i>
               Thùng rác #${b.id} ${b.inaccessible ? '(Dưới Sông)' : ''}
             </span>
-            <span id="popup-smell-badge-${b.id}">${smellTag}</span>
           </div>
 
           ${warningHtml}
           ${bundledHtml}
-          ${collectionModeSelector}
 
           <!-- Độ đầy rác (Fullness Slider & Quick Buttons) -->
           <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 10px; margin-bottom:8px;" onmousedown="event.stopPropagation()">
@@ -3748,22 +2882,6 @@
               <button type="button" onclick="setBinFillLevel(${b.id}, 80)" style="flex:1; font-size:10.5px; padding:3px 0; border:1px solid #cbd5e1; background:#fff; border-radius:4px; cursor:pointer; font-weight:600; color:#475569;">80%</button>
               <button type="button" onclick="setBinFillLevel(${b.id}, 100)" style="flex:1; font-size:10.5px; padding:3px 0; border:1px solid #fecaca; background:#fef2f2; border-radius:4px; cursor:pointer; font-weight:700; color:#dc2626;">100%</button>
             </div>
-          </div>
-
-          <!-- Bốc mùi Toggle Switch -->
-          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 10px; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;" onmousedown="event.stopPropagation()">
-            <div style="display:flex; flex-direction:column;">
-              <span id="smell-title-${b.id}" style="font-size:12px; font-weight:700; color:${b.has_smell ? '#b45309' : '#334155'}; display:flex; align-items:center; gap:5px;">
-                ${b.has_smell ? '🦨 Bốc mùi hôi thối' : '🌱 Không có mùi'}
-              </span>
-              <span id="smell-sub-${b.id}" style="font-size:10.5px; color:#64748b;">
-                ${b.has_smell ? 'Cần xe ưu tiên thu gom' : 'Môi trường sạch sẽ'}
-              </span>
-            </div>
-            <label class="switch-smell">
-              <input type="checkbox" id="smell-chk-${b.id}" ${b.has_smell ? 'checked' : ''} onchange="toggleBinSmell(${b.id}, this.checked)">
-              <span class="slider-smell"></span>
-            </label>
           </div>
 
           <!-- Trạng thái & Xóa -->
@@ -3789,20 +2907,6 @@
       const markerGoogle = binMarkersGoogle[b.id];
       if (!marker && !markerGoogle) return;
 
-      const bType = b.collection_type || (b.type === 1 ? 'home' : (b.type === 2 ? 'centralized' : 'flexible'));
-      let typeBadgeHtml = '';
-      let typeRingClass = '';
-      if (bType === 'centralized' || b.type === 2) {
-        typeRingClass = 'bin-hub-ring';
-        typeBadgeHtml = '<div class="bin-type-badge" title="Trạm gom tập trung (Hub)">🏢</div>';
-      } else if (bType === 'home' || b.type === 1) {
-        typeRingClass = 'bin-home-ring';
-        typeBadgeHtml = '<div class="bin-type-badge" title="Thu gom tại nhà (Door-to-door)">🏠</div>';
-      } else {
-        typeRingClass = 'bin-flex-ring';
-        typeBadgeHtml = '<div class="bin-type-badge" title="Điểm đa quyết định (Linh hoạt tối ưu)">🔄</div>';
-      }
-
       // 1. Cập nhật biểu tượng trên Left Map (3D-PACO)
       if (marker) {
         let fillClass = b.collected ? 'bin-collected' : (b.fill_level >= 85 ? 'bin-full' : (b.fill_level >= 60 ? 'bin-medium' : 'bin-empty'));
@@ -3813,16 +2917,9 @@
           iconContent = '<i class="fa-solid fa-water"></i>';
         }
 
-        const smellBadgeHtml = b.has_smell && !b.collected ? `
-          <div class="bin-smelly-badge" title="Đang bốc mùi hôi thối!">🦨</div>
-          <div class="bin-smelly-aura"></div>
-        ` : '';
-
         const newIcon = L.divIcon({
           html: `<div class="marker-bin-wrap" id="bin-marker-wrap-${b.id}">
-                   ${smellBadgeHtml}
-                   ${typeBadgeHtml}
-                   <div class="marker-bin-inner ${fillClass} ${typeRingClass}">${iconContent}</div>
+                   <div class="marker-bin-inner ${fillClass}">${iconContent}</div>
                  </div>`,
           className: '',
           iconSize: [32, 32],
@@ -3842,16 +2939,9 @@
           iconContentG = '<i class="fa-solid fa-water"></i>';
         }
 
-        const smellBadgeHtmlG = b.has_smell && !b.collectedGoogle ? `
-          <div class="bin-smelly-badge" title="Đang bốc mùi hôi thối!">🦨</div>
-          <div class="bin-smelly-aura"></div>
-        ` : '';
-
         const newIconG = L.divIcon({
           html: `<div class="marker-bin-wrap" id="bin-marker-wrap-g-${b.id}">
-                   ${smellBadgeHtmlG}
-                   ${typeBadgeHtml}
-                   <div class="marker-bin-inner ${fillClassG} ${typeRingClass}">${iconContentG}</div>
+                   <div class="marker-bin-inner ${fillClassG}">${iconContentG}</div>
                  </div>`,
           className: '',
           iconSize: [32, 32],
@@ -3928,77 +3018,11 @@
       onBinFillCommit(binId, val);
     }
 
-    function toggleBinSmell(binId, isChecked) {
-      const b = bins.find(item => item.id === binId);
-      if (!b) return;
-      b.has_smell = !!isChecked;
-
-      const smellTitle = document.getElementById(`smell-title-${binId}`);
-      const smellSub = document.getElementById(`smell-sub-${binId}`);
-      const smellBadge = document.getElementById(`popup-smell-badge-${binId}`);
-
-      if (smellTitle) {
-        smellTitle.innerHTML = b.has_smell ? '🦨 Bốc mùi hôi thối' : '🌱 Không có mùi';
-        smellTitle.style.color = b.has_smell ? '#b45309' : '#334155';
-      }
-      if (smellSub) {
-        smellSub.textContent = b.has_smell ? 'Cần xe ưu tiên thu gom' : 'Môi trường sạch sẽ';
-      }
-      if (smellBadge) {
-        smellBadge.innerHTML = b.has_smell && !b.collected ? `
-          <span style="background:#fef3c7; color:#b45309; padding:2px 7px; border-radius:12px; font-size:10.5px; font-weight:700; border:1px solid #fde68a; display:inline-flex; align-items:center; gap:3px;">
-            🦨 Bốc mùi
-          </span>
-        ` : '';
-      }
-
-      updateBinMarkerVisual(b);
-      updateStatsBar();
-
-      if (b.has_smell) {
-        logTimeline(`🦨 Thùng rác #${b.id} phát sinh mùi hôi thối! Đã bật cảnh báo ưu tiên thu gom sớm.`, 'incident');
-      } else {
-        logTimeline(`🌱 Thùng rác #${b.id} đã tắt cảnh báo mùi hôi.`, 'default');
-      }
-
-      if (computedRoutes.length > 0 || computedRoutesGoogle.length > 0) {
-        computedRoutes = [];
-        computedRoutesGoogle = [];
-        routesGroup.clearLayers();
-        walkingLinksGroup.clearLayers();
-        badgesGroup.clearLayers();
-        routesGroupGoogle.clearLayers();
-        walkingLinksGroupGoogle.clearLayers();
-        badgesGroupGoogle.clearLayers();
-        document.getElementById('stat-dist').textContent = '0 km (Cần tính lại)';
-      }
-    }
-
     function updateStatsBar() {
-      document.getElementById('stat-bins').textContent = `${bins.length} điểm gom`;
-      document.getElementById('stat-trucks').textContent = `${vehicles.length} xe`;
-      const smellyCount = bins.filter(b => b.has_smell && !b.collected).length;
-      const smellBadge = document.getElementById('badge-smell');
-      if (smellBadge) {
-        if (smellyCount > 0) {
-          smellBadge.style.display = 'flex';
-          document.getElementById('stat-smell').textContent = `${smellyCount} bốc mùi`;
-        } else {
-          smellBadge.style.display = 'none';
-        }
-      }
-
-      const homeCount = bins.filter(b => b.collection_type === 'home' || b.type === 1).length;
-      const hubCount = bins.filter(b => b.collection_type === 'centralized' || b.type === 2).length;
-      const flexCount = bins.filter(b => (b.collection_type === 'flexible' || b.type === 3) || (!b.collection_type && !b.type)).length;
-      const decisionBadge = document.getElementById('badge-decision');
-      const decisionText = document.getElementById('stat-decision');
-      if (decisionText) {
-        decisionText.textContent = `${homeCount} 🏠 • ${hubCount} 🏢 • ${flexCount} 🔄`;
-      }
-      if (decisionBadge) {
-        decisionBadge.title = `Phân loại gom rác: ${homeCount} điểm thu tại nhà (🏠), ${hubCount} trạm gom tập trung (🏢), ${flexCount} điểm đa quyết định linh hoạt (🔄)`;
-      }
+      const statBins = document.getElementById('stat-bins');
+      if (statBins) statBins.textContent = `${bins.length} điểm gom`;
+      const statTrucks = document.getElementById('stat-trucks');
+      if (statTrucks) statTrucks.textContent = `${vehicles.length} xe`;
     }
 
     function updateAll() {
@@ -4130,13 +3154,6 @@
         b.collected = false;
         b.collectedGoogle = false;
       });
-      incidents.forEach(inc => {
-        inc.triggered = false;
-        inc.discovered = false;
-        Object.keys(inc).forEach(k => {
-          if (k.startsWith('triggered')) delete inc[k];
-        });
-      });
       renderMarkers();
     }
 
@@ -4151,13 +3168,6 @@
       vehicles.forEach(v => {
         v.currentLoad = 0;
         v.status = "Đang di chuyển thu gom";
-      });
-      incidents.forEach(inc => {
-        inc.triggered = false;
-        inc.discovered = false;
-        Object.keys(inc).forEach(k => {
-          if (k.startsWith('triggered')) delete inc[k];
-        });
       });
 
       // 1. Khởi tạo xe trên Left Map (3D-PACO)
@@ -4191,7 +3201,6 @@
           stops: r.stops,
           currentStopIndex: 1,
           active: true,
-          isHandlingIncident: false,
           solverType: 'paco'
         };
       });
@@ -4228,7 +3237,6 @@
             stops: r.stops,
             currentStopIndex: 1,
             active: true,
-            isHandlingIncident: false,
             solverType: 'google'
           };
         });
@@ -4253,11 +3261,6 @@
       truckSimStates.forEach(ts => {
         if (!ts.active) return;
         anyActive = true;
-
-        // Nếu xe này đang xử lý sự cố: chỉ xe này dừng bánh, các xe khác và bên kia vẫn chạy!
-        if (ts.isHandlingIncident) {
-          return;
-        }
 
         if (ts.currStep < ts.totalSteps - 1) {
           ts.currStep++;
@@ -4284,10 +3287,8 @@
               const canCollect = !b.inaccessible && (d < 0.00085 || dSnapped < 0.00085);
 
               if (canCollect) {
-                const hadSmell = b.has_smell;
                 b.collected = true;
                 b.inaccessible = false;
-                b.has_smell = false;
                 b.fill_level = 0;
                 b.demand = 0;
                 updateBinMarkerVisual(b);
@@ -4299,7 +3300,6 @@
                   if (bb && !bb.collected) {
                     bb.collected = true;
                     bb.inaccessible = false;
-                    bb.has_smell = false;
                     bb.fill_level = 0;
                     bb.demand = 0;
                     updateBinMarkerVisual(bb);
@@ -4317,8 +3317,6 @@
                 ts.vehicleRef.currentLoad += b.demand;
                 if (dSnapped < 0.00085 && d >= 0.00085) {
                   logTimeline(`🚶 [3D-PACO • ${ts.vehicleRef.name} - Đi Bộ Vào Hẻm]: Xe đỗ tại mép đường, công nhân đi bộ vào gom Thùng #${b.id}!`, 'collected');
-                } else if (hadSmell) {
-                  logTimeline(`✨ [3D-PACO • ${ts.vehicleRef.name}] Gom & khử mùi Thùng #${b.id} (dập tắt mùi hôi!)`, 'collected');
                 } else {
                   logTimeline(`✅ [3D-PACO • ${ts.vehicleRef.name}] Gom xong Thùng #${b.id}`, 'collected');
                 }
@@ -4332,17 +3330,6 @@
             }
           });
 
-          // Kiểm tra tiếp cận sự cố độc lập cho 3D-PACO
-          incidents.forEach(inc => {
-            const triggerKey = `triggered_paco_${ts.truckId}_${inc.id}`;
-            if (!inc[triggerKey]) {
-              const d = Math.hypot(currentPos[0] - inc.lat, currentPos[1] - inc.lon);
-              if (d < 0.00075) {
-                inc[triggerKey] = true;
-                handleEncounteredIncident(inc, ts, 'paco');
-              }
-            }
-          });
         } else {
           ts.active = false;
           ts.vehicleRef.status = "Đã hoàn thành lộ trình";
@@ -4356,11 +3343,6 @@
         truckSimStatesGoogle.forEach(tsg => {
           if (!tsg.active) return;
           anyActive = true;
-
-          // Nếu xe bên Google đang xử lý sự cố: chỉ xe này dừng bánh, các xe khác vẫn chạy!
-          if (tsg.isHandlingIncident) {
-            return;
-          }
 
           if (tsg.currStep < tsg.totalSteps - 1) {
             tsg.currStep++;
@@ -4413,17 +3395,6 @@
               }
             });
 
-            // Kiểm tra tiếp cận sự cố độc lập cho Google OR-Tools
-            incidents.forEach(inc => {
-              const triggerKey = `triggered_google_${tsg.truckId}_${inc.id}`;
-              if (!inc[triggerKey]) {
-                const d = Math.hypot(currentPos[0] - inc.lat, currentPos[1] - inc.lon);
-                if (d < 0.00075) {
-                  inc[triggerKey] = true;
-                  handleEncounteredIncident(inc, tsg, 'google');
-                }
-              }
-            });
           } else {
             tsg.active = false;
             tsg.vehicleRef.status = "Đã hoàn thành lộ trình";
@@ -4432,10 +3403,7 @@
         });
       }
 
-      const anyHandling = truckSimStates.some(ts => ts.isHandlingIncident) ||
-                          truckSimStatesGoogle.some(tsg => tsg.isHandlingIncident);
-
-      if (!anyActive && !anyHandling) {
+      if (!anyActive) {
         isSimulating = false;
         if (simInterval) clearInterval(simInterval);
         document.getElementById('btn-sim').innerHTML = '<i class="fa-solid fa-rotate-right"></i> Chạy Lại';
@@ -4456,258 +3424,6 @@
       }
     }
 
-    // Dynamic AI Detour: Reroute around blocked incident from current position following local street network
-    async function rerouteTruckDetour(truckState, incident, solverType = 'paco') {
-      const isGoogle = (solverType === 'google');
-      // Truck stays safely at its current position before obstacle
-      let safeStep = truckState.currStep;
-      while (safeStep > 0 && Math.hypot(truckState.coords[safeStep][0] - incident.lat, truckState.coords[safeStep][1] - incident.lon) < 0.00030) {
-        safeStep--;
-      }
-      truckState.currStep = safeStep;
-      const currentPos = truckState.coords[safeStep]; // [lat, lon]
-      if (truckState.marker) {
-        truckState.marker.setLatLng(currentPos);
-      }
-
-      // Mark incident discovered
-      incident.discovered = true;
-      const blockedList = incidents.filter(i => i.type === 'road_blocked' && (i.discovered || i.id === incident.id));
-
-      // Identify uncollected remaining stops for this truck ONLY FROM CURRENT PROGRESS FORWARD!
-      // Never backtrack to stops in the past!
-      const currentStopIdx = truckState.currentStopIndex || 1;
-      const uncollectedStops = (truckState.stops || []).filter((s, idx) => {
-        if (s.type === 'depot' || s.type === 'start') return false;
-        // Do not revisit past stops!
-        if (idx < currentStopIdx) return false;
-        const bin = bins.find(b => b.id === s.id);
-        return bin && (isGoogle ? !bin.collectedGoogle : !bin.collected);
-      });
-
-      // Build waypoints strictly: currentPos -> uncollected stops in forward order -> depot
-      const remainingStopsCoords = [[currentPos[1], currentPos[0]]];
-      uncollectedStops.forEach(s => remainingStopsCoords.push([s.lon, s.lat]));
-      remainingStopsCoords.push([depot.lon, depot.lat]);
-
-      try {
-        // Calculate safe street geometry using realistic local street network
-        const newRoadCoords = await buildSafeFullRouteGeometry(remainingStopsCoords, blockedList);
-        const newLeafletCoords = newRoadCoords.map(c => [c[1], c[0]]);
-        const interpolatedDetour = interpolateCoords(newLeafletCoords);
-
-        // Splice truck coords: keep past path (0 .. currStep), append smooth street-aligned detour!
-        const pastCoords = truckState.coords.slice(0, truckState.currStep + 1);
-        truckState.coords = pastCoords.concat(interpolatedDetour.slice(1));
-        truckState.totalSteps = truckState.coords.length;
-        // Update truck stops sequence to the remaining forward stops
-        truckState.stops = [{ type: 'current_pos', lat: currentPos[0], lon: currentPos[1] }]
-          .concat(uncollectedStops)
-          .concat([depot]);
-        truckState.currentStopIndex = 1;
-
-        // Update route geometry on map corresponding to solver
-        if (isGoogle) {
-          const routeObj = computedRoutesGoogle.find(r => r.truck_id === truckState.truckId);
-          if (routeObj) {
-            routeObj.streetGeometry = truckState.coords.map(c => [c[1], c[0]]);
-          }
-          renderRoutesGoogleOnMap();
-        } else {
-          const routeObj = computedRoutes.find(r => r.truck_id === truckState.truckId);
-          if (routeObj) {
-            routeObj.streetGeometry = truckState.coords.map(c => [c[1], c[0]]);
-          }
-          renderRoutesOnMap();
-        }
-
-        const solverLabel = isGoogle ? 'Google OR-Tools' : '3D-PACO';
-        logTimeline(`🔀 [${solverLabel} • ${truckState.vehicleRef.name}]: Đã tự động phân luồng bẻ lộ trình qua phố song song, né hoàn toàn rào chắn!`, 'ai');
-      } catch (err) {
-        console.warn('Detour routing error:', err);
-      }
-    }
-
-    // Dynamic AI Stop Reassignment: Assign broken truck's stops to other active truck
-    async function reassignStopsToOtherTruck(brokenTruckState, solverType = 'paco') {
-      brokenTruckState.active = false;
-      brokenTruckState.isHandlingIncident = false;
-      brokenTruckState.vehicleRef.status = "🛑 Hỏng động cơ (Dừng tại chỗ)";
-
-      const isGoogle = (solverType === 'google');
-      const pool = isGoogle ? truckSimStatesGoogle : truckSimStates;
-      const otherTruck = pool.find(ts => ts.truckId !== brokenTruckState.truckId && ts.active);
-      if (!otherTruck) {
-        logTimeline(`⚠️ Không còn xe nào khác trong đội để tiếp nhận bàn giao.`, 'incident');
-        return;
-      }
-
-      // Collect uncollected bins from both trucks
-      const uncollectedBroken = bins.filter(b => (isGoogle ? !b.collectedGoogle : !b.collected) && (brokenTruckState.stops || []).some(s => s.id === b.id));
-      const uncollectedOther = bins.filter(b => (isGoogle ? !b.collectedGoogle : !b.collected) && (otherTruck.stops || []).some(s => s.id === b.id));
-      const allTargetBins = [...uncollectedOther, ...uncollectedBroken];
-
-      const otherCurrentPos = otherTruck.coords[otherTruck.currStep]; // [lat, lon]
-
-      // Nearest Neighbor ordering from other truck's current pos
-      const orderedBins = [];
-      let cur = otherCurrentPos;
-      const tempPool = [...allTargetBins];
-      while (tempPool.length > 0) {
-        let bestIdx = 0;
-        let bestDist = Infinity;
-        for (let i = 0; i < tempPool.length; i++) {
-          const d = Math.hypot(cur[0] - tempPool[i].lat, cur[1] - tempPool[i].lon);
-          if (d < bestDist) {
-            bestDist = d;
-            bestIdx = i;
-          }
-        }
-        const nextBin = tempPool.splice(bestIdx, 1)[0];
-        orderedBins.push(nextBin);
-        cur = [nextBin.lat, nextBin.lon];
-      }
-
-      // Build waypoints for OSRM [lon, lat]: otherCurrentPos -> orderedBins -> depot
-      const waypoints = [[otherCurrentPos[1], otherCurrentPos[0]]];
-      orderedBins.forEach(b => waypoints.push([b.lon, b.lat]));
-      waypoints.push([depot.lon, depot.lat]);
-
-      try {
-        const blockedList = incidents.filter(i => i.type === 'road_blocked');
-        const newRoadCoords = await buildSafeFullRouteGeometry(waypoints, blockedList);
-        const newLeafletCoords = newRoadCoords.map(c => [c[1], c[0]]);
-        const interpolatedReassign = interpolateCoords(newLeafletCoords);
-
-        const pastCoords = otherTruck.coords.slice(0, otherTruck.currStep + 1);
-        otherTruck.coords = pastCoords.concat(interpolatedReassign.slice(1));
-        otherTruck.totalSteps = otherTruck.coords.length;
-        otherTruck.stops = [{ type: 'truck_pos', lat: otherCurrentPos[0], lon: otherCurrentPos[1] }]
-          .concat(orderedBins)
-          .concat([depot]);
-
-        if (isGoogle) {
-          const brokenRouteObj = computedRoutesGoogle.find(r => r.truck_id === brokenTruckState.truckId);
-          if (brokenRouteObj) {
-            brokenRouteObj.streetGeometry = brokenTruckState.coords.slice(0, brokenTruckState.currStep + 1).map(c => [c[1], c[0]]);
-          }
-          const otherRouteObj = computedRoutesGoogle.find(r => r.truck_id === otherTruck.truckId);
-          if (otherRouteObj) {
-            otherRouteObj.streetGeometry = otherTruck.coords.map(c => [c[1], c[0]]);
-          }
-          renderRoutesGoogleOnMap();
-        } else {
-          const brokenRouteObj = computedRoutes.find(r => r.truck_id === brokenTruckState.truckId);
-          if (brokenRouteObj) {
-            brokenRouteObj.streetGeometry = brokenTruckState.coords.slice(0, brokenTruckState.currStep + 1).map(c => [c[1], c[0]]);
-          }
-          const otherRouteObj = computedRoutes.find(r => r.truck_id === otherTruck.truckId);
-          if (otherRouteObj) {
-            otherRouteObj.streetGeometry = otherTruck.coords.map(c => [c[1], c[0]]);
-          }
-          renderRoutesOnMap();
-        }
-
-        const solverLabel = isGoogle ? 'Google OR-Tools' : '3D-PACO';
-        logTimeline(`📋 [${solverLabel} • Điều Phối]: Đã tích hợp ${uncollectedBroken.length} thùng rác dang dở sang ${otherTruck.vehicleRef.name}.`, 'ai');
-      } catch (err) {
-        console.warn('Reassign route error:', err);
-      }
-    }
-
-    // Dynamic AI Detour to Depot (for dump_early)
-    async function rerouteTruckStraightToDepot(truckState, solverType = 'paco') {
-      const currentPos = truckState.coords[truckState.currStep];
-      const waypoints = [[currentPos[1], currentPos[0]], [depot.lon, depot.lat]];
-      try {
-        const blockedList = incidents.filter(i => i.type === 'road_blocked');
-        const newRoadCoords = await buildSafeFullRouteGeometry(waypoints, blockedList);
-        const newLeafletCoords = newRoadCoords.map(c => [c[1], c[0]]);
-        const interpolatedDepot = interpolateCoords(newLeafletCoords);
-        const pastCoords = truckState.coords.slice(0, truckState.currStep + 1);
-        truckState.coords = pastCoords.concat(interpolatedDepot.slice(1));
-        truckState.totalSteps = truckState.coords.length;
-
-        const isGoogle = (solverType === 'google');
-        if (isGoogle) {
-          const routeObj = computedRoutesGoogle.find(r => r.truck_id === truckState.truckId);
-          if (routeObj) {
-            routeObj.streetGeometry = truckState.coords.map(c => [c[1], c[0]]);
-          }
-          renderRoutesGoogleOnMap();
-        } else {
-          const routeObj = computedRoutes.find(r => r.truck_id === truckState.truckId);
-          if (routeObj) {
-            routeObj.streetGeometry = truckState.coords.map(c => [c[1], c[0]]);
-          }
-          renderRoutesOnMap();
-        }
-      } catch (err) {
-        console.warn('Reroute depot error:', err);
-      }
-    }
-
-    // Handle Encountered Incident: ONLY freeze the affected truck, NEVER freeze the whole simulation or other solvers!
-    async function handleEncounteredIncident(incident, truckState, solverType = 'paco') {
-      // Freeze ONLY this individual truck at its exact current location
-      truckState.isHandlingIncident = true;
-      truckState.vehicleRef.status = "🚧 Đang phân luồng tránh sự cố...";
-      updateFleetCards();
-
-      const isGoogle = (solverType === 'google');
-      const solverLabel = isGoogle ? 'Google OR-Tools' : '3D-PACO';
-      logTimeline(`⚠️ [${solverLabel} • ${truckState.vehicleRef.name}]: Gặp sự cố: ${incident.name}!`, 'incident');
-
-      try {
-        const resp = await fetch('/api/waste/resolve-incident', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            incident: incident,
-            truck_state: {
-              truck_id: truckState.truckId,
-              current_load: truckState.vehicleRef.currentLoad,
-              capacity: truckState.vehicleRef.capacity
-            },
-            all_trucks: vehicles
-          })
-        });
-
-        const resolution = await resp.json();
-
-        if (resolution.resolved_by_ai) {
-          // AI RESOLVED AUTONOMOUSLY
-          const aiMsg = `[${solverLabel} • ${truckState.vehicleRef.name}]: ${resolution.log}`;
-          logTimeline(aiMsg, 'ai');
-          showAiToast(aiMsg);
-
-          if (incident.type === 'road_blocked') {
-            // Calculate dynamic detour around obstacle from current position following street network
-            await rerouteTruckDetour(truckState, incident, solverType);
-          } else if (incident.type === 'bin_overflow') {
-            if (resolution.new_load) {
-              truckState.vehicleRef.currentLoad = Math.min(resolution.new_load, truckState.vehicleRef.capacity);
-              updateFleetCards();
-            }
-          }
-
-          // Unfreeze ONLY this truck after 1.2s so user can observe the new path, other trucks never paused!
-          setTimeout(() => {
-            truckState.isHandlingIncident = false;
-            truckState.vehicleRef.status = "Đang di chuyển thu gom";
-            updateFleetCards();
-          }, 1200);
-        } else {
-          // CANNOT RESOLVE AUTONOMOUSLY -> TRIGGER HUMAN-IN-THE-LOOP DIALOG
-          logTimeline(`❓ [${solverLabel} • HITL]: ${resolution.message}`, 'human');
-          showHumanModal(resolution, truckState, solverType);
-        }
-      } catch (err) {
-        console.error('Incident resolution error:', err);
-        truckState.isHandlingIncident = false;
-      }
-    }
-
     let toastTimer = null;
     function showAiToast(msg) {
       const toast = document.getElementById('ai-toast');
@@ -4723,86 +3439,9 @@
       document.getElementById('ai-toast').classList.remove('open');
     }
 
-    // Show Human Decision Modal Dialog (Specific to solver and truck)
-    function showHumanModal(resolution, truckState, solverType = 'paco') {
-      const isGoogle = (solverType === 'google');
-      const solverLabel = isGoogle ? 'Google OR-Tools' : '3D-PACO';
-      document.getElementById('modal-title').textContent = `[${solverLabel}] ${resolution.title || "HỆ THỐNG CẦN CHỈ ĐẠO TỪ ĐIỀU PHỐI VIÊN"}`;
-      document.getElementById('modal-desc').innerHTML = `<b>Xe:</b> ${truckState.vehicleRef.name} (${solverLabel})<br/><b>Mô tả sự cố:</b> ${resolution.message}`;
-
-      const optionsContainer = document.getElementById('modal-options');
-      optionsContainer.innerHTML = '';
-
-      resolution.options.forEach((opt, idx) => {
-        const btn = document.createElement('button');
-        btn.className = 'btn-human-option';
-        btn.innerHTML = `<i class="fa-solid fa-circle-arrow-right" style="color:#2563eb;"></i> <span><b>Phương án ${idx + 1}:</b> ${opt.label}</span>`;
-        btn.onclick = () => {
-          selectHumanOption(opt, truckState, solverType);
-        };
-        optionsContainer.appendChild(btn);
-      });
-
-      document.getElementById('human-modal').classList.add('open');
-    }
-
-    async function selectHumanOption(option, truckState, solverType = 'paco') {
-      document.getElementById('human-modal').classList.remove('open');
-      const isGoogle = (solverType === 'google');
-      const solverLabel = isGoogle ? 'Google OR-Tools' : '3D-PACO';
-      logTimeline(`👤 [${solverLabel} • Điều Phối]: Đã chọn: "${option.label}" cho ${truckState.vehicleRef.name}`, 'human');
-
-      if (option.action === 'dispatch_rescue') {
-        truckState.vehicleRef.name = `${truckState.vehicleRef.name} (Xe cứu hộ)`;
-        truckState.vehicleRef.status = "Xe cứu hộ tiếp quản";
-        logTimeline(`🚚 [${solverLabel}]: Xe cứu trợ đã tiếp quản lộ trình tại vị trí xe gặp sự cố!`, 'ai');
-        updateFleetCards();
-        truckState.isHandlingIncident = false;
-      } else if (option.action === 'split_to_active_trucks') {
-        await reassignStopsToOtherTruck(truckState, solverType);
-        updateFleetCards();
-        truckState.isHandlingIncident = false;
-      } else if (option.action === 'collect_partial') {
-        truckState.vehicleRef.currentLoad = truckState.vehicleRef.capacity;
-        logTimeline(`📦 [${solverLabel}]: Xe nén và bốc tối đa tải trọng (${truckState.vehicleRef.capacity}kg). Tiếp tục lộ trình.`, 'human');
-        updateFleetCards();
-        truckState.isHandlingIncident = false;
-      } else if (option.action === 'dump_early') {
-        logTimeline(`🚛 [${solverLabel}]: Xe chuyển hướng quay về bãi xả sớm!`, 'human');
-        await rerouteTruckStraightToDepot(truckState, solverType);
-        truckState.isHandlingIncident = false;
-      } else if (option.action === 'reassign_truck2') {
-        logTimeline(`🚚 [${solverLabel}]: Bỏ qua điểm quá tải, giao xe khác nhận sau. Xe tiếp tục di chuyển.`, 'human');
-        truckState.isHandlingIncident = false;
-      } else if (option.action === 'redirect_secondary_depot') {
-        logTimeline(`🚨 [${solverLabel}]: Đã chuyển hướng xe sang Bãi xử lý dự phòng số 2!`, 'human');
-        truckState.vehicleRef.status = "Đang về Bãi rác dự phòng #2";
-        updateFleetCards();
-        truckState.isHandlingIncident = false;
-      } else if (option.action === 'wait_on_site') {
-        truckState.vehicleRef.status = "⏳ Chờ giải tỏa tại chỗ (2s)";
-        updateFleetCards();
-        setTimeout(() => {
-          truckState.vehicleRef.status = "Tiếp tục lộ trình";
-          logTimeline(`✅ [${solverLabel}]: Trạm tiếp nhận đã mở cửa lại! Xe tiếp tục hành trình.`, 'ai');
-          truckState.isHandlingIncident = false;
-          updateFleetCards();
-        }, 2000);
-      } else {
-        truckState.active = false;
-        truckState.isHandlingIncident = false;
-        truckState.vehicleRef.status = "🛑 Tạm ngừng ca làm";
-        logTimeline(`🛑 [${solverLabel}]: Xe đã kết thúc ca làm theo chỉ đạo.`, 'human');
-        updateFleetCards();
-      }
-    }
-
     // Initial Load
     const initPresetId = new URLSearchParams(window.location.search).get('preset');
     loadPresetData(initPresetId ? parseInt(initPresetId) : 1);
-    if (new URLSearchParams(window.location.search).get('battle') === '1') {
-      setTimeout(openBattleModal, 800);
-    }
   </script>
 </body>
 </html>

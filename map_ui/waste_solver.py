@@ -482,6 +482,12 @@ def solve_waste_vrp(
     - Accurate environmental & operational metrics (saved km, fuel, CO2)
     """
     t0 = time.perf_counter()
+    if isinstance(num_vehicles, list):
+        vehicles = num_vehicles
+        num_vehicles = len(vehicles)
+    elif vehicles and not num_vehicles:
+        num_vehicles = len(vehicles)
+
     ref_lat = depot["lat"]
     ref_lon = depot["lon"]
 
@@ -587,6 +593,12 @@ def solve_ortools_vrp(
     Solve using Google OR-Tools (RoutingModel + Guided Local Search) on Active Stops.
     """
     t0 = time.perf_counter()
+    if isinstance(num_vehicles, list):
+        vehicles = num_vehicles
+        num_vehicles = len(vehicles)
+    elif vehicles and not num_vehicles:
+        num_vehicles = len(vehicles)
+
     ref_lat = depot["lat"]
     ref_lon = depot["lon"]
 

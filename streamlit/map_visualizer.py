@@ -124,31 +124,27 @@ def create_vrp_map(
         lats.append(lat)
         lons.append(lon)
 
-    # Initialize Folium Map
+    # Initialize Folium Map with Google Maps (Clean, accurate, no nine-dash line)
     m = folium.Map(
         location=[ref_lat, ref_lon],
         zoom_start=13,
-        tiles="OpenStreetMap",
+        tiles="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+        attr="Google Maps",
+        name="Đường phố (Google Maps)",
         control_scale=True,
     )
 
-    # Add free, rich Tile Layers (Satellite, Topography, Humanitarian)
+    # Add Google Maps Satellite & Terrain Tile Layers (Free, high-res, clean of nine-dash line)
     folium.TileLayer(
-        tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-        attr="Esri World Imagery",
-        name="🛰️ Vệ tinh (Esri Satellite)",
+        tiles="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+        attr="Google Maps",
+        name="🛰️ Vệ tinh (Google Satellite)",
     ).add_to(m)
 
     folium.TileLayer(
-        tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
-        attr="Esri World Topo",
-        name="🏔️ Địa hình (Esri Topo)",
-    ).add_to(m)
-
-    folium.TileLayer(
-        tiles="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
-        attr="&copy; OpenStreetMap contributors, Humanitarian style",
-        name="🏥 Đường phố HOT (OSM Humanitarian)",
+        tiles="https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}",
+        attr="Google Maps",
+        name="🏔️ Địa hình (Google Terrain)",
     ).add_to(m)
 
     # Plugins
