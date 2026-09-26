@@ -1,35 +1,44 @@
-# 🚛 Smartbin - Hệ Thống Giám Sát & Định Vị Thu Gom Rác Thông Minh (Civic-Tech)
+# 📱 Smartbin EcoNet - Ứng Dụng Di Động Cư Dân & Thu Gom Rác Cồng Kềnh AI
 
-Hệ thống điều phối, quản lý và định vị phương tiện thu gom rác thải & điểm tập kết thông minh thời gian thực (Real-time GPS Tracking & Smart Waste Management System), phục vụ chương trình Chuyển đổi số địa phương và kinh tế tuần hoàn.
+Hệ sinh thái ứng dụng di động thông minh đa vai trò (**Flutter**) phục vụ **Cổng Hộ Gia Đình (Citizen Portal)**, **Dịch vụ Thu Gom Rác Cồng Kềnh với Trí Tuệ Nhân Tạo (Bulky Waste Service)** và **Hệ thống Điểm Thưởng Xanh (Eco Rewards)**.
 
-![Smartbin Banner](public/logo.svg)
+Phát triển và phụ trách bởi: **Quốc Anh (EnglandLee)** - Developer 3.
 
 ---
 
 ## 🌟 Tính Năng Nổi Bật
 
-### 1. 📱 Ứng dụng Di động Cư Dân & Thu Gom Rác Cồng Kềnh AI (`mobile/`)
-> Phân hệ ứng dụng Native đa nền tảng (**Flutter**) dành cho **Cư dân**, **Tài xế rác cồng kềnh** và **Điều phối viên** do **Dev 3 (EnglandLee)** phát triển. Xem chi tiết tại [mobile/README.md](mobile/README.md).
+### 1. 👥 Tổng Quan Đa Vai Trò (RBAC)
+- **Cư dân (Citizen):** Cổng thông tin gia đình, tích điểm đổi voucher quà tặng, đặt lịch thu gom rác cồng kềnh bằng camera AI, tra cứu hóa đơn & thanh toán trực tuyến.
+- **Tài xế xe rác cồng kềnh (Bulky Driver):** Tách biệt hoàn toàn với đội xe rác thông thường. Theo dõi lộ trình ca làm việc, danh sách các điểm thu gom cồng kềnh được phân công, định vị bản đồ và cập nhật trạng thái thu gom tại chỗ.
+- **Điều phối viên (Operator):** Giám sát tải trọng xe, kiểm tra năng lực phục vụ theo ngày, duyệt đơn và điều phối chuyến xe thu gom cồng kềnh.
 
-- **Camera Quét & Nhận diện AI (Gemini Vision)**: Chụp ảnh đồ đạc cồng kềnh (sofa, nệm, bàn tủ...), tự động vẽ khung *bounding box*, nhận diện chủng loại và phân loại vật liệu.
-- **Request Wizard 3 Bước**: Quy trình đặt lịch nhanh chóng — từ chọn vật dụng, khảo sát lầu/thang máy/bốc dỡ vỉa hè đến xem xét báo giá.
-- **Live Pricing Engine & Cam kết sai số (Tolerance Guarantee)**: Tính toán chi phí minh bạch theo công thức chuẩn; cam kết chênh lệch phụ phí thực tế không vượt quá ngưỡng cho phép (±10%).
-- **Đổi Điểm Xanh (Eco Rewards)**: Tích điểm phân loại rác để đổi voucher đồ uống từ các thương hiệu phổ biến tại Việt Nam (**Highlands Coffee**, **Phúc Long**, **Katinat**).
-- **Thanh toán giữ chỗ có thời hạn**: Đếm ngược 15 phút giữ slot xe cồng kềnh, thanh toán trực tiếp qua mã QR / MoMo / VNPay.
-- **Bản đồ ca trực cho Tài xế xe cồng kềnh**: Phân tách rành mạch với xe rác thông thường; hiển thị danh sách điểm gom, lộ trình tối ưu và trạng thái hoàn thành.
+### 2. 📷 AI Vision Scanner Nhận Diện Vật Dụng
+- Chụp ảnh phế thải / đồ nội thất cồng kềnh (sofa, nệm, bàn, tủ, ghế, đồ gia dụng...).
+- Tự động vẽ khung **Bounding Box** nhận diện với mô hình Gemini Vision.
+- Tự động ước lượng kích thước (Dài x Rộng x Cao) và gợi ý phân loại vật liệu (gỗ, da, kim loại, nỉ...).
 
-### 2. 📡 Web Mobile Tracker (`/tracker`) dành cho Xe gom rác thông thường
-- **Không cần cài đặt app Native**: Hoạt động trực tiếp trên trình duyệt mọi điện thoại (iOS Safari, Android Chrome, Zalo Browser).
-- **Định vị GPS vệ tinh độ chính xác cao**: Tự động lấy toạ độ vệ tinh (sai số chỉ 5 - 15m), vận tốc km/h và hướng la bàn.
-- **Nút Kết nối tức thì (< 50ms)**: Đồng bộ toạ độ về máy chủ ngay lập tức với bộ đệm thông minh.
-- **Nút Báo động SOS khẩn cấp**: Phát chuỗi tín hiệu ưu tiên (`alarm=sos`) về phòng điều hành, kích hoạt còi hú và thông báo cảnh báo tức thì.
-- **Giám sát pin thông minh (Hybrid Battery)**: Hỗ trợ đọc pin phần cứng hoặc pin mô phỏng IoT, liên tục báo cáo % pin và trạng thái sạc.
+### 3. 📋 Quy Trình Request Wizard 3 Bước
+- **Bước 1 - Danh mục vật dụng:** Chọn nhanh từ danh mục mẫu hoặc nhận diện từ AI Scanner; tùy chỉnh số lượng và kích thước.
+- **Bước 2 - Khảo sát hiện trường & Hậu cần:** Khảo sát tầng lầu, có thang máy hay thang bộ; chọn vị trí lấy rác tại vỉa hè (*Curbside*) hoặc bốc dỡ trong nhà (*Inside Home*); tùy chọn yêu cầu tháo dỡ nội thất.
+- **Bước 3 - Xem xét & Xác nhận:** Tóm tắt chi tiết toàn bộ đơn hàng, phụ phí và thời gian dự kiến thu gom.
 
-### 3. 🗺️ Trung tâm Giám sát Bản đồ (`/`)
-- **Bản đồ thời gian thực (Live Map)**: Theo dõi lộ trình di chuyển của toàn bộ đội xe rác trên địa bàn xã/phường.
-- **Cảnh báo SOS trung tâm**: Tự động phát âm thanh cảnh báo và hiển thị hộp thoại khẩn cấp khi xe gặp sự cố.
-- **Báo cáo & Lịch sử**: Xem lại hành trình, dừng đỗ, quãng đường tiêu hao nhiên liệu.
-- **Vùng địa lý (Geofencing)**: Thiết lập ranh giới điểm tập kết rác, bãi chôn lấp, trạm trung chuyển.
+### 4. 💰 Live Pricing Engine & Cam Kết Sai Số (Tolerance Guarantee)
+- Công thức tính phí minh bạch theo chuẩn nghiệp vụ:
+  $$\text{Tổng phí} = \text{Phí vật dụng} + \text{Phí xe / khu vực} + \text{Phí bốc xếp / tầng lầu / tháo dỡ} + \text{Thuế VAT} - \text{Ưu đãi}$$
+- Chính sách **Bảo hiểm cam kết sai số (Tolerance Guarantee)**: Cam kết chênh lệch phụ phí thực tế khi tài xế đến nơi không vượt quá ngưỡng cho phép ($\le \pm 10\%$).
+
+### 5. 🎁 Eco Rewards - Đổi Điểm Xanh Lấy Voucher Thương Hiệu Việt
+- Cư dân tích lũy điểm xanh (Eco Points) khi thực hiện phân loại rác và đặt thu gom đúng quy chuẩn.
+- Quy đổi điểm thưởng trực tiếp lấy voucher giải khát từ các thương hiệu phổ biến tại Việt Nam: **Highlands Coffee**, **Phúc Long Coffee & Tea**, **Katinat Saigon Kafe**.
+
+### 6. ⏳ Thanh Toán Giữ Chỗ Có Thời Hạn (Countdown Timer)
+- Sau khi chốt đơn, hệ thống kích hoạt **đồng hồ đếm ngược 15 phút** để giữ slot xe cồng kềnh (*Prepaid Booking Slot*).
+- Tích hợp đa dạng phương thức thanh toán: mã QR, MoMo, VNPay hoặc chuyển khoản định danh. Tự động giải phóng slot nếu quá hạn chưa hoàn tất trả trước.
+
+### 7. 🚛 Lộ Trình Ca Làm Việc Cho Tài Xế Cồng Kềnh
+- Hệ thống phân tách rành mạch lộ trình xe cồng kềnh với xe rác thông thường.
+- Hiển thị bản đồ trạm dừng (*Waypoints*), thông tin liên hệ hộ gia đình, chỉ dẫn đường đi và cập nhật trạng thái đơn (*Đã tiếp nhận*, *Đang đến*, *Đã thu gom*).
 
 ---
 
@@ -37,142 +46,100 @@ Hệ thống điều phối, quản lý và định vị phương tiện thu gom
 
 ```mermaid
 graph TD
-  subgraph FlutterMobile ["📱 Flutter Mobile App (mobile/)"]
-    Citizen["Cư dân\n(AI Scan, Đặt lịch, Eco Rewards)"]
-    BulkyDriver["Tài xế Xe Cồng Kềnh\n(Lộ trình ca trực, Điểm đón)"]
-    BulkyOperator["Điều phối viên\n(Duyệt đơn, Giữ chỗ xe)"]
+  subgraph MobileApp ["📱 Flutter Mobile App (mobile/)"]
+    Citizen["Cư Dân (Citizen)\n• Quét AI Vision & Bounding Box\n• Request Wizard 3 Bước\n• Đổi Voucher Eco Rewards"]
+    Driver["Tài Xế Cồng Kềnh (Bulky Driver)\n• Lộ trình ca làm việc\n• Bản đồ trạm dừng & Waypoints\n• Cập nhật trạng thái tại chỗ"]
+    Operator["Điều Phối Viên (Bulky Operator)\n• Giám sát tải trọng xe\n• Kiểm tra năng lực phục vụ\n• Duyệt đơn & Giữ chỗ slot"]
   end
 
-  subgraph WebClient ["🌐 Web Dashboard & Tracker"]
-    Driver["Web GPS Tracker (/tracker)"]
-    Dashboard["Màn hình Giám sát Điều hành (/)"]
-    CitizenPortal["Citizen Web Portal (/citizen, /bulky)"]
+  subgraph CoreEngine ["⚙️ Core Domain & Engine"]
+    AI["Gemini Vision AI Engine\n(Nhận diện đồ đạc, Bounding Box)"]
+    Pricing["Live Pricing Engine\n(Minh bạch phí + Tolerance Guarantee)"]
+    Countdown["Booking Countdown Timer\n(15 phút giữ chỗ thanh toán)"]
+    Storage["State Management & Storage\n(Provider + Local / API Cache)"]
   end
 
-  subgraph CloudGateway ["☁️ Backend, AI & API Gateway"]
-    Vite["Vite Dev / Gateway Proxy (Port 3000)"]
-    GeminiAI["Google Gemini Vision AI\n(Nhận diện đồ cồng kềnh)"]
-    OsmAnd["GPS OsmAnd (Port 5055)"]
-    Traccar["Traccar Backend & Socket (Port 8082)"]
+  subgraph Gateway ["☁️ Cloud API & Payment Gateway"]
+    API["Backend API Gateway"]
+    Payment["Cổng Thanh Toán\n(MoMo, VNPay, QR Pay)"]
   end
 
-  Citizen -->|Gửi ảnh vật dụng| GeminiAI
-  Citizen -->|Đặt lịch & Thanh toán| Vite
-  BulkyDriver -->|Cập nhật chuyến| Vite
-  BulkyOperator -->|Điều phối xe| Vite
-  Driver -->|HTTP GET /gps| Vite
-  Vite -->|Proxy /gps| OsmAnd
-  OsmAnd --> Traccar
-  Traccar -->|WebSocket /api/socket| Dashboard
+  Citizen -->|Chụp ảnh vật dụng| AI
+  Citizen -->|Tính giá tức thời| Pricing
+  Citizen -->|Giữ chỗ & Thanh toán| Countdown
+  Countdown -->|Xử lý giao dịch| Payment
+  Driver -->|Cập nhật trạng thái chuyến| API
+  Operator -->|Điều phối xe & slot| API
+  MobileApp --> Storage
 ```
 
 ---
 
-## 🚀 Hướng Dẫn Cài Đặt & Phát Triển
+## 📂 Cấu Trúc Thư Mục Feature-Driven
 
-### Yêu Cầu Tiên Quyết
-- **Node.js**: `>= 18.x`
-- **Flutter SDK**: `>= 3.13.2` (để phát triển App Mobile)
-- **Docker**: Để chạy Traccar Backend Server (Port 8082 & Port 5055)
+Mã nguồn ứng dụng di động được tổ chức theo kiến trúc **Feature-Driven Architecture** chuẩn mực tại `mobile/`:
+
+```text
+mobile/
+├── lib/
+│   ├── core/                           # Thành phần dùng chung toàn hệ thống
+│   │   ├── constants/                  # Hằng số hệ thống, danh mục rác cồng kềnh
+│   │   ├── domain/
+│   │   │   ├── models/                 # BulkyOrder, BulkyItem, BulkyQuote, BoundingBox
+│   │   │   └── pricing/                # PricingEngine tính chi phí & phụ phí lầu/thang máy
+│   │   ├── services/
+│   │   │   ├── ai/                     # GeminiVisionService, AiRecognitionResult
+│   │   │   └── storage/                # MockBulkyStorage, lưu trữ session & cache
+│   │   ├── theme/                      # BulkyTheme, BulkyColors (Chuẩn UX/UI)
+│   │   └── widgets/                    # BottomNavBar, Tolerance Banner, Countdown Timer
+│   ├── features/                       # Các phân hệ chức năng độc lập
+│   │   ├── auth/                       # Quản lý tài khoản, CitizenUser, chuyển đổi Role RBAC
+│   │   ├── citizen_home/               # Màn hình chính cư dân, Eco Rewards, voucher đồ uống
+│   │   ├── scan/                       # Chụp ảnh, quét AI, vẽ Bounding Box trực quan
+│   │   ├── request_wizard/             # Wizard 3 bước: Items -> Logistics -> Summary
+│   │   ├── quote/                      # Chi tiết báo giá, phân rã chi phí minh bạch
+│   │   ├── payment/                    # Thanh toán QR/MoMo/VNPay, đếm ngược giữ slot 15p
+│   │   ├── orders/                     # Danh sách đơn, chi tiết đơn hàng & timeline xử lý
+│   │   ├── driver/                     # Giao diện tài xế, bản đồ lộ trình ca trực, trạm dừng
+│   │   └── operator/                   # Giao diện điều phối viên, kiểm tra năng lực ca xe
+│   └── main.dart                       # Khởi tạo App, MultiProvider & khai báo Navigation
+└── test/                               # Bộ kiểm thử tự động toàn diện (121 tests)
+    ├── core/                           # Test logic PricingEngine, Storage
+    ├── features/                       # Test tích hợp UI, Wizard, Auth, Đơn hàng, RBAC
+    └── widget_test.dart                # Smoke test điều hướng Bottom Navigation
+```
 
 ---
 
-### A. Khởi Động Web Dashboard & GPS Server
+## 🚀 Hướng Dẫn Cài Đặt & Khởi Chạy
 
-#### 1. Khởi động Backend Traccar (Docker)
+### Yêu Cầu Môi Trường
+- **Flutter SDK**: `>= 3.13.2`
+- **Dart SDK**: `^3.13.2`
+
+### 1. Cài đặt thư viện dependencies
 ```bash
-docker run -d --name traccar-server \
-  -p 8082:8082 -p 5055:5055 \
-  traccar/traccar:latest
-```
-* Tài khoản quản trị mặc định: `admin` / `admin`.
-
-#### 2. Cài đặt Thư Viện & Chạy Web Frontend
-```bash
-npm install
-npm start
-```
-- **Web App**: `http://localhost:3000`
-- **Bộ phát GPS Web**: `http://localhost:3000/tracker`
-- **Cổng Rác Cồng Kềnh Web**: `http://localhost:3000/bulky`
-
-#### 3. Build Bản Triển Khai Web (Production)
-```bash
-npm run build
-```
-
----
-
-### B. Khởi Động Ứng Dụng Di Động Flutter (`mobile/`)
-
-```bash
-# 1. Chuyển vào thư mục mobile
 cd mobile
-
-# 2. Cài đặt các gói thư viện
 flutter pub get
+```
 
-# 3. Chạy kiểm thử tự động (121 tests)
+### 2. Chạy kiểm thử tự động (Automated Tests)
+```bash
 flutter test
+```
+> **Kết quả kiểm thử:** Toàn bộ **121/121 tests** đều vượt qua thành công (`All tests passed!`), đảm bảo 100% độ tin cậy của các luồng nghiệp vụ.
 
-# 4. Khởi chạy ứng dụng
+### 3. Khởi chạy ứng dụng
+```bash
+# Chạy trên thiết bị mặc định (Emulator / Điện thoại thật)
 flutter run
-# Hoặc chạy thử nghiệm trên Chrome:
+
+# Hoặc chạy trực tiếp trên trình duyệt Chrome (Web mode)
 flutter run -d chrome
 ```
 
 ---
 
-## 📂 Cấu Trúc Thư Mục Quan Trọng
-
-```text
-Smartbin/
-├── mobile/                        # 🌟 Ứng dụng di động Flutter (Cư dân, Rác cồng kềnh AI, Tài xế)
-│   ├── lib/
-│   │   ├── core/                  # Domain models, PricingEngine, GeminiVisionService
-│   │   ├── features/              # citizen_home, scan, request_wizard, quote, payment, orders, driver, operator
-│   │   └── main.dart              # Khởi tạo App, MultiProvider & RBAC
-│   ├── test/                      # 121 automated tests cho luồng Wizard, AI & Pricing
-│   └── README.md                  # Tài liệu chi tiết kiến trúc App Mobile
-├── public/                        # Tài nguyên tĩnh, logo.svg, manifest PWA
-├── src/
-│   ├── modules/
-│   │   ├── citizen/               # Cổng thông tin cư dân, lịch thu gom, phản ánh
-│   │   ├── billing/               # Bảng kê phí tháng, đối soát thanh toán MoMo/QR
-│   │   └── bulky/                 # Dịch vụ thu gom cồng kềnh web, Vision AI, bảng giá
-│   ├── other/
-│   │   └── MobileTrackerPage.jsx  # Bộ phát GPS di động trên nền Web
-│   ├── main/                      # Giao diện bản đồ giám sát trung tâm
-│   │   ├── MainPage.jsx
-│   │   ├── DeviceRow.jsx
-│   │   └── EventsDrawer.jsx
-│   ├── SocketController.jsx       # WebSocket realtime & còi báo động SOS
-│   └── vite.config.js             # Cấu hình Proxy và Build Web
-└── package.json
-```
-
----
-
-## 📡 Chuẩn Giao Thức Truyền Tin GPS (OsmAnd Protocol)
-
-Bộ phát Mobile gửi dữ liệu toạ độ định kỳ bằng HTTP GET về endpoint `/gps`:
-```http
-GET /gps?id={deviceId}&lat={lat}&lon={lon}&timestamp={timestamp}&speed={speedKnots}&bearing={heading}&accuracy={acc}&batt={batteryLevel}&charge={isCharging}&alarm={alarmType}
-```
-| Tham số | Ý nghĩa | Ví dụ |
-| :--- | :--- | :--- |
-| `id` | Mã định danh xe / thùng rác | `81891318`, `BIN-001` |
-| `timestamp` | Thời gian gửi (giây Epoch) | `1789580341` |
-| `lat`, `lon` | Toạ độ vệ tinh WGS84 | `10.845671, 106.813482` |
-| `speed` | Vận tốc chuyển đổi ra Knot | `15.5` |
-| `bearing` | Góc la bàn di chuyển (0 - 360°) | `90.0` |
-| `accuracy` | Độ chính xác bán kính mét | `12.5` |
-| `batt` | Phần trăm pin thiết bị (0 - 100) | `95` |
-| `charge` | Đang cắm sạc (`true`/`false`) | `true` |
-| `alarm` | Báo động khẩn cấp | `sos` |
-
----
-
 ## 👥 Tác Giả & Bản Quyền
-Dự án được phát triển và tối ưu cho nền tảng Chuyển đổi số Quản lý Rác thông minh Smartbin / NaN-EcoNet.  
-Phát triển bởi **chinhanxt, EnglandLee (Quốc Anh) & Team**. Giấy phép nguồn mở Apache License 2.0.
+Phát triển bởi **Quốc Anh (EnglandLee)** - Developer 3, Phân hệ Mobile Cư Dân & Rác Cồng Kềnh AI.  
+Dự án thuộc hệ sinh thái **NaN-EcoNet**. Giấy phép nguồn mở Apache License 2.0.
