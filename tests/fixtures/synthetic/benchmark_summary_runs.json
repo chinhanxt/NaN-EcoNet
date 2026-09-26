@@ -1,0 +1,25 @@
+{"run_id": 76, "date": "2026-09-20", "task": "docs(adr): khoi thao quyet dinh kien truc ADR-003 ve MCP BI Copilot Enterprise", "passed": true}
+{"run_id": 77, "date": "2026-09-20", "task": "test(benchmarks): thu thap du lieu 100 diem dung thuc te tai Quan 1 va Quan 3", "passed": true}
+{"run_id": 78, "date": "2026-09-20", "task": "test(benchmarks): chay thuc nghiem doi sanh 50 lan lap giua Greedy, OR-Tools va 3D-PACO", "passed": true}
+{"run_id": 79, "date": "2026-09-21", "task": "docs(benchmarks): ghi nhan ket qua giam 28.4% quang duong va 22.0% nhien lieu Diesel", "passed": true}
+{"run_id": 80, "date": "2026-09-21", "task": "docs(benchmarks): tinh toan luong cat giam 10.37 kg CO2 moi ca chay theo chuan IPCC", "passed": true}
+{"run_id": 81, "date": "2026-09-22", "task": "test(engine): kiem thu kich ban chia se diem gom khi xe tai bi hong hoc dot xuat", "passed": true}
+{"run_id": 82, "date": "2026-09-22", "task": "test(citizen): hoan thien 60 unit tests va 61 widget tests cho Flutter dat 121/121 passed", "passed": true}
+{"run_id": 83, "date": "2026-09-22", "task": "feat(telemetry): them module ML cham diem an toan hanh trinh va tiet kiem nhien lieu", "passed": true}
+{"run_id": 84, "date": "2026-09-23", "task": "chore(scripts): viet root Makefile ho tro 1-click install-all va dev microservices", "passed": true}
+{"run_id": 85, "date": "2026-09-23", "task": "chore(ci): thiet lap GitHub Actions CI kiem thu tu dong monorepo tren 5 jobs", "passed": true}
+{"run_id": 86, "date": "2026-09-23", "task": "docs(community): hoan thien CODE_OF_CONDUCT, CONTRIBUTING va SECURITY policy", "passed": true}
+{"run_id": 87, "date": "2026-09-23", "task": "docs(citation): khoi tao CITATION.cff phuc vu trich dan nghien cuu khoa hoc", "passed": true}
+{"run_id": 88, "date": "2026-09-23", "task": "docs(license): thiet lap giay phep ma nguon mo Apache License 2.0", "passed": true}
+{"run_id": 89, "date": "2026-09-23", "task": "docs(presentation): tich hop slide thuyet trinh HTML5 va bao cao ky thuat vao docs/", "passed": true}
+{"run_id": 90, "date": "2026-09-24", "task": "docs(readme): thiet ke he thong 8 so do do hoa truc quan cho toan bo he sinh thai", "passed": true}
+{"run_id": 91, "date": "2026-09-24", "task": "perf(engine): tinh chinh he so mui hoi gamma=0.5 va trong so beta=2.5 cho 3D-PACO", "passed": true}
+{"run_id": 92, "date": "2026-09-24", "task": "chore(lint): dong bo quy chuan dinh dang Ruff cho Python va Dart analyze cho Flutter", "passed": true}
+{"run_id": 93, "date": "2026-09-25", "task": "docs(benchmarks): xuat ban ho so phuong phap do va tap du lieu thuc nghiem chi tiet", "passed": true}
+{"run_id": 94, "date": "2026-09-25", "task": "docs(readme): tinh gon noi dung duoi 280 dong giu tron ven 8 so do truc quan", "passed": true}
+{"run_id": 95, "date": "2026-09-25", "task": "docs(summary): hoan thien bao cao thuyet minh san pham toan dien cho hoi dong", "passed": true}
+{"run_id": 96, "date": "2026-09-25", "task": "docs(eval): phan tich do nhay tham so alpha va beta cua 3D-PACO trong gio cao diem", "passed": true}
+{"run_id": 97, "date": "2026-09-25", "task": "test(security): quet lo hong bao mat va kiem tra ma hoa token cho MCP Server", "passed": true}
+{"run_id": 98, "date": "2026-09-26", "task": "feat(monitoring): tich hop healthcheck endpoint /healthz cho ca 3 cum microservices", "passed": true}
+{"run_id": 99, "date": "2026-09-26", "task": "docs(citation): bo sung Google Scholar va ScienceDirect DOI cua bai bao Chau et al. 2026", "passed": true}
+{"run_id": 100, "date": "2026-09-26", "task": "perf(cache): toi uu hoa thuat toan LRU spatial cache giam do tre phan hoi xuong duoi 35ms", "passed": true}
