@@ -81,9 +81,60 @@ graph LR
 * **Chuẩn hóa công cụ phân tích (Reusable Tooling)**: Các công cụ MCP có thể được tái sử dụng trực tiếp bởi Cursor, Claude Desktop, Antigravity, hoặc CopilotKit Frontend.
 * **Tự động hóa báo cáo ESG**: Rút ngắn thời gian tạo báo cáo tuân thủ EPR từ 2 tuần xuống còn 30 giây với biểu đồ trực quan.
 
-### 3.2. Đánh Đổi & Biện Pháp Kiểm Soát (Trade-offs & Mitigations)
-* **Bảo vệ SQL Injection gián tiếp (Prompt Injection / Indirect Injection)**:
-  * *Biện pháp*: Không cho phép LLM sinh câu lệnh SQL thô (raw SQL) chạy thẳng vào cơ sở dữ liệu. Tất cả câu truy vấn bắt buộc đi qua các MCP Tools có kiểu dữ liệu tham số hóa chặt chẽ (Parameterized / Prepared Statements).
+### 3.2. Hệ Quả Bảo Mật & Chốt Chặn Phòng Vệ Chuyên Sâu (Security Consequences & Guardrails)
+
+Trong phân hệ Enterprise BI Copilot, các tác vụ Text-to-SQL và MCP Tool Calling trực tiếp tương tác với dữ liệu nhạy cảm của các tập đoàn đa quốc gia (FMCG, F&B như Unilever, Nestlé, Highlands Coffee). Do đó, mô hình bảo vệ dữ liệu được thiết kế theo nguyên lý **Phòng vệ Chuyên sâu (Defense-in-Depth)** qua 4 lớp chốt chặn bất khả xâm phạm:
+
+```mermaid
+graph TD
+  Prompt["User Prompt / LLM Generated SQL"] --> Layer1["LỚP 1: Bộ Lọc AST & Regex Sanitize\n(Chặn DDL/DML, Piggyback Semicolon)"]
+  Layer1 --> Layer2["LỚP 2: Whitelist Bảng Phân Tích Được Cấp Phép\n(Chặn truy cập users, credentials, system tables)"]
+  Layer2 --> Layer3["LỚP 3: Mandatory Row Limit & Rate Limiter\n(Tự động ép LIMIT 100, Token Bucket 30 req/min)"]
+  Layer3 --> Layer4["LỚP 4: Enforced Read-Only Connection Pool\n(PRAGMA query_only = ON / DB User Read-Only)"]
+  Layer4 --> DB[(EPR Audit Ledger & Transactions DB)]
+```
+
+#### A. Mô Hình Bảo Vệ Cơ Sở Dữ Liệu Kiểm Toán EPR (EPR Audit Ledger Security)
+* **Tầm quan trọng của dữ liệu EPR:** Sổ cái kiểm toán Trách nhiệm mở rộng của nhà sản xuất (EPR Audit Ledger) lưu trữ minh chứng pháp lý về khối lượng phế liệu thu gom, định mức tái chế, chi phí đóng góp tài chính vào Quỹ BVMT Việt Nam và mã xác thực đốt tem (One-Time Burn QR). Mọi hành vi sửa đổi trái phép (Tampering) hoặc rò rỉ dữ liệu (Exfiltration) sẽ dẫn đến trách nhiệm pháp lý và tổn thất hàng triệu USD cho doanh nghiệp đối tác.
+* **Nguyên tắc Bất Biến (Immutability):** Dữ liệu giao dịch EPR và lịch sử đốt tem một khi đã ghi nhận thì chỉ được phép đọc (`SELECT`) hoặc kiểm toán (`VERIFY`). Bất kỳ thao tác `UPDATE`, `DELETE`, `DROP` nào đều bị coi là vi phạm an ninh nghiêm trọng.
+
+#### B. Danh Sách Trắng Bảng Phân Tích (Strict Schema Whitelist)
+Mọi câu truy vấn Text-to-SQL hoặc MCP tool gọi vào cơ sở dữ liệu phải được thẩm định qua danh sách trắng (Whitelist) nghiêm ngặt trước khi được phép chuyển xuống cơ sở dữ liệu:
+* **Các bảng được cấp phép (Whitelisted Analytics Tables):**
+  * `recycling_transactions`: Dữ liệu phân loại rác, khối lượng thu gom thực tế.
+  * `epr_compliance_logs`: Báo cáo chỉ tiêu hoàn thành định mức tái chế theo quý.
+  * `voucher_redemptions`: Tỷ lệ chuyển đổi voucher thưởng tại các điểm POS.
+  * `collection_metrics`: Hiệu suất đội xe và định mức khí thải.
+  * `carbon_offset_summary`: Báo cáo định lượng ESG và bù trừ $\text{CO}_2$.
+* **Các bảng cấm tuyệt đối (Blacklisted / Restricted Tables):**
+  * `users`, `user_credentials`, `passwords`, `api_keys`, `jwt_tokens`, `system_config`.
+  * Siêu dữ liệu hệ quản trị: `sqlite_master`, `sqlite_schema`, `information_schema.*`, `pg_catalog.*`.
+  * Bất kỳ câu truy vấn nào chứa tên bảng không thuộc Whitelist sẽ bị ngắt kết nối lập tức và ghi nhận cảnh báo an ninh mức độ cao (Security Alert Level 3).
+
+#### C. Kết Nối Cơ Sở Dữ Liệu Chỉ Đọc Cưỡng Chế (Enforced Read-Only Connection Pool)
+* Toàn bộ các kết nối từ MCP Server đến cơ sở dữ liệu phân tích đều sử dụng Connection Pool ở chế độ **Read-Only bắt buộc**:
+  * Với SQLite: Thiết lập cứng cờ mở tệp `sqlite3.OPEN_READONLY` và chạy lệnh cưỡng chế `PRAGMA query_only = ON;`.
+  * Với PostgreSQL: Kết nối thông qua tài khoản cơ sở dữ liệu chuyên dụng `mcp_readonly_worker` với phân quyền:
+    ```sql
+    REVOKE ALL ON ALL TABLES IN SCHEMA public FROM mcp_readonly_worker;
+    GRANT SELECT ON TABLE recycling_transactions, epr_compliance_logs, voucher_redemptions TO mcp_readonly_worker;
+    ```
+* Ngay cả trong kịch bản xấu nhất khi kẻ tấn công đánh lừa được mô hình LLM sinh mã độc DDL/DML, tầng động cơ cơ sở dữ liệu vật lý (Database Engine Level) sẽ từ chối thực thi với mã lỗi `SQLITE_READONLY` hoặc `PG_INSUFFICIENT_PRIVILEGE`.
+
+#### D. Ngăn Chặn SQL Injection Đa Tầng (Multi-Layer SQL Injection Defense)
+1. **Lọc từ khóa nguy hiểm bằng Regular Expressions:**
+   Chặn không khoan nhượng tất cả các từ khóa DDL/DML gây biến đổi trạng thái:
+   `/(DROP|DELETE|UPDATE|INSERT|ALTER|TRUNCATE|CREATE|GRANT|REVOKE|EXEC|ATTACH|DETACH|VACUUM)/i`.
+2. **Triệt tiêu tấn công gộp lệnh (Piggybacked Queries / Semicolon Injection):**
+   Phát hiện và loại bỏ triệt để ký tự phân tách dấu chấm phẩy `;` trong câu lệnh SQL thô nhằm ngăn chặn kỹ thuật chèn thêm lệnh thứ hai (ví dụ: `SELECT * FROM epr_compliance_logs; DROP TABLE users; --`).
+3. **Cưỡng chế giới hạn số dòng (Mandatory Row Limiting):**
+   Tất cả câu lệnh SELECT đều bắt buộc có mệnh đề `LIMIT`. Hệ thống tự động thêm `LIMIT 100` nếu câu lệnh nguyên bản không có, hoặc hạ giới hạn xuống tối đa `500` nếu câu lệnh yêu cầu vượt quá, triệt tiêu nguy cơ tấn công từ chối dịch vụ (Denial of Service - OOM crash).
+4. **Tham số hóa truy vấn (Parameterized Execution):**
+   Mọi MCP tool cụ thể (`query_voucher_redemptions`, `get_epr_compliance_stats`) bắt buộc sử dụng Prepared Statements với các placeholder tham số (`$1, $2, ...`), cách ly hoàn toàn dữ liệu đầu vào của người dùng khỏi cú pháp thực thi SQL.
+
+### 3.3. Các Đánh Đổi Khác & Biện Pháp Kiểm Soát
+* **Độ trễ khi qua tầng trung gian MCP:** Giao thức SSE/JSON-RPC có thể thêm 50-100ms so với gọi REST trực tiếp.
+  * *Biện pháp*: Sử dụng keep-alive connection và streaming response theo từng token (Token-by-token SSE streaming) giúp người dùng thấy câu trả lời xuất hiện ngay tức thì mà không phải chờ hoàn tất toàn bộ truy vấn.
 
 ---
 

@@ -81,6 +81,58 @@ Yêu cầu Gemini 2.5 Flash trả về cấu trúc JSON chặt chẽ tuân thủ
 * Hệ thống tính toán giá cước tự động dựa trên kích thước khối tích ($m^3$) do Gemini trích xuất kết hợp với các tham số hậu cần: tầng lầu, thang máy, bốc dỡ vỉa hè (*Curbside*) hay trong nhà (*Inside Home*).
 * Đưa ra cam kết pháp lý với cư dân: Khi tài xế đến hiện trường, nếu kích thước thực tế sai lệch trong ngưỡng cho phép, giá cước cuối cùng không bao giờ chênh lệch quá $\pm 10\%$ so với giá tạm tính.
 
+### 2.5. Ngân Sách Lỗi & Cơ Chế Dự Phòng (Error Budget & Fallback Mechanism)
+
+Nhằm duy trì tính sẵn sàng cao và trải nghiệm người dùng không gián đoạn trong điều kiện mạng di động 4G/5G chập chờn hoặc môi trường chụp ảnh phức tạp tại ngõ sâu đô thị, hệ thống thiết lập chính sách **Error Budget** và cơ chế **Fallback 2 tầng**:
+
+#### A. Định mức SLA & Ngân Sách Lỗi (Service Level Agreement & Error Budget)
+* **Chỉ số SLA mục tiêu:** Độ sẵn sàng toàn hệ thống $\ge 99.5\%$, tỷ lệ phản hồi quét ảnh thành công $\ge 98.0\%$.
+* **Ngân sách độ trễ (Latency Budget):** Ngưỡng trễ tối đa chấp nhận được cho tác vụ gọi Vision AI là $p95 < 2,000\text{ms}$ (2 giây). Nếu cuộc gọi vượt quá $2,000\text{ms}$, hệ thống tự động ngắt kết nối (Client Timeout) để kích hoạt fallback, ngăn chặn tình trạng người dùng treo màn hình.
+* **Ngưỡng tin cậy tối thiểu (Confidence Threshold):** $\kappa_{min} = 0.65$.
+
+```mermaid
+flowchart TD
+  Capture["Cư dân chụp ảnh vật dụng"] --> CallProxy["Gửi ảnh tới Backend AI Proxy\n(Timeout = 2000ms)"]
+  CallProxy --> DecisionLatency{"Độ trễ API <= 2.0s\n& HTTP 200 OK?"}
+  
+  DecisionLatency -- Không (Timeout / Lỗi 5xx / 429) --> FallbackCatalog["KÍCH HOẠT FALLBACK CẤP 1\nTra cứu Ma Trận Kích Thước Chuẩn Hóa\n(Standard Furniture Catalog Matrix)"]
+  DecisionLatency -- Có --> CheckConfidence{"Điểm tin cậy\nConfidence >= 0.65?"}
+  
+  CheckConfidence -- Không (Ảnh mờ / thiếu sáng) --> FallbackCatalog
+  CheckConfidence -- Có --> ParseGemini["Trích xuất kích thước từ Gemini 2.5 Flash\n(Box 2D, L x W x H thực tế)"]
+  
+  FallbackCatalog --> AttachFlag["Gán cờ audit:\nis_fallback = true\nfallback_reason = LATENCY / CONFIDENCE"]
+  ParseGemini --> LiveQuote["Tính toán giá cước Live Pricing\n(Khóa giá 15 phút, Dung sai +-10%)"]
+  AttachFlag --> LiveQuote
+  
+  LiveQuote --> WizardUI["Giao diện Wizard 3 Bước\n(Cho phép người dùng kéo chỉnh nhanh kích thước)"]
+```
+
+#### B. Hai Kịch Bản Kích Hoạt Fallback Tự Động
+1. **Sự cố độ trễ hoặc lỗi hạ tầng (Latency Exceeded / Infrastructure Failures):**
+   * Backend Proxy hoặc Client App gặp timeout sau $2,000\text{ms}$ không nhận được hồi đáp từ Gemini Flash API.
+   * Gặp mã lỗi HTTP `429 (Too Many Requests)` hoặc `5xx (Service Unavailable)`.
+2. **Suy giảm chất lượng hình ảnh & độ tin cậy thấp (Low Confidence Score):**
+   * Mô hình Gemini trả về trường `confidence < 0.65` do ảnh chụp trong điều kiện ánh sáng yếu (kho hẹp, gầm cầu thang), góc chụp bị khuất, hoặc vật dụng bị phủ bạt.
+
+#### C. Cơ Chế Fallback Cấp Độ 1: Ma Trận Kích Thước Chuẩn Hóa (Standard Furniture Catalog Matrix)
+Khi rơi vào kịch bản Fallback, phân hệ Vision Scanner tự động đối sánh danh mục phân loại đồ dùng phổ biến tại các hộ gia đình Việt Nam để gán kích thước và tải trọng định mức:
+
+| Danh Mục Vật Dụng | Kích Thước Chuẩn (Dài x Rộng x Cao cm) | Thể Tích Định Mức ($m^3$) | Khối Lượng Định Mức (kg) | Phân Rã Vật Liệu Mặc Định |
+| :--- | :--- | :--- | :--- | :--- |
+| **Sofa băng 3 chỗ** | $200 \times 85 \times 80$ | $1.36$ | $45.0$ | Gỗ: $40\%$, Mút xốp: $50\%$, Khung sắt: $10\%$ |
+| **Sofa đơn / Armchair** | $85 \times 80 \times 85$ | $0.58$ | $18.0$ | Gỗ: $40\%$, Mút xốp: $50\%$, Vải: $10\%$ |
+| **Nệm lò xo King / Queen** | $200 \times 180 \times 25$ | $0.90$ | $35.0$ | Thép lò xo: $60\%$, Mút nỉ: $40\%$ |
+| **Tủ quần áo 2 cánh gỗ CN** | $120 \times 60 \times 200$ | $1.44$ | $65.0$ | Gỗ dăm ép MDF: $85\%$, Bản lề kim loại: $15\%$ |
+| **Bàn ăn gỗ 4-6 ghế** | $140 \times 80 \times 75$ | $0.84$ | $35.0$ | Gỗ cao su/tràm: $80\%$, Phụ kiện sắt: $20\%$ |
+| **Tủ lạnh gia đình (150-250L)** | $60 \times 65 \times 160$ | $0.62$ | $50.0$ | Kim loại vỏ máy: $65\%$, Nhựa nội thất: $35\%$ |
+| **Máy giặt cửa trước** | $60 \times 60 \times 85$ | $0.31$ | $62.0$ | Khung thép & lồng giặt inox: $70\%$, Nhựa: $30\%$ |
+
+#### D. Cơ Chế Fallback Cấp Độ 2: Tương Tác Cư Dân & Bảo Toàn Tolerance Guarantee
+* **Thông báo minh bạch trên giao diện:** Màn hình di động Flutter hiển thị nhãn: *"Hệ thống đã nhận dạng loại vật phẩm và áp dụng kích thước quy chuẩn tiêu chuẩn. Bạn có thể kéo thanh trượt để tinh chỉnh nếu kích thước thực tế có khác biệt."*
+* **Gắn nhãn dữ liệu hợp đồng (Contract Metadata):** Payload gửi về trung tâm điều phối gắn kèm `is_fallback: true`, `fallback_reason: "LATENCY_TIMEOUT" | "LOW_CONFIDENCE"` và `estimated_confidence: 0.65`.
+* **Điều chỉnh chính sách dung sai (Tolerance Guarantee):** Với các đơn hàng kích hoạt Fallback, biên độ dung sai cam kết được mở rộng linh hoạt từ $\pm 10\%$ lên $\pm 15\%$, đồng thời thông báo cho tài xế mang theo thước dây kiểm tra hiện trường, bảo vệ quyền lợi cả hai bên mà không làm phát sinh tranh chấp.
+
 ---
 
 ## 3. Hệ Quả & Đánh Đổi (Consequences)

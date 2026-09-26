@@ -45,7 +45,7 @@ Tại các siêu đô thị đang phát triển nhanh như TP. Hồ Chí Minh v�
 * 🌿 **Thiếu động lực kinh tế tuần hoàn:** Người dân chưa có thói quen phân loại rác tại nguồn; doanh nghiệp FMCG đối mặt áp lực kiểm toán định mức tái chế bắt buộc (**EPR** - Nghị định 08/2022/NĐ-CP).
 * 📢 **Truyền thông xanh thủ công, tốn kém & rời rạc:** Các chiến dịch vận động môi trường hiện nay phụ thuộc hoàn toàn vào nhân sự viết bài thủ công, chi phí thiết kế đồ họa đắt đỏ, nội dung khô khan khó lan tỏa, không duy trì được tần suất xuất bản đều đặn trên đa nền tảng mạng xã hội.
 
-> 💡 **Điểm Đột Phá (The Game Changer):** NaN-EcoNet tích hợp **Omni-Channel Agentic Media Hub** do AI làm chủ 100%: Tự động tạo ảnh poster thẩm mỹ cao qua đa mô hình SOTA (FLUX / Imagen / Qwen), tự động dựng video ngắn 9:16 bằng FFmpeg, viết caption bắt trend và tự động đăng tải đa kênh lên **Facebook Page**, **TikTok** và **YouTube Shorts** với chi phí vận hành gần như bằng 0.
+> 💡 **Điểm Đột Phá (The Game Changer):** NaN-EcoNet tích hợp **[Omni-Channel Agentic Media Hub](apps/ecopass-enterprise/enterprise-bi-copilot/)** do AI làm chủ 100%: Tự động tạo ảnh poster thẩm mỹ cao qua đa mô hình SOTA ([`apps/ecopass-enterprise/agy-image-gateway`](apps/ecopass-enterprise/agy-image-gateway): FLUX / Imagen / Qwen), tự động dựng video ngắn 9:16 bằng FFmpeg, viết caption bắt trend và tự động đăng tải đa kênh lên **Facebook Page**, **TikTok** và **YouTube Shorts** với chi phí vận hành gần như bằng 0.
 
 ```mermaid
 graph LR
@@ -248,7 +248,7 @@ make docker-up
 | **Thu Gom Ngõ Hẻm (Walk-in)** | 0% (Bỏ sót các điểm trong hẻm) | Cần tinh chỉnh thủ công | **100% Tự động hóa** | Gom cụm tại 12 điểm hẹn đầu hẻm |
 | **Xử Lý Sự Cố Động** | 4 - 6 giờ (Chờ ca hôm sau) | Phải chạy lại từ đầu ($>3\text{s}$) | **< 350 ms** (Human-in-the-Loop) | Bảo toàn 100% các điểm đã thu gom |
 
-> 📖 *Xem hồ sơ phương pháp đo đạc chi tiết và tham số thực nghiệm tại [docs/benchmarks/empirical-evaluation.md](docs/benchmarks/empirical-evaluation.md).*
+> 📖 *Xem hồ sơ phương pháp đo đạc chi tiết, dữ liệu kiểm chứng độc lập tại [RESULTS.md](RESULTS.md) và kịch bản tái lập [docs/benchmarks/reproduce_benchmark.py](docs/benchmarks/reproduce_benchmark.py) (phân tích chi tiết tại [docs/benchmarks/empirical-evaluation.md](docs/benchmarks/empirical-evaluation.md)).*
 
 ---
 
