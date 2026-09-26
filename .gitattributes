@@ -1,0 +1,16 @@
+# Auto-detect text files and normalize line endings to LF
+* text=auto eol=lf
+
+# Force specific binary formats
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.bin binary
+
+# Linguist overrides for GitHub language statistics
+docs/* linguist-documentation
+apps/smart-collection-engine/map_ui/route_cache.json linguist-generated
+apps/smart-collection-engine/backend/bin/* binary
