@@ -1,8 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide MaterialType;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bulky_mobile/core/constants/bulky_constants.dart';
+import 'package:bulky_mobile/core/domain/models/bulky_item.dart';
+import 'package:bulky_mobile/core/domain/models/bulky_order.dart';
+import 'package:bulky_mobile/core/domain/pricing/pricing_engine.dart';
 import 'package:bulky_mobile/core/services/storage/mock_bulky_storage.dart';
 import 'package:bulky_mobile/features/auth/models/citizen_user.dart';
 import 'package:bulky_mobile/features/auth/providers/auth_provider.dart';
@@ -199,6 +202,184 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(ordersProvider.getOrderById('order-demo-scheduled')?.status, BulkyOrderStatus.COMPLETED);
+      },
+    );
+
+    testWidgets(
+      '4. BulkyOperatorScreen reviews PENDING_REVIEW order, finalizes price with note, and approves to APPROVED_AWAITING_PAYMENT',
+      (tester) async {
+        final storage = MockBulkyStorage();
+        await storage.seedInitialOrdersIfEmpty();
+
+        const reviewItem = BulkyItem(
+          id: 'test-review-item-1',
+          category: BulkyCategory.CABINET,
+          displayName: 'Tủ gỗ công nghiệp 2 cánh',
+          quantity: 1,
+          lengthCm: 180,
+          widthCm: 100,
+          heightCm: 50,
+          material: MaterialType.STANDARD,
+        );
+        final quote = PricingEngine.calculateQuote(
+          items: [reviewItem],
+          floorNumber: 2,
+          hasElevator: false,
+          now: DateTime(2026, 9, 26, 9, 0),
+        );
+        final reviewOrder = BulkyOrder(
+          id: 'order-test-pending-review',
+          items: [reviewItem],
+          quote: quote,
+          address: '88 Hàm Nghi, Phường Bến Nghé, Quận 1',
+          pickupDate: '2026-09-28',
+          status: BulkyOrderStatus.PENDING_REVIEW,
+          paymentStatus: BulkyPaymentStatus.UNPAID,
+          hasElevator: false,
+          floorNumber: 2,
+          contactName: 'Hoàng Anh Tuấn',
+          contactPhone: '0908112233',
+          createdAt: DateTime(2026, 9, 26, 9, 0),
+        );
+        await storage.saveOrder(reviewOrder);
+
+        final ordersProvider = OrdersProvider(storage: storage);
+        await ordersProvider.loadOrders();
+
+        final auth = AuthProvider(initialUser: CitizenUser.demoOperator);
+
+        await tester.pumpWidget(
+          MultiProvider(
+            providers: [
+              ChangeNotifierProvider<AuthProvider>.value(value: auth),
+              ChangeNotifierProvider<OrdersProvider>.value(value: ordersProvider),
+            ],
+            child: const MaterialApp(
+              home: BulkyOperatorScreen(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // 1. Verify pending review section & card
+        expect(find.text('Đơn chờ xét duyệt giá'), findsWidgets);
+        expect(find.text('Hoàng Anh Tuấn • 0908112233'), findsOneWidget);
+        expect(find.text('88 Hàm Nghi, Phường Bến Nghé, Quận 1'), findsOneWidget);
+        expect(find.textContaining('Tủ gỗ công nghiệp 2 cánh'), findsOneWidget);
+        expect(find.textContaining('Dải giá AI ước tính:'), findsOneWidget);
+
+        // 2. Tap approve button to open approval dialog
+        final approveBtn = find.byKey(const Key('operator_approve_pricing_button_order-test-pending-review'));
+        expect(approveBtn, findsOneWidget);
+        await tester.tap(approveBtn);
+        await tester.pumpAndSettle();
+
+        // 3. Verify approval dialog content
+        expect(find.text('Phê duyệt & Chốt giá đơn hàng'), findsOneWidget);
+        expect(find.byKey(const Key('finalized_price_input')), findsOneWidget);
+        expect(find.byKey(const Key('operator_approval_note_input')), findsOneWidget);
+
+        // 4. Input finalized price and note
+        await tester.enterText(find.byKey(const Key('finalized_price_input')), '350000');
+        await tester.enterText(
+          find.byKey(const Key('operator_approval_note_input')),
+          'Đã kiểm tra ảnh chụp, chấp nhận cước trọn gói tầng 2 thang bộ',
+        );
+        await tester.pumpAndSettle();
+
+        // 5. Confirm approval
+        final confirmBtn = find.byKey(const Key('confirm_pricing_approval_button'));
+        expect(confirmBtn, findsOneWidget);
+        await tester.tap(confirmBtn);
+        await tester.pumpAndSettle();
+
+        // 6. Verify updated order status & attributes
+        final updatedOrder = ordersProvider.getOrderById('order-test-pending-review');
+        expect(updatedOrder?.status, BulkyOrderStatus.APPROVED_AWAITING_PAYMENT);
+        expect(updatedOrder?.finalizedPriceVnd, 350000);
+        expect(
+          updatedOrder?.operatorNote,
+          'Đã kiểm tra ảnh chụp, chấp nhận cước trọn gói tầng 2 thang bộ',
+        );
+      },
+    );
+
+    testWidgets(
+      '5. BulkyOperatorScreen rejects PENDING_REVIEW order with custom rejection reason',
+      (tester) async {
+        final storage = MockBulkyStorage();
+        await storage.seedInitialOrdersIfEmpty();
+
+        const reviewItem = BulkyItem(
+          id: 'test-reject-item',
+          category: BulkyCategory.OTHER,
+          displayName: 'Bình ga cũ và can sơn hóa chất',
+          quantity: 2,
+          lengthCm: 50,
+          widthCm: 50,
+          heightCm: 50,
+          material: MaterialType.HEAVY,
+        );
+        final quote = PricingEngine.calculateQuote(
+          items: [reviewItem],
+          floorNumber: 0,
+          hasElevator: false,
+          now: DateTime(2026, 9, 26, 9, 0),
+        );
+        final rejectOrder = BulkyOrder(
+          id: 'order-test-reject',
+          items: [reviewItem],
+          quote: quote,
+          address: '15 Lê Thánh Tôn, Quận 1',
+          pickupDate: '2026-09-29',
+          status: BulkyOrderStatus.PENDING_REVIEW,
+          paymentStatus: BulkyPaymentStatus.UNPAID,
+          contactName: 'Phạm Minh',
+          createdAt: DateTime(2026, 9, 26, 9, 0),
+        );
+        await storage.saveOrder(rejectOrder);
+
+        final ordersProvider = OrdersProvider(storage: storage);
+        await ordersProvider.loadOrders();
+
+        final auth = AuthProvider(initialUser: CitizenUser.demoOperator);
+
+        await tester.pumpWidget(
+          MultiProvider(
+            providers: [
+              ChangeNotifierProvider<AuthProvider>.value(value: auth),
+              ChangeNotifierProvider<OrdersProvider>.value(value: ordersProvider),
+            ],
+            child: const MaterialApp(
+              home: BulkyOperatorScreen(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final rejectBtn = find.byKey(const Key('operator_reject_booking_button_order-test-reject'));
+        expect(rejectBtn, findsOneWidget);
+        await tester.tap(rejectBtn);
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('reject_reason_input')), findsOneWidget);
+        await tester.enterText(
+          find.byKey(const Key('reject_reason_input')),
+          'Chứa chất thải nguy hại dễ cháy nổ không thuộc danh mục thu gom',
+        );
+        await tester.pumpAndSettle();
+
+        final confirmRejectBtn = find.byKey(const Key('confirm_reject_button'));
+        expect(confirmRejectBtn, findsOneWidget);
+        await tester.tap(confirmRejectBtn);
+        await tester.pumpAndSettle();
+
+        final updatedOrder = ordersProvider.getOrderById('order-test-reject');
+        expect(updatedOrder?.status, BulkyOrderStatus.REJECTED);
+        expect(
+          updatedOrder?.operatorNote,
+          'Chứa chất thải nguy hại dễ cháy nổ không thuộc danh mục thu gom',
+        );
       },
     );
   });

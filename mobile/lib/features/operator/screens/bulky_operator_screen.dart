@@ -38,6 +38,7 @@ class _BulkyOperatorScreenState extends State<BulkyOperatorScreen>
     final pendingOrders = ordersProvider.pendingDispatchOrders;
     final assignedOrders = ordersProvider.driverAssignedOrders;
     final allOrders = ordersProvider.orders;
+    final pendingReviewOrders = ordersProvider.pendingReviewOrders;
 
     return Scaffold(
       backgroundColor: BulkyColors.background,
@@ -63,7 +64,7 @@ class _BulkyOperatorScreenState extends State<BulkyOperatorScreen>
           unselectedLabelColor: BulkyColors.textSecondary,
           indicatorColor: BulkyColors.primary,
           tabs: [
-            Tab(text: 'Chờ xếp xe (${pendingOrders.length})'),
+            Tab(text: 'Chờ xếp xe (${pendingOrders.length + pendingReviewOrders.length})'),
             Tab(text: 'Trên tuyến (${assignedOrders.length})'),
             Tab(text: 'Tất cả (${allOrders.length})'),
           ],
@@ -77,7 +78,12 @@ class _BulkyOperatorScreenState extends State<BulkyOperatorScreen>
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildPendingDispatchTab(context, ordersProvider, pendingOrders),
+                _buildPendingDispatchTab(
+                  context,
+                  ordersProvider,
+                  pendingOrders,
+                  pendingReviewOrders,
+                ),
                 _buildAssignedTab(context, ordersProvider, assignedOrders),
                 _buildAllOrdersTab(context, allOrders),
               ],
@@ -188,8 +194,11 @@ class _BulkyOperatorScreenState extends State<BulkyOperatorScreen>
             children: [
               _buildKpiCard(
                 title: 'Chờ xếp xe',
-                subtitle: 'Đơn chờ duyệt',
-                count: ordersProvider.pendingDispatchOrders.length,
+                subtitle: ordersProvider.pendingReviewOrders.isNotEmpty
+                    ? '${ordersProvider.pendingReviewOrders.length} chờ duyệt giá'
+                    : 'Đơn chờ duyệt',
+                count: ordersProvider.pendingDispatchOrders.length +
+                    ordersProvider.pendingReviewOrders.length,
                 color: BulkyColors.warning,
                 bgColor: BulkyColors.warningBg,
               ),
@@ -266,9 +275,10 @@ class _BulkyOperatorScreenState extends State<BulkyOperatorScreen>
   Widget _buildPendingDispatchTab(
     BuildContext context,
     OrdersProvider ordersProvider,
-    List<BulkyOrder> orders,
+    List<BulkyOrder> dispatchOrders,
+    List<BulkyOrder> reviewOrders,
   ) {
-    if (orders.isEmpty) {
+    if (dispatchOrders.isEmpty && reviewOrders.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -294,13 +304,561 @@ class _BulkyOperatorScreenState extends State<BulkyOperatorScreen>
       );
     }
 
-    return ListView.builder(
+    return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: orders.length,
-      itemBuilder: (context, index) {
-        final order = orders[index];
-        return _buildPendingOrderCard(context, ordersProvider, order);
-      },
+      children: [
+        if (reviewOrders.isNotEmpty) ...[
+          _buildReviewSectionHeader(reviewOrders.length),
+          ...reviewOrders.map(
+            (order) => _buildPendingReviewOrderCard(context, ordersProvider, order),
+          ),
+        ],
+        if (dispatchOrders.isNotEmpty) ...[
+          if (reviewOrders.isNotEmpty)
+            _buildDispatchSectionHeader(dispatchOrders.length),
+          ...dispatchOrders.map(
+            (order) => _buildPendingOrderCard(context, ordersProvider, order),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildReviewSectionHeader(int count) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 8),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Icon(Icons.rate_review_rounded, size: 16, color: Color(0xFFD97706)),
+          ),
+          const SizedBox(width: 8),
+          const Text(
+            'Đơn chờ xét duyệt giá',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: BulkyColors.textPrimary,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEF3C7),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.4)),
+            ),
+            child: Text(
+              '$count',
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFFB45309),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDispatchSectionHeader(int count) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 12, bottom: 8),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              color: BulkyColors.primaryLight.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Icon(Icons.local_shipping_rounded, size: 16, color: BulkyColors.primary),
+          ),
+          const SizedBox(width: 8),
+          const Text(
+            'Đơn đã cọc chờ xếp xe',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: BulkyColors.textPrimary,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: BulkyColors.primaryLight.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: BulkyColors.primary.withValues(alpha: 0.4)),
+            ),
+            child: Text(
+              '$count',
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: BulkyColors.primary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPendingReviewOrderCard(
+    BuildContext context,
+    OrdersProvider ordersProvider,
+    BulkyOrder order,
+  ) {
+    return Card(
+      key: Key('operator_review_card_${order.id}'),
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: Color(0xFFFDE68A), width: 1.5),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  order.id,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: BulkyColors.textPrimary,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.4)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.hourglass_top_rounded, size: 12, color: Color(0xFFD97706)),
+                      SizedBox(width: 4),
+                      Text(
+                        'Chờ xét duyệt giá',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFB45309),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const Icon(Icons.location_on_outlined, size: 15, color: BulkyColors.primary),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    order.address,
+                    style: const TextStyle(fontSize: 12, color: BulkyColors.textPrimary),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(Icons.person_outline_rounded, size: 15, color: BulkyColors.textSecondary),
+                const SizedBox(width: 6),
+                Text(
+                  '${order.contactName ?? "Khách hàng"} • ${order.contactPhone ?? "Chưa có SĐT"}',
+                  style: const TextStyle(fontSize: 11, color: BulkyColors.textSecondary),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(Icons.apartment_rounded, size: 15, color: BulkyColors.textSecondary),
+                const SizedBox(width: 6),
+                Text(
+                  order.floorNumber > 0
+                      ? 'Tầng ${order.floorNumber} (${order.hasElevator ? "Thang máy" : "Thang bộ"})'
+                      : 'Bốc tại tầng trệt',
+                  style: const TextStyle(fontSize: 11, color: BulkyColors.textSecondary),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: BulkyColors.background,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Vật dụng thu gom (${order.items.length} món):',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: BulkyColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  ...order.items.map(
+                    (it) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 1),
+                      child: Text(
+                        '• ${it.displayName} (x${it.quantity}) - ${it.material.emoji} ${it.material.shortLabel}',
+                        style: const TextStyle(fontSize: 11, color: BulkyColors.textSecondary),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF3C7).withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.auto_awesome_rounded, size: 16, color: Color(0xFFD97706)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Dải giá AI ước tính: ${BulkyColors.formatCurrency(order.quote.minVnd)} - ${BulkyColors.formatCurrency(order.quote.maxVnd)}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF92400E),
+                          ),
+                        ),
+                        Text(
+                          'Giá đề xuất: ${BulkyColors.formatCurrency(order.quote.maxVnd)}',
+                          style: const TextStyle(fontSize: 11, color: Color(0xFFB45309)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    key: Key('operator_approve_pricing_button_${order.id}'),
+                    onPressed: () => _showPricingApprovalDialog(context, ordersProvider, order),
+                    icon: const Icon(Icons.check_circle_outline_rounded, size: 16),
+                    label: const Text('Phê duyệt & Chốt giá', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: BulkyColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                OutlinedButton.icon(
+                  key: Key('operator_reject_booking_button_${order.id}'),
+                  onPressed: () => _showReviewRejectDialog(context, ordersProvider, order),
+                  icon: const Icon(Icons.cancel_outlined, size: 16),
+                  label: const Text('Từ chối', style: TextStyle(fontSize: 12)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: BulkyColors.error,
+                    side: const BorderSide(color: BulkyColors.error),
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showPricingApprovalDialog(
+    BuildContext context,
+    OrdersProvider ordersProvider,
+    BulkyOrder order,
+  ) {
+    final priceController = TextEditingController(text: '${order.quote.maxVnd}');
+    final noteController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.verified_rounded, color: BulkyColors.primary, size: 22),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Phê duyệt & Chốt giá đơn hàng',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Đơn hàng: ${order.id} • ${order.contactName ?? "Khách hàng"}',
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: BulkyColors.textPrimary),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Địa chỉ: ${order.address}',
+                style: const TextStyle(fontSize: 12, color: BulkyColors.textSecondary),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: BulkyColors.primaryLight.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: BulkyColors.primary.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.auto_awesome_rounded, size: 16, color: BulkyColors.primary),
+                        SizedBox(width: 6),
+                        Text(
+                          'Dải giá AI ước tính:',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: BulkyColors.primary),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${BulkyColors.formatCurrency(order.quote.minVnd)} - ${BulkyColors.formatCurrency(order.quote.maxVnd)}',
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: BulkyColors.primary),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Giá gợi ý: ${BulkyColors.formatCurrency(order.quote.maxVnd)}',
+                      style: const TextStyle(fontSize: 11, color: BulkyColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Mức giá chính thức chốt duyệt (VNĐ):',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: BulkyColors.textPrimary),
+              ),
+              const SizedBox(height: 6),
+              TextField(
+                key: const Key('finalized_price_input'),
+                controller: priceController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  hintText: 'Nhập số tiền chính thức',
+                  suffixText: 'VNĐ',
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  prefixIcon: const Icon(Icons.payments_outlined, size: 18),
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Ghi chú duyệt đơn:',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: BulkyColors.textPrimary),
+              ),
+              const SizedBox(height: 6),
+              TextField(
+                key: const Key('operator_approval_note_input'),
+                controller: noteController,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  hintText: 'Ví dụ: Đã kiểm tra ảnh, chấp nhận hỗ trợ bốc vác tầng 2',
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  prefixIcon: const Icon(Icons.note_alt_outlined, size: 18),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Sau khi chốt giá, cư dân sẽ nhận được thông báo để tiến hành đặt cọc giữ xe tải thu gom.',
+                style: TextStyle(fontSize: 11, color: BulkyColors.textSecondary, fontStyle: FontStyle.italic),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Quay lại', style: TextStyle(color: BulkyColors.textSecondary)),
+          ),
+          ElevatedButton(
+            key: const Key('confirm_pricing_approval_button'),
+            onPressed: () async {
+              final priceText = priceController.text.replaceAll(RegExp(r'[^0-9]'), '');
+              final finalizedPrice = int.tryParse(priceText) ?? order.quote.maxVnd;
+              final note = noteController.text.trim().isNotEmpty ? noteController.text.trim() : null;
+
+              Navigator.pop(ctx);
+              await ordersProvider.approveWithFinalPrice(
+                order.id,
+                finalizedPrice,
+                operatorNote: note,
+              );
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      '✓ Đã phê duyệt và báo giá ${BulkyColors.formatCurrency(finalizedPrice)} cho đơn ${order.id}!',
+                    ),
+                    backgroundColor: BulkyColors.primary,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: BulkyColors.primary,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Xác nhận & Báo giá cho Cư dân'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showReviewRejectDialog(
+    BuildContext context,
+    OrdersProvider ordersProvider,
+    BulkyOrder order,
+  ) {
+    final reasonController = TextEditingController(
+      text: 'Ảnh chụp không rõ ràng / ngoài danh mục thu gom',
+    );
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: BulkyColors.error.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.cancel_rounded, color: BulkyColors.error, size: 22),
+            ),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text(
+                'Từ chối đơn thu gom',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Bạn đang xem xét từ chối đơn ${order.id} của cư dân ${order.contactName ?? ""}. Cư dân sẽ nhận được lý do từ chối.',
+                style: const TextStyle(fontSize: 13, color: BulkyColors.textSecondary, height: 1.3),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Lý do từ chối kiểm duyệt:',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: BulkyColors.textPrimary),
+              ),
+              const SizedBox(height: 6),
+              TextField(
+                key: const Key('reject_reason_input'),
+                controller: reasonController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Nhập lý do từ chối...',
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Quay lại', style: TextStyle(color: BulkyColors.textSecondary)),
+          ),
+          ElevatedButton(
+            key: const Key('confirm_reject_button'),
+            onPressed: () async {
+              final reason = reasonController.text.trim().isNotEmpty
+                  ? reasonController.text.trim()
+                  : 'Không phù hợp tiêu chuẩn thu gom';
+              Navigator.pop(ctx);
+              await ordersProvider.rejectOrderWithReason(order.id, reason);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Đã từ chối đơn ${order.id}.'),
+                    backgroundColor: BulkyColors.error,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: BulkyColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Xác nhận từ chối'),
+          ),
+        ],
+      ),
     );
   }
 
