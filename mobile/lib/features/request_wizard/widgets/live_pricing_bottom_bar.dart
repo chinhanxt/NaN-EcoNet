@@ -2,7 +2,6 @@ import 'package:flutter/material.dart' hide MaterialType;
 import 'package:provider/provider.dart';
 import '../../../../core/constants/bulky_constants.dart';
 import '../../../../core/theme/bulky_colors.dart';
-import '../../orders/providers/orders_provider.dart';
 import '../providers/booking_wizard_provider.dart';
 
 /// Persistent bottom action bar displaying real-time price estimation,
@@ -242,32 +241,6 @@ class LivePricingBottomBar extends StatelessWidget {
     }
     if (onNext != null) {
       onNext!();
-      return;
-    }
-    try {
-      final newOrder = await context.read<OrdersProvider>().createOrderForReview(wizard);
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Đã gửi yêu cầu xét duyệt thành công! Điều phối viên sẽ kiểm tra và chốt giá sớm nhất.',
-          ),
-          backgroundColor: BulkyColors.success,
-        ),
-      );
-      Navigator.pushNamed(
-        context,
-        '/order-detail',
-        arguments: newOrder.id,
-      );
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Không thể gửi yêu cầu xét duyệt: $e'),
-          backgroundColor: BulkyColors.error,
-        ),
-      );
     }
   }
 
