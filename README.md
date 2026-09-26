@@ -13,8 +13,11 @@
   <a href="#smart-collection"><img src="https://img.shields.io/badge/Route_Engine-3D--PACO_%26_OR--Tools-f97316.svg?style=for-the-badge&logo=speedtest" alt="Route Engine" /></a>
   <a href="#citizen-bulky"><img src="https://img.shields.io/badge/Vision_AI-Gemini_2.5_Flash-8b5cf6.svg?style=for-the-badge&logo=google" alt="Vision AI" /></a>
   <a href="#ecopass-enterprise"><img src="https://img.shields.io/badge/Agent_Protocol-MCP_Server-0ea5e9.svg?style=for-the-badge&logo=anthropic" alt="MCP Server" /></a>
+  <a href="https://drive.google.com/file/d/1pFIl_UKL5z9TQ8UQB4PyLLOEf1ttDoX8/view?usp=sharing"><img src="https://img.shields.io/badge/Live_Demo-Google_Drive-ea4335.svg?style=for-the-badge&logo=google-drive" alt="Demo Video" /></a>
   <a href="https://github.com/chinhanxt/NaN-EcoNet/pulls"><img src="https://img.shields.io/badge/PRs-Welcome-brightgreen.svg?style=for-the-badge&logo=github" alt="PRs Welcome" /></a>
 </p>
+
+> 🎬 **Video Demo Trình Diễn Hệ Thống Thực Tế:** Xem trực tiếp tại [Google Drive](https://drive.google.com/file/d/1pFIl_UKL5z9TQ8UQB4PyLLOEf1ttDoX8/view?usp=sharing) (Trình diễn đồng thời 3 phân hệ: App Flutter Cư dân, Bản đồ Dual-Map 8502, BI Copilot 3011 và MMO Automation).
 
 ---
 
