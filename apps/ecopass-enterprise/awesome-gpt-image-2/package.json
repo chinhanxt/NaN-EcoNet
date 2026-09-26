@@ -20,7 +20,7 @@
     "test:apimart": "node --test shared/apimart.test.js src/apimartClient.test.js api/_lib/apimart.test.js api/_lib/generation.test.js"
   },
   "dependencies": {
-    "@google-analytics/data": "^5.2.2",
+    "@google-analytics/data": "^7.2.0",
     "@supabase/supabase-js": "^2.105.4",
     "@vitejs/plugin-react": "^5.1.1",
     "alipay-sdk": "^4.14.0",
