@@ -382,5 +382,123 @@ void main() {
         );
       },
     );
+
+    testWidgets(
+      '6. BulkyDriverScreen allows driver to report on-site discrepancy and displays waiting banner',
+      (tester) async {
+        final storage = MockBulkyStorage();
+        await storage.seedInitialOrdersIfEmpty();
+        final ordersProvider = OrdersProvider(storage: storage);
+        await ordersProvider.loadOrders();
+
+        // Put order into IN_PROGRESS
+        await ordersProvider.startCollection('order-demo-scheduled');
+
+        final auth = AuthProvider(initialUser: CitizenUser.demoDriver);
+
+        await tester.pumpWidget(
+          MultiProvider(
+            providers: [
+              ChangeNotifierProvider<AuthProvider>.value(value: auth),
+              ChangeNotifierProvider<OrdersProvider>.value(value: ordersProvider),
+            ],
+            child: const MaterialApp(
+              home: BulkyDriverScreen(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Verify IN_PROGRESS state
+        expect(find.textContaining('Đã có mặt tại hiện trường'), findsOneWidget);
+
+        // Find report discrepancy button
+        final discrepancyBtn = find.byKey(const Key('driver_report_discrepancy_button_order-demo-scheduled'));
+        expect(discrepancyBtn, findsOneWidget);
+        await tester.scrollUntilVisible(discrepancyBtn, 100);
+        await tester.tap(discrepancyBtn);
+        await tester.pumpAndSettle();
+
+        // Verify Discrepancy Dialog
+        expect(find.byKey(const Key('discrepancy_price_input')), findsOneWidget);
+        expect(find.byKey(const Key('discrepancy_note_input')), findsOneWidget);
+        expect(find.byKey(const Key('confirm_report_discrepancy_button')), findsOneWidget);
+
+        // Input adjusted price & note
+        await tester.enterText(find.byKey(const Key('discrepancy_price_input')), '450000');
+        await tester.enterText(find.byKey(const Key('discrepancy_note_input')), 'Phát sinh thêm 1 nệm và tủ sắt');
+        await tester.pumpAndSettle();
+
+        // Tap confirm button
+        await tester.tap(find.byKey(const Key('confirm_report_discrepancy_button')));
+        await tester.pumpAndSettle();
+
+        // Verify order status and attributes in provider
+        final updatedOrder = ordersProvider.getOrderById('order-demo-scheduled');
+        expect(updatedOrder?.status, BulkyOrderStatus.DISCREPANCY_PENDING);
+        expect(updatedOrder?.onSiteAdjustedPriceVnd, 450000);
+        expect(updatedOrder?.onSiteDiscrepancyNote, 'Phát sinh thêm 1 nệm và tủ sắt');
+
+        // Verify driver screen shows discrepancy pending banner
+        expect(find.textContaining('Đang chờ cư dân duyệt cước phát sinh (450.000 đ)'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      '7. BulkyDriverScreen allows driver to reject collection on-site for safety violations',
+      (tester) async {
+        final storage = MockBulkyStorage();
+        await storage.seedInitialOrdersIfEmpty();
+        final ordersProvider = OrdersProvider(storage: storage);
+        await ordersProvider.loadOrders();
+
+        // Put order into IN_PROGRESS
+        await ordersProvider.startCollection('order-demo-scheduled');
+
+        final auth = AuthProvider(initialUser: CitizenUser.demoDriver);
+
+        await tester.pumpWidget(
+          MultiProvider(
+            providers: [
+              ChangeNotifierProvider<AuthProvider>.value(value: auth),
+              ChangeNotifierProvider<OrdersProvider>.value(value: ordersProvider),
+            ],
+            child: const MaterialApp(
+              home: BulkyDriverScreen(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Find safety reject button
+        final safetyRejectBtn = find.byKey(const Key('driver_reject_safety_button_order-demo-scheduled'));
+        expect(safetyRejectBtn, findsOneWidget);
+        await tester.scrollUntilVisible(safetyRejectBtn, 100);
+        await tester.tap(safetyRejectBtn);
+        await tester.pumpAndSettle();
+
+        // Verify Safety Rejection Dialog
+        expect(find.textContaining('Khấu trừ 50.000 đ phí điều xe thực tế, hoàn lại phần cọc còn lại cho cư dân.'), findsOneWidget);
+        expect(find.byKey(const Key('safety_rejection_reason_input')), findsOneWidget);
+        expect(find.byKey(const Key('confirm_safety_rejection_button')), findsOneWidget);
+
+        // Input safety rejection reason
+        await tester.enterText(
+          find.byKey(const Key('safety_rejection_reason_input')),
+          'Phát hiện bình gas mini và hóa chất công nghiệp dễ cháy nổ',
+        );
+        await tester.pumpAndSettle();
+
+        // Tap confirm button
+        await tester.tap(find.byKey(const Key('confirm_safety_rejection_button')));
+        await tester.pumpAndSettle();
+
+        // Verify order status and attributes in provider
+        final updatedOrder = ordersProvider.getOrderById('order-demo-scheduled');
+        expect(updatedOrder?.status, BulkyOrderStatus.REJECTED_ON_SITE);
+        expect(updatedOrder?.onSiteRejectionReason, 'Phát hiện bình gas mini và hóa chất công nghiệp dễ cháy nổ');
+        expect(updatedOrder?.calloutFeeVnd, 50000);
+      },
+    );
   });
 }

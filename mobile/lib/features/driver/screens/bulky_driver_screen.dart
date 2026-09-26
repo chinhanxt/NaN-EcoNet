@@ -19,7 +19,7 @@ class BulkyDriverScreen extends StatelessWidget {
     final user = auth.currentUser;
     final vehiclePlate = user?.vehiclePlate ?? '51C-889.21';
 
-    // Get orders assigned to this vehicle or currently in scheduled / progress
+    // Get orders assigned to this vehicle or currently in scheduled / progress / discrepancy pending
     final assignedOrders = ordersProvider.orders
         .where((o) =>
             (o.vehiclePlate == null ||
@@ -27,7 +27,8 @@ class BulkyDriverScreen extends StatelessWidget {
                 o.vehiclePlate == vehiclePlate) &&
             (o.status == BulkyOrderStatus.SCHEDULED ||
                 o.status == BulkyOrderStatus.ASSIGNED ||
-                o.status == BulkyOrderStatus.IN_PROGRESS))
+                o.status == BulkyOrderStatus.IN_PROGRESS ||
+                o.status == BulkyOrderStatus.DISCREPANCY_PENDING))
         .toList();
 
     final completedTrips = ordersProvider.orders
@@ -303,6 +304,7 @@ class BulkyDriverScreen extends StatelessWidget {
     BulkyOrder order,
   ) {
     final isInProgress = order.status == BulkyOrderStatus.IN_PROGRESS;
+    final isDiscrepancyPending = order.status == BulkyOrderStatus.DISCREPANCY_PENDING;
 
     return Card(
       key: Key('driver_task_card_${order.id}'),
@@ -311,8 +313,12 @@ class BulkyDriverScreen extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
         side: BorderSide(
-          color: isInProgress ? const Color(0xFFF97316) : BulkyColors.border,
-          width: isInProgress ? 2.0 : 1.0,
+          color: isDiscrepancyPending
+              ? BulkyColors.warning
+              : isInProgress
+                  ? const Color(0xFFF97316)
+                  : BulkyColors.border,
+          width: (isInProgress || isDiscrepancyPending) ? 2.0 : 1.0,
         ),
       ),
       child: Padding(
@@ -328,39 +334,51 @@ class BulkyDriverScreen extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                   decoration: BoxDecoration(
-                    color: isInProgress
-                        ? const Color(0xFFFFF7ED)
-                        : BulkyColors.primaryLight.withValues(alpha: 0.12),
+                    color: isDiscrepancyPending
+                        ? BulkyColors.warningBg
+                        : isInProgress
+                            ? const Color(0xFFFFF7ED)
+                            : BulkyColors.primaryLight.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: isInProgress
-                          ? const Color(0xFFF97316)
-                          : BulkyColors.primary.withValues(alpha: 0.3),
+                      color: isDiscrepancyPending
+                          ? BulkyColors.warning
+                          : isInProgress
+                              ? const Color(0xFFF97316)
+                              : BulkyColors.primary.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        isInProgress
-                            ? Icons.navigation_rounded
-                            : Icons.schedule_rounded,
+                        isDiscrepancyPending
+                            ? Icons.hourglass_top_rounded
+                            : isInProgress
+                                ? Icons.navigation_rounded
+                                : Icons.schedule_rounded,
                         size: 14,
-                        color: isInProgress
-                            ? const Color(0xFFEA580C)
-                            : BulkyColors.primary,
+                        color: isDiscrepancyPending
+                            ? BulkyColors.warning
+                            : isInProgress
+                                ? const Color(0xFFEA580C)
+                                : BulkyColors.primary,
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        isInProgress
-                            ? 'Đang đến điểm hẹn'
-                            : 'Đã lên lịch thu gom',
+                        isDiscrepancyPending
+                            ? 'Chờ duyệt phát sinh'
+                            : isInProgress
+                                ? 'Đang đến điểm hẹn'
+                                : 'Đã lên lịch thu gom',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: isInProgress
-                              ? const Color(0xFFEA580C)
-                              : BulkyColors.primary,
+                          color: isDiscrepancyPending
+                              ? BulkyColors.warning
+                              : isInProgress
+                                  ? const Color(0xFFEA580C)
+                                  : BulkyColors.primary,
                         ),
                       ),
                     ],
@@ -529,7 +547,61 @@ class BulkyDriverScreen extends StatelessWidget {
             const SizedBox(height: 12),
 
             // Action Buttons
-            if (!isInProgress)
+            if (isDiscrepancyPending) ...[
+              Container(
+                key: Key('driver_discrepancy_banner_${order.id}'),
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: BulkyColors.warningBg,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: BulkyColors.warning.withValues(alpha: 0.5)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.hourglass_top_rounded,
+                            size: 18, color: BulkyColors.warning),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '⏳ Đang chờ cư dân duyệt cước phát sinh (${BulkyColors.formatCurrency(order.onSiteAdjustedPriceVnd ?? 0)})',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF92400E),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (order.onSiteDiscrepancyNote != null &&
+                        order.onSiteDiscrepancyNote!.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        'Ghi chú: ${order.onSiteDiscrepancyNote}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: BulkyColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Tạm hoãn bốc dỡ đồ phát sinh. Xe tải chờ xác nhận của cư dân trên ứng dụng.',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontStyle: FontStyle.italic,
+                        color: BulkyColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ] else if (!isInProgress)
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -616,6 +688,52 @@ class BulkyDriverScreen extends StatelessWidget {
               ),
               const SizedBox(height: 10),
 
+              // Exception action button 1: Report discrepancy
+              KeyedSubtree(
+                key: const Key('driver_report_discrepancy_button'),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    key: Key('driver_report_discrepancy_button_${order.id}'),
+                    onPressed: () => _showDiscrepancyDialog(context, ordersProvider, order),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFD97706),
+                      side: const BorderSide(color: Color(0xFFD97706)),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text(
+                      '⚠️ Báo phát sinh đồ tại hiện trường',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Exception action button 2: Reject safety violation
+              KeyedSubtree(
+                key: const Key('driver_reject_safety_button'),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    key: Key('driver_reject_safety_button_${order.id}'),
+                    onPressed: () => _showSafetyRejectionDialog(context, ordersProvider, order),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: BulkyColors.error,
+                      side: const BorderSide(color: BulkyColors.error),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text(
+                      '⛔ Từ chối thu gom (Rác cấm / Nguy hại)',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -648,6 +766,217 @@ class BulkyDriverScreen extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  void _showDiscrepancyDialog(
+    BuildContext context,
+    OrdersProvider ordersProvider,
+    BulkyOrder order,
+  ) {
+    final currentPrice = order.finalizedPriceVnd ?? order.quote.maxVnd;
+    final priceController = TextEditingController(text: (currentPrice + 100000).toString());
+    final noteController = TextEditingController(text: 'Phát sinh thêm đồ tại hiện trường');
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Color(0xFFD97706)),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Báo phát sinh tại hiện trường',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Cước đã chốt ban đầu: ${BulkyColors.formatCurrency(currentPrice)}',
+                style: const TextStyle(fontSize: 13, color: BulkyColors.textSecondary),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Cước điều chỉnh mới (VNĐ):',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 6),
+              TextField(
+                key: const Key('discrepancy_price_input'),
+                controller: priceController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: 'Nhập tổng cước sau phát sinh...',
+                  suffixText: 'VNĐ',
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Ghi chú phát sinh của tài xế:',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 6),
+              TextField(
+                key: const Key('discrepancy_note_input'),
+                controller: noteController,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: 'Ví dụ: Phát sinh thêm 1 nệm và thang bộ tầng 3...',
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            key: const Key('confirm_report_discrepancy_button'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD97706),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              final price = int.tryParse(priceController.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? currentPrice;
+              final note = noteController.text.trim();
+              Navigator.of(dialogCtx).pop();
+              await ordersProvider.reportOnSiteDiscrepancy(order.id, price, note);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Đã gửi báo giá điều chỉnh (${BulkyColors.formatCurrency(price)}) cho cư dân!',
+                    ),
+                    backgroundColor: const Color(0xFFD97706),
+                  ),
+                );
+              }
+            },
+            child: const Text('Gửi báo giá điều chỉnh cho Cư dân'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSafetyRejectionDialog(
+    BuildContext context,
+    OrdersProvider ordersProvider,
+    BulkyOrder order,
+  ) {
+    final reasonController = TextEditingController(
+      text: 'Phát hiện chất thải nguy hại / cấm thu gom tại hiện trường',
+    );
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.dangerous_rounded, color: BulkyColors.error),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Từ chối thu gom tại chỗ',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: BulkyColors.errorBg,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: BulkyColors.error.withValues(alpha: 0.3)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info_outline, size: 18, color: BulkyColors.error),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Khấu trừ 50.000 đ phí điều xe thực tế, hoàn lại phần cọc còn lại cho cư dân.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: BulkyColors.error,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Lý do từ chối (Chất độc, pin ắc quy, bình ga, rác quá tải...):',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 6),
+              TextField(
+                key: const Key('safety_rejection_reason_input'),
+                controller: reasonController,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: 'Nhập lý do vi phạm an toàn...',
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            key: const Key('confirm_safety_rejection_button'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: BulkyColors.error,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              final reason = reasonController.text.trim();
+              Navigator.of(dialogCtx).pop();
+              await ordersProvider.rejectOnSiteSafetyViolation(
+                order.id,
+                reason.isEmpty
+                    ? 'Phát hiện chất thải nguy hại / cấm thu gom tại hiện trường'
+                    : reason,
+                calloutFee: 50000,
+              );
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Đã từ chối thu gom đơn hàng ${order.id} do vi phạm an toàn. Khấu trừ 50k phí điều xe.',
+                    ),
+                    backgroundColor: BulkyColors.error,
+                  ),
+                );
+              }
+            },
+            child: const Text('Xác nhận từ chối & Trừ phí điều xe 50k'),
+          ),
+        ],
       ),
     );
   }
