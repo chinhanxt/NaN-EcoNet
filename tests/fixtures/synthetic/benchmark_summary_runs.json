@@ -21,3 +21,4 @@
 {"run_id": 96, "date": "2026-09-25", "task": "docs(eval): phan tich do nhay tham so alpha va beta cua 3D-PACO trong gio cao diem", "passed": true}
 {"run_id": 97, "date": "2026-09-25", "task": "test(security): quet lo hong bao mat va kiem tra ma hoa token cho MCP Server", "passed": true}
 {"run_id": 98, "date": "2026-09-26", "task": "feat(monitoring): tich hop healthcheck endpoint /healthz cho ca 3 cum microservices", "passed": true}
+{"run_id": 99, "date": "2026-09-26", "task": "docs(citation): bo sung Google Scholar va ScienceDirect DOI cua bai bao Chau et al. 2026", "passed": true}
