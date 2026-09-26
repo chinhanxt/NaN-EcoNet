@@ -22,7 +22,7 @@
   "dependencies": {
     "@google-analytics/data": "^5.2.2",
     "@supabase/supabase-js": "^2.105.4",
-    "@vitejs/plugin-react": "^5.1.1",
+    "@vitejs/plugin-react": "^6.1.1",
     "alipay-sdk": "^4.14.0",
     "google-auth-library": "^10.6.2",
     "lucide-react": "^0.561.0",
