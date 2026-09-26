@@ -167,7 +167,7 @@ def main():
 
         for instance_file in instance_files:
             obj, time = run_solver(args.solver, param_file_path, instance_file, test_exec, size, args.timeout)
-            if   is None:
+            if obj is None or time is None:
                 print(f"Sample {instance_file.name} infeasible or timeout.")
                 # Dynamic Penalty Strategy:
                 # Avoid the "cliff" of 1e9 which distorts the Gaussian Process.

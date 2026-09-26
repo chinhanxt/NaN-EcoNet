@@ -149,23 +149,29 @@ Solution PACO::solve(const VRPInstance& instance, const YAML::Node& params_node,
     int non_improved = 0;
     int iter = 0;
     double rho = rho_ini;
+    double diversity_ratio = 1.0;
     auto sigmoid = [](double x) { return 1.0 / (1.0 + std::exp(-x)); };
 
     std::random_device rd_global_seed; // For seeding thread-local RNGs
 
-    while (non_improved < I) {
+    while (non_improved < I && diversity_ratio > 0.2) {
         if (verbose >= 1) std::cout << "[PACO] Iteration " << iter << std::endl;
         
         std::vector<Solution> iteration_final_solutions; // Collects solutions from all threads
 
-        #pragma omp parallel num_threads(p)
+        // Scale number of threads based on stagnation: active_p = max_threads * min(I_stag, I-2) / (I-2)
+        int max_threads = p;
+        int active_p = max_threads * std::min(non_improved + 1, I-2) / (I-2);
+        if (active_p < 1) active_p = 1; // Ensure at least 1 thread
+
+        #pragma omp parallel num_threads(active_p)
         {
             int tid = omp_get_thread_num();
             // Calculate ants per thread
-            int ants_per_thread = m;
-            int extra_ants = std::min(non_improved + 1, 8); // Extra ants for exploration
-            int start_ant_idx_global = tid * ants_per_thread;
-            int num_ants_this_thread = ants_per_thread * extra_ants;
+            // int ants_per_thread = m;
+            // int extra_ants = std::min(non_improved + 1, 15); // Extra ants for exploration
+            // int start_ant_idx_global = tid * ants_per_thread;
+            int num_ants_this_thread = m;
 
             std::mt19937 thread_rng(rd_global_seed() + tid + iter); // Thread-local RNG
 
@@ -245,10 +251,40 @@ Solution PACO::solve(const VRPInstance& instance, const YAML::Node& params_node,
         if (verbose >= 2) std::cout << "[PACO] Finished parallel ant construction." << std::endl;
 
         // Sort all collected candidate solutions from all threads
+        // Sort all collected candidate solutions from all threads
         std::sort(iteration_final_solutions.begin(), iteration_final_solutions.end(), 
                   [](const Solution& a, const Solution& b) {
             return a.objective_value < b.objective_value;
         });
+
+        // Check Elitist Diversity
+        int limit = 0;
+        int num_ne_elements = 0;
+        if (!iteration_final_solutions.empty()) {
+            limit = std::min((int)iteration_final_solutions.size(), t);
+            num_ne_elements = 1;
+            const Solution* ptr = &iteration_final_solutions[0];
+            for (int k = 1; k < limit; ++k) {
+                const Solution& current = iteration_final_solutions[k];
+                bool different = false;
+                // Check objective first (fastest)
+                if (std::abs(ptr->objective_value - current.objective_value) > 1e-6) different = true;
+                else if (ptr->customer_permutation != current.customer_permutation) different = true;
+                else if (ptr->customer2node != current.customer2node) different = true;
+
+                if (different) {
+                    num_ne_elements++;
+                    ptr = &current;
+                }
+            }
+            if (limit > 0) diversity_ratio = (double)num_ne_elements / limit;
+
+            if (verbose >= 2) {
+                std::cout << "[PACO] Elitist diversity: " << num_ne_elements << "/" << limit 
+                          << " (" << diversity_ratio << ")" << std::endl;
+            }
+        }
+
         // --- Compute and print average Hamming distance among top-t elitist ants ---
         int num_solutions_for_pheromone_update = std::min((int)iteration_final_solutions.size(), t);
 
@@ -308,11 +344,11 @@ Solution PACO::solve(const VRPInstance& instance, const YAML::Node& params_node,
                 // rho = rho_ini;
             } else {
                 non_improved++;
-                rho = rho_ini + (0.7 - rho_ini) * sigmoid(10 * (static_cast<double>(non_improved) / I - 0.5)); // Avoid division by zero if I=0
+                rho = rho_ini + (0.8 - rho_ini) * sigmoid(10 * (static_cast<double>(non_improved) / I - 0.5)); // Avoid division by zero if I=0
             }
         } else {
              non_improved++; // No solutions, count as non-improvement
-             rho = rho_ini + (0.7 - rho_ini) * sigmoid(10 * (static_cast<double>(non_improved) / I - 0.5)); // Avoid division by zero if I=0
+             rho = rho_ini + (0.8 - rho_ini) * sigmoid(10 * (static_cast<double>(non_improved) / I - 0.5)); // Avoid division by zero if I=0
         }
 
         if (history) convergence_history.push_back(global_best_obj);

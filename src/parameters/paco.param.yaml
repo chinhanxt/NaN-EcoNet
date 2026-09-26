@@ -3,22 +3,22 @@ large:
   num_runs: 10
   output_csv: ../output/solutions/large_paco.csv
   params:
-    I: 10
+    I: 15
+    m: 500
     LS: 100
     Q: 2.0
     alpha: 1.25
-    beta: 1.0
-    m: 50
     p: 64
-    rho: 0.5
-    t: 40
+    beta: 1.0
+    rho: 0.3
+    t: 100
 medium:
   data_dir: ../data/50
   num_runs: 1
   output_csv: /tmp/bao_temp_output.csv
   params:
-    m: 5
-    I: 30
+    m: 200
+    I: 15
     LS: 30
     alpha: 1.1644079306735833
     beta: 1.231355790111825
@@ -31,12 +31,12 @@ small:
   num_runs: 1
   output_csv: /tmp/bao_temp_output.csv
   params:
-    I: 15
+    I: 5
     LS: 50
     Q: 1.56
     alpha: 1.12
     beta: 1.43
-    m: 3
-    p: 64
+    m: 50
+    p: 32
     rho: 0.79
     t: 50
