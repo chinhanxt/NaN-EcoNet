@@ -2,14 +2,9 @@
 ## DỰ ÁN: NaN-EcoNet – HỆ SINH THÁI TUẦN HOÀN THÔNG MINH CHO MÔI TRƯỜNG BỀN VỮNG
 *(Autonomous Waste Logistics, Citizen Bulky Recycling & Circular 4-Win Economy)*
 
-* **Cơ quan chủ quản:** Bộ Giáo dục và Đào tạo – Trường Đại học Công nghệ TP. Hồ Chí Minh (HUTECH)
-* **Khoa:** Công nghệ Thông tin
-* **Nhóm tác giả (NaN-Team):**
-  1. **Bùi Nguyễn Công Nghiệp** (MSSV: 2380601460) – Logistics & Metaheuristics Lead
-  2. **Lê Quốc Anh** (MSSV: 2380600052) – Mobile & Computer Vision Lead
-  3. **Nguyễn Chí Nhân** (MSSV: 2380601523) – System Architect & Enterprise Lead
-* **Kho lưu trữ mã nguồn:** [https://github.com/chinhanxt/NaN-EcoNet](https://github.com/chinhanxt/NaN-EcoNet)
-* **Giấy phép bản quyền:** Apache License 2.0 (Open Source)
+* **Nhóm tác giả:** NaN-Team (Đại học Công nghệ TP. Hồ Chí Minh - HUTECH)
+* **Thành viên:** Bùi Nguyễn Công Nghiệp (2380601460) • Lê Quốc Anh (2380600052) • Nguyễn Chí Nhân (2380601523)
+* **Mã nguồn (Repository):** [https://github.com/chinhanxt/NaN-EcoNet](https://github.com/chinhanxt/NaN-EcoNet) *(Apache License 2.0)*
 
 ---
 
@@ -35,7 +30,7 @@ NaN-EcoNet cung cấp một hệ thống giải pháp công nghệ toàn diện 
 * **Ví điểm thưởng Eco Rewards:** Cư dân quét mã tem nhiệt trên vỏ lon/chai tái chế để tích điểm, quy đổi trực tiếp thành mã voucher giảm giá đồ uống tại các chuỗi F&B đối tác (Highlands Coffee, Phúc Long, Katinat, Căn tin HUTECH).
 
 #### 2.2. Động Cơ Định Tuyến Tối Ưu Đội Xe & Xử Lý Sự Cố Động (Smart Collection Engine)
-* **Thuật toán lai 3D-PACO giải quyết bài toán CVRPTW:** Tối ưu hóa phân bổ tuyến đường cho đội xe tải 1.5 tấn có ràng buộc tải trọng và khung giờ đón, tích hợp bản đồ số đường bộ thực tế (Local OSRM) bám sát các cung đường một chiều tại TP.HCM.
+* **Kế thừa nền tảng nghiên cứu quốc tế 3D-PACO giải CVRPTW:** Phát triển dựa trên mô hình thuật toán tối ưu hóa bầy đàn 3D-PACO trong bài báo khoa học công bố trên tạp chí hạng Q1 quốc tế *Swarm and Evolutionary Computation* (Elsevier, 2026). Động cơ mở rộng không gian tìm kiếm đa chiều giải bài toán định tuyến phương tiện có tải trọng và khung thời gian đón, tích hợp bản đồ đường bộ thực tế (Local OSRM) tại TP.HCM.
 * **Mô hình quyết định nhị phân ngõ hẻm (Bi-Modal Decision):** Mở rộng không gian tìm kiếm với biến nhị phân $o \in \{0, 1\}$ ($o = 0$: xe tải gom tận nơi; $o = 1$: gom rác bằng bộ kéo tập kết tại đầu ngõ lớn), giải quyết triệt để vấn đề mạng lưới hẻm sâu đô thị.
 * **Điều phối sự cố động thời gian thực (< 350 ms):** Tự động tính lộ trình vòng tránh đường ngập/rào chắn (Roadblock Detour), ứng cứu thùng rác tràn (Bin Overflow), và điều chuyển điểm gom khi xe gặp sự cố (Breakdown Transfer) mà không cần lập lịch lại từ đầu.
 * **Giám sát Telemetry & ML chấm điểm tài xế:** Thu thập tốc độ, gia tốc và chấm điểm hành vi lái xe an toàn, tiết kiệm nhiên liệu theo từng ca chạy.
@@ -68,7 +63,7 @@ Dự án được triển khai theo kiến trúc **Multi-Service Monorepo** vớ
    * **Mô hình Gemini 2.5 Flash:** Trích xuất hộp bao 2D chuẩn hóa $[y_{\min}, x_{\min}, y_{\max}, x_{\max}] \in [0, 1000]$. Nhận diện cùng lúc nhiều vật dụng trong 1 ảnh (ví dụ: 1 bàn ăn và 4 ghế tựa).
    * **Ước lượng thể tích 3D & Bóc tách tỷ lệ vật liệu:** Đối chiếu tỷ lệ phối cảnh để tính thể tích hình học $V = (L \times W \times H) / 1.000.000 \text{ (m}^3\text{)}$; tự động phân loại tỷ lệ gỗ tự nhiên/công nghiệp, đệm mút và kim loại để phục vụ tính cước và xếp tải trọng xe.
 2. **AI Tối Ưu Hóa Bầy Đàn (3D-PACO) Trong Logistics Đô Thị:**
-   * **Cơ chế Pheromone 3 Chiều:** Tích hợp ma trận vết mùi $\tau(i, j, o)$ và độ hấp dẫn heuristic $\eta(i, j, o) = (1 + \gamma \cdot \text{OdorLevel}_j) / c_{ij}$ (ưu tiên các điểm bốc mùi/đầy ứ và cự ly ngắn).
+   * **Cơ chế Pheromone 3 Chiều (Thừa hưởng từ Chau et al., 2026):** Tích hợp ma trận vết mùi đa chiều $\tau(i, j, o)$ và độ hấp dẫn heuristic $\eta(i, j, o) = (1 + \gamma \cdot \text{OdorLevel}_j) / c_{ij}$ (ưu tiên các điểm bốc mùi/đầy ứ và cự ly ngắn).
    * **Tốc độ tính toán vượt trội:** Nhờ tối ưu hóa OpenMP 8 luồng song song trên C++, thuật toán 3D-PACO đạt tốc độ giải chỉ **510 ms** cho cụm 100 điểm, nhanh gấp **4.2 lần** so với thuật toán Google OR-Tools tuần tự (2.140 ms).
 3. **AI Tự Động Hóa Sáng Tạo & Đăng Tải Truyền Thông Đa Nền Tảng (Omni-Channel):**
    * **AI Visual Generation:** Tự động sản xuất poster nâng cao ý thức phân loại rác thông qua prompt presets chuyên sâu, tiết kiệm 100% chi phí thiết kế đồ họa thủ công.
@@ -94,15 +89,20 @@ Dự án được triển khai theo kiến trúc **Multi-Service Monorepo** vớ
 ### 6. LINK MÃ NGUỒN / REPOSITORY & LINK SẢN PHẨM / VIDEO DEMO
 
 * **Mã nguồn toàn bộ dự án (GitHub Monorepo):**  
-  [https://github.com/chinhanxt/NaN-EcoNet](https://github.com/chinhanxt/NaN-EcoNet) *(Mã nguồn mở chuẩn Apache License 2.0, hỗ trợ kiểm thử tự động CI qua Makefile).*
+  [https://github.com/chinhanxt/NaN-EcoNet](https://github.com/chinhanxt/NaN-EcoNet) *(Mã nguồn mở Apache License 2.0, kiểm thử tự động Makefile).*
 * **Link Video Demo & Trình Diễn Toàn Bộ Hệ Thống:**  
-  Trình diễn video thực tế 3 phân hệ (App Flutter Cư dân, Bản đồ điều phối Dual-Map 8502, BI Copilot 3011, MMO Automation) được tích hợp trực tiếp tại Slide số 13 trong file thuyết trình: `presentation/index.html` (Mục *Demo Sản Phẩm Thực Tế*).
+  Video quay thực nghiệm màn hình hoạt động đồng thời của 3 phân hệ (App Flutter Cư dân, Bản đồ Dual-Map 8502, BI Copilot 3011, MMO Automation) được tích hợp trực tiếp tại Slide 13 của tệp thuyết trình: `presentation/index.html` (Mục *Demo Sản Phẩm Thực Tế*).
 
 ---
 
 ### 7. CÁC TÀI LIỆU LIÊN QUAN PHỤC VỤ VIỆC ĐÁNH GIÁ SẢN PHẨM
 
-Hồ sơ kỹ thuật của NaN-EcoNet được kiểm chứng bằng thực nghiệm đối đầu trực tiếp (**Head-to-Head Solver Battle**) trên bộ dữ liệu 100 điểm rác thực tế tại Quận 1 & Quận 3 TP.HCM:
+#### Bài Báo Khoa Học Nền Tảng (Foundational Research Paper về Thuật Toán 3D-PACO):
+> **Chau, P. A., Nguyen, L. T., Pedrycz, W., & Vo, B. (2026).** *Parallel ant colony optimization for vehicle routing with parcel lockers*. **Swarm and Evolutionary Computation** (ISI/Scopus Q1, Elsevier), Vol. 104, 102371.  
+> 🔗 **Google Scholar Citation:** [https://scholar.google.com/citations?view_op=view_citation&hl=vi&user=vIowI28AAAAJ&citation_for_view=vIowI28AAAAJ:aqlVkmm33-oC](https://scholar.google.com/citations?view_op=view_citation&hl=vi&user=vIowI28AAAAJ&citation_for_view=vIowI28AAAAJ:aqlVkmm33-oC)  
+> 🔗 **ScienceDirect DOI:** [https://doi.org/10.1016/j.swevo.2026.102371](https://doi.org/10.1016/j.swevo.2026.102371)
+
+#### Bảng Đối Sánh Thực Nghiệm Đối Đầu (Head-to-Head Solver Battle trên 100 điểm Quận 1 & Quận 3 TP.HCM):
 
 | Chỉ Số Đo Lường (Benchmark Metrics) | Baseline Tuyến Cố Định (Greedy) | Google OR-Tools Tiêu Chuẩn (GLS) | Đề Xuất 3D-PACO C++ (NaN-EcoNet) | Mức Độ Cải Thiện Của 3D-PACO |
 | :--- | :--- | :--- | :--- | :--- |

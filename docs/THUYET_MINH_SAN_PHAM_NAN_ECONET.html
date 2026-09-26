@@ -29,33 +29,12 @@
       padding: 0;
     }
 
-    .header-box {
-      border-bottom: 2px solid #000000;
-      padding-bottom: 8px;
-      margin-bottom: 14px;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-    }
-
-    .header-left {
-      text-align: left;
-      font-size: 10.5pt;
-      font-weight: bold;
-      text-transform: uppercase;
-      line-height: 1.3;
-    }
-
-    .header-right {
-      text-align: right;
-      font-size: 10.5pt;
-      font-style: italic;
-      line-height: 1.3;
-    }
-
     .doc-title-block {
       text-align: center;
-      margin: 12px 0 16px 0;
+      margin-top: 4px;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1.5px solid #0b3d20;
     }
 
     .doc-main-title {
@@ -71,13 +50,15 @@
       font-size: 12.5pt;
       font-weight: bold;
       color: #1e5631;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
 
-    .doc-meta {
-      font-size: 11pt;
-      font-style: italic;
-      color: #333333;
+    .doc-meta-line {
+      font-size: 10.5pt;
+      line-height: 1.4;
+      white-space: nowrap;
+      color: #222222;
+      margin-bottom: 3px;
     }
 
     .section-title {
@@ -159,7 +140,16 @@
       border-radius: 4px;
       padding: 8px 12px;
       margin: 8px 0;
-      font-size: 11.5pt;
+      font-size: 11pt;
+      page-break-inside: avoid;
+    }
+
+    .citation-box {
+      background-color: #f4f8fb;
+      border-left: 3.5px solid #0284c7;
+      padding: 8px 12px;
+      margin: 8px 0;
+      font-size: 10.5pt;
       page-break-inside: avoid;
     }
 
@@ -173,46 +163,26 @@
       page-break-inside: avoid;
     }
 
-    .page-break {
-      page-break-before: always;
-    }
-
-    .tag {
-      display: inline-block;
-      background: #e1efe5;
-      color: #0b3d20;
-      font-weight: bold;
-      padding: 1px 6px;
-      border-radius: 3px;
-      font-size: 9.5pt;
-      margin-right: 4px;
+    a {
+      color: #0284c7;
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
 
-  <!-- HEADER INSTITUTION -->
-  <div class="header-box">
-    <div class="header-left">
-      BỘ GIÁO DỤC VÀ ĐÀO TẠO<br>
-      TRƯỜNG ĐẠI HỌC CÔNG NGHỆ TP. HỒ CHÍ MINH (HUTECH)<br>
-      KHOA CÔNG NGHỆ THÔNG TIN
-    </div>
-    <div class="header-right">
-      HUTECH INNOVATION 2026<br>
-      Lĩnh vực: Đô thị Thông minh & Công nghệ Môi trường<br>
-      Mã hồ sơ: <strong>NaN-EcoNet-2026</strong>
-    </div>
-  </div>
-
-  <!-- TITLE -->
+  <!-- TITLE BLOCK -->
   <div class="doc-title-block">
     <h1 class="doc-main-title">BÁO CÁO THUYẾT MINH SẢN PHẨM</h1>
     <h2 class="doc-sub-title">DỰ ÁN: NaN-EcoNet – HỆ SINH THÁI TUẦN HOÀN THÔNG MINH CHO MÔI TRƯỜNG BỀN VỮNG</h2>
-    <div class="doc-meta">
-      <strong>Nhóm tác giả:</strong> NaN-Team | 
-      <strong>Thành viên:</strong> Bùi Nguyễn Công Nghiệp (2380601460), Lê Quốc Anh (2380600052), Nguyễn Chí Nhân (2380601523)<br>
-      <strong>Kho lưu trữ (Repository):</strong> https://github.com/chinhanxt/NaN-EcoNet (Giấy phép mã nguồn mở Apache License 2.0)
+    <div class="doc-meta-line">
+      <strong>Nhóm tác giả:</strong> NaN-Team (Đại học Công nghệ TP. Hồ Chí Minh - HUTECH)
+    </div>
+    <div class="doc-meta-line">
+      <strong>Thành viên:</strong> Bùi Nguyễn Công Nghiệp (2380601460) &bull; Lê Quốc Anh (2380600052) &bull; Nguyễn Chí Nhân (2380601523)
+    </div>
+    <div class="doc-meta-line">
+      <strong>Mã nguồn (Repository):</strong> <a href="https://github.com/chinhanxt/NaN-EcoNet">https://github.com/chinhanxt/NaN-EcoNet</a> (Apache License 2.0)
     </div>
   </div>
 
@@ -262,7 +232,7 @@
   <div class="subsection-title">2.2. Động Cơ Định Tuyến Tối Ưu Đội Xe & Xử Lý Sự Cố Động (Smart Collection Engine)</div>
   <ul>
     <li>
-      <strong>Thuật toán lai 3D-PACO giải quyết bài toán CVRPTW:</strong> Tối ưu hóa phân bổ tuyến đường cho đội xe tải 1.5 tấn có ràng buộc tải trọng và khung giờ đón, tích hợp bản đồ số đường bộ thực tế (Local OSRM) bám sát các cung đường một chiều tại TP.HCM.
+      <strong>Kế thừa nền tảng nghiên cứu quốc tế 3D-PACO giải CVRPTW:</strong> Phát triển dựa trên mô hình thuật toán tối ưu hóa bầy đàn 3D-PACO trong bài báo khoa học công bố trên tạp chí hạng Q1 quốc tế <em>Swarm and Evolutionary Computation</em> (Elsevier, 2026). Động cơ mở rộng không gian tìm kiếm đa chiều giải bài toán định tuyến phương tiện có tải trọng và khung thời gian đón, tích hợp bản đồ đường bộ thực tế (Local OSRM) tại TP.HCM.
     </li>
     <li>
       <strong>Mô hình quyết định nhị phân ngõ hẻm (Bi-Modal Decision):</strong> Mở rộng không gian tìm kiếm với biến nhị phân <em>o ∈ {0, 1}</em> (<em>o = 0</em>: xe tải gom tận nơi; <em>o = 1</em>: gom rác bằng bộ kéo tập kết tại đầu ngõ lớn), giải quyết triệt để vấn đề mạng lưới hẻm sâu đô thị.
@@ -365,7 +335,7 @@
   <div class="subsection-title">4.2. AI Tối Ưu Hóa Bầy Đàn (3D-PACO) Trong Logistics Đô Thị</div>
   <ul>
     <li>
-      <strong>Cơ chế Pheromone 3 Chiều:</strong> Tích hợp ma trận vết mùi <em>τ(i, j, o)</em> và độ hấp dẫn heuristic <em>η(i, j, o) = (1 + γ · OdorLevel<sub>j</sub>) / c<sub>ij</sub></em> (ưu tiên các điểm bốc mùi/đầy ứ và cự ly ngắn).
+      <strong>Cơ chế Pheromone 3 Chiều (Thừa hưởng từ Chau et al., 2026):</strong> Tích hợp ma trận vết mùi đa chiều <em>τ(i, j, o)</em> và độ hấp dẫn heuristic <em>η(i, j, o) = (1 + γ · OdorLevel<sub>j</sub>) / c<sub>ij</sub></em> (ưu tiên các điểm bốc mùi/đầy ứ và cự ly ngắn).
     </li>
     <li>
       <strong>Tốc độ tính toán vượt trội:</strong> Nhờ tối ưu hóa OpenMP 8 luồng song song trên C++, thuật toán 3D-PACO đạt tốc độ giải chỉ <strong>510 ms</strong> cho cụm 100 điểm, nhanh gấp <strong>4.2 lần</strong> so với thuật toán Google OR-Tools tuần tự (2.140 ms).
@@ -455,6 +425,14 @@
 
   <!-- 7. TÀI LIỆU LIÊN QUAN PHỤC VỤ ĐÁNH GIÁ -->
   <div class="section-title">7. CÁC TÀI LIỆU LIÊN QUAN PHỤC VỤ VIỆC ĐÁNH GIÁ SẢN PHẨM</div>
+  
+  <div class="citation-box">
+    <strong>Bài Báo Khoa Học Nền Tảng (Foundational Research Paper về Thuật Toán 3D-PACO):</strong><br>
+    Chau, P. A., Nguyen, L. T., Pedrycz, W., &amp; Vo, B. (2026). <em>Parallel ant colony optimization for vehicle routing with parcel lockers</em>. <strong>Swarm and Evolutionary Computation</strong>, Vol. 104, 102371. Elsevier (ISI/Scopus Q1, Impact Factor cao).<br>
+    🔗 <strong>Google Scholar Citation:</strong> <a href="https://scholar.google.com/citations?view_op=view_citation&hl=vi&user=vIowI28AAAAJ&citation_for_view=vIowI28AAAAJ:aqlVkmm33-oC">Xem bài báo trích dẫn trên Google Scholar</a> | 
+    🔗 <strong>ScienceDirect DOI:</strong> <a href="https://www.sciencedirect.com/science/article/pii/S221065022600091X">https://doi.org/10.1016/j.swevo.2026.102371</a>
+  </div>
+
   <p>
     Hồ sơ kỹ thuật của NaN-EcoNet được kiểm chứng bằng thực nghiệm đối đầu trực tiếp (Head-to-Head Solver Battle) trên bộ dữ liệu 100 điểm rác thực tế tại Quận 1 &amp; Quận 3 TP.HCM:
   </p>
@@ -523,12 +501,6 @@
       <li><code>docs/adr/ADR-003-mcp-copilot.md</code>: Chuẩn Model Context Protocol (MCP) cho Enterprise BI Copilot &amp; Quản trị tuần hoàn EPR.</li>
       <li><code>docs/benchmarks/empirical-evaluation.md</code>: Phương pháp đo lường thực nghiệm, hệ số IPCC và đối chuẩn kỹ thuật.</li>
     </ol>
-  </div>
-
-  <div style="margin-top: 18px; text-align: right; font-style: italic; font-size: 11pt;">
-    TP. Hồ Chí Minh, ngày 26 tháng 09 năm 2026<br>
-    <strong>ĐẠI DIỆN NHÓM TÁC GIẢ THỰC HIỆN DỰ ÁN</strong><br><br><br>
-    <strong>NaN-Team • Đại học Công nghệ TP.HCM (HUTECH)</strong>
   </div>
 
 </body>
