@@ -137,14 +137,16 @@ docker-up: ## Khởi động toàn bộ docker compose (deploy/docker-compose.ym
 	@docker compose -f $(COMPOSE_FILE) up -d --build
 	@echo -e "\n${BOLD}${GREEN}✅ Tất cả container đã được khởi động thành công!${RESET}"
 	@echo -e "Danh sách cổng dịch vụ:"
-	@echo -e "  - EcoPass Web:           ${CYAN}http://localhost:3000${RESET}"
-	@echo -e "  - EcoPass API:           ${CYAN}http://localhost:5001${RESET}"
-	@echo -e "  - Citizen Web Portal:    ${CYAN}http://localhost:3001${RESET}"
-	@echo -e "  - Citizen Traccar API:   ${CYAN}http://localhost:5002${RESET}"
-	@echo -e "  - Collection Solver API: ${CYAN}http://localhost:5000${RESET}"
-	@echo -e "  - Collection Dashboard:  ${CYAN}http://localhost:8501${RESET}"
-	@echo -e "  - Redis Message Queue:   ${CYAN}localhost:6379${RESET}"
+	@echo -e "  - Dual-Map Dispatcher:   ${CYAN}http://localhost:8502${RESET}"
+	@echo -e "  - Parameter Dashboard:   ${CYAN}http://localhost:8501${RESET}"
+	@echo -e "  - VRP Solver Core API:   ${CYAN}http://localhost:8000${RESET}"
+	@echo -e "  - Citizen Bulky Portal:  ${CYAN}http://localhost:3006${RESET}"
+	@echo -e "  - Enterprise BI & MCP:   ${CYAN}http://localhost:3011${RESET}"
+	@echo -e "  - EcoPass Voucher Web:   ${CYAN}http://localhost:3010${RESET}"
+	@echo -e "  - EcoPass Voucher API:   ${CYAN}http://localhost:5001${RESET}"
+	@echo -e "  - AI Visual Synthesis:   ${CYAN}http://localhost:5002${RESET}"
 	@echo -e "  - OSRM Route Engine:     ${CYAN}http://localhost:5003${RESET}"
+	@echo -e "  - Redis Message Queue:   ${CYAN}localhost:6379${RESET}"
 
 docker-down: ## Dừng docker compose
 	@echo -e "${BOLD}${YELLOW}🛑 Đang dừng toàn bộ container Docker Compose...${RESET}"

@@ -1,7 +1,45 @@
+# ==============================================================================
+# 🌿 NaN-EcoNet: Monorepo Microservices & Infrastructure Orchestration
+# ==============================================================================
+# BẢNG TRA CỨU CỔNG DỊCH VỤ & ÁNH XẠ MÔI TRƯỜNG (PORT MAPPING & ENVIRONMENT GUIDE)
+#
+# +-------+----------------------------------+-----------------------+-------------------------+--------------------+
+# | Cổng  | Dịch Vụ                          | Biến Môi Trường       | Môi Trường Dev (Local)  | Docker Compose     |
+# +-------+----------------------------------+-----------------------+-------------------------+--------------------+
+# | 8502  | MapLibre Dual-Map Dispatcher     | COLLECTION_DISPATCHER | http://localhost:8502   | 8502:8502 (Host:Ctr)|
+# | 8501  | Streamlit Convergence Dashboard  | COLLECTION_DASHBOARD  | http://localhost:8501   | 8501:8501          |
+# | 8000  | FastAPI VRP Solver Core          | COLLECTION_ENGINE_PORT| http://localhost:8000   | 8000:8000          |
+# | 3006  | Citizen Bulky Waste Portal       | CITIZEN_PORTAL_PORT   | http://localhost:3006   | 3006:80 (Nginx)    |
+# | 3011  | Enterprise BI Copilot & MCP      | ENTERPRISE_BI_PORT    | http://localhost:3011   | 3011:3011          |
+# | 3010  | EcoPass Voucher Client Scanner   | ECOPASS_SCANNER_PORT  | http://localhost:3010   | 3010:3000 (Next.js)|
+# | 5002  | AI Visual Synthesis Gateway      | AI_GATEWAY_PORT       | http://localhost:5002   | 5002:5002 (FastAPI)|
+# | 5003  | OSRM Local Routing Engine        | OSRM_PORT             | http://localhost:5003   | 5003:5000          |
+# | 6379  | Redis Message Queue              | REDIS_PORT            | localhost:6379          | 6379:6379          |
+# | 5001  | EcoPass Voucher Backend & API    | ECOPASS_API_PORT      | http://localhost:5001   | 5001:8000          |
+# | 8082  | Citizen IoT Telemetry / Traccar  | CITIZEN_API_PORT      | http://localhost:8082   | 8082:8082          |
+# +-------+----------------------------------+-----------------------+-------------------------+--------------------+
+#
+# HƯỚNG DẪN ÁNH XẠ CỔNG CHO DEVELOPMENT VÀ PRODUCTION:
+#
+# 1. Môi trường Phát triển (Development):
+#    - Từng phân hệ có thể chạy trực tiếp bằng Makefile (make dev-engine, make dev-citizen, make dev-ecopass).
+#    - Khi chạy qua Docker Compose, các port trên host ánh xạ trực tiếp 1:1 hoặc qua cổng chuẩn hóa.
+#    - Có thể ghi đè cổng bằng tệp `.env` đặt tại thư mục gốc hoặc chỉ định biến môi trường dòng lệnh:
+#      Ví dụ: `COLLECTION_ENGINE_PORT=8001 docker compose up -d`
+#
+# 2. Môi trường Vận hành (Production):
+#    - Toàn bộ microservices giao tiếp nội bộ thông qua mạng bridge `nan-econet-network` bằng container name
+#      (ví dụ: `http://collection-engine:8000`, `http://osrm-backend:5000`, `redis://redis-queue:6379`).
+#    - Các cổng dịch vụ công cộng (3006, 3010, 8502) có thể được định tuyến qua Reverse Proxy (Nginx/Traefik)
+#      với chứng chỉ SSL/TLS tự động và tường lửa chặn truy cập trực tiếp vào các cổng nội bộ (6379, 8000).
+# ==============================================================================
+
 services:
   # ============================================================================
   # 1. ECOPASS ENTERPRISE SUITE
   # ============================================================================
+
+  # [Port 3010] EcoPass Voucher Client Scanner (Next.js / QR Scanner) - Production-Ready
   ecopass-web:
     container_name: nan-ecopass-web
     build:
@@ -9,18 +47,19 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "${ECOPASS_PORT:-3000}:3000"
+      - "${ECOPASS_SCANNER_PORT:-${ECOPASS_PORT:-3010}}:3000"
     environment:
       - PORT=3000
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=${ECOPASS_API_URL:-http://localhost:5001/api}
       - NEXT_PUBLIC_STAGING=false
-      - MCP_SERVER_PORT=${MCP_SERVER_PORT:-5001}
+      - MCP_SERVER_PORT=${MCP_SERVER_PORT:-3011}
     networks:
       - nan-econet-network
     depends_on:
       - ecopass-api
 
+  # [Port 5001] EcoPass Voucher Backend & API (Django / SQLite) - Production-Ready
   ecopass-api:
     container_name: nan-ecopass-api
     build:
@@ -37,7 +76,7 @@ services:
       - FACEBOOK_API_KEY=${FACEBOOK_API_KEY:-}
       - ZALO_OA_SECRET=${ZALO_OA_SECRET:-}
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
-      - MCP_SERVER_PORT=${MCP_SERVER_PORT:-5001}
+      - MCP_SERVER_PORT=${MCP_SERVER_PORT:-3011}
       - TZ=${TZ:-Asia/Ho_Chi_Minh}
     volumes:
       - ecopass_data:/opt/app/database
@@ -46,9 +85,50 @@ services:
     depends_on:
       - redis-queue
 
+  # [Port 3011] Enterprise BI Copilot & MCP Server (Node.js / TypeScript) - Beta / Enterprise
+  enterprise-bi-copilot:
+    container_name: nan-bi-copilot
+    build:
+      context: ../apps/ecopass-enterprise/enterprise-bi-copilot
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${ENTERPRISE_BI_PORT:-3011}:3011"
+    environment:
+      - PORT=3011
+      - NODE_ENV=production
+      - REDIS_URL=${REDIS_URL:-redis://redis-queue:6379/4}
+      - TZ=${TZ:-Asia/Ho_Chi_Minh}
+    volumes:
+      - bi_copilot_data:/app/data
+    networks:
+      - nan-econet-network
+    depends_on:
+      - redis-queue
+
+  # [Port 5002] AI Visual Synthesis Gateway (FastAPI / FLUX / Gemini) - Prototype
+  ai-visual-gateway:
+    container_name: nan-ai-visual-gateway
+    build:
+      context: ../apps/ecopass-enterprise/agy-image-gateway
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${AI_GATEWAY_PORT:-5002}:5002"
+    environment:
+      - PORT=5002
+      - PROXY_PORT=8899
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    volumes:
+      - ai_gateway_storage:/app/storage
+    networks:
+      - nan-econet-network
+
   # ============================================================================
   # 2. SMART COLLECTION & 3D-PACO OPTIMIZATION ENGINE
   # ============================================================================
+
+  # [Port 8000] FastAPI VRP Solver Core (C++ OpenMP / OR-Tools) - Production-Ready
   collection-engine:
     container_name: nan-collection-engine
     build:
@@ -58,7 +138,7 @@ services:
     command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
     working_dir: /app/backend
     ports:
-      - "${COLLECTION_ENGINE_PORT:-5000}:8000"
+      - "${COLLECTION_ENGINE_PORT:-8000}:8000"
     environment:
       - OSRM_HOST=${OSRM_HOST:-http://osrm-backend:5000}
       - REDIS_URL=${REDIS_URL:-redis://redis-queue:6379/2}
@@ -73,6 +153,7 @@ services:
       - redis-queue
       - osrm-backend
 
+  # [Port 8501] Streamlit Parameter Convergence Dashboard (Python 3.11) - Pilot / Research
   collection-dashboard:
     container_name: nan-collection-dashboard
     build:
@@ -96,9 +177,32 @@ services:
     depends_on:
       - collection-engine
 
+  # [Port 8502] MapLibre Dual-Map Interactive Dispatcher - Production-Ready
+  collection-dispatcher:
+    container_name: nan-collection-dispatcher
+    build:
+      context: ../apps/smart-collection-engine
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: ["python3", "-m", "uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8502"]
+    working_dir: /app/map_ui
+    ports:
+      - "${COLLECTION_DISPATCHER_PORT:-8502}:8502"
+    environment:
+      - SOLVER_API_URL=http://collection-engine:8000
+      - OSRM_HOST=${OSRM_HOST:-http://osrm-backend:5000}
+    volumes:
+      - ../apps/smart-collection-engine/map_ui:/app/map_ui
+    networks:
+      - nan-econet-network
+    depends_on:
+      - collection-engine
+
   # ============================================================================
   # 3. CITIZEN BULKY APP & IOT DISPATCHER
   # ============================================================================
+
+  # [Port 3006] Citizen Bulky Waste Portal (React 18 / Vite / Nginx) - Production-Ready
   citizen-portal:
     container_name: nan-citizen-portal
     build:
@@ -106,7 +210,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "${CITIZEN_PORTAL_PORT:-3001}:80"
+      - "${CITIZEN_PORTAL_PORT:-3006}:80"
     environment:
       - VITE_APP_VERSION=1.0.0
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
@@ -117,12 +221,13 @@ services:
     depends_on:
       - citizen-api
 
+  # [Port 8082] Citizen IoT Telemetry & Tracking Gateway (Traccar Alpine)
   citizen-api:
     container_name: nan-citizen-api
     image: traccar/traccar:alpine
     restart: unless-stopped
     ports:
-      - "${CITIZEN_API_PORT:-5002}:8082"
+      - "${CITIZEN_API_PORT:-8082}:8082"
     environment:
       - REDIS_URL=${REDIS_URL:-redis://redis-queue:6379/3}
       - DISPATCHER_SECRET=${DISPATCHER_SECRET:-secret-key-nan-econet}
@@ -136,6 +241,8 @@ services:
   # ============================================================================
   # 4. SHARED INFRASTRUCTURE (REDIS QUEUE & OSRM ROUTE ENGINE)
   # ============================================================================
+
+  # [Port 6379] Redis Message Queue & PubSub Broker
   redis-queue:
     container_name: nan-redis-queue
     image: redis:7-alpine
@@ -153,6 +260,7 @@ services:
       timeout: 5s
       retries: 5
 
+  # [Port 5003 / 5000] OSRM Local Routing Engine
   osrm-backend:
     container_name: nan-osrm-backend
     image: osrm/osrm-backend:latest
@@ -197,3 +305,7 @@ volumes:
     name: nan_econet_citizen_traccar_logs
   osrm_data:
     name: nan_econet_osrm_data
+  bi_copilot_data:
+    name: nan_econet_bi_copilot_data
+  ai_gateway_storage:
+    name: nan_econet_ai_gateway_storage

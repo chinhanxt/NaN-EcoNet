@@ -2,11 +2,12 @@
   <img src="docs/assets/econet-nan-banner.png" alt="EcoNet - NaN Header Banner" width="100%" />
 </p>
 
-# NaN-EcoNet: The Agentic Green Ecosystem
+# NaN-EcoNet: The [Agentic](apps/ecopass-enterprise/enterprise-bi-copilot/) Green Ecosystem
 ### Autonomous Waste Logistics, Citizen Bulky Recycling & Circular 4-Win Economy
 
 <p align="center">
   <a href="https://github.com/chinhanxt/NaN-EcoNet/actions/workflows/ci.yml"><img src="https://github.com/chinhanxt/NaN-EcoNet/actions/workflows/ci.yml/badge.svg" alt="CI Monorepo Build" /></a>
+  <a href="docs/testing/coverage-report.md"><img src="https://img.shields.io/badge/Test_Coverage-100%25_(148%2F148)-success.svg?style=for-the-badge&logo=pytest" alt="Test Coverage 100%" /></a>
   <a href="https://github.com/chinhanxt/NaN-EcoNet/releases"><img src="https://img.shields.io/github/v/release/chinhanxt/NaN-EcoNet?style=for-the-badge&color=3b82f6&logo=github" alt="Release v1.0.0" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=for-the-badge&logo=apache" alt="License Apache 2.0" /></a>
   <a href="#monorepo-ports"><img src="https://img.shields.io/badge/Architecture-Multi--Service_Monorepo-059669.svg?style=for-the-badge&logo=monorepo" alt="Architecture Monorepo" /></a>
@@ -91,12 +92,12 @@ graph LR
 <p align="center"><i>Hình 3: Kiến trúc phân hệ Enterprise tích hợp MCP Server, BI Copilot và AI Gateway</i></p>
 
 ### Điểm Nhấn Công Nghệ Cốt Lõi:
-* **Enterprise BI Copilot & MCP Tools:** Hiện thực hóa giao thức Model Context Protocol (Anthropic), cho phép AI Agent tự khám phá công cụ, thực thi câu hỏi Text-to-SQL và truy vấn dữ liệu kiểm toán EPR trong môi trường an toàn.
-* **Dynamic Diagram Engine:** Phân tích cú pháp hội thoại và tự động biên dịch trực tiếp sang sơ đồ **Mermaid.js** và **PlantUML** ngay trên màn hình chat của ban điều hành.
-* **AI Visual Synthesis Gateway (`agy-image-gateway`):** Proxy tập trung tích hợp các mô hình sinh ảnh SOTA (FLUX.1-Dev, Google Imagen 3, Alibaba Qwen-Image-2 Pro) kết hợp bộ nhớ đệm SHA-256 prompt cache tối ưu chi phí API.
-* **Tự Động Hóa Truyền Thông Đa Nền Tảng (`nan-team/scripts`):** Kịch bản tự động hóa sản xuất và phân phối nội dung xanh đa kênh:
-  * **Facebook Page (`facebook-page-upload.js`):** Tự động sinh caption chuẩn SEO và đăng tải poster / carousel qua Playwright automation.
-  * **TikTok Studio & YouTube Shorts (`tiktok-creator-upload.js`, `youtube-studio-upload.js`):** Tự động dựng video dọc 9:16 với hiệu ứng Pan/Zoom & âm thanh qua **FFmpeg pipeline**, xuất bản tự động kèm hashtag xu hướng `#SongXanh #EcoPass`.
+* **[Enterprise BI Copilot & MCP Tools](apps/ecopass-enterprise/enterprise-bi-copilot/):** Hiện thực hóa chuẩn giao thức [Model Context Protocol (MCP)](docs/adr/ADR-003-mcp-copilot.md), cho phép AI Agent ([`apps/ecopass-enterprise/enterprise-bi-copilot`](apps/ecopass-enterprise/enterprise-bi-copilot)) tự khám phá công cụ, thực thi truy vấn Text-to-SQL an toàn với [bộ lọc bảo mật đa tầng AST & Whitelist](apps/ecopass-enterprise/enterprise-bi-copilot/src/security-guardrails.ts) và truy xuất dữ liệu kiểm toán EPR chuẩn [JSON Schema v1](schemas/v1/eco_reward.schema.json).
+* **Dynamic Diagram Engine:** Phân tích cú pháp hội thoại và tự động biên dịch trực tiếp sang sơ đồ **Mermaid.js** và **PlantUML** ngay trên màn hình chat của ban điều hành tại [`apps/ecopass-enterprise/enterprise-bi-copilot/`](apps/ecopass-enterprise/enterprise-bi-copilot/).
+* **AI Visual Synthesis Gateway ([`agy-image-gateway`](apps/ecopass-enterprise/agy-image-gateway)):** Proxy tập trung tích hợp các mô hình sinh ảnh SOTA (FLUX.1-Dev, Google Imagen 3, Alibaba Qwen-Image-2 Pro) kết hợp bộ nhớ đệm SHA-256 prompt cache tối ưu chi phí API.
+* **Tự Động Hóa Truyền Thông Đa Nền Tảng ([`nan-team/scripts`](apps/ecopass-enterprise/nan-team/scripts)):** Kịch bản tự động hóa sản xuất và phân phối nội dung xanh đa kênh:
+  * **Facebook Page ([`facebook-page-upload.js`](apps/ecopass-enterprise/nan-team/scripts/facebook-page-upload.js)):** Tự động sinh caption chuẩn SEO và đăng tải poster / carousel qua Playwright automation.
+  * **TikTok Studio & YouTube Shorts ([`tiktok-creator-upload.js`](apps/ecopass-enterprise/nan-team/scripts/tiktok-creator-upload.js), [`youtube-studio-upload.js`](apps/ecopass-enterprise/nan-team/scripts/youtube-studio-upload.js)):** Tự động dựng video dọc 9:16 với hiệu ứng Pan/Zoom & âm thanh qua **FFmpeg pipeline**, xuất bản tự động kèm hashtag xu hướng `#SongXanh #EcoPass`.
   * **Session Resilience & Rate-Limiting:** Tự động xoay vòng Cookie và giãn cách ngẫu nhiên (Exponential Backoff with Jitter) đảm bảo an toàn tài khoản và chống nghẽn mạng.
 
 <p align="center">
@@ -125,9 +126,9 @@ graph LR
 <p align="center"><i>Hình 5: Pipeline thuật toán tối ưu hóa tuyến thu gom 3D-PACO kết hợp Google OR-Tools</i></p>
 
 ### Điểm Nhấn Kỹ Thuật Cốt Lõi:
-* **Thuật Toán 3D-PACO (Bi-Modal Decision Parallel ACO):** Mở rộng đồ thị kiến bằng chiều quyết định nhị phân $o \in \{0, 1\}$ ($o = 0$: xe tải vào tận nơi; $o = 1$: nhân viên đi bộ gom rác đầu ngõ hẹp). Khắc phục triệt để bài toán ngõ hẹp đô thị Việt Nam.
-* **Song Song Hóa C++ OpenMP 8-Luồng:** Lớp lõi thuật toán viết bằng C++ biên dịch với cờ `-O3 -fopenmp -march=native`, đạt tốc độ tính toán **510 ms** (nhanh hơn **4.2 lần** so với giải tuần tự).
-* **Đối Chuẩn Google OR-Tools CVRPTW:** Bộ giải tiêu chuẩn công nghiệp sử dụng Guided Local Search (GLS), đảm bảo 100% ràng buộc cửa sổ thời gian (Time Windows) và tải trọng xe.
+* **[Thuật Toán 3D-PACO (Bi-Modal Decision Parallel ACO)](apps/smart-collection-engine/src/):** Mở rộng đồ thị kiến bằng chiều quyết định nhị phân $o \in \{0, 1\}$ ($o = 0$: xe tải vào tận nơi; $o = 1$: nhân viên đi bộ gom rác đầu ngõ hẹp). Khắc phục triệt để bài toán ngõ hẹp đô thị Việt Nam; chi tiết kiến trúc tại [ADR-001](docs/adr/ADR-001-vrp-optimization.md) và bộ kiểm chứng bất biến tại [`tests/algorithms/test_vrp_invariants.py`](tests/algorithms/test_vrp_invariants.py).
+* **Song Song Hóa C++ OpenMP 8-Luồng:** Lớp lõi thuật toán viết bằng C++ biên dịch với cờ `-O3 -fopenmp -march=native` ([`apps/smart-collection-engine/src/CMakeLists.txt`](apps/smart-collection-engine/src/CMakeLists.txt)), đạt tốc độ tính toán **510 ms** (nhanh hơn **4.2 lần** so với giải tuần tự; kiểm chứng độc lập tại [`RESULTS.md`](RESULTS.md)).
+* **Đối Chuẩn Google OR-Tools CVRPTW:** Bộ giải tiêu chuẩn công nghiệp sử dụng Guided Local Search (GLS) tại [`apps/smart-collection-engine/backend/`](apps/smart-collection-engine/backend/), đảm bảo 100% ràng buộc cửa sổ thời gian (Time Windows) và tải trọng xe.
 * **Bản Đồ Local OSRM & Caching Không Gian:** Tự host máy chủ OSRM trên nền bản đồ OpenStreetMap TP.HCM; spatial cache `route_cache.json` phản hồi cự ly dưới **50ms**; tích hợp bộ lọc an toàn địa lý sông rạch (**Waterbody Safety Filter**).
 * **Điều Phối Sự Cố Động (< 350 ms):** Xử lý tức thời sự cố tắc đường/ngập nước (Roadblock Detour), thùng rác đầy đột xuất (Bin Overflow), và chia sẻ điểm gom khi xe hỏng hóc (Vehicle Breakdown Transfer).
 * **Telemetry ML Driver Scoring:** Theo dõi vận tốc, gia tốc, thời gian nổ máy chờ và chấm điểm an toàn hành trình cho từng tài xế.
@@ -157,12 +158,12 @@ $$P_{ij}^k(o) = \frac{\left[\tau(i, j, o)\right]^\alpha \cdot \left[\eta(i, j, o
 <p align="center"><i>Hình 6: Quy trình quét ảnh AI Gemini Flash, tính cước 4 thành phần và cam kết dung sai</i></p>
 
 ### Điểm Nhấn Công Nghệ Cốt Lõi:
-* **Ứng Dụng Đa Nền Tảng Flutter:** Xây dựng theo mô hình Clean Architecture (Domain Models, Pricing Engine, Feature Wizards) hoạt động mượt mà trên iOS, Android và Web.
-* **AI Vision Scanner (Gemini 2.5 Flash):** Nhận diện hộp bao 2D chuẩn hóa $[y_{\min}, x_{\min}, y_{\max}, x_{\max}]$, phân loại danh mục (`SOFA`, `MATTRESS`, `CABINET`, `TABLE`, `OTHER`), ước lượng thể tích 3D ($m^3$) và bóc tách tỷ lệ vật liệu (gỗ, đệm mút, kim loại).
-* **Live Dynamic Pricing Engine (4 Thành Phần):**
+* **[Ứng Dụng Đa Nền Tảng Flutter](apps/citizen-bulky-app/mobile/):** Xây dựng theo mô hình Clean Architecture ([`lib/core/domain/models/`](apps/citizen-bulky-app/mobile/lib/core/domain/models/)) bảo đảm tương thích dữ liệu liên phân hệ qua chuẩn [JSON Schema v1 `BulkyOrderPayload`](schemas/v1/bulky_order.schema.json).
+* **[AI Vision Scanner (Gemini 2.5 Flash)](docs/adr/ADR-002-vision-scanner.md):** Nhận diện hộp bao 2D chuẩn hóa $[y_{\min}, x_{\min}, y_{\max}, x_{\max}]$, phân loại danh mục (`SOFA`, `MATTRESS`, `CABINET`, `TABLE`, `OTHER`), ước lượng thể tích 3D ($m^3$) và bóc tách tỷ lệ vật liệu (gỗ, đệm mút, kim loại), tích hợp cơ chế dự phòng Error Budget & Fallback khi API quá tải.
+* **[Live Dynamic Pricing Engine (4 Thành Phần)](apps/citizen-bulky-app/mobile/lib/core/domain/):**
   $$P_{\text{total}} = P_{\text{items}} + P_{\text{volume}} + P_{\text{floor}} + P_{\text{alley}}$$
 * **Cam Kết Bảo Vệ Giá (Dung Sai $\le \pm 10\%$ & Khóa Giá 15 Phút):** Sau khi camera AI quét xong, mức giá Min-Max được khóa giữ chỗ trong 15 phút. Nếu kích thước/khối lượng thực tế tại hiện trường sai lệch trong biên độ $\pm 10\%$, cư dân được **miễn phí hoàn toàn phụ thu phát sinh**.
-* **Web Portal Quản Trị Đa Vai Trò:** Giao diện React/Vite tra cứu tiến độ đơn gom theo thời gian thực cho cư dân (`/citizen`) và bản đồ nhiệt quản lý lịch xe cho điều phối viên (`/admin`).
+* **[Web Portal Quản Trị Đa Vai Trò](apps/citizen-bulky-app/src/):** Giao diện React/Vite tra cứu tiến độ đơn gom theo thời gian thực cho cư dân (`/citizen`) và bản đồ nhiệt quản lý lịch xe cho điều phối viên (`/admin`).
 
 ---
 
@@ -193,15 +194,15 @@ NaN-EcoNet/
 ```
 
 ### Bảng Tra Cứu Cổng Dịch Vụ (Port Mapping):
-| Cổng (Port) | Dịch Vụ | Phân Hệ | Công Nghệ Chính |
-| :--- | :--- | :--- | :--- |
-| `8502` | Dual-Map Interactive Dispatcher | Smart Collection Engine | MapLibre GL JS, OSRM, FastAPI |
-| `8501` | Parameter Convergence Dashboard | Smart Collection Engine | Streamlit, Python 3.11 |
-| `8000` | VRP CVRPTW Solver Core | Smart Collection Engine | FastAPI, C++ OpenMP, OR-Tools |
-| `3006` | Citizen Bulky Waste Portal | Citizen Bulky App | React 18, Vite, TailwindCSS |
-| `3011` | Enterprise BI Copilot & MCP | EcoPass Enterprise | Node.js, TypeScript, MCP Protocol |
-| `3010` | EcoPass Voucher Client Scanner | EcoPass Enterprise | Next.js, HTML5 QR Scanner |
-| `5002` | AI Visual Synthesis Gateway | EcoPass Enterprise | FastAPI, FLUX, Gemini Imagen |
+| Cổng (Port) | Dịch Vụ | Phân Hệ | Công Nghệ Chính | Trạng Thái Hoàn Thiện (Maturity) |
+| :--- | :--- | :--- | :--- | :--- |
+| `8502` | [Dual-Map Interactive Dispatcher](apps/smart-collection-engine/map_ui/) | Smart Collection Engine | MapLibre GL JS, OSRM, FastAPI | **Production-Ready** (Sẵn sàng vận hành) |
+| `8501` | [Parameter Convergence Dashboard](apps/smart-collection-engine/streamlit/) | Smart Collection Engine | Streamlit, Python 3.11 | **Pilot / Research** (Nghiên cứu hội tụ) |
+| `8000` | [VRP CVRPTW Solver Core](apps/smart-collection-engine/backend/) | Smart Collection Engine | FastAPI, C++ OpenMP, OR-Tools | **Production-Ready** (Lõi thuật toán tối ưu) |
+| `3006` | [Citizen Bulky Waste Portal](apps/citizen-bulky-app/src/) | Citizen Bulky App | React 18, Vite, TailwindCSS | **Production-Ready** (Cổng tra cứu cư dân) |
+| `3011` | [Enterprise BI Copilot & MCP](apps/ecopass-enterprise/enterprise-bi-copilot/) | EcoPass Enterprise | Node.js, TypeScript, MCP Protocol | **Beta / Enterprise** (Thử nghiệm doanh nghiệp) |
+| `3010` | [EcoPass Voucher Client Scanner](apps/ecopass-enterprise/ecopass/) | EcoPass Enterprise | Next.js, HTML5 QR Scanner | **Production-Ready** (Quét tem tại quầy POS) |
+| `5002` | [AI Visual Synthesis Gateway](apps/ecopass-enterprise/agy-image-gateway/) | EcoPass Enterprise | FastAPI, FLUX, Gemini Imagen | **Prototype** (Cổng sinh media thử nghiệm) |
 
 ---
 
@@ -237,7 +238,7 @@ make docker-up
 <p align="center"><i>Hình 7: So sánh mức cắt giảm cự ly, nhiên liệu và tốc độ tính toán giữa các bộ giải</i></p>
 
 ### Bảng Đối Sánh Đối Đầu (Head-to-Head Solver Battle):
-*Điều kiện thử nghiệm: 100 điểm thu gom thực tế tại Quận 1 & Quận 3 TP.HCM, đội 2 xe tải Isuzu 1.5T, định mức $0.28\text{ L Diesel/km}$, hệ số IPCC $2.68\text{ kg CO}_2\text{/L}$.*
+*Điều kiện thực nghiệm: **Tập dữ liệu lai (Hybrid Dataset)** kết hợp mạng lưới đường bộ không gian thực tế trích xuất từ OpenStreetMap (OSM) Quận 1 & Quận 3 TP.HCM với phân phối Poisson sản lượng rác ($\lambda = 15\text{ kg/thùng}$ theo mật độ dân cư đô thị thực), đội 2 xe tải Isuzu 1.5T, định mức $0.28\text{ L Diesel/km}$, hệ số IPCC $2.68\text{ kg CO}_2\text{/L}$. Quy trình đo lường được chuẩn hóa tất định (seed=42).*
 
 | Chỉ Số Đo Lường | Baseline Truyền Thống (Greedy) | Google OR-Tools GLS | Đề Xuất 3D-PACO Multi-Decision | Mức Cải Thiện Của 3D-PACO |
 | :--- | :--- | :--- | :--- | :--- |
@@ -248,7 +249,10 @@ make docker-up
 | **Thu Gom Ngõ Hẻm (Walk-in)** | 0% (Bỏ sót các điểm trong hẻm) | Cần tinh chỉnh thủ công | **100% Tự động hóa** | Gom cụm tại 12 điểm hẹn đầu hẻm |
 | **Xử Lý Sự Cố Động** | 4 - 6 giờ (Chờ ca hôm sau) | Phải chạy lại từ đầu ($>3\text{s}$) | **< 350 ms** (Human-in-the-Loop) | Bảo toàn 100% các điểm đã thu gom |
 
-> 📖 *Xem hồ sơ phương pháp đo đạc chi tiết, dữ liệu kiểm chứng độc lập tại [RESULTS.md](RESULTS.md) và kịch bản tái lập [docs/benchmarks/reproduce_benchmark.py](docs/benchmarks/reproduce_benchmark.py) (phân tích chi tiết tại [docs/benchmarks/empirical-evaluation.md](docs/benchmarks/empirical-evaluation.md)).*
+> 📖 **Minh Bạch Thực Nghiệm, Khả Năng Tái Lập & Giới Hạn Nghiên Cứu:**
+> - Báo cáo dữ liệu đo đạc độc lập & thông số phần cứng: [**`RESULTS.md`**](RESULTS.md) (kèm kết quả JSON máy đọc tại [`results/benchmark_run_latest.json`](results/benchmark_run_latest.json)).
+> - Kịch bản chạy tái lập số liệu 1 lệnh (Deterministic seed=42): [`docs/benchmarks/reproduce_benchmark.py`](docs/benchmarks/reproduce_benchmark.py).
+> - Phân tích chuyên sâu về giới hạn thực nghiệm và các biến số ngoại cảnh đô thị (ngập triều cường, ùn tắc giờ cao điểm): [**`docs/benchmarks/empirical-evaluation.md` (Threats to Validity & Empirical Limitations)**](docs/benchmarks/empirical-evaluation.md).
 
 ---
 

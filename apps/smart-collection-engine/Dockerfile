@@ -39,14 +39,19 @@ COPY streamlit/ /app/streamlit/
 # It will be provided by backend dependencies.
 RUN uv pip install --system .
 
+# --- Map UI Setup (Port 8502) ---
+WORKDIR /app/map_ui
+COPY map_ui/ /app/map_ui/
+
 # --- Final Setup ---
 WORKDIR /app
 COPY start.sh /app/start.sh
 RUN chmod +x /app/start.sh
 
-# Expose ports: 8000 for FastAPI, 8501 for Streamlit
+# Expose ports: 8000 for FastAPI Solver, 8501 for Streamlit Dashboard, 8502 for MapLibre Dispatcher
 EXPOSE 8000
 EXPOSE 8501
+EXPOSE 8502
 
 # Run the startup script
 CMD ["/app/start.sh"]

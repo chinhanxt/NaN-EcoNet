@@ -446,7 +446,7 @@ git commit -m "docs: minh bach hoa bao cao do phu kiem thu va kiem chung bat bie
 - Consumes: Danh mục cổng và trạng thái sẵn sàng của 7 microservices.
 - Produces: Bảng phân loại trưởng thành minh bạch: `Production-Ready`, `Beta / Pilot`, `Prototype / Research`, giúp người đọc và giám khảo đánh giá công tâm theo đúng mục tiêu của từng thành phần.
 
-- [ ] **Step 1: Cập nhật Bảng Tra Cứu Cổng Dịch Vụ trong `README.md`**
+- [x] **Step 1: Cập nhật Bảng Tra Cứu Cổng Dịch Vụ trong `README.md`**
 
 Chỉnh sửa bảng tại dòng 195-206 thành:
 
@@ -460,11 +460,11 @@ Chỉnh sửa bảng tại dòng 195-206 thành:
 | `3010` | EcoPass Voucher Client Scanner | EcoPass Enterprise | Next.js, HTML5 QR Scanner | **Production-Ready** (Quét tem tại quầy POS) |
 | `5002` | AI Visual Synthesis Gateway | EcoPass Enterprise | FastAPI, FLUX, Gemini Imagen | **Prototype** (Cổng sinh media thử nghiệm) |
 
-- [ ] **Step 2: Rà soát tệp `deploy/docker-compose.yml`**
+- [x] **Step 2: Rà soát tệp `deploy/docker-compose.yml`**
 
 Đảm bảo tất cả biến môi trường cổng mặc định trong `deploy/docker-compose.yml` ăn khớp hoàn toàn với bảng tra cứu.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add README.md deploy/docker-compose.yml
