@@ -95,6 +95,154 @@ class MockBulkyStorage {
     await _persistOrders(orders);
   }
 
+  /// [Operator Action] Approves order with a finalized price, optional note,
+  /// and transitions status to [BulkyOrderStatus.APPROVED_AWAITING_PAYMENT].
+  Future<BulkyOrder?> approveWithFinalPrice(
+    String orderId,
+    int finalizedPriceVnd, {
+    String? operatorNote,
+  }) async {
+    final orders = await getOrders();
+    final index = orders.indexWhere((o) => o.id == orderId);
+    if (index == -1) return null;
+
+    final existing = orders[index];
+    final updated = existing.copyWith(
+      status: BulkyOrderStatus.APPROVED_AWAITING_PAYMENT,
+      finalizedPriceVnd: finalizedPriceVnd,
+      operatorNote: operatorNote ?? existing.operatorNote,
+    );
+
+    orders[index] = updated;
+    await _persistOrders(orders);
+    return updated;
+  }
+
+  /// [Operator Action] Rejects an order with a reason and marks as REJECTED.
+  /// If deposit was held, payment status is updated to [BulkyPaymentStatus.REFUNDED].
+  Future<BulkyOrder?> rejectOrderWithReason(
+    String orderId,
+    String reason,
+  ) async {
+    final orders = await getOrders();
+    final index = orders.indexWhere((o) => o.id == orderId);
+    if (index == -1) return null;
+
+    final existing = orders[index];
+    final newPaymentStatus = existing.paymentStatus == BulkyPaymentStatus.DEPOSIT_HELD
+        ? BulkyPaymentStatus.REFUNDED
+        : existing.paymentStatus;
+
+    final updated = existing.copyWith(
+      status: BulkyOrderStatus.REJECTED,
+      paymentStatus: newPaymentStatus,
+      operatorNote: reason,
+    );
+
+    orders[index] = updated;
+    await _persistOrders(orders);
+    return updated;
+  }
+
+  /// [Driver Action] Reports an on-site discrepancy (e.g. additional volume or items).
+  /// Updates on-site adjusted price and discrepancy note, setting status to [BulkyOrderStatus.DISCREPANCY_PENDING].
+  Future<BulkyOrder?> reportOnSiteDiscrepancy(
+    String orderId,
+    int adjustedPriceVnd,
+    String note,
+  ) async {
+    final orders = await getOrders();
+    final index = orders.indexWhere((o) => o.id == orderId);
+    if (index == -1) return null;
+
+    final existing = orders[index];
+    final updated = existing.copyWith(
+      status: BulkyOrderStatus.DISCREPANCY_PENDING,
+      onSiteAdjustedPriceVnd: adjustedPriceVnd,
+      onSiteDiscrepancyNote: note,
+    );
+
+    orders[index] = updated;
+    await _persistOrders(orders);
+    return updated;
+  }
+
+  /// [Customer / Operator Action] Responds to on-site discrepancy report.
+  /// If accept is true: sets finalizedPriceVnd to onSiteAdjustedPriceVnd and returns status to IN_PROGRESS.
+  /// If accept is false: keeps original finalizedPriceVnd, clears discrepancy note, and returns status to IN_PROGRESS.
+  Future<BulkyOrder?> respondToOnSiteDiscrepancy(
+    String orderId, {
+    required bool accept,
+  }) async {
+    final orders = await getOrders();
+    final index = orders.indexWhere((o) => o.id == orderId);
+    if (index == -1) return null;
+
+    final existing = orders[index];
+    final BulkyOrder updated;
+    if (accept) {
+      updated = existing.copyWith(
+        status: BulkyOrderStatus.IN_PROGRESS,
+        finalizedPriceVnd: existing.onSiteAdjustedPriceVnd ?? existing.finalizedPriceVnd,
+      );
+    } else {
+      updated = BulkyOrder(
+        id: existing.id,
+        items: existing.items,
+        quote: existing.quote,
+        address: existing.address,
+        pickupDate: existing.pickupDate,
+        status: BulkyOrderStatus.IN_PROGRESS,
+        paymentStatus: existing.paymentStatus,
+        hasElevator: existing.hasElevator,
+        floorNumber: existing.floorNumber,
+        requiresDisassembly: existing.requiresDisassembly,
+        vehiclePlate: existing.vehiclePlate,
+        createdAt: existing.createdAt,
+        depositPaidAt: existing.depositPaidAt,
+        contactName: existing.contactName,
+        contactPhone: existing.contactPhone,
+        note: existing.note,
+        imageUri: existing.imageUri,
+        finalizedPriceVnd: existing.finalizedPriceVnd,
+        operatorNote: existing.operatorNote,
+        onSiteAdjustedPriceVnd: null,
+        onSiteDiscrepancyNote: null,
+        onSiteRejectionReason: existing.onSiteRejectionReason,
+        calloutFeeVnd: existing.calloutFeeVnd,
+      );
+    }
+
+    orders[index] = updated;
+    await _persistOrders(orders);
+    return updated;
+  }
+
+  /// [Driver Action] Rejects collection on-site due to safety violation (hazardous waste, structural danger, etc.).
+  /// Updates on-site rejection reason, callout fee, sets status to [BulkyOrderStatus.REJECTED_ON_SITE],
+  /// and sets payment status to [BulkyPaymentStatus.REFUNDED].
+  Future<BulkyOrder?> rejectOnSiteSafetyViolation(
+    String orderId,
+    String reason, {
+    int calloutFee = 50000,
+  }) async {
+    final orders = await getOrders();
+    final index = orders.indexWhere((o) => o.id == orderId);
+    if (index == -1) return null;
+
+    final existing = orders[index];
+    final updated = existing.copyWith(
+      status: BulkyOrderStatus.REJECTED_ON_SITE,
+      paymentStatus: BulkyPaymentStatus.REFUNDED,
+      onSiteRejectionReason: reason,
+      calloutFeeVnd: calloutFee,
+    );
+
+    orders[index] = updated;
+    await _persistOrders(orders);
+    return updated;
+  }
+
   /// Seeds 2 realistic Vietnamese demonstration orders if storage is currently empty.
   Future<void> seedInitialOrdersIfEmpty() async {
     final existingOrders = await getOrders();

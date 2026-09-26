@@ -407,5 +407,162 @@ void main() {
       expect(cancelled!.status, BulkyOrderStatus.CANCELLED);
       expect(ordersProvider.activeOrders.any((o) => o.id == targetId), isFalse);
     });
+
+    test('5. createOrderForReview creates order with PENDING_REVIEW and adds to pendingReviewOrders', () async {
+      await ordersProvider.loadOrders();
+
+      final wizard = BookingWizardProvider();
+      wizard.addItem(const BulkyItem(
+        id: 'item-wizard-review',
+        category: BulkyCategory.SOFA,
+        displayName: 'Sofa bọc nỉ 3 chỗ',
+        quantity: 1,
+        material: MaterialType.STANDARD,
+      ));
+      wizard.setCustomerInfo(
+        address: '100 Nguyễn Huệ, Quận 1',
+        date: '2026-10-06',
+        name: 'Trần Văn Nam',
+        phone: '0912345678',
+        notes: 'Chờ điều phối viên khảo sát hình ảnh',
+      );
+
+      final order = await ordersProvider.createOrderForReview(wizard);
+
+      expect(order.status, BulkyOrderStatus.PENDING_REVIEW);
+      expect(order.paymentStatus, BulkyPaymentStatus.UNPAID);
+      expect(order.address, contains('Nguyễn Huệ'));
+      expect(ordersProvider.orders.first.id, order.id);
+      expect(ordersProvider.pendingReviewOrders.any((o) => o.id == order.id), isTrue);
+
+      final stored = await storage.getOrderById(order.id);
+      expect(stored, isNotNull);
+      expect(stored!.status, BulkyOrderStatus.PENDING_REVIEW);
+    });
+
+    test('6. approveWithFinalPrice updates provider state and notifies listeners', () async {
+      await ordersProvider.loadOrders();
+
+      final wizard = BookingWizardProvider();
+      wizard.addItem(const BulkyItem(
+        id: 'item-app',
+        category: BulkyCategory.CABINET,
+        displayName: 'Tủ hồ sơ gỗ',
+      ));
+      wizard.setCustomerInfo(
+        address: '12 Nguyễn Trãi, Quận 5',
+        date: '2026-10-07',
+      );
+      final order = await ordersProvider.createOrderForReview(wizard);
+
+      bool notified = false;
+      ordersProvider.addListener(() {
+        notified = true;
+      });
+
+      await ordersProvider.approveWithFinalPrice(
+        order.id,
+        300000,
+        operatorNote: 'Giá chốt sau khi đối soát kích thước thực tế',
+      );
+
+      expect(notified, isTrue);
+      final updated = ordersProvider.getOrderById(order.id);
+      expect(updated, isNotNull);
+      expect(updated!.status, BulkyOrderStatus.APPROVED_AWAITING_PAYMENT);
+      expect(updated.finalizedPriceVnd, 300000);
+      expect(updated.operatorNote, contains('Giá chốt sau khi đối soát'));
+    });
+
+    test('7. rejectOrderWithReason updates state to REJECTED and refunds deposit if held', () async {
+      await ordersProvider.loadOrders();
+
+      // Find an order with DEPOSIT_HELD
+      final confirmedOrder = ordersProvider.orders.firstWhere(
+        (o) => o.paymentStatus == BulkyPaymentStatus.DEPOSIT_HELD,
+      );
+
+      await ordersProvider.rejectOrderWithReason(
+        confirmedOrder.id,
+        'Địa chỉ nằm ngoài bán kính phục vụ',
+      );
+
+      final updated = ordersProvider.getOrderById(confirmedOrder.id);
+      expect(updated, isNotNull);
+      expect(updated!.status, BulkyOrderStatus.REJECTED);
+      expect(updated.paymentStatus, BulkyPaymentStatus.REFUNDED);
+      expect(updated.operatorNote, 'Địa chỉ nằm ngoài bán kính phục vụ');
+    });
+
+    test('8. reportOnSiteDiscrepancy updates state to DISCREPANCY_PENDING with note and price', () async {
+      await ordersProvider.loadOrders();
+
+      final targetOrder = ordersProvider.orders.first;
+      await ordersProvider.reportOnSiteDiscrepancy(
+        targetOrder.id,
+        350000,
+        'Khối lượng thực tế lớn hơn khai báo 25%',
+      );
+
+      final updated = ordersProvider.getOrderById(targetOrder.id);
+      expect(updated, isNotNull);
+      expect(updated!.status, BulkyOrderStatus.DISCREPANCY_PENDING);
+      expect(updated.onSiteAdjustedPriceVnd, 350000);
+      expect(updated.onSiteDiscrepancyNote, contains('25%'));
+      expect(ordersProvider.discrepancyPendingOrders.any((o) => o.id == targetOrder.id), isTrue);
+    });
+
+    test('9. respondToOnSiteDiscrepancy accept true updates final price and accept false clears note', () async {
+      await ordersProvider.loadOrders();
+
+      final targetOrder = ordersProvider.orders.first;
+      await ordersProvider.reportOnSiteDiscrepancy(
+        targetOrder.id,
+        400000,
+        'Phụ thu thêm tầng 4 không thang máy',
+      );
+
+      // Accept discrepancy
+      await ordersProvider.respondToOnSiteDiscrepancy(
+        targetOrder.id,
+        accept: true,
+      );
+      final accepted = ordersProvider.getOrderById(targetOrder.id);
+      expect(accepted!.status, BulkyOrderStatus.IN_PROGRESS);
+      expect(accepted.finalizedPriceVnd, 400000);
+
+      // Report another discrepancy then reject it
+      await ordersProvider.reportOnSiteDiscrepancy(
+        targetOrder.id,
+        500000,
+        'Thêm rác phụ kiện',
+      );
+      await ordersProvider.respondToOnSiteDiscrepancy(
+        targetOrder.id,
+        accept: false,
+      );
+      final rejected = ordersProvider.getOrderById(targetOrder.id);
+      expect(rejected!.status, BulkyOrderStatus.IN_PROGRESS);
+      expect(rejected.finalizedPriceVnd, 400000); // remains previous final price
+      expect(rejected.onSiteDiscrepancyNote, isNull);
+    });
+
+    test('10. rejectOnSiteSafetyViolation sets REJECTED_ON_SITE, reason, fee, and refunds deposit', () async {
+      await ordersProvider.loadOrders();
+
+      final targetOrder = ordersProvider.orders.first;
+      await ordersProvider.rejectOnSiteSafetyViolation(
+        targetOrder.id,
+        'Rác chứa mảnh kính vỡ sắc nhọn chưa đóng gói an toàn',
+        calloutFee: 50000,
+      );
+
+      final rejected = ordersProvider.getOrderById(targetOrder.id);
+      expect(rejected, isNotNull);
+      expect(rejected!.status, BulkyOrderStatus.REJECTED_ON_SITE);
+      expect(rejected.paymentStatus, BulkyPaymentStatus.REFUNDED);
+      expect(rejected.onSiteRejectionReason, contains('mảnh kính vỡ'));
+      expect(rejected.calloutFeeVnd, 50000);
+    });
   });
 }
