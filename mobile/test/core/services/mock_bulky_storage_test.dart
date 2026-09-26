@@ -268,7 +268,7 @@ void main() {
       final updated = await storage.reportOnSiteDiscrepancy(
         'order-disc-test',
         220000,
-        'Thực tế có thêm 01 tủ sắt phụ, cần xe cẩu hỗ trợ',
+        'Thực tế có thêm 01 tủ sắt phụ, cần xe tải thu gom hỗ trợ',
       );
 
       expect(updated, isNotNull);
