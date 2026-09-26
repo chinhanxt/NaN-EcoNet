@@ -58,30 +58,30 @@ class BulkyDriverScreen extends StatelessWidget {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // 1. Driver & Vehicle Information Card
             _buildDriverHeaderCard(user, vehiclePlate, assignedOrders.length),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
             // 2. Active Stops Section
             const Row(
               children: [
-                Icon(Icons.route_rounded, size: 20, color: BulkyColors.primary),
+                Icon(Icons.route_rounded, size: 18, color: BulkyColors.primary),
                 SizedBox(width: 8),
                 Text(
                   'Nhiệm vụ thu gom trên tuyến',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: BulkyColors.textPrimary,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
 
             if (assignedOrders.isEmpty)
               _buildEmptyTasksCard()
@@ -90,26 +90,26 @@ class BulkyDriverScreen extends StatelessWidget {
                 (order) => _buildDriverTaskCard(context, ordersProvider, order),
               ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             // 3. Completed Trips Section
             if (completedTrips.isNotEmpty) ...[
               const Row(
                 children: [
                   Icon(Icons.check_circle_outline_rounded,
-                      size: 20, color: BulkyColors.success),
+                      size: 18, color: BulkyColors.success),
                   SizedBox(width: 8),
                   Text(
                     'Đã hoàn tất hôm nay',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.bold,
                       color: BulkyColors.textPrimary,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               ...completedTrips.map(_buildCompletedTripCard),
             ],
           ],
@@ -120,7 +120,7 @@ class BulkyDriverScreen extends StatelessWidget {
 
   Widget _buildDriverHeaderCard(CitizenUser? user, String vehiclePlate, int activeCount) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: BulkyColors.surface,
         borderRadius: BorderRadius.circular(14),
@@ -131,16 +131,59 @@ class BulkyDriverScreen extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 48,
-                height: 48,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEA580C).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  '🚚 TÀI XẾ THU GOM CHUYÊN DỤNG',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFEA580C),
+                  ),
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: BulkyColors.successBg,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.circle, size: 8, color: BulkyColors.success),
+                    SizedBox(width: 4),
+                    Text(
+                      'Trực tuyến',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: BulkyColors.success,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(
                   color: const Color(0xFFF97316).withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.local_shipping_rounded,
-                    color: Color(0xFFEA580C), size: 26),
+                    color: Color(0xFFEA580C), size: 22),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -151,7 +194,7 @@ class BulkyDriverScreen extends StatelessWidget {
                           child: Text(
                             user?.name ?? 'Nguyễn Văn Hùng',
                             style: const TextStyle(
-                              fontSize: 16,
+                              fontSize: 15,
                               fontWeight: FontWeight.bold,
                               color: BulkyColors.textPrimary,
                             ),
@@ -180,7 +223,7 @@ class BulkyDriverScreen extends StatelessWidget {
                     Text(
                       'Xe tải 2.5T ($vehiclePlate) • Đội VSMT Q.1',
                       style: const TextStyle(
-                        fontSize: 12,
+                        fontSize: 11,
                         color: BulkyColors.textSecondary,
                         fontWeight: FontWeight.w500,
                       ),
@@ -190,21 +233,21 @@ class BulkyDriverScreen extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           const Divider(height: 1, color: BulkyColors.border),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Row(
                 children: [
                   Icon(Icons.fiber_manual_record,
-                      size: 12, color: BulkyColors.success),
+                      size: 10, color: BulkyColors.success),
                   SizedBox(width: 6),
                   Text(
                     'Trạng thái: Đang trực tuyến',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: BulkyColors.success,
                     ),
@@ -214,7 +257,7 @@ class BulkyDriverScreen extends StatelessWidget {
               Text(
                 'Điểm hẹn: $activeCount đang chờ',
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: BulkyColors.textPrimary,
                 ),
@@ -273,7 +316,7 @@ class BulkyDriverScreen extends StatelessWidget {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -283,7 +326,7 @@ class BulkyDriverScreen extends StatelessWidget {
               children: [
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                   decoration: BoxDecoration(
                     color: isInProgress
                         ? const Color(0xFFFFF7ED)
@@ -333,7 +376,34 @@ class BulkyDriverScreen extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
+
+            // Assigned Truck Badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEA580C).withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFEA580C).withValues(alpha: 0.25)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.local_shipping_rounded, size: 16, color: Color(0xFFEA580C)),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Xe phụ trách: ${order.vehiclePlate ?? "51C-889.21"} - Xe tải 2.5T',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFEA580C),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
 
             // Pickup Address
             Row(
@@ -349,7 +419,7 @@ class BulkyDriverScreen extends StatelessWidget {
                       Text(
                         order.address,
                         style: const TextStyle(
-                          fontSize: 14,
+                          fontSize: 13,
                           fontWeight: FontWeight.bold,
                           color: BulkyColors.textPrimary,
                         ),
@@ -358,7 +428,7 @@ class BulkyDriverScreen extends StatelessWidget {
                         Text(
                           'Tầng ${order.floorNumber} (${order.hasElevator ? "Có thang máy" : "Thang bộ"})',
                           style: const TextStyle(
-                            fontSize: 12,
+                            fontSize: 11,
                             color: BulkyColors.textSecondary,
                           ),
                         ),
@@ -367,20 +437,46 @@ class BulkyDriverScreen extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
 
-            // Customer Contact
+            // Customer Contact with 1-tap call button
             Row(
               children: [
                 const Icon(Icons.phone_iphone_rounded,
                     size: 16, color: BulkyColors.textSecondary),
                 const SizedBox(width: 8),
-                Text(
-                  '${order.contactName ?? "Khách hàng"}: ${order.contactPhone ?? "0901234567"}',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: BulkyColors.textSecondary,
-                    fontWeight: FontWeight.w500,
+                Expanded(
+                  child: Text(
+                    '${order.contactName ?? "Khách hàng"}: ${order.contactPhone ?? "0901234567"}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: BulkyColors.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                OutlinedButton.icon(
+                  key: Key('driver_call_customer_button_${order.id}'),
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          '📞 Đang kết nối cuộc gọi đến ${order.contactPhone ?? "0901234567"} (${order.contactName ?? "Khách hàng"})...',
+                        ),
+                        backgroundColor: BulkyColors.primary,
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.phone_in_talk_rounded, size: 14),
+                  label: const Text('Gọi điện', style: TextStyle(fontSize: 11)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: BulkyColors.primary,
+                    side: const BorderSide(color: BulkyColors.primary),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                   ),
                 ),
               ],
@@ -430,7 +526,7 @@ class BulkyDriverScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
 
             // Action Buttons
             if (!isInProgress)
@@ -452,7 +548,7 @@ class BulkyDriverScreen extends StatelessWidget {
                     }
                   },
                   icon: const Icon(Icons.navigation_rounded, size: 18),
-                  label: const Text('Bắt đầu di chuyển đến điểm hẹn'),
+                  label: const Text('🚗 Đang đến điểm thu gom'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFEA580C),
                     foregroundColor: Colors.white,
@@ -488,6 +584,38 @@ class BulkyDriverScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
+
+              // Trip Checklist (active on-site)
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: BulkyColors.background,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: BulkyColors.border),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.checklist_rounded, size: 16, color: BulkyColors.primary),
+                        SizedBox(width: 6),
+                        Text(
+                          'Quy trình kiểm tra & cân rác tại chỗ:',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: BulkyColors.textPrimary),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    _buildTripChecklistRow('Kiểm tra đúng chủng loại rác cồng kềnh'),
+                    _buildTripChecklistRow('Chụp ảnh xác thực trước khi bốc dỡ'),
+                    _buildTripChecklistRow('Cân tải trọng thực tế bằng cân điện tử xe tải'),
+                    _buildTripChecklistRow('Quét dọn hiện trường sạch sẽ sau khi bốc xếp'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -506,7 +634,7 @@ class BulkyDriverScreen extends StatelessWidget {
                     }
                   },
                   icon: const Icon(Icons.verified_rounded, size: 18),
-                  label: const Text('Xác nhận hoàn tất thu gom & Nghiệm thu'),
+                  label: const Text('✓ Hoàn tất bốc xếp & Cân rác'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: BulkyColors.success,
                     foregroundColor: Colors.white,
@@ -520,6 +648,24 @@ class BulkyDriverScreen extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  static Widget _buildTripChecklistRow(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          const Icon(Icons.check_circle_outline_rounded, size: 14, color: BulkyColors.success),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(fontSize: 11, color: BulkyColors.textSecondary),
+            ),
+          ),
+        ],
       ),
     );
   }

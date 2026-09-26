@@ -167,7 +167,11 @@ class _BulkyAccountScreenState extends State<BulkyAccountScreen> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        '${user.role.displayName} • ${user.role.badgeLabel}',
+                        user.isCitizen
+                            ? 'Hộ gia đình • Hạng Bạc'
+                            : (user.isOperator
+                                ? '👮 ĐIỀU PHỐI VIÊN ĐÔ THỊ • Tổ VSMT Q.1'
+                                : '🚚 TÀI XẾ THU GOM CHUYÊN DỤNG • Đội Xe 2.5T'),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -489,7 +493,7 @@ class _BulkyAccountScreenState extends State<BulkyAccountScreen> {
                     Icon(Icons.eco_rounded, size: 18, color: BulkyColors.primary),
                     SizedBox(width: 6),
                     Text(
-                      'Điểm Xanh tích lũy',
+                      'Ví Điểm Xanh cư dân',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -500,9 +504,9 @@ class _BulkyAccountScreenState extends State<BulkyAccountScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '${user.rewardPoints} điểm (Bạc)',
+                  'Hạng Bạc - ${user.rewardPoints} Điểm Xanh',
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.bold,
                     color: BulkyColors.primary,
                   ),
@@ -516,168 +520,224 @@ class _BulkyAccountScreenState extends State<BulkyAccountScreen> {
   }
 
   Widget _buildOperatorSummary(CitizenUser user) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: const Color(0xFFEEF2FF),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.3)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Icon(Icons.badge_outlined, size: 18, color: Color(0xFF6366F1)),
-                    SizedBox(width: 6),
-                    Text(
-                      'Mã điều phối viên',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF6366F1),
-                      ),
-                    ),
-                  ],
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          margin: const EdgeInsets.only(bottom: 10),
+          decoration: BoxDecoration(
+            color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.3)),
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.admin_panel_settings_rounded, size: 18, color: Color(0xFF6366F1)),
+              SizedBox(width: 8),
+              Text(
+                '👮 ĐIỀU PHỐI VIÊN ĐÔ THỊ • Cổng Quản Trị VSMT',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF6366F1),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  user.staffCode ?? 'NV-DP01',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: BulkyColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: BulkyColors.successBg,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: BulkyColors.success.withValues(alpha: 0.3)),
-            ),
-            child: const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEEF2FF),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.timelapse_rounded, size: 18, color: BulkyColors.success),
-                    SizedBox(width: 6),
+                    const Row(
+                      children: [
+                        Icon(Icons.badge_outlined, size: 18, color: Color(0xFF6366F1)),
+                        SizedBox(width: 6),
+                        Text(
+                          'Mã điều phối viên',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF6366F1),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
                     Text(
-                      'Ca trực điều hành',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: BulkyColors.success,
+                      user.staffCode ?? 'NV-DP01',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: BulkyColors.textPrimary,
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: 6),
-                Text(
-                  'Ca Sáng (06:00-14:00)',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: BulkyColors.textPrimary,
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: BulkyColors.successBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: BulkyColors.success.withValues(alpha: 0.3)),
+                ),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.timelapse_rounded, size: 18, color: BulkyColors.success),
+                        SizedBox(width: 6),
+                        Text(
+                          'Ca trực điều hành',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: BulkyColors.success,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      'Ca Sáng (06:00-14:00)',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: BulkyColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
   }
 
   Widget _buildDriverSummary(CitizenUser user) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF7ED),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFEA580C).withValues(alpha: 0.3)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          margin: const EdgeInsets.only(bottom: 10),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEA580C).withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFFEA580C).withValues(alpha: 0.3)),
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.local_shipping_rounded, size: 18, color: Color(0xFFEA580C)),
+              SizedBox(width: 8),
+              Text(
+                '🚚 TÀI XẾ THU GOM CHUYÊN DỤNG • Đội Xe Hiện Trường',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFEA580C),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF7ED),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFEA580C).withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.directions_car_rounded, size: 18, color: Color(0xFFEA580C)),
-                    SizedBox(width: 6),
+                    const Row(
+                      children: [
+                        Icon(Icons.directions_car_rounded, size: 18, color: Color(0xFFEA580C)),
+                        SizedBox(width: 6),
+                        Text(
+                          'Biển số xe tải',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFFEA580C),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
                     Text(
-                      'Biển số xe tải',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFFEA580C),
+                      user.vehiclePlate ?? '51C-889.21',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: BulkyColors.textPrimary,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  user.vehiclePlate ?? '51C-889.21',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: BulkyColors.textPrimary,
-                  ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: BulkyColors.primaryLight.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: BulkyColors.primary.withValues(alpha: 0.3)),
                 ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: BulkyColors.primaryLight.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: BulkyColors.primary.withValues(alpha: 0.3)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.badge_outlined, size: 18, color: BulkyColors.primary),
-                    SizedBox(width: 6),
+                    const Row(
+                      children: [
+                        Icon(Icons.badge_outlined, size: 18, color: BulkyColors.primary),
+                        SizedBox(width: 6),
+                        Text(
+                          'Mã tài xế',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: BulkyColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
                     Text(
-                      'Mã tài xế',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
+                      user.staffCode ?? 'TX-51C889',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
                         color: BulkyColors.primary,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  user.staffCode ?? 'TX-51C889',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: BulkyColors.primary,
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ],
     );

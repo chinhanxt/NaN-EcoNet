@@ -154,7 +154,7 @@ class CitizenUser {
     householdId: 'STAFF-TX01',
     staffCode: 'TX-51C889',
     vehiclePlate: '51C-889.21',
-    department: 'Đội Xe Cẩu Chuyên Dụng 2.5T Q.1',
+    department: 'Đội Xe Thu Gom Chuyên Dụng 2.5T Q.1',
     rewardPoints: 350,
     role: UserRole.driver,
   );
