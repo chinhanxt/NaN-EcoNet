@@ -905,197 +905,700 @@ class CitizenHomeScreen extends StatelessWidget {
     );
   }
 
-  /// Sheet: Monthly Waste Billing Details
+  /// Sheet: Monthly Waste Billing Details with Tabs (Current bill, History, Welfare policy)
   void _showBillingDetailsSheet(BuildContext context) {
+    int activeTab = 0; // 0: Kỳ cước 09/2026, 1: Lịch sử hóa đơn, 2: Chính sách an sinh
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          color: BulkyColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  '💳 Phí Dịch Vụ Vệ Sinh Môi Trường',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
-              ],
-            ),
-            const Divider(),
-            const SizedBox(height: 8),
-            _buildBillingRow('Kỳ cước:', 'Tháng 09/2026'),
-            _buildBillingRow('Hộ gia đình:', 'Nguyễn Văn An (HH-78921)'),
-            _buildBillingRow('Định mức rác:', 'Hộ gia đình tiêu chuẩn (<5 người)'),
-            _buildBillingRow('Số tiền niêm yết:', '45.000 đ / tháng'),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: BulkyColors.successBg,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: BulkyColors.success.withValues(alpha: 0.3)),
-              ),
-              child: const Row(
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setSheetState) => Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            color: BulkyColors.surface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Icon(Icons.check_circle_rounded, color: BulkyColors.success, size: 20),
-                  SizedBox(width: 8),
+                  const Text(
+                    '💳 Phí Dịch Vụ Vệ Sinh Môi Trường',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const Divider(),
+              const SizedBox(height: 6),
+
+              // Segmented Tab Selector
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    ChoiceChip(
+                      label: const Text('Kỳ cước Tháng 09'),
+                      selected: activeTab == 0,
+                      selectedColor: BulkyColors.primaryLight.withValues(alpha: 0.15),
+                      backgroundColor: BulkyColors.background,
+                      side: BorderSide(
+                        color: activeTab == 0 ? BulkyColors.primary : BulkyColors.border,
+                      ),
+                      labelStyle: TextStyle(
+                        fontSize: 12,
+                        fontWeight: activeTab == 0 ? FontWeight.bold : FontWeight.normal,
+                        color: activeTab == 0 ? BulkyColors.primary : BulkyColors.textSecondary,
+                      ),
+                      onSelected: (selected) {
+                        if (selected) setSheetState(() => activeTab = 0);
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    ChoiceChip(
+                      label: const Text('Lịch sử hóa đơn (3)'),
+                      selected: activeTab == 1,
+                      selectedColor: BulkyColors.primaryLight.withValues(alpha: 0.15),
+                      backgroundColor: BulkyColors.background,
+                      side: BorderSide(
+                        color: activeTab == 1 ? BulkyColors.primary : BulkyColors.border,
+                      ),
+                      labelStyle: TextStyle(
+                        fontSize: 12,
+                        fontWeight: activeTab == 1 ? FontWeight.bold : FontWeight.normal,
+                        color: activeTab == 1 ? BulkyColors.primary : BulkyColors.textSecondary,
+                      ),
+                      onSelected: (selected) {
+                        if (selected) setSheetState(() => activeTab = 1);
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    ChoiceChip(
+                      label: const Text('Chính sách an sinh'),
+                      selected: activeTab == 2,
+                      selectedColor: BulkyColors.primaryLight.withValues(alpha: 0.15),
+                      backgroundColor: BulkyColors.background,
+                      side: BorderSide(
+                        color: activeTab == 2 ? BulkyColors.primary : BulkyColors.border,
+                      ),
+                      labelStyle: TextStyle(
+                        fontSize: 12,
+                        fontWeight: activeTab == 2 ? FontWeight.bold : FontWeight.normal,
+                        color: activeTab == 2 ? BulkyColors.primary : BulkyColors.textSecondary,
+                      ),
+                      onSelected: (selected) {
+                        if (selected) setSheetState(() => activeTab = 2);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              Expanded(
+                child: SingleChildScrollView(
+                  child: activeTab == 0
+                      ? _buildCurrentBillingTab(ctx)
+                      : activeTab == 1
+                          ? _buildBillingHistoryTab()
+                          : _buildWelfarePolicyTab(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCurrentBillingTab(BuildContext ctx) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildBillingRow('Kỳ cước:', 'Tháng 09/2026'),
+        _buildBillingRow('Hộ gia đình:', 'Nguyễn Văn An (HH-78921)'),
+        _buildBillingRow('Định mức rác:', 'Hộ gia đình tiêu chuẩn (<5 người)'),
+        _buildBillingRow('Số tiền niêm yết:', '45.000 đ / tháng'),
+        _buildBillingRow('Mã biên lai:', 'BL-202609-0881'),
+        _buildBillingRow('Ngày thanh toán:', '05/09/2026 lúc 08:30'),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: BulkyColors.successBg,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: BulkyColors.success.withValues(alpha: 0.3)),
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.check_circle_rounded, color: BulkyColors.success, size: 20),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Trạng thái: ĐÃ THANH TOÁN (Qua VietQR / MoMo)',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: BulkyColors.success, fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    const SnackBar(
+                      content: Text('✓ Đã tải biên lai điện tử Tháng 09/2026 về máy!'),
+                      backgroundColor: BulkyColors.primary,
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.download_rounded, size: 16),
+                label: const Text('Tải biên lai PDF'),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(ctx),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: BulkyColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Text('Đóng'),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBillingHistoryTab() {
+    final history = [
+      {'period': 'Tháng 08/2026', 'amount': '45.000 đ', 'paidAt': '05/08/2026', 'code': 'BL-202608-0722'},
+      {'period': 'Tháng 07/2026', 'amount': '45.000 đ', 'paidAt': '04/07/2026', 'code': 'BL-202607-0619'},
+      {'period': 'Tháng 06/2026', 'amount': '45.000 đ', 'paidAt': '02/06/2026', 'code': 'BL-202606-0512'},
+    ];
+
+    return Column(
+      children: history.map((item) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: BulkyColors.background,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: BulkyColors.border),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item['period']!,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Đã trả ngày: ${item['paidAt']} • ${item['code']}',
+                    style: const TextStyle(fontSize: 11, color: BulkyColors.textSecondary),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: BulkyColors.successBg,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  item['amount']!,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: BulkyColors.success,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildWelfarePolicyTab() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: BulkyColors.primaryContainer.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: BulkyColors.primaryLight.withValues(alpha: 0.3)),
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.shield_outlined, color: BulkyColors.primary, size: 20),
+              SizedBox(width: 8),
+              Text(
+                'Quy định An sinh & Nhắc nợ rác thải',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: BulkyColors.primaryDark),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Text(
+            '• Quy trình nhắc cước: Ngày D (hạn đóng), D+3 (nhắc nhẹ qua app), D+7 (thông báo tổ dân phố), D+14 (chuyển cán bộ an sinh duyệt).\n'
+            '• Cam kết an sinh: Hệ thống TUYỆT ĐỐI KHÔNG TỰ ĐỘNG CHẶN THU GOM nếu hộ dân chưa được xem xét hoàn cảnh an sinh.\n'
+            '• Cảm biến IoT thông minh tại thùng rác gia đình vẫn duy trì đo đạc mức đầy và cảnh báo mùi 24/7.',
+            style: TextStyle(fontSize: 12, color: BulkyColors.textPrimary, height: 1.4),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Sheet: Eco Rewards Exchange with Tabs (Catalog, History)
+  void _showEcoRewardsSheet(BuildContext context, int points) {
+    int activeTab = 0; // 0: Đổi quà, 1: Lịch sử điểm
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setSheetState) => Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            color: BulkyColors.surface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '🎁 Đổi Điểm Xanh ($points Điểm)',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const Divider(),
+              const SizedBox(height: 6),
+
+              // Segmented Tab Selector
+              Row(
+                children: [
                   Expanded(
-                    child: Text(
-                      'Trạng thái: ĐÃ THANH TOÁN (Qua VietQR / MoMo)',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: BulkyColors.success, fontSize: 13),
+                    child: ChoiceChip(
+                      label: const Center(child: Text('Kho quà sinh thái')),
+                      selected: activeTab == 0,
+                      selectedColor: BulkyColors.warningBg,
+                      backgroundColor: BulkyColors.background,
+                      side: BorderSide(
+                        color: activeTab == 0 ? BulkyColors.warning : BulkyColors.border,
+                      ),
+                      labelStyle: TextStyle(
+                        fontSize: 12,
+                        fontWeight: activeTab == 0 ? FontWeight.bold : FontWeight.normal,
+                        color: activeTab == 0 ? BulkyColors.warning : BulkyColors.textSecondary,
+                      ),
+                      onSelected: (selected) {
+                        if (selected) setSheetState(() => activeTab = 0);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ChoiceChip(
+                      label: const Center(child: Text('Lịch sử tích điểm')),
+                      selected: activeTab == 1,
+                      selectedColor: BulkyColors.warningBg,
+                      backgroundColor: BulkyColors.background,
+                      side: BorderSide(
+                        color: activeTab == 1 ? BulkyColors.warning : BulkyColors.border,
+                      ),
+                      labelStyle: TextStyle(
+                        fontSize: 12,
+                        fontWeight: activeTab == 1 ? FontWeight.bold : FontWeight.normal,
+                        color: activeTab == 1 ? BulkyColors.warning : BulkyColors.textSecondary,
+                      ),
+                      onSelected: (selected) {
+                        if (selected) setSheetState(() => activeTab = 1);
+                      },
                     ),
                   ),
                 ],
               ),
+              const SizedBox(height: 14),
+
+              Expanded(
+                child: SingleChildScrollView(
+                  child: activeTab == 0
+                      ? _buildRewardsCatalogTab(ctx)
+                      : _buildPointsHistoryTab(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRewardsCatalogTab(BuildContext ctx) {
+    final rewards = [
+      {
+        'emoji': '🛍️',
+        'title': '1 Cuộn túi rác sinh học tự phân hủy',
+        'cost': 50,
+        'costText': '50 Điểm Xanh',
+        'enabled': true,
+      },
+      {
+        'emoji': '🎟️',
+        'title': 'Voucher giảm 30k cước xe thu gom rác cồng kềnh',
+        'cost': 100,
+        'costText': '100 Điểm Xanh',
+        'enabled': true,
+      },
+      {
+        'emoji': '🪴',
+        'title': 'Cây sen đá để bàn lọc không khí',
+        'cost': 80,
+        'costText': '80 Điểm Xanh',
+        'enabled': true,
+      },
+      {
+        'emoji': '🧤',
+        'title': 'Găng tay phân loại rác bảo hộ cao cấp',
+        'cost': 40,
+        'costText': '40 Điểm Xanh',
+        'enabled': true,
+      },
+      {
+        'emoji': '🗑️',
+        'title': 'Thùng rác mini phân loại 2 ngăn gia đình',
+        'cost': 200,
+        'costText': '200 Điểm Xanh (Cần thêm 80 điểm)',
+        'enabled': false,
+      },
+    ];
+
+    return Column(
+      children: rewards.map((r) {
+        final isEnabled = r['enabled'] as bool;
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          decoration: BoxDecoration(
+            color: BulkyColors.background,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: BulkyColors.border),
+          ),
+          child: ListTile(
+            leading: Text(r['emoji'] as String, style: const TextStyle(fontSize: 24)),
+            title: Text(
+              r['title'] as String,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
             ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(ctx),
+            subtitle: Text(
+              r['costText'] as String,
+              style: TextStyle(
+                fontSize: 11,
+                color: isEnabled ? BulkyColors.primary : BulkyColors.textSecondary,
+                fontWeight: isEnabled ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+            trailing: ElevatedButton(
+              onPressed: isEnabled
+                  ? () {
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        SnackBar(
+                          content: Text('✓ Đã đổi ${r['title']} thành công!'),
+                          backgroundColor: BulkyColors.primary,
+                        ),
+                      );
+                    }
+                  : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: BulkyColors.primary,
+                backgroundColor: isEnabled ? BulkyColors.primary : BulkyColors.border,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              child: const Text('Đóng'),
+              child: Text(isEnabled ? 'Đổi quà' : 'Chưa đủ'),
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      }).toList(),
     );
   }
 
-  /// Sheet: Eco Rewards Exchange
-  void _showEcoRewardsSheet(BuildContext context, int points) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          color: BulkyColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '🎁 Đổi Điểm Xanh ($points Điểm)',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+  Widget _buildPointsHistoryTab() {
+    final history = [
+      {'desc': 'Phân loại rác tái chế tuần qua', 'pts': '+20 điểm', 'date': '24/09/2026', 'isAdd': true},
+      {'desc': 'Đặt xe thu gom sofa cồng kềnh đúng chuẩn', 'pts': '+30 điểm', 'date': '20/09/2026', 'isAdd': true},
+      {'desc': 'Cư dân sống xanh tiêu biểu Tháng 08', 'pts': '+50 điểm', 'date': '01/09/2026', 'isAdd': true},
+      {'desc': 'Đã đổi 1 Cuộn túi rác sinh học', 'pts': '-50 điểm', 'date': '15/09/2026', 'isAdd': false},
+    ];
+
+    return Column(
+      children: history.map((item) {
+        final isAdd = item['isAdd'] as bool;
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: BulkyColors.background,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: BulkyColors.border),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item['desc'] as String,
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      item['date'] as String,
+                      style: const TextStyle(fontSize: 10, color: BulkyColors.textSecondary),
+                    ),
+                  ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(ctx),
+              ),
+              Text(
+                item['pts'] as String,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: isAdd ? BulkyColors.success : BulkyColors.error,
                 ),
-              ],
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Text('🛍️', style: TextStyle(fontSize: 24)),
-              title: const Text('1 Cuộn túi rác sinh học tự phân hủy', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              subtitle: const Text('50 Điểm Xanh'),
-              trailing: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('✓ Đã đổi 1 Cuộn túi rác tự phân hủy thành công!'), backgroundColor: BulkyColors.primary),
-                  );
-                },
-                child: const Text('Đổi quà'),
               ),
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Text('🎟️', style: TextStyle(fontSize: 24)),
-              title: const Text('Voucher giảm 30k cước xe thu gom rác cồng kềnh', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              subtitle: const Text('100 Điểm Xanh'),
-              trailing: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('✓ Đã đổi Voucher giảm 30k thu rác cồng kềnh!'), backgroundColor: BulkyColors.primary),
-                  );
-                },
-                child: const Text('Đổi quà'),
-              ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 
-  /// Dialog: Citizen Feedback & Bin Complaints
+  /// Dialog: Citizen Feedback & Bin Complaints with Tabs (Create & History)
   void _showCitizenFeedbackDialog(BuildContext context) {
+    int activeTab = 0; // 0: Gửi mới, 1: Lịch sử phản ánh
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Row(
-          children: [
-            Text('📢 ', style: TextStyle(fontSize: 20)),
-            Text('Phản Ánh Thùng Rác', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Chọn vấn đề phản ánh về thùng rác thông minh:',
-              style: TextStyle(fontSize: 13, color: BulkyColors.textSecondary),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Text('📢 ', style: TextStyle(fontSize: 20)),
+                  Text('Phản Ánh Thùng Rác', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, size: 20),
+                onPressed: () => Navigator.pop(ctx),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildComplaintChip('Thùng quá tải'),
-                _buildComplaintChip('Bị bốc mùi hôi'),
-                _buildComplaintChip('Bị bỏ sót thu gom'),
-                _buildComplaintChip('Thùng hư hỏng / nứt'),
+                Row(
+                  children: [
+                    ChoiceChip(
+                      label: const Text('Gửi phản ánh mới'),
+                      selected: activeTab == 0,
+                      selectedColor: BulkyColors.primaryLight.withValues(alpha: 0.15),
+                      backgroundColor: BulkyColors.background,
+                      labelStyle: TextStyle(
+                        fontSize: 11,
+                        fontWeight: activeTab == 0 ? FontWeight.bold : FontWeight.normal,
+                        color: activeTab == 0 ? BulkyColors.primary : BulkyColors.textSecondary,
+                      ),
+                      onSelected: (selected) {
+                        if (selected) setDialogState(() => activeTab = 0);
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    ChoiceChip(
+                      label: const Text('Lịch sử (2)'),
+                      selected: activeTab == 1,
+                      selectedColor: BulkyColors.primaryLight.withValues(alpha: 0.15),
+                      backgroundColor: BulkyColors.background,
+                      labelStyle: TextStyle(
+                        fontSize: 11,
+                        fontWeight: activeTab == 1 ? FontWeight.bold : FontWeight.normal,
+                        color: activeTab == 1 ? BulkyColors.primary : BulkyColors.textSecondary,
+                      ),
+                      onSelected: (selected) {
+                        if (selected) setDialogState(() => activeTab = 1);
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (activeTab == 0) ...[
+                  const Text(
+                    'Chọn vấn đề phản ánh về thùng rác thông minh:',
+                    style: TextStyle(fontSize: 13, color: BulkyColors.textSecondary),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      _buildComplaintChip('Thùng quá tải'),
+                      _buildComplaintChip('Bị bốc mùi hôi'),
+                      _buildComplaintChip('Bị bỏ sót thu gom'),
+                      _buildComplaintChip('Thùng hư hỏng / nứt'),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Nhập vị trí ngõ hoặc mô tả cụ thể...',
+                      hintStyle: const TextStyle(fontSize: 12, color: BulkyColors.textSecondary),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    maxLines: 2,
+                  ),
+                ] else ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: BulkyColors.background,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: BulkyColors.border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Phiếu #PA-8921 • Bị bốc mùi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(color: BulkyColors.successBg, borderRadius: BorderRadius.circular(4)),
+                              child: const Text('ĐÃ XỬ LÝ', style: TextStyle(color: BulkyColors.success, fontSize: 10, fontWeight: FontWeight.bold)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        const Text('Tổ VSMT đã xịt khử khuẩn lúc 10:15 ngày 22/09.', style: TextStyle(fontSize: 11, color: BulkyColors.textSecondary)),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: BulkyColors.background,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: BulkyColors.border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Phiếu #PA-8710 • Thùng đầy tràn', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(color: BulkyColors.successBg, borderRadius: BorderRadius.circular(4)),
+                              child: const Text('ĐÃ GIẢI QUYẾT', style: TextStyle(color: BulkyColors.success, fontSize: 10, fontWeight: FontWeight.bold)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        const Text('Xe thu gom số 03 đã đến lấy rác lúc 14:00 ngày 15/09.', style: TextStyle(fontSize: 11, color: BulkyColors.textSecondary)),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
-          ],
+          ),
+          actions: activeTab == 0
+              ? [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Hủy', style: TextStyle(color: BulkyColors.textSecondary)),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('✓ Đã gửi phản ánh tới Tổ VSMT đô thị. Cảm ơn đóng góp của bạn!'),
+                          backgroundColor: BulkyColors.primary,
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: BulkyColors.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Gửi phản ánh'),
+                  ),
+                ]
+              : [
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: BulkyColors.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Đóng'),
+                  ),
+                ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Hủy', style: TextStyle(color: BulkyColors.textSecondary)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('✓ Đã gửi phản ánh tới Tổ VSMT đô thị. Cảm ơn đóng góp của bạn!'),
-                  backgroundColor: BulkyColors.primary,
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: BulkyColors.primary,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Gửi phản ánh'),
-          ),
-        ],
       ),
     );
   }

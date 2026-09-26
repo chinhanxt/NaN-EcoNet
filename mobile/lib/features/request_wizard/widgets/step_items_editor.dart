@@ -337,6 +337,46 @@ class StepItemsEditor extends StatelessWidget {
                       color: BulkyColors.textSecondary,
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  ElevatedButton.icon(
+                    key: const Key('load_sample_items_button'),
+                    onPressed: () {
+                      wizard.addItem(const BulkyItem(
+                        id: 'demo-item-sofa',
+                        category: BulkyCategory.SOFA,
+                        displayName: 'Sofa da góc chữ L',
+                        quantity: 1,
+                        lengthCm: 220,
+                        widthCm: 150,
+                        heightCm: 85,
+                        material: MaterialType.STANDARD,
+                        requiresDisassembly: true,
+                      ));
+                      wizard.addItem(const BulkyItem(
+                        id: 'demo-item-table',
+                        category: BulkyCategory.TABLE,
+                        displayName: 'Bàn trà mặt kính',
+                        quantity: 1,
+                        lengthCm: 100,
+                        widthCm: 60,
+                        heightCm: 45,
+                        material: MaterialType.LIGHT,
+                      ));
+                    },
+                    icon: const Icon(Icons.bolt_rounded, size: 18),
+                    label: const Text(
+                      'Nạp mẫu Sofa & Bàn trà demo',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: BulkyColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             )
