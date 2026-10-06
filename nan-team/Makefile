@@ -14,7 +14,7 @@ YELLOW  := \033[33m
 RED     := \033[31m
 RESET   := \033[0m
 
-.PHONY: help dev stop restart restart-app restart-fe restart-be restart-orch logs status ps db-shell clean test-health warmup
+.PHONY: help dev stop restart restart-app restart-fe restart-be restart-orch tunnel tunnel-url tunnel-stop logs status ps db-shell clean test-health warmup agy-version
 
 ## help: Show this help message
 help:
@@ -28,11 +28,27 @@ help:
 
 ## dev: Start the native dev stack in foreground (Ctrl+C to stop)
 dev:
+	@[ "$$(cat /proc/sys/vm/swappiness)" = "10" ] || sudo sysctl -w vm.swappiness=10
+	@bash scripts/agy-proxy-pool.sh start >/dev/null || echo "WARN: agy-proxy-pool start failed"
+	@curl -sf -m 3 http://127.0.0.1:8080/health >/dev/null || bash $${AGY_IMAGE_GATEWAY_DIR:-/home/chinhan/agy-image-gateway}/start.sh >/dev/null || echo "WARN: agy-image-gateway start failed"
+	@curl -sf -m 3 http://127.0.0.1:8002/health >/dev/null || VOICE_CLONE_PYTHON=$${VOICE_CLONE_PYTHON:-/home/chinhan/VS_/Voice_Clone/.venv/bin/python} bash config/voice-clone-native.sh start || echo "WARN: voice-clone start failed"
 	@bash config/dev-native.sh dev
 
 ## stop: Stop the native dev stack and free all ports
 stop:
 	@bash config/dev-native.sh stop
+
+## tunnel: Start/restart only the Cloudflare quick tunnel (new public URL)
+tunnel:
+	@bash config/tunnel-native.sh restart
+
+## tunnel-url: Print the current public Cloudflare URL
+tunnel-url:
+	@bash config/tunnel-native.sh url
+
+## tunnel-stop: Stop only the Cloudflare tunnel and its proxy
+tunnel-stop:
+	@bash config/tunnel-native.sh stop
 
 ## restart: Restart the full native dev stack cleanly
 restart:
@@ -97,18 +113,13 @@ test-health:
 	@curl -fsS -o /dev/null http://127.0.0.1:3002/health/status && echo -e "    $(GREEN)✔ Worker / Orchestrator (:3002)$(RESET)" || echo -e "    $(RED)✘ Worker (:3002)$(RESET)"
 	@curl -fsS -o /dev/null http://127.0.0.1:4200/auth && echo -e "    $(GREEN)✔ Frontend Next.js (:4200)$(RESET)" || echo -e "    $(RED)✘ Frontend (:4200)$(RESET)"
 	@curl -fsS -o /dev/null http://127.0.0.1:8233/ && echo -e "    $(GREEN)✔ Temporal UI (:8233)$(RESET)" || echo -e "    $(RED)✘ Temporal UI (:8233)$(RESET)"
-	@curl -fsS -o /dev/null http://127.0.0.1:8080/health && echo -e "    $(GREEN)✔ Agy AI Gateway (:8080)$(RESET)" || echo -e "    $(YELLOW)⚠ Agy AI Gateway (:8080) stopped$(RESET)"
+	@bash config/tunnel-native.sh status && echo -e "    $(GREEN)✔ Cloudflare tunnel: $(BOLD)$$(bash config/tunnel-native.sh url)$(RESET)" || echo -e "    $(YELLOW)✘ Cloudflare tunnel not running (make tunnel)$(RESET)"
+	@"$${AGY_MCP_BINARY:-agy}" --version >/dev/null 2>&1 && echo -e "    $(GREEN)✔ AGY CLI installed (native MCP runtime)$(RESET)" || echo -e "    $(RED)✘ AGY CLI unavailable$(RESET)"
+	@echo -e "    $(CYAN)Native authentication and provider execution are verified by live task receipts.$(RESET)"
 
-## start-gateway: Start Agy Image Gateway service (:8080)
-start-gateway:
-	@bash /home/chinhan/agy-image-gateway/start.sh
-
-## stop-gateway: Stop Agy Image Gateway service
-stop-gateway:
-	@bash /home/chinhan/agy-image-gateway/stop.sh
-
-## restart-gateway: Restart Agy Image Gateway service
-restart-gateway: stop-gateway start-gateway
+## agy-version: Show the installed AGY CLI version used by native MCP jobs
+agy-version:
+	@"$${AGY_MCP_BINARY:-agy}" --version
 
 ## warmup: Precompile the main frontend tabs on demand
 warmup:
@@ -135,3 +146,7 @@ sync-cookies:
 
 ## clean: Stop the native dev stack
 clean: stop
+
+## seed-admin: Create/refresh sandbox demo account admin/123456 in org "NaN Demo" (fake channel)
+seed-admin:
+	@pnpm run seed:admin

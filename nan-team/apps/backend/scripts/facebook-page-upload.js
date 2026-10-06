@@ -1,1 +1,1 @@
-/home/chinhan/MMO/postiz/scripts/facebook-page-upload.js
+/home/chinhan/MMO/NaN-Team/scripts/facebook-page-upload.js

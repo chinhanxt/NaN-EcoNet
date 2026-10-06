@@ -15,6 +15,7 @@ import { Button } from '@gitroom/react/form/button';
 import useSWR from 'swr';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { hasExtension } from '@gitroom/helpers/utils/has.extension';
+import { isVideoPath } from '@gitroom/helpers/utils/media.kind';
 import { Media } from '@prisma/client';
 import { useMediaDirectory } from '@gitroom/react/helpers/use.media.directory';
 import { useSettings } from '@gitroom/frontend/components/launches/helpers/use.values';
@@ -32,6 +33,7 @@ import { ThirdPartyMedia } from '@gitroom/frontend/components/third-parties/thir
 import { ReactSortable } from 'react-sortablejs';
 import { MediaComponentInner } from '@gitroom/frontend/components/launches/helpers/media.settings.component';
 import { AiVideo } from '@gitroom/frontend/components/launches/ai.video';
+import { AiVideoStudioButton } from '@gitroom/frontend/components/agents/ai-video-studio.modal';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { ThirdPartyMediaLibrary } from '@gitroom/frontend/components/third-parties/third-party.media-library';
 import { Dashboard } from '@uppy/react';
@@ -53,7 +55,8 @@ import { useShallow } from 'zustand/react/shallow';
 import { LoadingComponent } from '@gitroom/frontend/components/layout/loading';
 import { useDebounce } from 'use-debounce';
 const Polonto = dynamic(
-  () => import('@gitroom/frontend/components/launches/polonto')
+  () => import('@gitroom/frontend/components/launches/polonto'),
+  { ssr: false }
 );
 export const Pagination: FC<{
   current: number;
@@ -340,17 +343,19 @@ export const MediaBox: FC<{
         title: '',
         top: 10,
         children: (
-          <div className="w-full h-full p-[50px]">
+          // Whole media at its own aspect ratio (a 9:16 video must not be cropped to a wide box).
+          <div className="flex items-center justify-center rounded-[8px] bg-black/80">
             {hasExtension(media.path, 'mp4') ? (
-              <VideoFrame
-                autoplay={true}
-                url={mediaDirectory.set(media.path)}
+              <video
+                className="block w-auto h-auto max-h-[80vh] max-w-[85vw] object-contain"
+                src={mediaDirectory.set(media.path)}
+                controls={true}
+                autoPlay={true}
+                playsInline={true}
               />
             ) : (
               <img
-                width="100%"
-                height="100%"
-                className="w-full h-full max-h-[100%] max-w-[100%] object-cover"
+                className="block w-auto h-auto max-h-[80vh] max-w-[85vw] object-contain"
                 src={mediaDirectory.set(media.path)}
                 alt="media"
               />
@@ -617,6 +622,9 @@ export const MediaBox: FC<{
   );
 };
 export const MultiMediaComponent: FC<{
+  aiVideoStudio?: boolean;
+  // Post text suggested by an attached source clip (clip.content.postText)
+  onStudioPostText?: (text: string) => void;
   label: string;
   description: string;
   mediaNotAvailable?: boolean;
@@ -675,6 +683,12 @@ export const MultiMediaComponent: FC<{
   }, [value]);
 
   const [currentMedia, setCurrentMedia] = useState(value);
+  // Modals keep the changeMedia they were opened with and may call it late
+  // (AI image fires again after "insert now"), so read the latest list here.
+  const currentMediaRef = useRef(currentMedia);
+  currentMediaRef.current = currentMedia;
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
   const mediaDirectory = useMediaDirectory();
   const changeMedia = useCallback(
     (
@@ -689,16 +703,25 @@ export const MultiMediaComponent: FC<{
           }[]
     ) => {
       const mediaArray = Array.isArray(m) ? m : [m];
-      const newMedia = [...(currentMedia || []), ...mediaArray];
+      const latest = currentMediaRef.current || [];
+      const seen = new Set(latest.map((item) => item.id));
+      const added = mediaArray.filter((item) => {
+        if (!item?.id || seen.has(item.id)) return false;
+        seen.add(item.id);
+        return true;
+      });
+      if (!added.length) return;
+      const newMedia = [...latest, ...added];
+      currentMediaRef.current = newMedia;
       setCurrentMedia(newMedia);
-      onChange({
+      onChangeRef.current({
         target: {
           name,
           value: newMedia,
         },
       });
     },
-    [currentMedia]
+    [name]
   );
   const showModal = useCallback(() => {
     modals.openModal({
@@ -796,7 +819,7 @@ export const MultiMediaComponent: FC<{
                       >
                         <MediaSettingsIcon className="cursor-pointer relative z-[200]" />
                       </div>
-                      {hasExtension(media?.path, 'mp4') ? (
+                      {isVideoPath(media?.path) ? (
                         <VideoFrame url={mediaDirectory.set(media?.path)} />
                       ) : (
                         <img
@@ -815,33 +838,30 @@ export const MultiMediaComponent: FC<{
             </ReactSortable>
           )}
         </div>
-        <div className="flex gap-[8px] px-[12px] border-t border-newColColor w-full b1 text-textColor">
+        <div className="flex items-center gap-[6px] px-[12px] py-[6px] border-t border-newColColor/40 w-full b1 text-textColor">
           {!mediaNotAvailable && (
-            <div className="flex py-[10px] b2 items-center gap-[4px]">
+            <div className="flex items-center gap-[6px]">
               <div
                 onClick={showModal}
-                className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
+                className="cursor-pointer h-[32px] px-2.5 rounded-[8px] justify-center items-center flex gap-1.5 bg-newColColor hover:bg-boxHover border border-transparent hover:border-newBgLineColor transition-all duration-150 active:scale-[0.98] select-none text-textColor"
+                title={t('insert_media', 'Insert Media')}
               >
-                <div className="flex gap-[8px] items-center">
-                  <div>
-                    <InsertMediaIcon />
+                <div className="flex gap-[6px] items-center">
+                  <div className="shrink-0 flex items-center">
+                    <InsertMediaIcon className="w-3.5 h-3.5" />
                   </div>
-                  <div className="text-[10px] font-[600] maxMedia:hidden block">
+                  <div className="text-[12px] font-medium maxMedia:hidden block whitespace-nowrap leading-none">
                     {t('insert_media', 'Insert Media')}
                   </div>
                 </div>
               </div>
               <div
                 onClick={designMedia}
-                className="cursor-pointer h-[30px] rounded-[6px] justify-center items-center flex bg-newColColor px-[8px]"
+                className="cursor-pointer h-[32px] w-[32px] rounded-[8px] justify-center items-center flex bg-newColColor hover:bg-boxHover border border-transparent hover:border-newBgLineColor transition-all duration-150 active:scale-[0.98] select-none text-textColor shrink-0"
+                title={t('design_media', 'Design Media')}
               >
-                <div className="flex gap-[5px] items-center">
-                  <div>
-                    <DesignMediaIcon />
-                  </div>
-                  <div className="text-[10px] font-[600] iconBreak:hidden block">
-                    {t('design_media', 'Design Media')}
-                  </div>
+                <div className="flex items-center justify-center shrink-0">
+                  <DesignMediaIcon className="w-3.5 h-3.5" />
                 </div>
               </div>
 
@@ -850,23 +870,22 @@ export const MultiMediaComponent: FC<{
               {!!user?.tier?.ai && (
                 <>
                   <AiImage value={text} onChange={changeMedia} />
-                  <AiVideo value={text} onChange={changeMedia} />
+                  {!props.aiVideoStudio && <AiVideo value={text} onChange={changeMedia} />}
                 </>
               )}
+              {props.aiVideoStudio && <AiVideoStudioButton value={text} onChange={changeMedia} onPostText={props.onStudioPostText} />}
             </div>
           )}
-          {!mediaNotAvailable && (
-            <div className="text-newColColor h-full flex items-center">
-              <VerticalDividerIcon />
-            </div>
+          {!mediaNotAvailable && !!toolBar && (
+            <div className="w-[1px] h-4 bg-newBgLineColor/80 mx-1 shrink-0 self-center" />
           )}
           {!!toolBar && (
-            <div className="flex py-[10px] b2 items-center gap-[4px]">
+            <div className="flex items-center gap-[6px]">
               {toolBar}
             </div>
           )}
           {information && (
-            <div className="flex-1 justify-end flex py-[10px] b2 items-center gap-[4px]">
+            <div className="flex-1 justify-end flex items-center gap-[6px]">
               {information}
             </div>
           )}

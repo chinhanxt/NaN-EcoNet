@@ -1,3 +1,12 @@
+import { ProcessSourceVideoTool } from './process.source.video.tool';
+import { SourceVideoStatusTool } from './source.video.status.tool';
+import { CancelSourceVideoTool } from './cancel.source.video.tool';
+import { SourceVideoProjectsTool } from './source.video.projects.tool';
+import { EditVideoClipTool } from './edit.video.clip.tool';
+import { ApproveSourceVideoTool } from './approve.source.video.tool';
+import { SourceVideoCapabilitiesTool } from './source.video.capabilities.tool';
+import { SourceVideoEvidenceTool } from './source.video.evidence.tool';
+import { SourceVideoDownloadTool } from './source.video.download.tool';
 import { IntegrationValidationTool } from '@gitroom/nestjs-libraries/chat/tools/integration.validation.tool';
 import { IntegrationTriggerTool } from '@gitroom/nestjs-libraries/chat/tools/integration.trigger.tool';
 import { IntegrationSchedulePostTool } from './integration.schedule.post';
@@ -5,6 +14,8 @@ import { GenerateVideoOptionsTool } from '@gitroom/nestjs-libraries/chat/tools/g
 import { VideoFunctionTool } from '@gitroom/nestjs-libraries/chat/tools/video.function.tool';
 import { GenerateVideoTool } from '@gitroom/nestjs-libraries/chat/tools/generate.video.tool';
 import { VideoStatusTool } from '@gitroom/nestjs-libraries/chat/tools/video.status.tool';
+import { GenerateAiVideoTool } from './generate.ai.video.tool';
+import { AiVideoStatusTool } from './ai.video.status.tool';
 import { ClippingTool } from '@gitroom/nestjs-libraries/chat/tools/clipping.tool';
 import { ClippingStatusTool } from '@gitroom/nestjs-libraries/chat/tools/clipping.status.tool';
 import { ClippingWidgetTicketTool } from '@gitroom/nestjs-libraries/chat/tools/clipping.widget.ticket.tool';
@@ -19,6 +30,16 @@ import { UploadWidgetTicketTool } from '@gitroom/nestjs-libraries/chat/tools/upl
 import { UploadWidgetStatusTool } from '@gitroom/nestjs-libraries/chat/tools/upload.widget.status.tool';
 
 export const toolList = [
+  ProcessSourceVideoTool,
+  SourceVideoStatusTool,
+  CancelSourceVideoTool,
+  SourceVideoProjectsTool,
+  EditVideoClipTool,
+  ApproveSourceVideoTool,
+  SourceVideoCapabilitiesTool,
+  SourceVideoEvidenceTool,
+  SourceVideoDownloadTool,
+
   IntegrationListTool,
   GroupListTool,
   IntegrationValidationTool,
@@ -30,6 +51,8 @@ export const toolList = [
   VideoFunctionTool,
   GenerateVideoTool,
   VideoStatusTool,
+  GenerateAiVideoTool,
+  AiVideoStatusTool,
   ClippingTool,
   ClippingStatusTool,
   ClippingWidgetTicketTool,

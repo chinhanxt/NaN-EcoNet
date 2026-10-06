@@ -27,6 +27,7 @@ import { difference, uniq } from 'lodash';
 import utc from 'dayjs/plugin/utc';
 import { AutopostRepository } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.repository';
 import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
+import { isDemoIntegration } from '@gitroom/nestjs-libraries/integrations/demo.integration';
 import { TemporalService } from 'nestjs-temporal-core';
 
 dayjs.extend(utc);
@@ -455,7 +456,8 @@ export class IntegrationService {
       throw new Error('Invalid integration');
     }
 
-    if (getIntegration.type !== 'social') {
+    // demo sandbox channel has no real token: no analytics, no refresh
+    if (getIntegration.type !== 'social' || isDemoIntegration(getIntegration)) {
       return [];
     }
 

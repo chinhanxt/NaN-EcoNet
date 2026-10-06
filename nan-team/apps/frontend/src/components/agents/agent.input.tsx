@@ -1,10 +1,11 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   useCopilotChatInternal,
   useCopilotContext,
   useCopilotReadable,
 } from '@copilotkit/react-core';
 import AutoResizingTextarea from '@gitroom/frontend/components/agents/agent.textarea';
+import { useMediaPaste } from '@gitroom/frontend/components/media/use.media.paste';
 import { useChatContext, InputProps } from '@copilotkit/react-ui';
 const MAX_NEWLINES = 6;
 
@@ -16,7 +17,18 @@ export const Input = ({
   onUpload,
   hideStopButton = false,
   onChange,
-}: InputProps & { onChange: (value: string) => void }) => {
+  prefill,
+  onFiles,
+  uploading = 0,
+}: InputProps & {
+  onChange: (value: string) => void;
+  // Suggested text (e.g. an attached clip's post text); never replaces typed text
+  prefill?: { text: string };
+  // Image/video files pasted (Ctrl+V) or dropped on the input; text paste is untouched
+  onFiles?: (files: File[]) => void;
+  // Attachments still uploading: sending waits so the message carries them
+  uploading?: number;
+}) => {
   const context = useChatContext();
   const copilotContext = useCopilotContext();
   const showPoweredBy = !copilotContext.copilotApiConfig?.publicApiKey;
@@ -38,8 +50,19 @@ export const Input = ({
   };
 
   const [text, setText] = useState('');
+  useEffect(() => {
+    if (!prefill?.text || text.trim()) return;
+    setText(prefill.text);
+    onChange(prefill.text);
+  }, [prefill]);
+
+  const [dragging, setDragging] = useState(false);
+  // Native capture-phase listeners: React's onPaste on this div did not receive pasted screenshots.
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  useMediaPaste(wrapperRef, onFiles, setDragging);
+
   const send = () => {
-    if (inProgress) return;
+    if (inProgress || uploading > 0) return;
     onSend(text);
     setText('');
 
@@ -54,8 +77,8 @@ export const Input = ({
 
   const { interrupt } = useCopilotChatInternal();
   const canSend = useMemo(() => {
-    return !isInProgress && text.trim().length > 0 && !interrupt;
-  }, [interrupt, isInProgress, text]);
+    return !isInProgress && text.trim().length > 0 && !interrupt && uploading === 0;
+  }, [interrupt, isInProgress, text, uploading]);
 
   const canStop = useMemo(() => {
     return isInProgress && !hideStopButton;
@@ -65,11 +88,20 @@ export const Input = ({
 
   return (
     <div
+      ref={wrapperRef}
       className={`copilotKitInputContainer ${
         showPoweredBy ? 'poweredByContainer' : ''
       }`}
     >
-      <div className="copilotKitInput" onClick={handleDivClick}>
+      {uploading > 0 && (
+        <div role="status" className="px-[14px] pb-[6px] text-[12px] text-textColor/70">
+          Đang tải lên {uploading} tệp đính kèm…
+        </div>
+      )}
+      <div
+        className={`copilotKitInput${dragging ? ' outline-dashed outline-2 outline-emerald-500/60' : ''}`}
+        onClick={handleDivClick}
+      >
         <AutoResizingTextarea
           ref={textareaRef}
           placeholder={context.labels.placeholder}

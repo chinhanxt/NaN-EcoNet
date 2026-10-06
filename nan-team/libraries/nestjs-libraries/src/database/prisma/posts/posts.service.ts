@@ -34,7 +34,9 @@ import axios from 'axios';
 import sharp from 'sharp';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { Readable } from 'stream';
-import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
+import { AgyMcpService } from '@gitroom/nestjs-libraries/videos/agy-mcp/agy.mcp.service';
+import { separateNativePosts } from '@gitroom/nestjs-libraries/agent/separate.posts';
+import { findPostTime } from '@gitroom/nestjs-libraries/agent/find.post.time';
 dayjs.extend(utc);
 import * as Sentry from '@sentry/nestjs';
 import { TemporalService } from 'nestjs-temporal-core';
@@ -69,7 +71,7 @@ export class PostsService {
     private _integrationService: IntegrationService,
     private _mediaService: MediaService,
     private _shortLinkService: ShortLinkService,
-    private _openaiService: OpenaiService,
+    private _agyMcpService: AgyMcpService,
     private _temporalService: TemporalService,
     private _refreshIntegrationService: RefreshIntegrationService
   ) {}
@@ -338,6 +340,10 @@ export class PostsService {
     return minifyPosts({
       posts: await this._postRepository.getPosts(orgId, query),
     });
+  }
+
+  getPostsForSlot(orgId: string, integrationId: string, publishDate: string) {
+    return this._postRepository.getPostsForSlot(orgId, integrationId, publishDate);
   }
 
   async getPostsList(orgId: string, query: GetPostsListDto) {
@@ -1129,8 +1135,8 @@ export class PostsService {
     };
   }
 
-  async separatePosts(content: string, len: number) {
-    return this._openaiService.separatePosts(content, len);
+  async separatePosts(content: string, len: number, signal?: AbortSignal) {
+    return separateNativePosts(this._agyMcpService, content, len, signal);
   }
 
   async changeState(id: string, state: State, err?: any, body?: any) {
@@ -1298,16 +1304,13 @@ export class PostsService {
     return this._postRepository.findPopularPosts(category, topic);
   }
 
-  async findFreeDateTime(orgId: string, integrationId?: string) {
+  async findFreeDateTime(orgId: string, integrationId?: string, signal?: AbortSignal) {
+    signal?.throwIfAborted();
     const findTimes = await this._integrationService.findFreeDateTime(
       orgId,
       integrationId
     );
-    return this.findFreeDateTimeRecursive(
-      orgId,
-      findTimes,
-      dayjs.utc().startOf('day')
-    );
+    return findPostTime(findTimes, (times, date) => this._postRepository.getPostsCountsByDates(orgId, times, date), signal);
   }
 
   async createPopularPosts(post: {
@@ -1317,31 +1320,6 @@ export class PostsService {
     hook: string;
   }) {
     return this._postRepository.createPopularPosts(post);
-  }
-
-  private async findFreeDateTimeRecursive(
-    orgId: string,
-    times: number[],
-    date: dayjs.Dayjs
-  ): Promise<string> {
-    const list = await this._postRepository.getPostsCountsByDates(
-      orgId,
-      times,
-      date
-    );
-
-    if (!list.length) {
-      return this.findFreeDateTimeRecursive(orgId, times, date.add(1, 'day'));
-    }
-
-    const num = list.reduce<null | number>((prev, curr) => {
-      if (prev === null || prev > curr) {
-        return curr;
-      }
-      return prev;
-    }, null) as number;
-
-    return date.clone().add(num, 'minutes').format('YYYY-MM-DDTHH:mm:00');
   }
 
   getComments(postId: string) {

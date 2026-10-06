@@ -1,0 +1,802 @@
+[
+ {
+  "id": 1,
+  "group": "Hook Gây Tò Mò",
+  "category": "Mở Vòng Lặp",
+  "template": "Bạn sẽ không tin chuyện gì vừa xảy ra với mình...",
+  "useWhen": "Câu chuyện/khoảnh khắc có diễn biến bất ngờ; mở một vòng lặp mà đoạn sau trả lời.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 2,
+  "group": "Hook Gây Tò Mò",
+  "category": "Mở Vòng Lặp",
+  "template": "Đừng lướt vội, 3 giây nữa thôi bạn sẽ hiểu vì sao.",
+  "useWhen": "Câu chuyện/khoảnh khắc có diễn biến bất ngờ; mở một vòng lặp mà đoạn sau trả lời.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 3,
+  "group": "Hook Gây Tò Mò",
+  "category": "Mở Vòng Lặp",
+  "template": "Mình vừa test thử một thứ cực kỳ điên rồ...",
+  "useWhen": "Câu chuyện/khoảnh khắc có diễn biến bất ngờ; mở một vòng lặp mà đoạn sau trả lời.",
+  "requiresRealClaim": true
+ },
+ {
+  "id": 4,
+  "group": "Hook Gây Tò Mò",
+  "category": "Mở Vòng Lặp",
+  "template": "Hóa ra bấy lâu nay chúng ta đều làm sai điều này.",
+  "useWhen": "Câu chuyện/khoảnh khắc có diễn biến bất ngờ; mở một vòng lặp mà đoạn sau trả lời.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 5,
+  "group": "Hook Gây Tò Mò",
+  "category": "Mở Vòng Lặp",
+  "template": "Đoán xem thứ này giá bao nhiêu? Bạn sẽ bất ngờ đấy.",
+  "useWhen": "Câu chuyện/khoảnh khắc có diễn biến bất ngờ; mở một vòng lặp mà đoạn sau trả lời.",
+  "requiresRealClaim": true
+ },
+ {
+  "id": 6,
+  "group": "Hook Gây Tò Mò",
+  "category": "Kích Thích Xem Tiếp",
+  "template": "Ai cũng nói là không làm được, nhưng mình vừa chứng minh điều ngược lại.",
+  "useWhen": "Nội dung có bí mật/mẹo ít người biết hoặc kết quả trái kỳ vọng; hứa hẹn giá trị ở cuối.",
+  "requiresRealClaim": true
+ },
+ {
+  "id": 7,
+  "group": "Hook Gây Tò Mò",
+  "category": "Kích Thích Xem Tiếp",
+  "template": "Có một bí mật không ai nói cho bạn biết về chuyện này...",
+  "useWhen": "Nội dung có bí mật/mẹo ít người biết hoặc kết quả trái kỳ vọng; hứa hẹn giá trị ở cuối.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 8,
+  "group": "Hook Gây Tò Mò",
+  "category": "Kích Thích Xem Tiếp",
+  "template": "Nếu xem hết video này, bạn sẽ tiết kiệm được rất nhiều tiền.",
+  "useWhen": "Nội dung có bí mật/mẹo ít người biết hoặc kết quả trái kỳ vọng; hứa hẹn giá trị ở cuối.",
+  "requiresRealClaim": true
+ },
+ {
+  "id": 9,
+  "group": "Hook Gây Tò Mò",
+  "category": "Kích Thích Xem Tiếp",
+  "template": "Bạn có dám thử cách này cùng mình không?",
+  "useWhen": "Nội dung có bí mật/mẹo ít người biết hoặc kết quả trái kỳ vọng; hứa hẹn giá trị ở cuối.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 10,
+  "group": "Hook Gây Tò Mò",
+  "category": "Kích Thích Xem Tiếp",
+  "template": "Mình chỉ cho bạn một thứ ít người biết mà cực kỳ hữu ích.",
+  "useWhen": "Nội dung có bí mật/mẹo ít người biết hoặc kết quả trái kỳ vọng; hứa hẹn giá trị ở cuối.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 11,
+  "group": "Hook Gây Tò Mò",
+  "category": "Gợi Câu Hỏi",
+  "template": "Bạn đã bao giờ tự hỏi vì sao điều này lại xảy ra chưa?",
+  "useWhen": "Nội dung trả lời một câu hỏi 'vì sao/cái kết là gì'; hội thoại, câu chuyện, giải thích.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 12,
+  "group": "Hook Gây Tò Mò",
+  "category": "Gợi Câu Hỏi",
+  "template": "Thử đoán xem cái kết của câu chuyện này là gì?",
+  "useWhen": "Nội dung trả lời một câu hỏi 'vì sao/cái kết là gì'; hội thoại, câu chuyện, giải thích.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 13,
+  "group": "Hook Gây Tò Mò",
+  "category": "Gợi Câu Hỏi",
+  "template": "Đây là lý do vì sao video của bạn không có view.",
+  "useWhen": "Nội dung trả lời một câu hỏi 'vì sao/cái kết là gì'; hội thoại, câu chuyện, giải thích.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 14,
+  "group": "Hook Gây Tò Mò",
+  "category": "Gợi Câu Hỏi",
+  "template": "Hôm nay mình sẽ làm điều mà 90% mọi người không dám làm.",
+  "useWhen": "Nội dung trả lời một câu hỏi 'vì sao/cái kết là gì'; hội thoại, câu chuyện, giải thích.",
+  "requiresRealClaim": true
+ },
+ {
+  "id": 15,
+  "group": "Hook Gây Tò Mò",
+  "category": "Gợi Câu Hỏi",
+  "template": "Mình đã giấu chuyện này khá lâu, và đây là lần đầu chia sẻ.",
+  "useWhen": "Nội dung trả lời một câu hỏi 'vì sao/cái kết là gì'; hội thoại, câu chuyện, giải thích.",
+  "requiresRealClaim": true
+ },
+ {
+  "id": 16,
+  "group": "Hook Gây Tò Mò",
+  "category": "Tạo Cú Móc",
+  "template": "Có một lỗi nhỏ nhưng đang âm thầm phá kênh của bạn.",
+  "useWhen": "Thông tin chung/ý kiến mạnh; chỉ ra lỗi, điều lạ, hoặc phân loại người xem.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 17,
+  "group": "Hook Gây Tò Mò",
+  "category": "Tạo Cú Móc",
+  "template": "Mình dám cá là bạn chưa từng thấy cái này bao giờ.",
+  "useWhen": "Thông tin chung/ý kiến mạnh; chỉ ra lỗi, điều lạ, hoặc phân loại người xem.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 18,
+  "group": "Hook Gây Tò Mò",
+  "category": "Tạo Cú Móc",
+  "template": "Mình chấp nhận bị chê, miễn là nói thật điều này.",
+  "useWhen": "Thông tin chung/ý kiến mạnh; chỉ ra lỗi, điều lạ, hoặc phân loại người xem.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 19,
+  "group": "Hook Gây Tò Mò",
+  "category": "Tạo Cú Móc",
+  "template": "Bạn có tin là chỉ cần 1 phút mỗi ngày là đủ để thay đổi chuyện này không?",
+  "useWhen": "Thông tin chung/ý kiến mạnh; chỉ ra lỗi, điều lạ, hoặc phân loại người xem.",
+  "requiresRealClaim": true
+ },
+ {
+  "id": 20,
+  "group": "Hook Gây Tò Mò",
+  "category": "Tạo Cú Móc",
+  "template": "Thử xem bạn thuộc nhóm người nào sau video này.",
+  "useWhen": "Thông tin chung/ý kiến mạnh; chỉ ra lỗi, điều lạ, hoặc phân loại người xem.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 21,
+  "group": "Hook Tips Thực Chiến",
+  "category": "Kết Quả Rõ",
+  "template": "Đây là 3 bước giúp mình tăng 10 lần lượt xem trong 30 ngày.",
+  "useWhen": "Hướng dẫn có kết quả đo được thật trong nội dung (số bước, số liệu, trước/sau).",
+  "requiresRealClaim": true
+ },
+ {
+  "id": 22,
+  "group": "Hook Tips Thực Chiến",
+  "category": "Kết Quả Rõ",
+  "template": "Cách mình dựng video nhanh gấp đôi mà vẫn giữ chất lượng.",
+  "useWhen": "Hướng dẫn có kết quả đo được thật trong nội dung (số bước, số liệu, trước/sau).",
+  "requiresRealClaim": true
+ },
+ {
+  "id": 23,
+  "group": "Hook Tips Thực Chiến",
+  "category": "Kết Quả Rõ",
+  "template": "Chỉ cần thay đổi 1 chi tiết, mình đã tăng gấp 3 đơn hàng.",
+  "useWhen": "Hướng dẫn có kết quả đo được thật trong nội dung (số bước, số liệu, trước/sau).",
+  "requiresRealClaim": true
+ },
+ {
+  "id": 24,
+  "group": "Hook Tips Thực Chiến",
+  "category": "Kết Quả Rõ",
+  "template": "Đây là công thức viết caption mình dùng cho mọi video bán hàng.",
+  "useWhen": "Hướng dẫn có kết quả đo được thật trong nội dung (số bước, số liệu, trước/sau).",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 25,
+  "group": "Hook Tips Thực Chiến",
+  "category": "Kết Quả Rõ",
+  "template": "Đây là checklist trước khi đăng video mà mình luôn dùng.",
+  "useWhen": "Hướng dẫn có kết quả đo được thật trong nội dung (số bước, số liệu, trước/sau).",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 26,
+  "group": "Hook Tips Thực Chiến",
+  "category": "Cách Làm Ngay",
+  "template": "Cách mình quay video bằng điện thoại nhưng nhìn như máy chuyên nghiệp.",
+  "useWhen": "Tutorial/screencast: thao tác cụ thể người xem làm theo được ngay.",
+  "requiresRealClaim": true
+ },
+ {
+  "id": 27,
+  "group": "Hook Tips Thực Chiến",
+  "category": "Cách Làm Ngay",
+  "template": "3 lỗi cơ bản khiến video của bạn không bao giờ lên xu hướng.",
+  "useWhen": "Tutorial/screencast: thao tác cụ thể người xem làm theo được ngay.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 28,
+  "group": "Hook Tips Thực Chiến",
+  "category": "Cách Làm Ngay",
+  "template": "Cách mình tìm idea mỗi ngày mà không bị bí nội dung.",
+  "useWhen": "Tutorial/screencast: thao tác cụ thể người xem làm theo được ngay.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 29,
+  "group": "Hook Tips Thực Chiến",
+  "category": "Cách Làm Ngay",
+  "template": "Đây là cách mình biến 1 video thành 5 nội dung khác nhau.",
+  "useWhen": "Tutorial/screencast: thao tác cụ thể người xem làm theo được ngay.",
+  "requiresRealClaim": true
+ },
+ {
+  "id": 30,
+  "group": "Hook Tips Thực Chiến",
+  "category": "Cách Làm Ngay",
+  "template": "Cách đơn giản để giữ người xem ở lại đến cuối video.",
+  "useWhen": "Tutorial/screencast: thao tác cụ thể người xem làm theo được ngay.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 31,
+  "group": "Hook Tips Thực Chiến",
+  "category": "Quay Dựng",
+  "template": "3 kiểu ánh sáng giúp video trông đắt tiền hơn hẳn.",
+  "useWhen": "Hướng dẫn kỹ thuật quay/dựng/âm thanh/ánh sáng.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 32,
+  "group": "Hook Tips Thực Chiến",
+  "category": "Quay Dựng",
+  "template": "Mình chỉ bạn cách chỉnh màu nhanh nhưng vẫn rất đẹp.",
+  "useWhen": "Hướng dẫn kỹ thuật quay/dựng/âm thanh/ánh sáng.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 33,
+  "group": "Hook Tips Thực Chiến",
+  "category": "Quay Dựng",
+  "template": "Cách mình ghi âm giọng nói rõ, ấm, không bị rè.",
+  "useWhen": "Hướng dẫn kỹ thuật quay/dựng/âm thanh/ánh sáng.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 34,
+  "group": "Hook Tips Thực Chiến",
+  "category": "Quay Dựng",
+  "template": "Đây là khung kịch bản 15 giây mình áp dụng cho hầu hết video.",
+  "useWhen": "Hướng dẫn kỹ thuật quay/dựng/âm thanh/ánh sáng.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 35,
+  "group": "Hook Tips Thực Chiến",
+  "category": "Quay Dựng",
+  "template": "2 việc nhỏ nhưng giúp kênh của mình tăng follow đều mỗi ngày.",
+  "useWhen": "Hướng dẫn kỹ thuật quay/dựng/âm thanh/ánh sáng.",
+  "requiresRealClaim": true
+ },
+ {
+  "id": 36,
+  "group": "Hook Tips Thực Chiến",
+  "category": "Tối Ưu Bán Hàng",
+  "template": "Cách mình phân tích video viral để học công thức của họ.",
+  "useWhen": "Phân tích/chia sẻ quy trình, template, CTA cho nội dung bán hàng.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 37,
+  "group": "Hook Tips Thực Chiến",
+  "category": "Tối Ưu Bán Hàng",
+  "template": "Mình cho bạn mượn template làm video bán hàng hiệu quả nhất của mình.",
+  "useWhen": "Phân tích/chia sẻ quy trình, template, CTA cho nội dung bán hàng.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 38,
+  "group": "Hook Tips Thực Chiến",
+  "category": "Tối Ưu Bán Hàng",
+  "template": "Cách mình kết hợp nhạc xu hướng với nội dung bán hàng mà không bị lố.",
+  "useWhen": "Phân tích/chia sẻ quy trình, template, CTA cho nội dung bán hàng.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 39,
+  "group": "Hook Tips Thực Chiến",
+  "category": "Tối Ưu Bán Hàng",
+  "template": "Đây là cách mình thêm CTA mà vẫn tự nhiên, không bị chốt sale quá đà.",
+  "useWhen": "Phân tích/chia sẻ quy trình, template, CTA cho nội dung bán hàng.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 40,
+  "group": "Hook Tips Thực Chiến",
+  "category": "Tối Ưu Bán Hàng",
+  "template": "3 câu hỏi mình tự hỏi trước khi bấm đăng bất kỳ video nào.",
+  "useWhen": "Phân tích/chia sẻ quy trình, template, CTA cho nội dung bán hàng.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 41,
+  "group": "Hook Review Affiliate",
+  "category": "Khơi Nhu Cầu",
+  "template": "Đây là món đồ đáng tiền nhất mình mua trong tháng này.",
+  "useWhen": "Review/giới thiệu sản phẩm: khơi nhu cầu trước khi mua.",
+  "requiresRealClaim": true
+ },
+ {
+  "id": 42,
+  "group": "Hook Review Affiliate",
+  "category": "Khơi Nhu Cầu",
+  "template": "Nếu bạn định mua sản phẩm này, hãy xem video này trước.",
+  "useWhen": "Review/giới thiệu sản phẩm: khơi nhu cầu trước khi mua.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 43,
+  "group": "Hook Review Affiliate",
+  "category": "Khơi Nhu Cầu",
+  "template": "Mình ước gì biết sản phẩm này sớm hơn...",
+  "useWhen": "Review/giới thiệu sản phẩm: khơi nhu cầu trước khi mua.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 44,
+  "group": "Hook Review Affiliate",
+  "category": "Khơi Nhu Cầu",
+  "template": "Thú thật, lúc đầu mình không tin, cho đến khi dùng thử nó.",
+  "useWhen": "Review/giới thiệu sản phẩm: khơi nhu cầu trước khi mua.",
+  "requiresRealClaim": true
+ },
+ {
+  "id": 45,
+  "group": "Hook Review Affiliate",
+  "category": "Khơi Nhu Cầu",
+  "template": "Mình đã test sản phẩm này trong vài ngày, đây là kết quả.",
+  "useWhen": "Review/giới thiệu sản phẩm: khơi nhu cầu trước khi mua.",
+  "requiresRealClaim": true
+ },
+ {
+  "id": 46,
+  "group": "Hook Review Affiliate",
+  "category": "So Sánh Giá Trị",
+  "template": "Đây là phiên bản rẻ hơn nhưng dùng không hề thua bản đắt.",
+  "useWhen": "Review sản phẩm có so sánh giá/giá trị hoặc giải quyết vấn đề cụ thể.",
+  "requiresRealClaim": true
+ },
+ {
+  "id": 47,
+  "group": "Hook Review Affiliate",
+  "category": "So Sánh Giá Trị",
+  "template": "Nếu bạn cũng gặp vấn đề giống mình, sản phẩm này sinh ra là dành cho bạn.",
+  "useWhen": "Review sản phẩm có so sánh giá/giá trị hoặc giải quyết vấn đề cụ thể.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 48,
+  "group": "Hook Review Affiliate",
+  "category": "So Sánh Giá Trị",
+  "template": "Mình nói thật, đừng vứt tiền vào những món này nữa.",
+  "useWhen": "Review sản phẩm có so sánh giá/giá trị hoặc giải quyết vấn đề cụ thể.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 49,
+  "group": "Hook Review Affiliate",
+  "category": "So Sánh Giá Trị",
+  "template": "Đây là combo dưới mức giá cực rẻ mà mình nghĩ ai cũng nên có trong nhà.",
+  "useWhen": "Review sản phẩm có so sánh giá/giá trị hoặc giải quyết vấn đề cụ thể.",
+  "requiresRealClaim": true
+ },
+ {
+  "id": 50,
+  "group": "Hook Review Affiliate",
+  "category": "So Sánh Giá Trị",
+  "template": "Mình sẽ cho bạn xem sản phẩm này ngoài đời trông như thế nào.",
+  "useWhen": "Review sản phẩm có so sánh giá/giá trị hoặc giải quyết vấn đề cụ thể.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 51,
+  "group": "Hook Review Affiliate",
+  "category": "Review Thẳng",
+  "template": "3 điểm mình thích nhất ở sản phẩm này, và 1 điểm mình không thích.",
+  "useWhen": "Review trung thực, ưu/nhược điểm, so sánh, nhắm đúng đối tượng.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 52,
+  "group": "Hook Review Affiliate",
+  "category": "Review Thẳng",
+  "template": "Đây không phải video quảng cáo bình thường, mình sẽ review rất thẳng.",
+  "useWhen": "Review trung thực, ưu/nhược điểm, so sánh, nhắm đúng đối tượng.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 53,
+  "group": "Hook Review Affiliate",
+  "category": "Review Thẳng",
+  "template": "Mình đã so sánh 3 sản phẩm cùng loại, và đây là quán quân.",
+  "useWhen": "Review trung thực, ưu/nhược điểm, so sánh, nhắm đúng đối tượng.",
+  "requiresRealClaim": true
+ },
+ {
+  "id": 54,
+  "group": "Hook Review Affiliate",
+  "category": "Review Thẳng",
+  "template": "Sản phẩm này nhỏ nhưng giải quyết một vấn đề rất lớn.",
+  "useWhen": "Review trung thực, ưu/nhược điểm, so sánh, nhắm đúng đối tượng.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 55,
+  "group": "Hook Review Affiliate",
+  "category": "Review Thẳng",
+  "template": "Nếu bạn là học sinh, sinh viên hoặc dân văn phòng, hãy xem kỹ đoạn này.",
+  "useWhen": "Review trung thực, ưu/nhược điểm, so sánh, nhắm đúng đối tượng.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 56,
+  "group": "Hook Review Affiliate",
+  "category": "Chốt Niềm Tin",
+  "template": "Mình để link giảm giá ở dưới, nhưng nhớ xem hết video rồi hãy quyết định.",
+  "useWhen": "Review sau thời gian dùng thật; xây niềm tin, chốt mua.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 57,
+  "group": "Hook Review Affiliate",
+  "category": "Chốt Niềm Tin",
+  "template": "Đây là sự thật sau một thời gian mình sử dụng sản phẩm này.",
+  "useWhen": "Review sau thời gian dùng thật; xây niềm tin, chốt mua.",
+  "requiresRealClaim": true
+ },
+ {
+  "id": 58,
+  "group": "Hook Review Affiliate",
+  "category": "Chốt Niềm Tin",
+  "template": "Sản phẩm này không hoàn hảo, nhưng có một điểm khiến mình vẫn chọn mua.",
+  "useWhen": "Review sau thời gian dùng thật; xây niềm tin, chốt mua.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 59,
+  "group": "Hook Review Affiliate",
+  "category": "Chốt Niềm Tin",
+  "template": "Mình đã thử cách rẻ hơn và đây là lý do mình quay lại với sản phẩm này.",
+  "useWhen": "Review sau thời gian dùng thật; xây niềm tin, chốt mua.",
+  "requiresRealClaim": true
+ },
+ {
+  "id": 60,
+  "group": "Hook Review Affiliate",
+  "category": "Chốt Niềm Tin",
+  "template": "Bạn sẽ bất ngờ với chất lượng so với mức giá của em này.",
+  "useWhen": "Review sau thời gian dùng thật; xây niềm tin, chốt mua.",
+  "requiresRealClaim": true
+ },
+ {
+  "id": 61,
+  "group": "Hook Chạm Cảm Xúc",
+  "category": "Dành Cho Bạn",
+  "template": "Video này dành cho bạn - người đang thấy mình không đủ giỏi.",
+  "useWhen": "Nội dung động viên/tâm sự; gọi đúng người xem đang có cảm xúc đó.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 62,
+  "group": "Hook Chạm Cảm Xúc",
+  "category": "Dành Cho Bạn",
+  "template": "Nếu hôm nay bạn thấy mệt, hãy xem hết video này.",
+  "useWhen": "Nội dung động viên/tâm sự; gọi đúng người xem đang có cảm xúc đó.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 63,
+  "group": "Hook Chạm Cảm Xúc",
+  "category": "Dành Cho Bạn",
+  "template": "Không ai tin bạn làm được, nhưng điều đó không quan trọng.",
+  "useWhen": "Nội dung động viên/tâm sự; gọi đúng người xem đang có cảm xúc đó.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 64,
+  "group": "Hook Chạm Cảm Xúc",
+  "category": "Dành Cho Bạn",
+  "template": "Đừng cuộn màn hình, vì có thể đây là điều bạn cần nghe hôm nay.",
+  "useWhen": "Nội dung động viên/tâm sự; gọi đúng người xem đang có cảm xúc đó.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 65,
+  "group": "Hook Chạm Cảm Xúc",
+  "category": "Dành Cho Bạn",
+  "template": "Bạn không một mình đâu, thật sự là vậy.",
+  "useWhen": "Nội dung động viên/tâm sự; gọi đúng người xem đang có cảm xúc đó.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 66,
+  "group": "Hook Chạm Cảm Xúc",
+  "category": "Khi Muốn Bỏ Cuộc",
+  "template": "Đây là điều mình ước có người nói với mình 5 năm trước.",
+  "useWhen": "Câu chuyện vượt khó, lời khuyên từ trải nghiệm.",
+  "requiresRealClaim": true
+ },
+ {
+  "id": 67,
+  "group": "Hook Chạm Cảm Xúc",
+  "category": "Khi Muốn Bỏ Cuộc",
+  "template": "Nếu bạn đang định bỏ cuộc, hãy cho mình 30 giây.",
+  "useWhen": "Câu chuyện vượt khó, lời khuyên từ trải nghiệm.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 68,
+  "group": "Hook Chạm Cảm Xúc",
+  "category": "Khi Muốn Bỏ Cuộc",
+  "template": "Đừng tự so sánh mình với người khác nữa, hãy thử cách này.",
+  "useWhen": "Câu chuyện vượt khó, lời khuyên từ trải nghiệm.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 69,
+  "group": "Hook Chạm Cảm Xúc",
+  "category": "Khi Muốn Bỏ Cuộc",
+  "template": "Bạn xứng đáng với một cuộc sống tốt hơn hiện tại.",
+  "useWhen": "Câu chuyện vượt khó, lời khuyên từ trải nghiệm.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 70,
+  "group": "Hook Chạm Cảm Xúc",
+  "category": "Khi Muốn Bỏ Cuộc",
+  "template": "Nếu bạn thấy mình đang đi chậm, video này là cho bạn.",
+  "useWhen": "Câu chuyện vượt khó, lời khuyên từ trải nghiệm.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 71,
+  "group": "Hook Chạm Cảm Xúc",
+  "category": "Bắt Đầu Lại",
+  "template": "Không sao nếu hôm nay bạn chỉ làm được một chút.",
+  "useWhen": "Câu chuyện thật về khởi đầu lại, bị coi thường, thất bại.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 72,
+  "group": "Hook Chạm Cảm Xúc",
+  "category": "Bắt Đầu Lại",
+  "template": "Đây là câu chuyện thật của mình khi bắt đầu lại từ con số 0.",
+  "useWhen": "Câu chuyện thật về khởi đầu lại, bị coi thường, thất bại.",
+  "requiresRealClaim": true
+ },
+ {
+  "id": 73,
+  "group": "Hook Chạm Cảm Xúc",
+  "category": "Bắt Đầu Lại",
+  "template": "Mình biết cảm giác bị coi thường là như thế nào.",
+  "useWhen": "Câu chuyện thật về khởi đầu lại, bị coi thường, thất bại.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 74,
+  "group": "Hook Chạm Cảm Xúc",
+  "category": "Bắt Đầu Lại",
+  "template": "Lý do bạn chưa thành công không phải vì bạn kém đâu.",
+  "useWhen": "Câu chuyện thật về khởi đầu lại, bị coi thường, thất bại.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 75,
+  "group": "Hook Chạm Cảm Xúc",
+  "category": "Bắt Đầu Lại",
+  "template": "Chỉ cần bạn không dừng lại, bạn vẫn đang tiến về phía trước.",
+  "useWhen": "Câu chuyện thật về khởi đầu lại, bị coi thường, thất bại.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 76,
+  "group": "Hook Chạm Cảm Xúc",
+  "category": "Tự Nhắc Mình",
+  "template": "Bạn đã cố gắng nhiều hơn bạn nghĩ rất nhiều.",
+  "useWhen": "Thông điệp ngắn truyền cảm hứng, tự nhắc nhở.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 77,
+  "group": "Hook Chạm Cảm Xúc",
+  "category": "Tự Nhắc Mình",
+  "template": "Đừng để một ngày tệ hại biến thành một cuộc đời tệ hại.",
+  "useWhen": "Thông điệp ngắn truyền cảm hứng, tự nhắc nhở.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 78,
+  "group": "Hook Chạm Cảm Xúc",
+  "category": "Tự Nhắc Mình",
+  "template": "Ở tuổi nào bắt đầu lại cũng được, miễn là bạn dám thử.",
+  "useWhen": "Thông điệp ngắn truyền cảm hứng, tự nhắc nhở.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 79,
+  "group": "Hook Chạm Cảm Xúc",
+  "category": "Tự Nhắc Mình",
+  "template": "Đôi khi, việc tốt nhất bạn có thể làm cho bản thân là dừng lại và hít thở một chút.",
+  "useWhen": "Thông điệp ngắn truyền cảm hứng, tự nhắc nhở.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 80,
+  "group": "Hook Chạm Cảm Xúc",
+  "category": "Tự Nhắc Mình",
+  "template": "Mình quay video này chỉ để nói với bạn một câu duy nhất thôi...",
+  "useWhen": "Thông điệp ngắn truyền cảm hứng, tự nhắc nhở.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 81,
+  "group": "Hook Bán Hàng & Xây Kênh Cá Nhân",
+  "category": "Kinh Doanh Online",
+  "template": "Nếu bạn đang kinh doanh online, đừng bỏ qua mẹo này.",
+  "useWhen": "Mẹo kinh doanh online, lý do khách không mua, chốt đơn.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 82,
+  "group": "Hook Bán Hàng & Xây Kênh Cá Nhân",
+  "category": "Kinh Doanh Online",
+  "template": "Đây là cách mình biến 1 khách lạ thành khách quen.",
+  "useWhen": "Mẹo kinh doanh online, lý do khách không mua, chốt đơn.",
+  "requiresRealClaim": true
+ },
+ {
+  "id": 83,
+  "group": "Hook Bán Hàng & Xây Kênh Cá Nhân",
+  "category": "Kinh Doanh Online",
+  "template": "Tại sao khách xem mà không mua? Đây là lý do.",
+  "useWhen": "Mẹo kinh doanh online, lý do khách không mua, chốt đơn.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 84,
+  "group": "Hook Bán Hàng & Xây Kênh Cá Nhân",
+  "category": "Kinh Doanh Online",
+  "template": "3 giây đầu tiên này quyết định khách có ở lại xem video bán hàng của bạn hay không.",
+  "useWhen": "Mẹo kinh doanh online, lý do khách không mua, chốt đơn.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 85,
+  "group": "Hook Bán Hàng & Xây Kênh Cá Nhân",
+  "category": "Kinh Doanh Online",
+  "template": "Đây là mẫu câu chốt đơn mình dùng hàng ngày.",
+  "useWhen": "Mẹo kinh doanh online, lý do khách không mua, chốt đơn.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 86,
+  "group": "Hook Bán Hàng & Xây Kênh Cá Nhân",
+  "category": "Xây Kênh Cá Nhân",
+  "template": "Bạn không cần nói hay, chỉ cần nhớ những điều này khi quay video.",
+  "useWhen": "Mẹo xây kênh, sai lầm phổ biến, tăng tương tác.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 87,
+  "group": "Hook Bán Hàng & Xây Kênh Cá Nhân",
+  "category": "Xây Kênh Cá Nhân",
+  "template": "Sai lầm lớn nhất khi bán hàng trên TikTok mà nhiều người mắc phải.",
+  "useWhen": "Mẹo xây kênh, sai lầm phổ biến, tăng tương tác.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 88,
+  "group": "Hook Bán Hàng & Xây Kênh Cá Nhân",
+  "category": "Xây Kênh Cá Nhân",
+  "template": "Đây là cách mình trả lời comment mà vẫn khéo léo chốt đơn.",
+  "useWhen": "Mẹo xây kênh, sai lầm phổ biến, tăng tương tác.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 89,
+  "group": "Hook Bán Hàng & Xây Kênh Cá Nhân",
+  "category": "Xây Kênh Cá Nhân",
+  "template": "Cách mình biến viewer thành follower trung thành.",
+  "useWhen": "Mẹo xây kênh, sai lầm phổ biến, tăng tương tác.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 90,
+  "group": "Hook Bán Hàng & Xây Kênh Cá Nhân",
+  "category": "Xây Kênh Cá Nhân",
+  "template": "Lý do kênh bán hàng của bạn không phát triển chính là...",
+  "useWhen": "Mẹo xây kênh, sai lầm phổ biến, tăng tương tác.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 91,
+  "group": "Hook Bán Hàng & Xây Kênh Cá Nhân",
+  "category": "Kịch Bản Bán Hàng",
+  "template": "Đây là kịch bản 30 giây giúp mình chốt rất nhiều đơn.",
+  "useWhen": "Kịch bản/hậu trường video bán hàng, vượt ngại lên hình.",
+  "requiresRealClaim": true
+ },
+ {
+  "id": 92,
+  "group": "Hook Bán Hàng & Xây Kênh Cá Nhân",
+  "category": "Kịch Bản Bán Hàng",
+  "template": "Cách mình xử lý khi video bị ít view mà vẫn không bỏ cuộc.",
+  "useWhen": "Kịch bản/hậu trường video bán hàng, vượt ngại lên hình.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 93,
+  "group": "Hook Bán Hàng & Xây Kênh Cá Nhân",
+  "category": "Kịch Bản Bán Hàng",
+  "template": "3 dạng nội dung mà bất kỳ kênh bán hàng nào cũng nên có.",
+  "useWhen": "Kịch bản/hậu trường video bán hàng, vượt ngại lên hình.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 94,
+  "group": "Hook Bán Hàng & Xây Kênh Cá Nhân",
+  "category": "Kịch Bản Bán Hàng",
+  "template": "Nếu bạn đang ngại lên hình, hãy bắt đầu theo cách này.",
+  "useWhen": "Kịch bản/hậu trường video bán hàng, vượt ngại lên hình.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 95,
+  "group": "Hook Bán Hàng & Xây Kênh Cá Nhân",
+  "category": "Kịch Bản Bán Hàng",
+  "template": "Mình cho bạn xem hậu trường thật sự của việc quay 1 video bán hàng.",
+  "useWhen": "Kịch bản/hậu trường video bán hàng, vượt ngại lên hình.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 96,
+  "group": "Hook Bán Hàng & Xây Kênh Cá Nhân",
+  "category": "Xây Kênh Cá Nhân",
+  "template": "Cách mình biến những câu hỏi lặp đi lặp lại thành nội dung mới.",
+  "useWhen": "Mẹo xây kênh, lịch đăng, tư duy bán kết quả.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 97,
+  "group": "Hook Bán Hàng & Xây Kênh Cá Nhân",
+  "category": "Xây Kênh Cá Nhân",
+  "template": "Đây là lý do bạn nên xuất hiện mỗi ngày trên TikTok và Reels.",
+  "useWhen": "Mẹo xây kênh, lịch đăng, tư duy bán kết quả.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 98,
+  "group": "Hook Bán Hàng & Xây Kênh Cá Nhân",
+  "category": "Xây Kênh Cá Nhân",
+  "template": "Một câu nói nhỏ nhưng khiến khách hàng cảm thấy được tôn trọng hơn.",
+  "useWhen": "Mẹo xây kênh, lịch đăng, tư duy bán kết quả.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 99,
+  "group": "Hook Bán Hàng & Xây Kênh Cá Nhân",
+  "category": "Xây Kênh Cá Nhân",
+  "template": "Đừng bán sản phẩm, hãy bán kết quả mà khách nhận được.",
+  "useWhen": "Mẹo xây kênh, lịch đăng, tư duy bán kết quả.",
+  "requiresRealClaim": false
+ },
+ {
+  "id": 100,
+  "group": "Hook Bán Hàng & Xây Kênh Cá Nhân",
+  "category": "Xây Kênh Cá Nhân",
+  "template": "Nếu bạn xem đến đây, mình sẽ tặng bạn một ý tưởng content miễn phí mỗi ngày.",
+  "useWhen": "Mẹo xây kênh, lịch đăng, tư duy bán kết quả.",
+  "requiresRealClaim": true
+ }
+]

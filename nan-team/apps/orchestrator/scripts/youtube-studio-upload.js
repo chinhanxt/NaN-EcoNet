@@ -1,1 +1,1 @@
-/home/chinhan/MMO/postiz/scripts/youtube-studio-upload.js
+/home/chinhan/MMO/NaN-Team/scripts/youtube-studio-upload.js

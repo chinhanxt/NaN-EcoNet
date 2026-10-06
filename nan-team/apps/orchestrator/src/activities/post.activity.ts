@@ -32,6 +32,10 @@ import {
   BadBody,
   Disconnect,
 } from '@gitroom/nestjs-libraries/integrations/social.abstract';
+import {
+  demoPostResponse,
+  isDemoIntegration,
+} from '@gitroom/nestjs-libraries/integrations/demo.integration';
 
 // Drops fields the workflow and downstream activities never read — biggest wins are `error` (grows per retry) and `childrenPost` (Prisma side-loads it on every recursive row).
 function slimPost(post: any) {
@@ -217,6 +221,11 @@ export class PostActivity {
     // dropped once all V108 executions have drained
     return withHeartbeat(() =>
       this.handleDisconnect(integration, async () => {
+        // demo sandbox channel: never call the provider API
+        if (isDemoIntegration(integration)) {
+          return demoPostResponse(posts);
+        }
+
         const getIntegration = this._integrationManager.getSocialIntegration(
           integration.providerIdentifier
         );
@@ -326,6 +335,11 @@ export class PostActivity {
     posts: Post[],
     allowPending: boolean
   ) {
+    // demo sandbox channel: never call the provider API
+    if (isDemoIntegration(integration)) {
+      return demoPostResponse(posts);
+    }
+
     // Stage markers: whatever ran last is what a timed-out activity reports.
     // Providers that go through this.fetch overwrite these with the exact URL;
     // the ones on their own HTTP client (x, youtube, bluesky) are still

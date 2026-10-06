@@ -1,5 +1,6 @@
 import { PrismaRepository } from '@gitroom/nestjs-libraries/database/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
 
 @Injectable()
@@ -76,6 +77,18 @@ export class MediaRepository {
     });
   }
 
+  /** The org's live media whose stored path is one of `paths` (absolute URL or /uploads/... form). */
+  findByPath(org: string, paths: string[]) {
+    return this._media.model.media.findFirst({
+      where: {
+        organizationId: org,
+        deletedAt: null,
+        path: { in: paths },
+      },
+      select: { id: true, path: true },
+    });
+  }
+
   getMediaById(id: string) {
     return this._media.model.media.findUnique({
       where: {
@@ -130,7 +143,7 @@ export class MediaRepository {
           },
         }
       : {};
-    const query = {
+    const query: Prisma.MediaCountArgs = {
       where: {
         organization: {
           id: org,

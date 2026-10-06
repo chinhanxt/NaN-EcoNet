@@ -1,0 +1,8 @@
+@font-face {
+  font-family: VideoSans;
+  src: url('../public/fonts/NotoSans-Bold.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 700;
+  font-display: block;
+}
+* { box-sizing: border-box; }

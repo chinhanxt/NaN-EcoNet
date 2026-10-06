@@ -28,6 +28,7 @@ import { DeleteConfirmationModal } from '@gitroom/frontend/components/agents/del
 export const MediaPortal: FC<{
   media: { path: string; id: string }[];
   value: string;
+  onPostText?: (text: string) => void;
   setMedia: (event: {
     target: {
       name: string;
@@ -40,13 +41,15 @@ export const MediaPortal: FC<{
       }[];
     };
   }) => void;
-}> = ({ media, setMedia, value }) => {
+}> = ({ media, setMedia, value, onPostText }) => {
   const waitForClass = useWaitForClass('copilotKitMessages');
   const t = useT();
   if (!waitForClass) return null;
   return (
     <div className="pl-[14px] pr-[24px] whitespace-nowrap editor rm-bg">
       <MultiMediaComponent
+        aiVideoStudio
+        onStudioPostText={onPostText}
         allData={[{ content: value }]}
         text={value}
         label={t('attachments', 'Attachments')}
@@ -57,6 +60,30 @@ export const MediaPortal: FC<{
         onChange={setMedia}
         onOpen={() => {}}
         onClose={() => {}}
+        toolBar={
+          <>
+          <Link
+            href="/launches"
+            className="cursor-pointer h-[32px] px-2.5 rounded-[8px] justify-center items-center flex gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 hover:border-emerald-500/40 transition-all duration-150 active:scale-[0.98] select-none no-underline shrink-0 text-[12px] font-medium"
+            title={t('open_calendar', 'Xem lịch đăng bài trên hệ thống')}
+          >
+            <svg
+              className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            <span className="leading-none">{t('calendar', 'Lịch')}</span>
+          </Link>
+          </>
+        }
       />
     </div>
   );
@@ -261,6 +288,7 @@ const Threads: FC = () => {
       } catch (e) {}
       await mutate();
       if (id === deleteTarget.id) {
+        window.dispatchEvent(new CustomEvent('nan-start-new-chat'));
         router.push('/agents/new');
       }
       setDeleteTarget(null);
@@ -274,6 +302,7 @@ const Threads: FC = () => {
     try {
       localStorage.removeItem('active_agent_thread_id');
     } catch (e) {}
+    window.dispatchEvent(new CustomEvent('nan-start-new-chat'));
     router.push('/agents/new');
   }, [router]);
 

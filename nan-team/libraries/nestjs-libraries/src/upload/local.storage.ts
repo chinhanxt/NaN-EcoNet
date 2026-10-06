@@ -5,6 +5,10 @@ import { pipeline } from 'stream/promises';
 import { isSafePublicHttpsUrl } from '@gitroom/nestjs-libraries/dtos/webhooks/webhook.url.validator';
 import { ssrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { parseDataUrl } from '@gitroom/nestjs-libraries/upload/data.url';
+import { mkdir, realpath, rename, rm } from 'node:fs/promises';
+import { dirname, join, resolve, sep } from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { validateSourceVideoStorageKey } from './source-video.storage.key';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { fileTypeFromBuffer } = require('file-type');
 
@@ -24,6 +28,28 @@ const LOCAL_STORAGE_ALLOWED_MIME = new Set<string>([
 ]);
 export class LocalStorage implements IUploadProvider {
   constructor(private uploadDirectory: string) {}
+
+  publicUrl(key: string): string {
+    return `${process.env.FRONTEND_URL}/uploads/${key}`;
+  }
+
+  async uploadStreamAtKey(stream: Readable, mimetype: string, key: string, signal?: AbortSignal): Promise<UploadedStream> {
+    validateSourceVideoStorageKey(key, mimetype);
+    signal?.throwIfAborted();
+    await mkdir(this.uploadDirectory, {recursive: true});
+    const root = await realpath(this.uploadDirectory);
+    const target = join(root, key);
+    await mkdir(dirname(target), {recursive: true});
+    const parent = await realpath(dirname(target));
+    if (!parent.startsWith(root + sep)) throw new Error('Storage path escaped uploads');
+    const temporary = join(parent, `.upload-${randomUUID()}.tmp`);
+    try {
+      await pipeline(stream, createWriteStream(temporary, {flags: 'wx', mode: 0o600}), {signal});
+      signal?.throwIfAborted();
+      await rename(temporary, target);
+      return {filename: key, originalname: key, path: this.publicUrl(key), mimetype};
+    } finally { await rm(temporary, {force: true}); }
+  }
 
   // Files live under /YYYY/MM/DD with a random name; creates the folder
   private newFilePath(ext: string) {

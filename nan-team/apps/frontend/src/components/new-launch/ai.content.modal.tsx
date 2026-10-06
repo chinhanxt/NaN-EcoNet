@@ -1,11 +1,13 @@
 'use client';
 
-import React, { FC, useCallback, useEffect, useState } from 'react';
+import React, { FC, useCallback, useEffect, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { Button } from '@gitroom/react/form/button';
+import { AiWaitStream } from '@gitroom/frontend/components/ui/ai.wait.stream';
+import { readNdjson } from '@gitroom/helpers/utils/read.ndjson';
 
 // --- Standardized SVG Icons ---
 
@@ -264,6 +266,12 @@ export const AiContentModal: FC<{
   const [seconds, setSeconds] = useState(0);
   const [generatedText, setGeneratedText] = useState('');
   const [insertMode, setInsertMode] = useState<'replace' | 'append'>('replace');
+  // Caption text as it streams (the latest model response block); the final result replaces it.
+  const [streamingText, setStreamingText] = useState('');
+  const cancellation = useRef<AbortController | null>(null);
+
+  // Closing the modal stops the AGY job: the server aborts it when the stream disconnects.
+  useEffect(() => () => cancellation.current?.abort(), []);
 
   // Timer
   useEffect(() => {
@@ -317,6 +325,10 @@ export const AiContentModal: FC<{
 
     setIsGenerating(true);
     setGeneratedText('');
+    setStreamingText('');
+    cancellation.current?.abort();
+    const controller = new AbortController();
+    cancellation.current = controller;
 
     const imageUrls = isVisionNeeded
       ? pictures
@@ -325,8 +337,9 @@ export const AiContentModal: FC<{
       : [];
 
     try {
-      const res = await fetch('/posts/generate-content', {
+      const res = await fetch('/posts/generate-content/stream', {
         method: 'POST',
+        signal: controller.signal,
         body: JSON.stringify({
           prompt: trimmed || 'Hãy phân tích bức ảnh và viết bài đăng cuốn hút #hinhanh',
           image_urls: imageUrls,
@@ -338,11 +351,28 @@ export const AiContentModal: FC<{
         }),
       });
 
-      if (!res.ok) {
+      if (!res.ok || !res.body) {
         throw new Error(`Máy chủ phản hồi lỗi: ${res.status}`);
       }
 
-      const data = await res.json();
+      // One NDJSON event per line: delta (live text, per response block), result, error, done.
+      let data: any;
+      let block = '';
+      let text = '';
+      for await (const event of readNdjson(res.body.getReader())) {
+        if (event?.type === 'delta' && typeof event.text === 'string') {
+          if (event.block !== block) {
+            block = event.block;
+            text = '';
+          }
+          text += event.text;
+          setStreamingText(text);
+        } else if (event?.type === 'result') {
+          data = event;
+        } else if (event?.type === 'error') {
+          throw new Error(event.message || 'Có lỗi khi tạo nội dung');
+        }
+      }
       if (!data?.content) {
         throw new Error('Không nhận được nội dung từ AI');
       }
@@ -350,9 +380,15 @@ export const AiContentModal: FC<{
       setGeneratedText(data.content);
       toaster.show('Đã tạo xong nội dung bài đăng!', 'success');
     } catch (e: any) {
-      toaster.show(e?.message || 'Có lỗi khi tạo nội dung', 'warning');
+      if (!controller.signal.aborted) {
+        toaster.show(e?.message || 'Có lỗi khi tạo nội dung', 'warning');
+      }
     } finally {
-      setIsGenerating(false);
+      if (cancellation.current === controller) {
+        cancellation.current = null;
+        setStreamingText('');
+        setIsGenerating(false);
+      }
     }
   };
 
@@ -564,17 +600,24 @@ export const AiContentModal: FC<{
       </div>
 
       {/* Generating Progress State */}
-      {isGenerating && (
-        <div className="p-2.5 bg-[#059669]/10 border border-[#059669]/30 rounded-[8px] flex items-center justify-between text-[12px] text-[#10B981]">
-          <span className="flex items-center gap-2 font-medium">
-            <span className="w-2 h-2 rounded-full bg-[#10B981] animate-ping" />
-            {useVision ? 'Đang phân tích ảnh & sáng tạo bài...' : 'Đang sáng tạo nội dung...'}
+      {isGenerating && streamingText && (
+        <div className="flex flex-col gap-2 p-3 bg-newColColor/50 border border-[#059669]/40 rounded-[8px]">
+          <span className="font-medium text-[#10B981] text-[12px] flex items-center gap-1.5">
+            <SparklesIcon className="w-3.5 h-3.5 animate-pulse" />
+            AI đang viết bài...
           </span>
-          <span className="font-mono flex items-center gap-1 text-[11px]">
-            <ClockIcon className="w-3.5 h-3.5" />
-            {seconds}s
-          </span>
+          <div className="w-full max-h-[260px] overflow-y-auto p-2.5 text-[13px] border border-fifth rounded-[6px] bg-input text-inputText leading-relaxed whitespace-pre-wrap break-words">
+            {streamingText}
+          </div>
         </div>
+      )}
+      {isGenerating && !streamingText && (
+        <AiWaitStream
+          kind="caption"
+          title={useVision ? 'AI đang phân tích ảnh & viết bài' : 'AI đang viết bài'}
+          expectedSeconds={useVision ? 30 : 20}
+          fullWidth
+        />
       )}
 
       {/* Generated Result Preview */}

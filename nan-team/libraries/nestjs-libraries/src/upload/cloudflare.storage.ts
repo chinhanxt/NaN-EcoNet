@@ -17,6 +17,7 @@ import axios from 'axios';
 import { isSafePublicHttpsUrl } from '@gitroom/nestjs-libraries/dtos/webhooks/webhook.url.validator';
 import { ssrfSafeDispatcher } from '@gitroom/nestjs-libraries/dtos/webhooks/ssrf.safe.dispatcher';
 import { parseDataUrl } from '@gitroom/nestjs-libraries/upload/data.url';
+import { validateSourceVideoStorageKey } from './source-video.storage.key';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { fileTypeFromBuffer } = require('file-type');
 
@@ -208,6 +209,22 @@ class CloudflareStorage implements IUploadProvider {
     );
   }
 
+  async uploadStreamAtKey(stream: Readable, mimetype: string, key: string, signal?: AbortSignal): Promise<UploadedStream> {
+    validateSourceVideoStorageKey(key, mimetype);
+    signal?.throwIfAborted();
+    const upload = new Upload({client: this._client,
+      params: {Bucket: this._bucketName, Key: key, Body: stream, ContentType: mimetype},
+      leavePartsOnError: false});
+    const abort = () => { stream.destroy(); void upload.abort().catch(() => undefined); };
+    signal?.addEventListener('abort', abort, {once: true});
+    try {
+      if (signal?.aborted) abort();
+      await upload.done();
+      signal?.throwIfAborted();
+      return {filename: key, originalname: key, path: this.publicUrl(key), mimetype};
+    } finally { signal?.removeEventListener('abort', abort); }
+  }
+
   async signUploadUrl(fileName: string, contentType: string) {
     return getSignedUrl(
       this._client,
@@ -245,7 +262,11 @@ class CloudflareStorage implements IUploadProvider {
 
   // Accepts either the public URL or the bare key
   async removeFile(filePath: string): Promise<void> {
-    const fileName = filePath.split('/').pop();
+    const prefix = this._uploadUrl.replace(/\/$/, '') + '/';
+    const fileName = filePath.startsWith(prefix) ? filePath.slice(prefix.length) : filePath;
+    if (/^https?:\/\//i.test(fileName) || fileName.startsWith('/') ||
+      fileName.split('/').some(part => !part || part === '.' || part === '..') ||
+      /[?#\\\x00]/.test(fileName)) throw new Error('Invalid storage object key');
     if (!fileName) {
       return;
     }

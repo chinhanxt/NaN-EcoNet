@@ -1,10 +1,18 @@
-import { BadRequestException, HttpException, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { MediaRepository } from '@gitroom/nestjs-libraries/database/prisma/media/media.repository';
-import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
+import { AgyMcpService, AgyAspectRatio, agyImageVariation, agyMaxImagesPerRequest, agyRequestImageConcurrency } from '@gitroom/nestjs-libraries/videos/agy-mcp/agy.mcp.service';
 import { generationError } from '@gitroom/nestjs-libraries/openai/generation.error';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
 import { Organization } from '@prisma/client';
 import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
+import { AiDesignEditDto } from '@gitroom/nestjs-libraries/dtos/media/ai.design.edit.dto';
+import { assertAiVideoAssetUrl, readLocalVideoAsset } from '@gitroom/nestjs-libraries/videos/video.asset';
+import { resolveWorkspaceArtifact } from '@gitroom/nestjs-libraries/videos/runtime.path';
+import { execFile } from 'node:child_process';
+import { createReadStream } from 'node:fs';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { VideoManager } from '@gitroom/nestjs-libraries/videos/video.manager';
 import { VideoDto } from '@gitroom/nestjs-libraries/dtos/videos/video.dto';
 import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
@@ -81,6 +89,52 @@ const USABLE_AS_IS = new Set([
   '.gif',
 ]);
 
+const DESIGN_SCREENSHOT_MAX_BYTES = 4 * 1024 * 1024;
+/** Upload path/URL as an absolute storage URL, or the decoded bytes of a PNG/JPEG data URL. */
+export function designScreenshot(value: string): string | { data: Buffer; mimeType: string } {
+  const inline = /^data:(image\/(?:png|jpeg));base64,([A-Za-z0-9+/=]+)$/.exec(value);
+  if (inline) {
+    const data = Buffer.from(inline[2], 'base64');
+    if (!data.length || data.length > DESIGN_SCREENSHOT_MAX_BYTES) throw new BadRequestException('Screenshot must be a PNG/JPEG of at most 4 MB');
+    return { data, mimeType: inline[1] };
+  }
+  if (value.startsWith('data:')) throw new BadRequestException('Screenshot data URL must be PNG or JPEG');
+  return storageImageUrl(value);
+}
+
+/** /uploads/... as an absolute URL; the AGY service then accepts only configured upload storage. */
+export function storageImageUrl(value: string): string {
+  if (value.startsWith('data:')) throw new BadRequestException('Reference images must be uploaded files');
+  return value.startsWith('/') && process.env.FRONTEND_URL ? new URL(value, process.env.FRONTEND_URL).href : value;
+}
+
+const REMOVE_BACKGROUND_TIMEOUT_MS = 60_000;
+const REMOVE_BACKGROUND_MAX_BYTES = 30_000_000;
+// One rembg process at a time (~1 GB RAM each): later requests wait for the previous one.
+let removeBackgroundQueue: Promise<unknown> = Promise.resolve();
+function oneAtATime<T>(task: () => Promise<T>): Promise<T> {
+  const run = removeBackgroundQueue.then(task, task);
+  removeBackgroundQueue = run.catch(() => undefined);
+  return run;
+}
+
+// Image jobs in flight per org (process-wide): at most agyRequestImageConcurrency() run, the rest queue in
+// order. Keeps one org's burst (e.g. a poster asking for 4 pictures) from taking every AGY account.
+const orgImageQueues = new Map<string, { active: number; waiting: (() => void)[] }>();
+async function orgImageSlot<T>(orgId: string, task: () => Promise<T>): Promise<T> {
+  const queue = orgImageQueues.get(orgId) ?? { active: 0, waiting: [] };
+  orgImageQueues.set(orgId, queue);
+  // A finishing job hands its slot straight to the next waiter, so the cap is never exceeded.
+  if (queue.active >= agyRequestImageConcurrency()) await new Promise<void>((resolve) => queue.waiting.push(resolve));
+  else queue.active++;
+  try { return await task(); }
+  finally {
+    const next = queue.waiting.shift();
+    if (next) next();
+    else if (--queue.active === 0) orgImageQueues.delete(orgId);
+  }
+}
+
 @Injectable()
 export class MediaService {
   private storage = UploadFactory.createStorage();
@@ -88,7 +142,7 @@ export class MediaService {
 
   constructor(
     private _mediaRepository: MediaRepository,
-    private _openAi: OpenaiService,
+    private readonly nativeAgy: AgyMcpService,
     private _subscriptionService: SubscriptionService,
     private _videoManager: VideoManager,
     private _temporalService: TemporalService
@@ -106,96 +160,136 @@ export class MediaService {
     prompt: string,
     org: Organization,
     generatePromptFirst?: boolean,
-    aspectRatio?: string
+    aspectRatio?: string,
+    variation?: string,
+    referenceImageUrls?: string[],
+    signal?: AbortSignal
   ) {
+    if (typeof prompt !== 'string' || !prompt.trim() || prompt.length > 12000) throw new BadRequestException('Invalid image prompt');
+    // Optional sample images to follow (AI design chat); upload storage only, at most 4.
+    if (referenceImageUrls !== undefined && (!Array.isArray(referenceImageUrls) || referenceImageUrls.length > 4
+      || referenceImageUrls.some((url) => typeof url !== 'string' || url.length > 2048))) throw new BadRequestException('Invalid reference images');
+    const references = await Promise.all((referenceImageUrls || []).map((url) => this.orgImageUrl(org.id, url)));
+    const ratios = ['auto','9:16','16:9','1:1','3:4','4:3','2:3','3:2','21:9'];
+    if (aspectRatio && !ratios.includes(aspectRatio)) throw new BadRequestException('Unsupported image aspect ratio');
     try {
-      const generating = await this._subscriptionService.useCredit(
-        org,
-        'ai_images',
-        async () => {
-          const agyGatewayUrl =
-            process.env.AGY_IMAGE_GATEWAY_URL || 'http://127.0.0.1:8080';
+      return await this._subscriptionService.useCredit(org, 'ai_images', async () => {
+        const description = prompt.match(/<!-- description -->([\s\S]*?)<!-- \/description -->/)?.[1]?.trim();
+        const style = prompt.match(/<!-- style -->([\s\S]*?)<!-- \/style -->/)?.[1]?.trim();
+        const cleanPrompt = `${description || prompt}${style ? ', phong cách: '+style : ''}${variation ? '\n'+variation : ''}`;
+        // Per-org cap on simultaneous image jobs (design editor fires one request per generateImage op).
+        return orgImageSlot(org.id, () => {
+          signal?.throwIfAborted();
+          return this.nativeAgy.image(cleanPrompt, signal, (aspectRatio || 'auto') as AgyAspectRatio, references);
+        });
+      });
+    } catch (error) { throw generationError(error); }
+  }
 
-          // 1. First attempt: call agy-image-gateway microservice
-          try {
-            let cleanPrompt = prompt;
-            let extractedStyle = '';
-            const descMatch = prompt.match(
-              /<!-- description -->([\s\S]*?)<!-- \/description -->/
-            );
-            const styleMatch = prompt.match(
-              /<!-- style -->([\s\S]*?)<!-- \/style -->/
-            );
-            if (descMatch) {
-              cleanPrompt = descMatch[1].trim();
-            }
-            if (styleMatch) {
-              extractedStyle = styleMatch[1].trim();
-            }
-            if (extractedStyle) {
-              cleanPrompt = `${cleanPrompt}, phong cách: ${extractedStyle}`;
-            }
+  /**
+   * "AI thiết kế" (Polotno): one AGY content job views the page screenshot and returns sanitized
+   * operations; no AI credit (chat-style editing). generateImage operations are returned, not executed (the frontend
+   * calls /media/generate-image-with-prompt for them).
+   */
+  async aiDesignEdit(org: Organization, body: AiDesignEditDto, signal?: AbortSignal) {
+    // Empty page: no screenshot is sent or needed (the AGY job then runs text-only).
+    if (body.phase === 'layout-over-image' && !body.screenshot) throw new BadRequestException('The layout phase needs the page screenshot');
+    const screenshot = body.screenshot ? designScreenshot(body.screenshot) : '';
+    // Pasted images must be this org's media (404 otherwise), checked before the AGY job.
+    const referenceImages = await Promise.all((body.referenceImages || []).map((url) => this.orgImageUrl(org.id, url)));
+    try {
+      return await this.nativeAgy.designEdit(org.id, { instruction: body.instruction, page: body.page,
+        elements: body.elements, variants: body.variants, history: body.history,
+        referenceImages, selectedIds: body.selectedIds, phase: body.phase, zones: body.zones,
+        palette: body.palette }, screenshot, signal);
+    } catch (error) { throw generationError(error); }
+  }
 
-            console.log(
-              `[MediaService] Calling agy-image-gateway at ${agyGatewayUrl}...`
-            );
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 180000);
+  /** Absolute URL of an image that is live media of this org (upload storage); otherwise 404. */
+  async orgImageUrl(orgId: string, value: string): Promise<string> {
+    const url = assertAiVideoAssetUrl(storageImageUrl(value));
+    const { pathname } = new URL(url);
+    const media = await this._mediaRepository.findByPath(orgId, [...new Set([url, value, pathname, decodeURIComponent(pathname)])]);
+    if (!media) throw new NotFoundException('Image not found in this organization media');
+    return url;
+  }
 
-            const res = await fetch(`${agyGatewayUrl}/v1/images/generate`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                prompt: cleanPrompt,
-                aspect_ratio: aspectRatio || 'auto',
-                return_format: 'base64',
-              }),
-              signal: controller.signal,
-            });
-            clearTimeout(timeout);
-
-            if (res.ok) {
-              const data = (await res.json()) as {
-                status: string;
-                base64?: string;
-                url?: string;
-                error?: string;
-              };
-              if (data.status === 'success' && data.base64) {
-                console.log(
-                  '[MediaService] Image generated successfully via agy-image-gateway'
-                );
-                return data.base64;
-              }
-              console.warn(
-                '[MediaService] agy-image-gateway returned non-success:',
-                data
-              );
-            } else {
-              console.warn(
-                `[MediaService] agy-image-gateway HTTP error ${res.status}: ${res.statusText}`
-              );
-            }
-          } catch (agyErr) {
-            console.warn(
-              '[MediaService] agy-image-gateway error or offline, falling back to OpenAI:',
-              (agyErr as Error).message
-            );
-          }
-
-          // 2. Fallback: OpenAI if configured
-          if (generatePromptFirst) {
-            prompt = await this._openAi.generatePromptForPicture(prompt);
-            console.log('Prompt:', prompt);
-          }
-          return this._openAi.generateImage(prompt);
-        }
-      );
-
-      return generating;
-    } catch (err) {
-      throw generationError(err);
+  /**
+   * Real background removal (rembg, flood-fill fallback) for an image in upload storage; the
+   * transparent PNG is saved as new org media. No AI credit.
+   */
+  async removeBackground(org: Organization, path: string) {
+    // The org's own upload only; local files are read through readLocalVideoAsset, which refuses traversal.
+    const url = await this.orgImageUrl(org.id, path);
+    const input = await readLocalVideoAsset(url, REMOVE_BACKGROUND_MAX_BYTES) ?? await (async () => {
+      const response = await fetch(url, { redirect: 'error' });
+      if (!response.ok) throw new BadRequestException('Could not load the image');
+      const body = Buffer.from(await response.arrayBuffer());
+      if (body.length > REMOVE_BACKGROUND_MAX_BYTES) throw new BadRequestException('Image exceeds size limit');
+      return body;
+    })();
+    const folder = await mkdtemp(join(tmpdir(), 'postiz-remove-bg-'));
+    try {
+      const source = join(folder, 'in'), target = join(folder, 'out.png');
+      await writeFile(source, input, { mode: 0o600 });
+      const script = resolveWorkspaceArtifact('scripts/remove-background.py', process.env.REMOVE_BACKGROUND_SCRIPT);
+      await oneAtATime(() => new Promise<void>((done, fail) => {
+        execFile('nice', ['-n', '10', process.env.REMOVE_BACKGROUND_PYTHON || 'python3', script, source, target],
+          { timeout: REMOVE_BACKGROUND_TIMEOUT_MS, killSignal: 'SIGKILL', maxBuffer: 1024 * 1024 },
+          (error, _stdout, stderr) => error
+            ? fail(new BadRequestException(`Background removal failed: ${String(stderr || error.message).trim().slice(-300)}`))
+            : done());
+      }));
+      const uploaded = await this.storage.uploadStream(createReadStream(target), 'image/png', 'png');
+      const media = await this.saveFile(org.id, uploaded.originalname, uploaded.path);
+      return { id: media.id, path: media.path };
+    } finally {
+      await rm(folder, { recursive: true, force: true });
     }
+  }
+
+  /**
+   * `count` images for one prompt: one AGY image job per image, all started together (the AGY pool
+   * spreads them over accounts within its RAM gate). Each image uses one credit, gets a composition
+   * variant and is saved to the media library; failed images are counted, not fatal, unless all fail.
+   */
+  async generateImageBatch(prompt: string, org: Organization, count: number, aspectRatio?: string, referenceImageUrls?: string[]) {
+    const total = Math.max(1, Math.min(agyMaxImagesPerRequest(), Math.floor(Number(count)) || 1));
+    const outcomes = await Promise.allSettled(Array.from({ length: total }, async (_, index) => {
+      const file = await this.generateImage(prompt, org, true, aspectRatio, agyImageVariation(index, total), referenceImageUrls);
+      return this.saveFile(org.id, file.split('/').pop()!, file);
+    }));
+    const images = outcomes.flatMap((outcome) => (outcome.status === 'fulfilled' ? [outcome.value] : []));
+    if (!images.length) throw (outcomes[0] as PromiseRejectedResult).reason;
+    return { ...images[0], images, failed: total - images.length };
+  }
+
+  /**
+   * Streaming twin of generateImageBatch (count 1 included): same credit, variants and media saving
+   * per image, but each saved image is reported through `emit` as soon as it is ready. Aborting
+   * `signal` (client gone) stops images that have not started yet and cancels running AGY jobs.
+   */
+  async generateImageStream(
+    prompt: string,
+    org: Organization,
+    count: number,
+    emit: (event: { type: 'start'; count: number } | { type: 'image'; index: number; media: Awaited<ReturnType<MediaService['saveFile']>> } | { type: 'error'; index?: number; message: string }) => void,
+    aspectRatio?: string,
+    referenceImageUrls?: string[],
+    signal?: AbortSignal
+  ) {
+    const total = Math.max(1, Math.min(agyMaxImagesPerRequest(), Math.floor(Number(count)) || 1));
+    emit({ type: 'start', count: total });
+    await Promise.allSettled(Array.from({ length: total }, async (_, index) => {
+      try {
+        const file = await this.generateImage(prompt, org, true, aspectRatio, agyImageVariation(index, total), referenceImageUrls, signal);
+        const media = await this.saveFile(org.id, file.split('/').pop()!, file);
+        if (!signal?.aborted) emit({ type: 'image', index, media });
+      } catch (error) {
+        if (signal?.aborted) return;
+        emit({ type: 'error', index, message: error instanceof HttpException ? error.message : 'Image generation failed, please try again.' });
+      }
+    }));
   }
 
   // Streams the remote body straight into storage: only the sniffing prefix

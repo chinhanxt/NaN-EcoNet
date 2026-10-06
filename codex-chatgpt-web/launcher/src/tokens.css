@@ -1,0 +1,77 @@
+:root {
+  color-scheme: dark;
+
+  --blue-100: #99ceff;
+  --blue-300: #339cff;
+  --blue-900: #00284d;
+  --gray-0: #ffffff;
+  --gray-100: #ededed;
+  --gray-300: #afafaf;
+  --gray-500: #5d5d5d;
+  --gray-600: #414141;
+  --gray-700: #303030;
+  --gray-750: #282828;
+  --gray-800: #212121;
+  --gray-900: #181818;
+  --gray-1000: #0d0d0d;
+  --green-300: #40c977;
+  --orange-300: #ff8549;
+  --red-300: #ff6764;
+  --red-400: #fa423e;
+
+  --color-background-surface-under: #000000;
+  --color-background-surface: var(--gray-900);
+  --color-background-sidebar: var(--gray-800);
+  --color-background-elevated: var(--gray-750);
+  --color-background-control: rgb(255 255 255 / 3%);
+  --color-background-control-hover: rgb(255 255 255 / 7%);
+  --color-background-control-active: rgb(255 255 255 / 10%);
+  --color-background-button-secondary: rgb(255 255 255 / 5%);
+  --color-background-button-secondary-hover: rgb(255 255 255 / 8%);
+  --color-background-status-success: rgb(4 184 76 / 16%);
+  --color-background-status-warning: rgb(255 133 73 / 12%);
+  --color-background-status-error: rgb(250 66 62 / 13%);
+
+  --color-text-primary: var(--gray-0);
+  --color-text-secondary: rgb(255 255 255 / 70%);
+  --color-text-tertiary: rgb(255 255 255 / 50%);
+  --color-text-disabled: rgb(255 255 255 / 32%);
+  --color-text-accent: var(--blue-100);
+  --color-text-success: var(--green-300);
+  --color-text-warning: var(--orange-300);
+  --color-text-error: var(--red-300);
+
+  --color-icon-primary: rgb(255 255 255 / 90%);
+  --color-icon-secondary: rgb(255 255 255 / 70%);
+  --color-icon-tertiary: rgb(255 255 255 / 50%);
+  --color-border: rgb(255 255 255 / 8%);
+  --color-border-light: rgb(255 255 255 / 4%);
+  --color-border-heavy: rgb(255 255 255 / 16%);
+  --color-border-focus: rgb(51 156 255 / 70%);
+
+  --font-ui: "OpenAI Sans", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Hiragino Sans", "Yu Gothic UI", "Meiryo", "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas, monospace;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 14px;
+  --text-lg: 16px;
+  --text-title: 24px;
+
+  --height-titlebar: 46px;
+  --height-row: 30px;
+  --height-control: 32px;
+  --sidebar-width: 252px;
+  --content-width: 720px;
+  --settings-width: 672px;
+
+  --radius-xs: 4px;
+  --radius-sm: 7px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-round: 999px;
+
+  --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --duration-micro: 140ms;
+  --duration-panel: 300ms;
+}

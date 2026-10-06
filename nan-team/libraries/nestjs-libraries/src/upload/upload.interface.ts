@@ -18,6 +18,9 @@ export interface IUploadProvider {
     mimetype: string,
     ext: string
   ): Promise<UploadedStream>;
+  uploadStreamAtKey?(
+    stream: Readable, mimetype: string, key: string, signal?: AbortSignal
+  ): Promise<UploadedStream>;
   removeFile(filePath: string): Promise<void>;
   // Presigned URLs handed to the media processor, which has no storage
   // credentials; only cloud storage can mint them

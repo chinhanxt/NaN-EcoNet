@@ -7,7 +7,7 @@ import { ioRedis } from '@gitroom/nestjs-libraries/redis/redis.service';
 import bs58 from 'bs58';
 import nacl from 'tweetnacl';
 
-function hexToUint8Array(hex) {
+function hexToUint8Array(hex: string): Uint8Array {
   if (hex.startsWith('0x')) {
     hex = hex.slice(2);
   }

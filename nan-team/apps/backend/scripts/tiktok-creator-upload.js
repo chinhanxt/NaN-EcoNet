@@ -1,1 +1,1 @@
-/home/chinhan/MMO/postiz/scripts/tiktok-creator-upload.js
+/home/chinhan/MMO/NaN-Team/scripts/tiktok-creator-upload.js

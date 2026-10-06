@@ -1,3 +1,103 @@
+# 🚀 NaN-Team MMO — Automated Social Content & Video AI Engine
+
+> Phân hệ tự động hóa sản xuất video ngắn (TikTok, YouTube Shorts, Facebook Reels), biên tập video giữ chân người xem (Retention Engineering), đồng bộ phiên tài khoản và đăng tải đa kênh tự động trong hệ sinh thái **NaN-EcoNet**.
+
+---
+
+## 📌 Tổng Quan Hệ Thống
+
+`nan-team` là nền tảng kết hợp giữa hệ thống lập lịch đăng bài đa kênh mã nguồn mở (Postiz) và các engine AI tiên tiến do đội ngũ phát triển:
+1. **AI Video Studio**: Trực tiếp tạo video ngắn từ kịch bản văn bản hoặc tái cấu trúc từ video dài (Source Video) với kỹ thuật Retention Hook.
+2. **Vietnamese Whisper & ASR**: Nhận diện giọng nói, tách phụ đề tiếng Việt chính xác và đồng bộ thời gian từng từ (word-level timestamps).
+3. **Programmatic Remotion**: Render chuyển động mượt mà với hoạt họa chữ động kiểu MrBeast / Alex Hormozi (Neon, Pop, Box, Classic).
+4. **Native Tooling & Automation**: Bộ script đăng nhập visual (Chrome Profile), tự động sync cookie và điều khiển upload trực tiếp.
+
+---
+
+## 🏗️ Cấu Trúc Mã Nguồn & Các Gói (Monorepo)
+
+```text
+nan-team/
+├── apps/
+│   ├── frontend/             # Giao diện Web (Next.js 14, TailwindCSS, SWR) - Port 4200
+│   │   └── src/components/agents/  # AI Video Studio Modal, Source Video Studio Modal
+│   ├── backend/              # Core API Server (NestJS, Prisma, PostgreSQL) - Port 3000
+│   └── orchestrator/         # Background Queue & Workflow Runner (Temporal/BullMQ)
+├── packages/
+│   ├── openshorts-engine/    # Động cơ cắt ghép video, ASR tiếng Việt, re-framing 9:16
+│   ├── remotion-engine/      # React Video Rendering, dynamic caption templates, audio SFX
+│   └── agy-mcp-runner/       # MCP Adapter tích hợp AI Agents (Codex/Antigravity/Claude)
+├── libraries/
+│   ├── nestjs-libraries/     # Module dùng chung cho NestJS (Database, Auth, Videos, AI)
+│   └── helpers/              # Utility dùng chung cho frontend và backend
+├── scripts/                  # Bộ script automation: upload, login Chrome, sync cookie
+├── Makefile                  # Quản lý toàn bộ tiến trình native (không cần Docker)
+└── .env.example              # Cấu hình biến môi trường mẫu
+```
+
+---
+
+## ⚡ Hướng Dẫn Cài Đặt & Khởi Chạy (Native Dev Stack)
+
+Toàn bộ hệ thống có thể chạy trực tiếp trên môi trường máy chủ / máy cá nhân mà không phụ thuộc Docker nhờ bộ `Makefile` tối ưu:
+
+### 1. Yêu cầu hệ thống
+- **Node.js**: v20+
+- **pnpm**: v9+ (`npm i -g pnpm`)
+- **Python**: v3.10+ (cho OpenShorts & ASR)
+- **ffmpeg**: Đã cài trên hệ thống (`sudo apt install ffmpeg`)
+- **PostgreSQL & Redis**: Chạy dịch vụ cục bộ hoặc container nền
+
+### 2. Thiết lập cấu hình
+```bash
+cp .env.example .env
+# Chỉnh sửa DATABASE_URL, REDIS_URL và JWT_SECRET nếu cần
+```
+
+### 3. Cài đặt thư viện
+```bash
+pnpm install
+```
+
+### 4. Các lệnh điều khiển hệ thống (`Makefile`)
+
+| Lệnh | Ý nghĩa |
+|---|---|
+| `make dev` | Khởi động toàn bộ stack native: Backend, Frontend, Worker, Proxy pool |
+| `make stop` | Dừng tất cả tiến trình và giải phóng các cổng mạng |
+| `make restart` | Khởi động lại toàn bộ hệ thống sạch sẽ |
+| `make status` hoặc `make ps` | Kiểm tra trạng thái các port, dịch vụ và healthcheck |
+| `make seed-admin` | Khởi tạo tài khoản sandbox demo: `admin` / `123456` tại org "NaN Demo" |
+| `make db-shell` | Mở trực tiếp terminal truy vấn PostgreSQL cục bộ |
+| `make tunnel` | Khởi chạy Cloudflare quick tunnel tạo public URL truy cập từ xa |
+| `make tunnel-url` | Xem public URL Cloudflare hiện tại |
+| `make tunnel-stop` | Đóng kết nối Cloudflare tunnel |
+
+### 5. Quản lý tài khoản mạng xã hội (Cookie & Profile)
+
+Để duy trì phiên đăng bài ổn định không bị checkpoint:
+```bash
+make login-fb       # Mở Chrome với profile Facebook để đăng nhập trực quan
+make login-yt       # Mở Chrome với profile YouTube Studio
+make login-tiktok   # Mở Chrome với profile TikTok Creator Center
+make sync-cookies   # Tự động xuất và đồng bộ cookie vào cơ sở dữ liệu
+```
+
+---
+
+## 🌐 Danh Sách Cổng Kết Nối Mặc Định
+
+| Dịch vụ | Cổng | Ghi chú |
+|---|---|---|
+| **Frontend Web App** | `4200` | Giao diện điều khiển chính (Dashboard, Studio, Lên lịch) |
+| **Backend REST API** | `3000` | API hệ thống, GraphQL, webhook callback |
+| **Voice Clone Server** | `8002` | API nhân bản và sinh giọng đọc AI (OmniVoice) |
+| **AGY Image Gateway** | `8080` | Proxy sinh ảnh minh họa AI |
+| **PostgreSQL** | `5432` | Cơ sở dữ liệu chính |
+| **Redis** | `6379` | Quản lý hàng đợi và cache trạng thái |
+
+---
+
 <p align="center">
   <a href="https://postiz.com/" target="_blank">
   <picture>
@@ -13,11 +113,12 @@
 </a>
 </p>
 
-<h3 align="center"><strong><a href="https://github.com/gitroomhq/postiz-agent">NEW: check out Postiz agent CLI! perfect for OpenClaw and other agents</a></strong></h3>
+<h3 align="center"><strong><a href="https://github.com/gitroomhq/postiz-agent">Postiz Core Platform Integration</a></strong></h3>
 <div align="center">
   <strong>
   <h2>Your ultimate AI social media scheduling tool</h2><br />
   <a href="https://postiz.com">Postiz</a>: An alternative to: Buffer.com, Hypefury, Twitter Hunter, etc...<br /><br />
+
   </strong>
   Postiz offers everything you need to manage your social media posts,<br />build an audience, capture leads, and grow your business.
 </div>

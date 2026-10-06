@@ -15,7 +15,7 @@ export class IntegrationListTool implements AgentToolInterface {
   run() {
     return createTool({
       id: 'integrationList',
-      description: `This tool list available integrations to schedule posts to. Optionally pass a group id (from the groupList tool) to only list integrations belonging to that group`,
+      description: `This tool list available integrations (channels) to schedule posts to. A channel with disabled, refreshNeeded or inBetweenSteps set to true cannot receive posts. Optionally pass a group id (from the groupList tool) to only list integrations belonging to that group`,
       inputSchema: z.object({
         group: z
           .string()
@@ -40,6 +40,14 @@ export class IntegrationListTool implements AgentToolInterface {
             name: z.string(),
             picture: z.string(),
             platform: z.string(),
+            disabled: z.boolean().optional(),
+            refreshNeeded: z.boolean().optional(),
+            inBetweenSteps: z.boolean().optional(),
+            display: z.string().nullable().optional(),
+            type: z.string().optional(),
+            customer: z
+              .object({ id: z.string(), name: z.string() })
+              .optional(),
           })
         ),
       }),
@@ -58,6 +66,8 @@ export class IntegrationListTool implements AgentToolInterface {
               name: p.name,
               id: p.id,
               disabled: p.disabled,
+              refreshNeeded: p.refreshNeeded,
+              inBetweenSteps: p.inBetweenSteps,
               picture: p.picture || '/no-picture.jpg',
               platform: p.providerIdentifier,
               display: p.profile,

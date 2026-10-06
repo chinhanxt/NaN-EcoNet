@@ -14,3 +14,10 @@ export const checkAuth = (
     (context.requestContext as any).set('ui', 'false');
   }
 };
+
+export const requireOrganization = (inputData: any, context: any) => {
+  checkAuth(inputData, context);
+  const organization = JSON.parse(context?.requestContext?.get('organization') || '{}');
+  if (!organization.id) throw new Error('An authenticated organization is required');
+  return organization;
+};

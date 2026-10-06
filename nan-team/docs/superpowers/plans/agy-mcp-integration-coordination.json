@@ -1,0 +1,146 @@
+{
+  "decision": "allow",
+  "authorization": "User explicitly requested AGY MCP implementation and delegated integration",
+  "createdAt": "2026-09-28T16:09:26.478244+00:00",
+  "integrationOwner": "root",
+  "source": "/home/chinhan/MMO/NaN-Team",
+  "claims": {
+    "runtime": [
+      "libraries/nestjs-libraries/src/videos/agy-mcp",
+      "packages/agy-mcp-runner",
+      "tests/agy-mcp-runtime"
+    ],
+    "engine": [
+      "packages/openshorts-engine",
+      "tests/openshorts"
+    ],
+    "video": [
+      "libraries/nestjs-libraries/src/videos/openshorts",
+      "libraries/nestjs-libraries/src/chat/tools/*source*video*",
+      "apps/backend/src/api/routes/source-video.controller.ts",
+      "apps/frontend/src/components/agents/source-video*"
+    ]
+  },
+  "constraints": [
+    "No git commits/push/merge",
+    "No writes to shared node_modules",
+    "Root integrates registries/manifests",
+    "No global AGY settings mutation"
+  ],
+  "handoffs": [
+    {
+      "agent": "agy_mcp_runtime",
+      "stage": "stable initial runtime",
+      "files": [
+        "libraries/nestjs-libraries/src/videos/agy-mcp/agy.mcp.service.ts",
+        "packages/agy-mcp-runner/index.cjs",
+        "packages/agy-mcp-runner/job-server.cjs",
+        "packages/agy-mcp-runner/process.cjs",
+        "packages/agy-mcp-runner/tool-gate.cjs",
+        "tests/agy-mcp-runtime/runtime.test.cjs"
+      ],
+      "at": "2026-09-28T16:25:14.343537+00:00"
+    },
+    {
+      "agent": "agy_mcp_runtime",
+      "stage": "three native specialists and native vision staging",
+      "at": "2026-09-29T01:01:02.584757+00:00",
+      "files": {
+        "libraries/nestjs-libraries/src/videos/agy-mcp/agy.mcp.service.ts": "953b2e8e3d3c4fd1d929da197b98fe3f96dd918fdbc33622a83c8761f23b4959",
+        "packages/agy-mcp-runner/index.cjs": "4f71527c89b002c9c629dd9d52724b0bddda7e60a636cb5727cb443b5bd8aac2",
+        "packages/agy-mcp-runner/job-server.cjs": "f71f120a1898c1791730612a261e6763c9518be9e142e8109397a5b8852088e5",
+        "packages/agy-mcp-runner/tool-gate.cjs": "ab59b858d23ecb8caeb072417e3f63b587c0f2014d3892133bdde6414690c24a",
+        "packages/agy-mcp-runner/native-review.cjs": "86c9dadd9b0b9635fb042ff59ffd82e6f87d84725d3289cd84589935c4078e6f",
+        "tests/agy-mcp-runtime/runtime.test.cjs": "4476ffacd9c8a1aae9ddc606c4abb235387f6baa4f19c4c33a238eb375d20720",
+        "tests/agy-mcp-runtime/service.test.cjs": "1ea84b60b79d169522e3b4a2960fc297619bf9ad685865e1c98123782fb61175",
+        "tests/agy-mcp-runtime/three-specialists.smoke.cjs": "697466f324138fbf827dd038eec9a8517acefb5a8a1addc3e067bfee83714bdd"
+      }
+    },
+    {
+      "agent": "source_video_integration",
+      "stage": "durable Prisma journal and Temporal approval workflow",
+      "at": "2026-09-29T01:03:02.662842+00:00",
+      "files": {
+        "libraries/nestjs-libraries/src/videos/openshorts/source-video.dto.ts": "6f91af472a455add4bb4f4a4e9760b2955fb3d653c97529d61d286edd18431f3",
+        "libraries/nestjs-libraries/src/videos/openshorts/source-video.repository.ts": "3331cf67eb1d274b7473c1c633df9ec7cbb2cd2b0c1874c53ecf73f0cbabdf49",
+        "libraries/nestjs-libraries/src/videos/openshorts/source-video.service.ts": "84867d4480cac7dea4bb6d05b8daf8c68bdd2c4a9c7ce5d6980c0b6a817f8fda",
+        "libraries/nestjs-libraries/src/videos/openshorts/source-video.worker.ts": "e68f39850d06fbae38d2476ac90ac70163cd6aa56006f15dab83bbb252b12e03",
+        "libraries/nestjs-libraries/src/videos/openshorts/source-video.models.prisma": "72eafed8da3bfc73794c4787df0b19eca5d15773b46acf53bd96ffdd7c759b90",
+        "apps/backend/src/api/routes/source-video.controller.ts": "2b09563960daac9aaa92963041139edf7865fc18c542338f0032af8ab4cb1a26",
+        "apps/frontend/src/components/agents/source-video.state.ts": "9db5819b77c2aab514791e08645f0f637ae4074692dc2551074f2010e0ee26e1",
+        "apps/frontend/src/components/agents/source-video-studio.modal.tsx": "6fedcf70479f821953632a4ce84c74cccc0557d9b7edfba0c01dd5a95621cb10",
+        "libraries/nestjs-libraries/src/chat/tools/process.source.video.tool.ts": "c9ee51c20c2353c6192667b42902abdb22b93db529d49493a603a7cf94361067",
+        "apps/orchestrator/src/activities/source-video.activity.v1.ts": "81b9498a4668d5364cc1ae660e82244e2e9b69fa3a18cab6b51d881073b59eac",
+        "apps/orchestrator/src/workflows/source-video.workflow.v1.ts": "bbe56619df4b38b7295a36f1127ff54cbc20d213046e5a399933f90c41882229",
+        "tests/source-video/service.spec.ts": "88bfc22adc1767dc3af2b46d57d94b6981a0027dc7970571bf63a68f28559a75",
+        "tests/source-video/repository.db.spec.ts": "ea88e7ef912c430c893e3e1ba33a0aa7088686783ed865275df9c1f63f31599e"
+      }
+    },
+    {
+      "agent": "openshorts_engine",
+      "stage": "phased checkpoints and clean-source revisions",
+      "at": "2026-09-29T01:08:18.862314+00:00",
+      "files": {
+        "packages/openshorts-engine/requirements.txt": "c463ea6084bc60d692946fa9d55ce68faa46fc20ab38be579d374e1a9d776147",
+        "packages/openshorts-engine/README.md": "ac5ebdd3523869b271a76ea52541356a38b2d6b2e657af0c39e34481ee158a08",
+        "packages/openshorts-engine/source-manifest.json": "9893327fe8b9c274e455185367d52fba3e5d6ac03b531ce3bd2a558abd50c1c1",
+        "packages/openshorts-engine/bin/docker-python": "bb0016bd7e439cea48d842914c5f01858e45104ad7778d28343f4bb081780e98",
+        "packages/openshorts-engine/bin/provision-models.py": "74aaaa03c8a5bef341245800ec8f042e1119de201cf99e42fcc4a3d2cdd21d10",
+        "packages/openshorts-engine/core/gemini_worker.py": "e7edc46a8718180671368cd810d78412470638c7abd0326739fc12c12c2a065c",
+        "packages/openshorts-engine/core/split_layout.py": "51e2c04542f1a44ad9899e4fcea45308f04afb98044225d97e6414642a0fedb8",
+        "packages/openshorts-engine/core/clip_selection.py": "36e7bbe348e64179dd3235f5e2dfefeca55b4330084e0fa007c5c0fbade02c0a",
+        "packages/openshorts-engine/core/transcribe_backends.py": "6b59641d56bca41c853b833462df91d909cd908fb284e738521cd0ddfca61c17",
+        "packages/openshorts-engine/core/llm_backend.py": "b1497a6f48e3fea519c6064cdb0c23941b50c6beac0210a5cee8a97db74dbf70",
+        "packages/openshorts-engine/core/scene_detection.py": "919553a4b7649dcf3ee61fa82ac865000dfbc3520708d7b538c813d112ccc322",
+        "packages/openshorts-engine/core/punch_in.py": "fa0197851dc7386f07f82b786056654fbf386c42b490962eeee247e2b110d629",
+        "packages/openshorts-engine/core/security_utils.py": "dbae2575be9721f985217b174133735c8649172fc61e37394de91111b96caa14",
+        "packages/openshorts-engine/core/main.py": "ff028794bb3a81447bcef4f2be4dfeb2348c859a22050cf8249334bb7dc6d0a4",
+        "packages/openshorts-engine/core/hook_grounding.py": "3150cce5c8a80ea34b33017a962bafb596d6499e19b16203caf99b7ca149a94d",
+        "packages/openshorts-engine/core/editor.py": "90b21eee77883cd623a287eb43b7094f84692e249a8617f7360c11b246100260",
+        "packages/openshorts-engine/core/screencast_layout.py": "ada043478ae630170f306ac6edaf6119cbba71ea245f51f92586983482fd7825",
+        "packages/openshorts-engine/core/camera_inset.py": "6a46a25304e1834690d9c7e9029d5a8db2c8aebe1a8cdb3da6285ae3c8ca5294",
+        "packages/openshorts-engine/core/edit_builder.py": "9a0c6834becaac817581bd299bd224f14eda18f6606a98f0130a87bc99bad991",
+        "packages/openshorts-engine/core/active_speaker.py": "6523ef35098300db69efbc7ff20f7b26c89889b1234806a5fbe0b78eec5c22cd",
+        "packages/openshorts-engine/core/subtitles.py": "ee2398d1006d17f726c82bd1762ce462f39195b2aac1ca5be4885ba52d21e0b5",
+        "packages/openshorts-engine/core/reframe_v2.py": "582069ab8f29c359602ddf01dea1ed46643ff4677d9082bc2a0437dde760a02c",
+        "packages/openshorts-engine/core/layout_picker.py": "2e179323eaf1a47f68b7d835729e8ad0996f2d9820114070acee24bdd6a62426",
+        "packages/openshorts-engine/core/recut.py": "6a737cd28a5407e71253282f9fc1c9a2cbefe7c5ad8decf9724710bef7d96f9d",
+        "packages/openshorts-engine/core/tracking.py": "2c8ab21f75b060c1e1f54d3eccb8b021b04c3cea89e8ba273672989559c99188",
+        "packages/openshorts-engine/core/moment_picker.py": "7ff4acc9c15413ba88d07071b471a87d22e86c560701a18d2c3f71e3b24f6555",
+        "packages/openshorts-engine/core/frame_sampler.py": "733c3aefb0be418ec427afc771fd271d6f410948532684db743eda59c011abdd",
+        "packages/openshorts-engine/core/layout_ranges.py": "f676862f0a8878ddf7d1c835e3844c393acee2406fbcc969dd8369f9aa037a58",
+        "packages/openshorts-engine/core/ffmpeg_utils.py": "315cb0ab07e4d83beed4abff98d83981850357d56887a543941820de7b8faad8",
+        "packages/openshorts-engine/core/hooks.py": "96beb8947472baf88765ef18f6f57f8568e41d6b4780fd6b5a58b5e66b880917",
+        "packages/openshorts-engine/src/analysis.py": "b76c796c2a6acf97a8bbcbd0d7fd5a3a3b53649dff9ed9c499e192fbe471d8b2",
+        "packages/openshorts-engine/src/render_phase.py": "6d8cd10255fb92ae723f8565bb3a2f017167e22e4f4c2a3fbccdea5e12a2a856",
+        "packages/openshorts-engine/src/contracts.py": "4ea8b628bcfcf04eed0296c22a74b465f6d7d739f50bdcd32b32a145d39db281",
+        "packages/openshorts-engine/src/retention.py": "fc88f6ddaa9865fdccf28432f88d1c0a2708d391660f0a3ca4c2166b95c820cf",
+        "packages/openshorts-engine/src/ai_provider.py": "51d14842d21908cc71081de04f4b15f7e2636cbdaf470154f1aad793214693d8",
+        "packages/openshorts-engine/src/checkpoints.py": "94a893a3912ff5b4cfb5c176e4b3e7141941a130d7b8a521624c2613b5583718",
+        "packages/openshorts-engine/src/agy_compat.py": "1078e51fa07ed1104c5174dad90cfe1ef04b8bcf5341a3070cb4dbebbce7a4ae",
+        "packages/openshorts-engine/src/worker.py": "130d9c0436367be2c5bde142bec4f56b298ff3f3820ea3da422a3e372165e618",
+        "packages/openshorts-engine/src/capabilities.py": "0b1713b28e5e876defd5c120905b657923875e88b9aec5f86a06a0f581010857",
+        "packages/openshorts-engine/src/pipeline.py": "75076eaf367f08a08064bd69487b390cbb80fcf4458a8319316443da3f948c99",
+        "packages/openshorts-engine/src/rendering.py": "d384f6f15cf6fb191c1aaae796dc7d654f45e709837ca58214114286b09fbea3",
+        "packages/openshorts-engine/src/timelines.py": "1d3ca00d821a45fdfc06d1399934a8bbee4afb82c1c1e375efc5a947ad72dca4",
+        "packages/openshorts-engine/src/budgets.py": "40cdb9ec2f46069e9e5476c2b36a22aad2c2d520d264584c800faebe141b8391",
+        "packages/openshorts-engine/src/revisions.py": "37d7fe81efb7c6ea5cc3b378759e2a187782d60b1857a5b76cbd3f983b44de0a",
+        "packages/openshorts-engine/core/fonts/NotoSerif-Bold.ttf": "3b2086a869bcded2aeb4416fc281ceec9d6ce3c06756cda19f8f763636204e7d",
+        "packages/openshorts-engine/core/fonts/openshorts-fontmap.conf": "133d66998c7060a7340a8e9df377912d50dba5cf51ae40c558792cd19cd0e4d4",
+        "packages/openshorts-engine/core/fonts/Anton-Regular.ttf": "a4ba3a92350ebb031da0cb47630ac49eb265082ca1bc0450442f4a83ab947cab",
+        "packages/openshorts-engine/core/fonts/Montserrat-ExtraBold.ttf": "d3ac6a843d3ba6d5cafd44cf39e437055c8aed7e261010f595f57d3c7b3e2c1b",
+        "packages/openshorts-engine/core/fonts/Montserrat-OFL.txt": "8b7141c03fa4f8d44e6345d5d4931709290f0f67875e452e95ac1fd3a027802e",
+        "tests/openshorts/test_engine.py": "463464d5989e1a9c1d744f74071551dda6efdac0f49464e83d86271b8c87d6be",
+        "tests/openshorts/runtime_cancel.py": "1be979e49de87b7f0f0a1df79e5f486ac27fa4ab0913a1d2e73c8ec3c48683f7",
+        "tests/openshorts/feature-inventory.json": "3d5b51b90ec0c62fb3598ff09d3e306e1f17d88fcd8d988d35b9ff2709e40803",
+        "tests/openshorts/cancellation-receipt.json": "6e9dc91f93b3256ce0c51c02d8c95be186c43923240ab3baba4895c76bb745bc",
+        "tests/openshorts/test_resources.py": "b0b872d38c88bbd948f14e012745686a3530663fd1093d94928626ddbb875e6a",
+        "tests/openshorts/runtime_layouts.py": "ea289b6e5ac501fc9548e9ea9a4d03b62cd97152edb04a870aab2aa15c61bfa3",
+        "tests/openshorts/unit-receipt.json": "4010dd482e9eaa4f5692682bb1f6ea3fa5235b4f3e4c037f2f959d8d1a6afe39",
+        "tests/openshorts/runtime-receipt.json": "6eb8e9e9c9d949f4592dcbe375a5634c28d712f47cd2f4875e96a75a4c0fe94c",
+        "tests/openshorts/runtime_smoke.py": "9ca9e7550ff4de90a609954093d6b816e6d9c3f3020a4fd2cbd383a4d5ac63f8",
+        "tests/openshorts/layout-receipt.json": "15531a040e36a1362682c7ee5e4c6d3f9cf32c6365f5a072d7032c2b84de7e39"
+      }
+    }
+  ]
+}

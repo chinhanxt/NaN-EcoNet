@@ -19,6 +19,7 @@ import ZoomButtons from 'polotno/toolbar/zoom-buttons';
 import { Button } from '@gitroom/react/form/button';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { PictureGeneratorSection } from '@gitroom/frontend/components/launches/polonto/polonto.picture.generation';
+import { AiDesignSection } from '@gitroom/frontend/components/launches/polonto/polonto.ai.design';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { loadVars } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
@@ -102,6 +103,8 @@ const Polonto: FC<{
     return [
       ...DEFAULT_SECTIONS,
       ...(user?.tier?.image_generator ? [PictureGeneratorSection] : []),
+      // AI design chat needs no credits or tier: every signed-in user gets it.
+      AiDesignSection,
     ] as any[];
   }, [user?.tier?.image_generator]);
   useEffect(() => {

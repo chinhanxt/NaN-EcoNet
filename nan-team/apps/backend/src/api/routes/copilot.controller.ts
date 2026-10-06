@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import {
   CopilotRuntime,
-  OpenAIAdapter,
+  EmptyAdapter,
   copilotRuntimeNodeHttpEndpoint,
 } from '@copilotkit/runtime';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
@@ -58,38 +58,9 @@ export class CopilotController {
     private _mastraService: MastraService
   ) {}
   @Post('/chat')
-  chatAgent(@Req() req: Request, @Res() res: Response) {
-    if (req.body?.method === 'info') {
-      return res.status(200).json({
-        version: '1.0.0',
-        agents: defaultCopilotAgents,
-        actions: [],
-      });
-    }
-
-    if (
-      process.env.OPENAI_API_KEY === undefined ||
-      process.env.OPENAI_API_KEY === ''
-    ) {
-      Logger.warn('OpenAI API key not set, chat functionality will not work');
-      return res.status(200).json({
-        version: '1.0.0',
-        agents: defaultCopilotAgents,
-        actions: [],
-        disabled: true,
-      });
-    }
-
-    const copilotRuntimeHandler = copilotRuntimeNodeHttpEndpoint({
-      endpoint: '/copilot/chat',
-      cors: copilotCors(),
-      runtime: new CopilotRuntime(),
-      serviceAdapter: new OpenAIAdapter({
-        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-      }),
-    });
-
-    return copilotRuntimeHandler(req, res);
+  async chatAgent(@Req() req: Request, @Res() res: Response,
+    @GetOrgFromRequest() organization: Organization) {
+    return this.handleAgent(req,res,organization,'/copilot/chat');
   }
 
   @Get('/chat')
@@ -134,6 +105,10 @@ export class CopilotController {
     @Res() res: Response,
     @GetOrgFromRequest() organization: Organization
   ) {
+    return this.handleAgent(req,res,organization,'/copilot/agent');
+  }
+
+  private async handleAgent(req: Request,res: Response,organization: Organization,endpoint:string) {
     if (req.body?.method === 'info') {
       return res.status(200).json({
         version: '1.0.0',
@@ -142,18 +117,6 @@ export class CopilotController {
       });
     }
 
-    if (
-      process.env.OPENAI_API_KEY === undefined ||
-      process.env.OPENAI_API_KEY === ''
-    ) {
-      Logger.warn('OpenAI API key not set, chat functionality will not work');
-      return res.status(200).json({
-        version: '1.0.0',
-        agents: defaultCopilotAgents,
-        actions: [],
-        disabled: true,
-      });
-    }
     const mastra = await this._mastraService.mastra();
     const requestContext = new RequestContext<ChannelsContext>();
     requestContext.set(
@@ -175,12 +138,10 @@ export class CopilotController {
     });
 
     const copilotRuntimeHandler = copilotRuntimeNodeHttpEndpoint({
-      endpoint: '/copilot/agent',
+      endpoint,
       cors: copilotCors(),
       runtime,
-      serviceAdapter: new OpenAIAdapter({
-        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-      }),
+      serviceAdapter: new EmptyAdapter(),
     });
 
     return copilotRuntimeHandler(req, res);
@@ -245,6 +206,8 @@ export class CopilotController {
     const mastra = await this._mastraService.mastra();
     const memory = await mastra.getAgent('postiz').getMemory();
     try {
+      const thread=await memory.getThreadById({threadId});
+      if(!thread||thread.resourceId!==organization.id)return {success:false,error:'Thread not found'};
       await memory.deleteThread(threadId);
       return { success: true };
     } catch (err) {

@@ -4,13 +4,14 @@
   "description": "",
   "type": "module",
   "scripts": {
-    "dev": "NEXT_TELEMETRY_DISABLED=1 NODE_OPTIONS='--max-old-space-size=2048' dotenv -e ../../.env -- next dev -p 4200 --disable-source-maps",
+    "dev": "NEXT_TELEMETRY_DISABLED=1 NODE_OPTIONS='--max-old-space-size=2048' dotenv -e ../../.env -- next dev --webpack -p 4200 --disable-source-maps",
+    "dev:lowmem": "NEXT_TELEMETRY_DISABLED=1 POSTIZ_DEV_LOW_MEMORY=1 NODE_OPTIONS='--max-old-space-size=3072' dotenv -e ../../.env -- next dev --webpack -p 4200 --disable-source-maps",
     "fetch-gtm": "node scripts/fetch-gtm.mjs",
     "postinstall": "node scripts/fetch-gtm.mjs",
-    "build": "next build",
-    "build:sentry": "dotenv -e ../../.env -- next build",
+    "build": "next build --webpack",
+    "build:sentry": "dotenv -e ../../.env -- next build --webpack",
     "start": "dotenv -e ../../.env -- next start -p 4200",
-    "pm2": "pm2 start 'NEXT_TELEMETRY_DISABLED=1 NODE_OPTIONS=\"--max-old-space-size=2048\" npx dotenv -e ../../.env -- next dev -p 4200 --disable-source-maps' --name frontend"
+    "pm2": "pm2 start 'NEXT_TELEMETRY_DISABLED=1 NODE_OPTIONS=\"--max-old-space-size=2048\" npx dotenv -e ../../.env -- next dev --webpack -p 4200 --disable-source-maps' --name frontend"
   },
   "keywords": [],
   "author": "",

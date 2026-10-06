@@ -34,9 +34,9 @@ export class AuthMiddleware implements NestMiddleware {
   async use(req: Request, res: Response, next: NextFunction) {
     const url = req.originalUrl || req.url || req.path || '';
     if (
-      url.startsWith('/copilot/chat') ||
+      (url.startsWith('/copilot/chat') && req.method === 'GET') ||
       url.startsWith('/copilot/agent/info') ||
-      (url.startsWith('/copilot/agent') && req.body?.method === 'info')
+      ((url.startsWith('/copilot/agent') || url.startsWith('/copilot/chat')) && req.body?.method === 'info')
     ) {
       return next();
     }

@@ -1,11 +1,13 @@
 import { Button } from '@gitroom/react/form/button';
-import { FC, useCallback, useState, useEffect } from 'react';
+import { FC, useCallback, useState, useEffect, useRef } from 'react';
 import clsx from 'clsx';
 import { useFetch } from '@gitroom/helpers/utils/custom.fetch';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { useLaunchStore } from '@gitroom/frontend/components/new-launch/store';
 import { useModals } from '@gitroom/frontend/components/layout/new-modal';
 import { useToaster } from '@gitroom/react/toaster/toaster';
+import { AiWaitStream } from '@gitroom/frontend/components/ui/ai.wait.stream';
+import { readNdjson } from '@gitroom/helpers/utils/read.ndjson';
 
 const styleList = [
   { value: 'Realistic', key: 'style_realistic', label: 'Realistic' },
@@ -32,10 +34,14 @@ const ratioList = [
   { value: '3:4', key: 'ratio_portrait', label: '3:4 (Portrait)' },
 ];
 
+type AiImageMedia = { id: string; path: string };
+/** Images per request (backend fans out one AGY job per image, max 6). */
+const countList = [1, 2, 3, 4, 5, 6];
+
 const AiImageModal: FC<{
   close: () => void;
   setLoading: (loading: boolean) => void;
-  onChange: (params: { id: string; path: string }) => void;
+  onChange: (params: AiImageMedia | AiImageMedia[]) => void;
 }> = (props) => {
   const { close, setLoading, onChange } = props;
   const t = useT();
@@ -45,6 +51,13 @@ const AiImageModal: FC<{
   const [prompt, setPrompt] = useState('');
   const [style, setStyle] = useState(styleList[0].value);
   const [ratio, setRatio] = useState('1:1');
+  const [count, setCount] = useState(1);
+  // count > 1: every returned image, the ones ticked for insertion, and how many failed
+  const [batch, setBatch] = useState<AiImageMedia[] | null>(null);
+  const [chosen, setChosen] = useState<string[]>([]);
+  const [failed, setFailed] = useState(0);
+  // "Hide popup (continue in background)": nobody can pick, so every variation is inserted.
+  const hidden = useRef(false);
 
   // Progress states
   const [isGenerating, setIsGenerating] = useState(false);
@@ -55,25 +68,16 @@ const AiImageModal: FC<{
     path: string;
   } | null>(null);
   const [genError, setGenError] = useState<string | null>(null);
+  // True while the NDJSON stream is open (images still arriving).
+  const [streaming, setStreaming] = useState(false);
 
-  // Timer & progress simulation
+  // Elapsed timer; progress is the real share of images received (set by the stream).
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isGenerating && !generatedResult && !genError) {
       const startTime = Date.now();
       interval = setInterval(() => {
-        const elapsed = (Date.now() - startTime) / 1000;
-        setSeconds(Math.floor(elapsed));
-
-        if (elapsed < 5) {
-          setProgress(Math.min(25, Math.floor(5 + (elapsed / 5) * 20)));
-        } else if (elapsed < 14) {
-          setProgress(Math.min(60, Math.floor(25 + ((elapsed - 5) / 9) * 35)));
-        } else if (elapsed < 24) {
-          setProgress(Math.min(90, Math.floor(60 + ((elapsed - 14) / 10) * 30)));
-        } else {
-          setProgress(Math.min(96, Math.floor(90 + Math.min(6, (elapsed - 24) * 0.5))));
-        }
+        setSeconds(Math.floor((Date.now() - startTime) / 1000));
       }, 200);
     }
     return () => clearInterval(interval);
@@ -89,15 +93,19 @@ const AiImageModal: FC<{
     }
 
     setIsGenerating(true);
-    setProgress(5);
+    setProgress(0);
     setSeconds(0);
     setGenError(null);
     setGeneratedResult(null);
+    setBatch(count > 1 ? [] : null);
+    setChosen([]);
+    setFailed(0);
+    setStreaming(true);
     setLoading(true);
     setLocked(true);
 
     try {
-      const res = await fetch('/media/generate-image-with-prompt', {
+      const res = await fetch('/media/generate-image-with-prompt/stream', {
         method: 'POST',
         body: JSON.stringify({
           prompt: `
@@ -111,16 +119,52 @@ ${style}
 
 `,
           aspect_ratio: ratio,
+          ...(count > 1 ? { count } : {}),
         }),
       });
 
-      if (!res.ok) {
+      if (!res.ok || !res.body) {
         throw new Error(`Image generation failed (${res.status})`);
       }
 
-      const image = await res.json();
-      if (image && image.path) {
-        setProgress(100);
+      // One NDJSON event per line: start, image (each saved image as soon as it is ready), error, done.
+      const images: AiImageMedia[] = [];
+      let total = count;
+      let errors = 0;
+      let lastError = '';
+      for await (const event of readNdjson(res.body.getReader())) {
+        if (event?.type === 'start') {
+          total = Math.max(1, Number(event.count) || count);
+        } else if (event?.type === 'image' && event.media?.id && event.media?.path) {
+          const media: AiImageMedia = event.media;
+          images.push(media);
+          setProgress(Math.round(((images.length + errors) / total) * 100));
+          if (count > 1) {
+            setBatch([...images]);
+            setChosen((current) => [...current, media.id]);
+          }
+        } else if (event?.type === 'error') {
+          lastError = event.message || '';
+          if (typeof event.index !== 'number') break;
+          errors++;
+          setFailed(errors);
+          setProgress(Math.round(((images.length + errors) / total) * 100));
+        }
+      }
+      setStreaming(false);
+
+      if (!images.length) {
+        throw new Error(lastError || t('invalid_image_data_server', 'Invalid image data received from server'));
+      }
+      setProgress(100);
+      if (count > 1) {
+        setGeneratedResult(images[0]);
+        // No auto-insert while the popup is open: the user picks which variations go into the post.
+        if (hidden.current) onChange(images);
+        setLocked(false);
+        setLoading(false);
+      } else {
+        const image = images[0];
         setGeneratedResult(image);
         setTimeout(() => {
           onChange(image);
@@ -128,19 +172,20 @@ ${style}
           setLocked(false);
           setLoading(false);
         }, 1800);
-      } else {
-        throw new Error(t('invalid_image_data_server', 'Invalid image data received from server'));
       }
     } catch (e: any) {
+      setStreaming(false);
+      setBatch(null);
       setGenError(e?.message || t('image_generation_issue', 'An error occurred during image generation'));
       setLocked(false);
       setLoading(false);
     }
-  }, [prompt, style, ratio, onChange, close, setLoading, setLocked, t, toaster, fetch]);
+  }, [prompt, style, ratio, count, onChange, close, setLoading, setLocked, t, toaster, fetch]);
 
   if (isGenerating) {
     return (
       <div className="flex flex-col gap-[20px] py-[8px]">
+        {(generatedResult || genError || !!batch?.length) && (<>
         {/* Header with status */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-[10px]">
@@ -203,9 +248,50 @@ ${style}
             style={{ width: `${progress}%` }}
           />
         </div>
+        </>)}
 
         {/* Result Preview or Stages */}
-        {generatedResult ? (
+        {batch?.length ? (
+          <div className="flex flex-col gap-[12px] p-[12px] bg-newColColor/50 rounded-[10px] border border-[#059669]/30">
+            <div className="text-[13px] text-inputText">
+              {streaming ? `Đã tạo ${batch.length}/${count} ảnh (đã lưu vào Media), đang tạo tiếp...` : `Đã tạo ${batch.length} ảnh (đã lưu vào Media).`} Bấm vào ảnh để chọn/bỏ chọn.
+              {failed > 0 && <span className="text-red-400"> {failed} ảnh lỗi, không tạo được.</span>}
+            </div>
+            <div className="grid grid-cols-3 gap-[8px]">
+              {batch.map((item) => {
+                const selected = chosen.includes(item.id);
+                return (
+                  <button
+                    type="button"
+                    key={item.id}
+                    aria-pressed={selected}
+                    onClick={() => setChosen((current) => selected ? current.filter((id) => id !== item.id) : [...current, item.id])}
+                    className={clsx(
+                      'relative rounded-[8px] overflow-hidden border-2 bg-black/40 aspect-square transition-all',
+                      selected ? 'border-[#10B981]' : 'border-transparent opacity-60 hover:opacity-90'
+                    )}
+                  >
+                    <img src={item.path} alt="AI Generated" className="w-full h-full object-contain" />
+                    {selected && (
+                      <span className="absolute top-[4px] end-[4px] w-[20px] h-[20px] rounded-full bg-[#059669] text-white text-[12px] flex items-center justify-center">✓</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <Button
+              type="button"
+              disabled={!chosen.length}
+              onClick={() => {
+                onChange(batch.filter((item) => chosen.includes(item.id)));
+                close();
+              }}
+              className="w-full !bg-[#059669] hover:!bg-[#047857]"
+            >
+              {`Chèn ${chosen.length} ảnh vào bài viết`}
+            </Button>
+          </div>
+        ) : generatedResult ? (
           <div className="flex flex-col items-center gap-[12px] p-[12px] bg-newColColor/50 rounded-[10px] border border-[#059669]/30">
             <div className="relative rounded-[8px] overflow-hidden max-h-[220px] shadow-lg border border-newBgLineColor">
               <img
@@ -258,122 +344,25 @@ ${style}
             </Button>
           </div>
         ) : (
-          <div className="flex flex-col gap-[10px] bg-newColColor/30 p-[14px] rounded-[10px] border border-newBgLineColor">
-            {/* Step 1 */}
-            <div className="flex items-center gap-[10px] text-[13px]">
-              <div
-                className={clsx(
-                  'w-[20px] h-[20px] rounded-full flex items-center justify-center text-[10px] font-bold',
-                  progress >= 25
-                    ? 'bg-[#059669] text-white'
-                    : 'bg-newColColor border border-newBgLineColor text-gray-400'
-                )}
-              >
-                {progress >= 25 ? '✓' : '1'}
-              </div>
-              <span
-                className={
-                  progress >= 25
-                    ? 'text-inputText font-[500]'
-                    : 'text-gray-400'
-                }
-              >
-                {t('ai_step_1', 'AI Art Director analyzing prompt & template matching')}
-              </span>
-            </div>
-
-            {/* Step 2 */}
-            <div className="flex items-center gap-[10px] text-[13px]">
-              <div
-                className={clsx(
-                  'w-[20px] h-[20px] rounded-full flex items-center justify-center text-[10px] font-bold',
-                  progress >= 60
-                    ? 'bg-[#059669] text-white'
-                    : progress >= 25
-                    ? 'bg-[#059669]/30 text-[#10B981] animate-pulse'
-                    : 'bg-newColColor border border-newBgLineColor text-gray-400'
-                )}
-              >
-                {progress >= 60 ? '✓' : '2'}
-              </div>
-              <span
-                className={
-                  progress >= 60
-                    ? 'text-inputText font-[500]'
-                    : progress >= 25
-                    ? 'text-[#10B981] font-[600]'
-                    : 'text-gray-400'
-                }
-              >
-                {t('ai_step_2', 'Compiling Master Prompt (Studio lighting & composition)')}
-              </span>
-            </div>
-
-            {/* Step 3 */}
-            <div className="flex items-center gap-[10px] text-[13px]">
-              <div
-                className={clsx(
-                  'w-[20px] h-[20px] rounded-full flex items-center justify-center text-[10px] font-bold',
-                  progress >= 90
-                    ? 'bg-[#059669] text-white'
-                    : progress >= 60
-                    ? 'bg-[#059669]/30 text-[#10B981] animate-pulse'
-                    : 'bg-newColColor border border-newBgLineColor text-gray-400'
-                )}
-              >
-                {progress >= 90 ? '✓' : '3'}
-              </div>
-              <span
-                className={
-                  progress >= 90
-                    ? 'text-inputText font-[500]'
-                    : progress >= 60
-                    ? 'text-[#10B981] font-[600]'
-                    : 'text-gray-400'
-                }
-              >
-                {t('ai_step_3', 'Rendering ultra-clear 300 DPI image via Antigravity Engine')}
-              </span>
-            </div>
-
-            {/* Step 4 */}
-            <div className="flex items-center gap-[10px] text-[13px]">
-              <div
-                className={clsx(
-                  'w-[20px] h-[20px] rounded-full flex items-center justify-center text-[10px] font-bold',
-                  progress >= 100
-                    ? 'bg-[#059669] text-white'
-                    : progress >= 90
-                    ? 'bg-[#059669]/30 text-[#10B981] animate-pulse'
-                    : 'bg-newColColor border border-newBgLineColor text-gray-400'
-                )}
-              >
-                {progress >= 100 ? '✓' : '4'}
-              </div>
-              <span
-                className={
-                  progress >= 100
-                    ? 'text-inputText font-[500]'
-                    : progress >= 90
-                    ? 'text-[#10B981] font-[600]'
-                    : 'text-gray-400'
-                }
-              >
-                {t('ai_step_4', 'Optimizing file size & syncing to post')}
-              </span>
-            </div>
-          </div>
+          <AiWaitStream
+            kind="image"
+            title={count > 1 ? `AI đang tạo ${count} ảnh` : undefined}
+            percent={count > 1 ? progress : undefined}
+            ratio={ratio.replace(':', ' / ')}
+            steps={['Phân tích prompt và chọn mẫu', 'Biên soạn prompt (ánh sáng, bố cục)', 'Vẽ ảnh độ nét cao', 'Tối ưu file và lưu vào Media']}
+            fullWidth
+          />
         )}
 
         {/* Minimize option */}
-        {!generatedResult && !genError && (
+        {streaming && !generatedResult && !genError && (
           <div className="flex justify-between items-center text-[12px] pt-[4px]">
             <span className="text-gray-400 italic">
               {t('image_generation_time_hint', 'Image generation usually takes around 25-30 seconds')}
             </span>
             <button
               type="button"
-              onClick={() => close()}
+              onClick={() => { hidden.current = true; close(); }}
               className="text-[#10B981] hover:underline font-[500]"
             >
               {t('hide_popup_continue_background', 'Hide popup (continue in background)')}
@@ -435,6 +424,25 @@ ${style}
           ))}
         </div>
       </div>
+      <div className="flex flex-col gap-[6px]">
+        <div className="text-[14px] font-[600]">Số lượng ảnh</div>
+        <div className="flex flex-wrap gap-[8px]">
+          {countList.map((value) => (
+            <div
+              key={value}
+              onClick={() => setCount(value)}
+              className={clsx(
+                'cursor-pointer rounded-[6px] w-[36px] h-[30px] flex items-center justify-center text-[12px] border transition-all duration-150',
+                count === value
+                  ? 'bg-[#059669] border-[#059669] text-white font-[600] shadow-[0_2px_8px_rgba(5,150,105,0.3)]'
+                  : 'bg-newColColor border-newBgLineColor hover:border-[#059669]/50'
+              )}
+            >
+              {value}
+            </div>
+          ))}
+        </div>
+      </div>
       <div className="flex">
         <Button type="button" onClick={generate} className="flex-1 !bg-[#059669] hover:!bg-[#047857]">
           {t('generate', 'Generate')}
@@ -446,7 +454,7 @@ ${style}
 
 export const AiImage: FC<{
   value: string;
-  onChange: (params: { id: string; path: string }) => void;
+  onChange: (params: AiImageMedia | AiImageMedia[]) => void;
 }> = (props) => {
   const t = useT();
   const { onChange } = props;
@@ -474,16 +482,19 @@ export const AiImage: FC<{
     <>
       <div
         className={clsx(
-          'cursor-pointer rounded-[4px] px-[10px] h-[30px] flex items-center text-[12px] border bg-newColColor border-newBgLineColor transition-all select-none',
+          'cursor-pointer h-[32px] px-2.5 rounded-[8px] justify-center items-center flex gap-1.5 bg-newColColor hover:bg-boxHover border border-transparent hover:border-newBgLineColor transition-all duration-150 active:scale-[0.98] select-none text-textColor shrink-0',
           loading && 'opacity-70 pointer-events-none'
         )}
         onClick={openImageModal}
+        title={t('generate_ai_image', 'Generate AI Image')}
       >
         <div className="flex items-center gap-[6px]">
           {loading ? (
             <>
-              <div className="w-[14px] h-[14px] border-[2px] border-[#10B981]/20 border-t-[#10B981] rounded-full animate-spin flex-shrink-0" />
-              <span className="text-[#10B981] font-medium">{t('generating_ai_image', 'Generating...')}</span>
+              <div className="w-3.5 h-3.5 border-[2px] border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin flex-shrink-0" />
+              <span className="text-emerald-500 text-[12px] font-medium leading-none">
+                {t('generating_ai_image', 'Generating...')}
+              </span>
             </>
           ) : (
             <>
@@ -497,10 +508,13 @@ export const AiImage: FC<{
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                className="text-emerald-500 shrink-0"
               >
                 <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
               </svg>
-              <span>{t('generate_ai_image', 'Generate AI Image')}</span>
+              <span className="text-[12px] font-medium leading-none">
+                {t('generate_ai_image', 'Tạo ảnh AI')}
+              </span>
             </>
           )}
         </div>

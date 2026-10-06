@@ -1,8 +1,9 @@
-import { IsBoolean, IsIn, IsString, MinLength } from 'class-validator';
+import { IsBoolean, IsIn, IsString, MinLength, MaxLength } from 'class-validator';
 
 export class GeneratorDto {
   @IsString()
   @MinLength(10)
+  @MaxLength(4000)
   research: string;
 
   @IsBoolean()

@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Feature requests and ideas
+    url: https://github.com/miuuyy/codex-chatgpt-web/discussions/categories/ideas
+    about: Propose new features and discuss product changes in Ideas before implementation.
+  - name: Troubleshooting guide
+    url: https://github.com/miuuyy/codex-chatgpt-web/blob/main/TROUBLESHOOTING.md
+    about: Resolve common setup, routing, sign-in, model, MCP, rate-limit, image, and streaming failures first.
+  - name: Questions and usage discussions
+    url: https://github.com/miuuyy/codex-chatgpt-web/discussions
+    about: Ask usage questions or discuss workflows that are not confirmed bugs.
+  - name: Private security report
+    url: https://github.com/miuuyy/codex-chatgpt-web/security/advisories/new
+    about: Report credential exposure, authentication bypass, or arbitrary tool-execution vulnerabilities privately.

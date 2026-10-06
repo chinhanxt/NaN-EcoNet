@@ -15,6 +15,8 @@ import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integ
 import { SettingsController } from '@gitroom/backend/api/routes/settings.controller';
 import { PostsController } from '@gitroom/backend/api/routes/posts.controller';
 import { MediaController } from '@gitroom/backend/api/routes/media.controller';
+import { SourceVideoController } from './routes/source-video.controller';
+import { AiVideoController } from '@gitroom/backend/api/routes/ai-video.controller';
 import { ClippingController } from '@gitroom/backend/api/routes/clipping.controller';
 import { MediaWidgetController } from '@gitroom/backend/api/routes/media.widget.controller';
 import { UploadWidgetAuthMiddleware } from '@gitroom/backend/services/auth/upload.widget.auth.middleware';
@@ -22,7 +24,6 @@ import { ClippingWidgetController } from '@gitroom/backend/api/routes/clipping.w
 import { ClippingWidgetAuthMiddleware } from '@gitroom/backend/services/auth/clipping.widget.auth.middleware';
 import { UploadModule } from '@gitroom/nestjs-libraries/upload/upload.module';
 import { NotificationsController } from '@gitroom/backend/api/routes/notifications.controller';
-import { OpenaiService } from '@gitroom/nestjs-libraries/openai/openai.service';
 import { ExtractContentService } from '@gitroom/nestjs-libraries/openai/extract.content.service';
 import { CodesService } from '@gitroom/nestjs-libraries/services/codes.service';
 import { CopilotController } from '@gitroom/backend/api/routes/copilot.controller';
@@ -61,6 +62,8 @@ const authenticatedController = [
   SettingsController,
   PostsController,
   MediaController,
+  AiVideoController,
+  SourceVideoController,
   ClippingController,
   NotificationsController,
   CopilotController,
@@ -102,7 +105,6 @@ const authenticatedController = [
     PaymentService,
     PaymentProviderManager,
     RevenueCatProvider,
-    OpenaiService,
     ExtractContentService,
     AuthMiddleware,
     UploadWidgetAuthMiddleware,
@@ -128,7 +130,7 @@ export class ApiModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(AuthMiddleware)
-      .exclude('copilot/chat', 'copilot/chat/(.*)', 'copilot/agent/info')
+      .exclude('copilot/chat/info', 'copilot/agent/info')
       .forRoutes(...authenticatedController);
     consumer.apply(UploadWidgetAuthMiddleware).forRoutes(MediaWidgetController);
     consumer

@@ -1,0 +1,214 @@
+{
+  "snapshotManifest": "packages/openshorts-engine/source-manifest.json",
+  "features": [
+    {
+      "id": 1,
+      "feature": "Scene detection",
+      "modules": [
+        "scene_detection.py"
+      ],
+      "entrypoint": "analysis.analyze/timelines.scenes; core scene_detection",
+      "evidenceStatus": "actual-hardcut-source-scenes-persisted-and-clip-rebased"
+    },
+    {
+      "id": 2,
+      "feature": "Transcript highlight selection",
+      "modules": [
+        "moment_picker.py",
+        "clip_selection.py"
+      ],
+      "entrypoint": "clips speech",
+      "evidenceStatus": "native-canonical-2pass-provider-unit; complete-sentence-boundary-tested; real-local-asr"
+    },
+    {
+      "id": 3,
+      "feature": "Silent visual highlight selection",
+      "modules": [
+        "moment_picker.py",
+        "gemini_worker.py"
+      ],
+      "entrypoint": "clips no-speech",
+      "evidenceStatus": "ffmpeg-and-vision-rpc-tested",
+      "receipts": []
+    },
+    {
+      "id": 4,
+      "feature": "Grounded screen hook",
+      "modules": [
+        "hook_grounding.py",
+        "gemini_worker.py"
+      ],
+      "entrypoint": "hook enabled without text",
+      "evidenceStatus": "live-synthetic-four-slide-hook: AGY read six frames with native view_file; persisted grounded hook; 9:16 Media overlay frame differs from clean; representative real screencast still unverified",
+      "receipts": [
+        "reports/openshorts-integration/live-user-source-video.json"
+      ]
+    },
+    {
+      "id": 5,
+      "feature": "Screencast/wide",
+      "modules": [
+        "screencast_layout.py",
+        "camera_inset.py",
+        "reframe_v2.py"
+      ],
+      "entrypoint": "layout screencast|wide",
+      "evidenceStatus": "wide-ffmpeg; actual-ML-synthetic-slides-camera-INSET; mocked-screen-range-vision"
+    },
+    {
+      "id": 6,
+      "feature": "Blurred general layout",
+      "modules": [
+        "reframe_v2.py"
+      ],
+      "entrypoint": "layout general",
+      "evidenceStatus": "implemented; uses-core-filter-builder"
+    },
+    {
+      "id": 7,
+      "feature": "Speaker cut",
+      "modules": [
+        "active_speaker.py",
+        "split_layout.py",
+        "reframe_v2.py"
+      ],
+      "entrypoint": "layout speaker-cut",
+      "evidenceStatus": "actual-ML-synthetic-two-face-ALTERNATE; attribution-100pct-outside-hold; real-conversation-unverified"
+    },
+    {
+      "id": 8,
+      "feature": "Punch-in",
+      "modules": [
+        "punch_in.py",
+        "edit_builder.py"
+      ],
+      "entrypoint": "effects punch_in",
+      "evidenceStatus": "live-synthetic-four-slide-punch-in: native three-specialist AGY review; persisted 0.5-2.5s/0.09 edit and published 9:16 Media; in-window pixel difference 2.508 versus 0.006 after; real footage unverified"
+    },
+    {
+      "id": 9,
+      "feature": "Matching-aspect passthrough",
+      "modules": [
+        "reframe_v2.py"
+      ],
+      "entrypoint": "source aspect matches target",
+      "evidenceStatus": "ffmpeg-tested"
+    },
+    {
+      "id": 10,
+      "feature": "Recut with transcript rebasing",
+      "modules": [
+        "recut.py"
+      ],
+      "entrypoint": "edit segments + private reuse",
+      "evidenceStatus": "actual-clean-artifact-recut; source-to-concatenated-timeline mapping; words/scenes-rebased",
+      "appearanceEvidence": "reports/source-motion/live-caption-appearance/live-receipt.json; Python caption-appearance/receipt.json"
+    },
+    {
+      "id": 11,
+      "feature": "Manual crop",
+      "modules": [
+        "reframe_v2.py",
+        "tracking.py"
+      ],
+      "entrypoint": "cropOverrides",
+      "evidenceStatus": "authenticated-live-MCP-crop-manifest-and-TRACK-revision; fixture-not-real-subject-quality",
+      "currentEvidence": "reports/openshorts-integration/live-mcp-controls.json",
+      "receipts": []
+    },
+    {
+      "id": 12,
+      "feature": "Karaoke captions",
+      "modules": [
+        "subtitles.py",
+        "transcribe_backends.py"
+      ],
+      "entrypoint": "captions enabled/styles",
+      "evidenceStatus": "real-local-asr-and-neon-burn-tested; replacement-narration-timings-tested",
+      "appearanceEvidence": "reports/source-motion/live-caption-appearance/live-receipt.json; Python caption-appearance/receipt.json",
+      "authenticatedAppearanceEvidence": "reports/openshorts-integration/live-caption-appearance-mcp.json"
+    },
+    {
+      "id": 13,
+      "feature": "Hook overlay",
+      "modules": [
+        "hooks.py"
+      ],
+      "entrypoint": "hook enabled text/style",
+      "evidenceStatus": "authenticated-live-MCP-0.75-second-hook-frame-timing",
+      "currentEvidence": "reports/openshorts-integration/live-mcp-controls.json",
+      "receipts": [
+        "reports/openshorts-integration/live-mcp-controls.json",
+        "reports/source-motion/live-hook-duration/live-receipt.json",
+        "reports/openshorts-integration/live-user-source-video.json"
+      ]
+    },
+    {
+      "id": 14,
+      "feature": "AI effects",
+      "modules": [
+        "editor.py",
+        "edit_builder.py"
+      ],
+      "entrypoint": "designBrief/effects",
+      "evidenceStatus": "live-synthetic-four-slide-AI-color-pop: native three-specialist AGY review; approved 0.5-4s/0.6 edit persisted and rendered; in-window pixel difference exceeds out-of-window by 82x; representative real footage unverified"
+    },
+    {
+      "id": 15,
+      "feature": "MCP",
+      "modules": [
+        "worker.py"
+      ],
+      "entrypoint": "NaN-Team native tool integration",
+      "evidenceStatus": "9-source-tools-Bearer-discovery; native-frame-inspection-submit_result-review-render-Media",
+      "receipts": [
+        "reports/openshorts-integration/public-mcp-discovery.json",
+        "reports/openshorts-integration/live-public-mcp-job.json",
+        "reports/openshorts-integration/live-public-mcp-managed-route.json",
+        "reports/openshorts-integration/live-user-source-video.json"
+      ],
+      "currentEvidence": "reports/openshorts-integration/live-public-mcp-low-load.json"
+    },
+    {
+      "id": 16,
+      "feature": "CLI",
+      "modules": [
+        "worker.py"
+      ],
+      "entrypoint": "packages/openshorts-engine/bin/nan-video.cjs; private NDJSON worker",
+      "evidenceStatus": "authenticated CLI process/revise subtitle flags and MCP schema live; actual Voice Clone source edit and byte-verified Media; 5 CLI unit tests, 69 source runtime tests",
+      "currentEvidence": "reports/openshorts-integration/live-caption-appearance-mcp.json"
+    },
+    {
+      "id": 17,
+      "feature": "REST/webhook",
+      "modules": [],
+      "entrypoint": "NaN-Team authenticated REST/polling and signed source-video callback outbox",
+      "evidenceStatus": "authenticated REST create/status/revision/approval/history/ZIP live; signed source-video webhook outbox, retry/fencing and SIGKILL recovery verified with local receiver; external configured HTTPS receiver not smoke-tested",
+      "currentEvidence": "reports/openshorts-integration/live-webhook-process-restart.json"
+    },
+    {
+      "id": 18,
+      "feature": "History/ZIP",
+      "modules": [],
+      "entrypoint": "NaN-Team tenant job artifacts",
+      "evidenceStatus": "MCP-bounded-history-and-authenticated-ZIP-integrity-cross-org-denial-cleanup",
+      "currentEvidence": "reports/openshorts-integration/live-mcp-controls.json"
+    }
+  ],
+  "limitations": [
+    "Live AGY connectivity is parent-owned and not proven by mock RPC tests",
+    "Full-video upstream vision requests are translated to eight sampled timestamped frames; approved analysis uses six frames per selected clip",
+    "Representative real conversations and real screencast content classification remain separate from synthetic geometry/mouth-motion tests",
+    "Punch-in has a full synthetic visual fixture; representative real footage and subjective framing quality remain unverified",
+    "No legacy unauthenticated API/MCP server is exposed; webhook dispatch is owned by the authenticated host with a database outbox",
+    "Disk budget is aggregate polling with possible overshoot; Docker memory/CPU caps require configured adapter",
+    "Configured multilingual tiny ASR assets match the local provision receipt; representative Vietnamese ASR quality remains unverified",
+    "Existing clone voice captions use estimated word-length timings; precise forced alignment has not been verified"
+  ],
+  "twoFlowsLiveEvidence": {
+    "idea": "reports/openshorts-integration/live-ai-video-mcp-resumed.json",
+    "source": "reports/openshorts-integration/live-user-source-video.json",
+    "frontendPreviewVerified": false
+  }
+}

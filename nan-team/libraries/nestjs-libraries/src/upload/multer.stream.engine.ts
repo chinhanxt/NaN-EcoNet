@@ -10,7 +10,7 @@ import { getMaxSize, uploadStreamToStorage } from './custom.upload.validation';
 // `file.filename` / `file.path` end up as the stored key and public URL,
 // `file.originalname` keeps the sender's name with the detected extension
 export class MulterStreamEngine implements StorageEngine {
-  constructor(private storage: IUploadProvider) {}
+  constructor(private storage: IUploadProvider, private allowedMime?: ReadonlySet<string>) {}
 
   _handleFile(
     req: Request,
@@ -19,7 +19,9 @@ export class MulterStreamEngine implements StorageEngine {
   ) {
     uploadStreamToStorage(
       this.storage,
-      Readable.toWeb(file.stream) as any
+      Readable.toWeb(file.stream) as any,
+      0,
+      this.allowedMime
     ).then(
       (uploaded) => {
         const safeBase =
@@ -53,6 +55,7 @@ export class MulterStreamEngine implements StorageEngine {
 }
 
 let engine: MulterStreamEngine;
+let videoEngine: MulterStreamEngine;
 
 // Options for FileInterceptor on the multipart upload routes. Multer's own
 // limit sits one byte above the largest allowed type so the in-stream cap is
@@ -64,4 +67,9 @@ export function streamUploadOptions() {
     storage: engine,
     limits: { fileSize: getMaxSize('video/mp4') + 1 },
   };
+}
+
+export function sourceVideoUploadOptions() {
+  videoEngine = videoEngine || new MulterStreamEngine(UploadFactory.createStorage(), new Set(['video/mp4']));
+  return { storage: videoEngine, limits: { fileSize: getMaxSize('video/mp4') + 1 } };
 }

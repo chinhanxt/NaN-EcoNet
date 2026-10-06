@@ -286,7 +286,9 @@ async function uploadToFacebook({
           'div[role="button"]:has-text("Add video"), button:has-text("Add video"), ' +
           'div[role="button"]:has-text("Thêm ảnh"), button:has-text("Thêm ảnh"), ' +
           'div[role="button"]:has-text("Thêm video"), button:has-text("Thêm video"), ' +
-          'div[role="button"]:has-text("Ảnh/video"), button:has-text("Ảnh/video")'
+          'div[role="button"]:has-text("Ảnh/video"), button:has-text("Ảnh/video"), ' +
+          'div[role="button"]:has-text("Photo/video"), button:has-text("Photo/video"), ' +
+          'div[aria-label="Photo/video"], div[aria-label="Ảnh/video"], div[aria-label*="photo/video" i]'
         );
 
         if (addBtn) {
@@ -303,14 +305,15 @@ async function uploadToFacebook({
             await fileInput.setInputFiles(resolvedPaths);
             console.log('[Facebook-Upload] Đã chọn tệp qua input[type="file"]:', resolvedPaths);
           } else {
-            console.warn('[Facebook-Upload] Cảnh báo: Không tìm thấy nút thêm media hoặc file input!');
+            throw new Error('Không tìm thấy nút thêm ảnh/video (Photo/video) trên trang Facebook');
           }
         }
 
         console.log('[Facebook-Upload] Đang chờ ảnh/video xử lý tải lên (6s)...');
         await page.waitForTimeout(6000);
       } catch (fileErr) {
-        console.warn('[Facebook-Upload] Cảnh báo khi đính kèm phương tiện:', fileErr.message);
+        // Không đăng bài chỉ có chữ khi người dùng đã chọn ảnh/video.
+        throw new Error(`Đính kèm ảnh/video thất bại: ${fileErr.message}`);
       }
     }
 

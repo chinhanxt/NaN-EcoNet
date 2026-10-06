@@ -1,0 +1,22 @@
+{
+ "version": 1,
+ "patternsFile": "hook_patterns.vi.json",
+ "maxPatterns": 10,
+ "kinds": {
+  "tutorial": {"label": "tutorial / screencast / how-to", "categories": ["Cách Làm Ngay", "Kết Quả Rõ"]},
+  "story": {"label": "dialogue / story / emotional talk", "categories": ["Mở Vòng Lặp", "Gợi Câu Hỏi", "Dành Cho Bạn", "Khi Muốn Bỏ Cuộc", "Bắt Đầu Lại", "Tự Nhắc Mình"]},
+  "product": {"label": "product review / affiliate", "categories": ["Khơi Nhu Cầu", "So Sánh Giá Trị", "Review Thẳng", "Chốt Niềm Tin"]},
+  "general": {"label": "general information / explainer", "categories": ["Mở Vòng Lặp", "Kích Thích Xem Tiếp", "Gợi Câu Hỏi", "Tạo Cú Móc"]}
+ },
+ "rules": [
+  "The hook is the first 1-3 seconds: open on the most surprising, concrete or tense thing in THIS content. No greeting, intro or setup (never 'Xin chào', 'Hôm nay mình sẽ chia sẻ', 'Trong thời đại').",
+  "Specific beats vague: name the real object, person, action, place, tool or number from the evidence instead of 'điều này', 'thứ này', 'sản phẩm này'.",
+  "Use one mechanism: curiosity gap / open loop, contrarian or myth-bust, mistake or warning, direct callout of who it is for ('Nếu bạn...'), pointed question, result first, or start in the middle of the action.",
+  "The content must pay the hook off: only open a loop the content really closes. No clickbait lies, no promise, result, price, secret or experience the evidence does not show.",
+  "Adapt a pattern's STRUCTURE to the real content. Never copy a template line verbatim. Patterns marked CLAIM assert numbers, results, prices, tests or personal experience: use them only when the evidence states that exact claim, with its real figure.",
+  "At most 10 words (hard limit 12) so it fits a text overlay; natural spoken Vietnamese that sounds said aloud in one breath; no hashtags, emoji or quotation marks.",
+  "Avoid AI cliches: đột phá, nâng tầm, mở khóa, hé lộ, thần thánh, đỉnh cao, không thể tin nổi, bí mật động trời.",
+  "The words must match what is seen and heard in the first seconds."
+ ],
+ "scoring": "Write exactly 3 different candidates, each built on a different pattern id from the list. Score each 1-5 for curiosity (makes the viewer need the next second), specificity (concrete real detail), truthfulness (every word supported by the evidence; 5 = fully supported) and fit (matches the content type and the opening visual). Choose the candidate with the highest total among those with truthfulness 5."
+}

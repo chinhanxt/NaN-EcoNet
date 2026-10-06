@@ -8,10 +8,14 @@ import {
 } from '@gitroom/nestjs-libraries/integrations/integration.manager';
 import { getValidationSchemas } from '@gitroom/nestjs-libraries/chat/validation.schemas.helper';
 import { checkAuth } from '@gitroom/nestjs-libraries/chat/auth.context';
+import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
 
 @Injectable()
 export class IntegrationValidationTool implements AgentToolInterface {
-  constructor(private _integrationManager: IntegrationManager) {}
+  constructor(
+    private _integrationManager: IntegrationManager,
+    private _integrationService: IntegrationService
+  ) {}
   name = 'integrationSchema';
 
   run() {
@@ -32,15 +36,25 @@ export class IntegrationValidationTool implements AgentToolInterface {
         },
       },
       inputSchema: z.object({
+        id: z
+          .string()
+          .optional()
+          .describe(
+            'The channel (integration) id; platform and isPremium are resolved from it when omitted'
+          ),
         isPremium: z
           .boolean()
-          .describe('is this the user premium? if not, set to false'),
+          .optional()
+          .describe(
+            'is this the user premium? if not, set to false (default: from the channel id, else false)'
+          ),
         platform: z
           .string()
+          .optional()
           .describe(
             `platform identifier (${socialIntegrationList
               .map((p) => p.identifier)
-              .join(', ')})`
+              .join(', ')}); optional when id is given`
           ),
       }),
       outputSchema: z.object({
@@ -83,8 +97,30 @@ export class IntegrationValidationTool implements AgentToolInterface {
       }),
       execute: async (inputData, context) => {
         checkAuth(inputData, context);
+        let platform = inputData.platform;
+        let premium: unknown = inputData.isPremium;
+        if (inputData.id && (!platform || premium === undefined)) {
+          const organizationId = JSON.parse(
+            (context?.requestContext as any)?.get('organization') as string
+          ).id;
+          const channel = await this._integrationService.getIntegrationById(
+            organizationId,
+            inputData.id
+          );
+          if (channel && !channel.deletedAt) {
+            platform = platform || channel.providerIdentifier;
+            if (premium === undefined) {
+              // Same source as post validation: the channel's additionalSettings ("Verified" for X).
+              try {
+                premium = JSON.parse(channel.additionalSettings || '[]');
+              } catch {
+                premium = false;
+              }
+            }
+          }
+        }
         const integration = socialIntegrationList.find(
-          (p) => p.identifier === inputData.platform
+          (p) => p.identifier === platform
         )!;
 
         if (!integration) {
@@ -93,7 +129,7 @@ export class IntegrationValidationTool implements AgentToolInterface {
           };
         }
 
-        const maxLength = integration.maxLength(inputData.isPremium);
+        const maxLength = integration.maxLength(premium ?? false);
         const schemas = !integration.dto
           ? false
           : getValidationSchemas()[integration.dto.name];

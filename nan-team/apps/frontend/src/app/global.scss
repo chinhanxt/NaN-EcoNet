@@ -862,3 +862,25 @@ html[dir='rtl'] [dir='ltr'] {
   animation-delay: 400ms;
 }
 
+.copilotKitAssistantMessage a {
+  color: #7c3aed !important;
+  font-weight: 600 !important;
+  text-decoration: underline !important;
+  text-underline-offset: 3px !important;
+  transition: all 0.2s ease !important;
+
+  &:hover {
+    color: #9333ea !important;
+    text-decoration-thickness: 2px !important;
+  }
+}
+
+.dark .copilotKitAssistantMessage a {
+  color: #a78bfa !important;
+
+  &:hover {
+    color: #c084fc !important;
+  }
+}
+
+

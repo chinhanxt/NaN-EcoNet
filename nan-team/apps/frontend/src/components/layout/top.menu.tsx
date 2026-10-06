@@ -246,7 +246,9 @@ export const TopMenu: FC = () => {
   const router = useRouter();
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    // Fetching every route in development compiles unused pages and exhausts
+    // the local dev server's heap while the user is working in the composer.
+    if (typeof window === 'undefined' || process.env.NODE_ENV !== 'production') return;
     const preloadRoutes = [
       '/launches',
       '/agents',

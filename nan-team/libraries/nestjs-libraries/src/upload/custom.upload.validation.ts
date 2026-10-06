@@ -51,7 +51,8 @@ export function maxSizeStream(maxSize: number) {
 export async function uploadStreamToStorage(
   storage: IUploadProvider,
   webStream: ReadableStream,
-  declaredSize = 0
+  declaredSize = 0,
+  allowedMime: ReadonlySet<string> = UPLOAD_ALLOWED_MIME
 ) {
   let sniffed: ReadableStream & { fileType?: { mime: string; ext: string } };
   try {
@@ -60,7 +61,7 @@ export async function uploadStreamToStorage(
     throw new BadRequestException('Failed to read file', { cause: err });
   }
   const detected = sniffed.fileType;
-  if (!detected || !UPLOAD_ALLOWED_MIME.has(detected.mime)) {
+  if (!detected || !allowedMime.has(detected.mime)) {
     await sniffed.cancel();
     throw new BadRequestException('Unsupported file type.');
   }

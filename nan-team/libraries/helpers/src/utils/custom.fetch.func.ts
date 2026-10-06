@@ -38,7 +38,7 @@ function createJsonResponse(data: any, status = 200): Response {
   });
 }
 
-async function handleFallback(url: string, options: RequestInit = {}): Promise<Response> {
+async function handleFallback(url: string, options: RequestInit = {}, original?: Response): Promise<Response> {
   const cleanUrl = url.split('?')[0];
 
   if (cleanUrl === '/user/self') {
@@ -337,7 +337,8 @@ async function handleFallback(url: string, options: RequestInit = {}): Promise<R
     }, 200);
   }
 
-  return createJsonResponse({ error: 'Service temporarily unavailable', statusCode: 502 }, 502);
+  // No offline stand-in for this route: keep the backend's own error (its message) when it answered.
+  return original || createJsonResponse({ error: 'Service temporarily unavailable', statusCode: 502 }, 502);
 }
 
 export const customFetch = (
@@ -409,7 +410,7 @@ export const customFetch = (
       });
 
       if (fetchRequest.status === 502 || fetchRequest.status === 504) {
-        fetchRequest = await handleFallback(url, options);
+        fetchRequest = await handleFallback(url, options, fetchRequest);
       }
     } catch (err) {
       fetchRequest = await handleFallback(url, options);

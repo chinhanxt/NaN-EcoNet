@@ -1,18 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Activity, ActivityMethod } from 'nestjs-temporal-core';
-import { PostsService } from '@gitroom/nestjs-libraries/database/prisma/posts/posts.service';
-import {
-  NotificationService,
-  NotificationType,
-} from '@gitroom/nestjs-libraries/database/prisma/notifications/notification.service';
-import { Integration, Post, State } from '@prisma/client';
-import { stripHtmlValidation } from '@gitroom/helpers/utils/strip.html.validation';
-import { IntegrationManager } from '@gitroom/nestjs-libraries/integrations/integration.manager';
-import { AuthTokenDetails } from '@gitroom/nestjs-libraries/integrations/social/social.integrations.interface';
-import { RefreshIntegrationService } from '@gitroom/nestjs-libraries/integrations/refresh.integration.service';
-import { timer } from '@gitroom/helpers/utils/timer';
-import { IntegrationService } from '@gitroom/nestjs-libraries/database/prisma/integrations/integration.service';
-import { WebhooksService } from '@gitroom/nestjs-libraries/database/prisma/webhooks/webhooks.service';
+import { Context } from '@temporalio/activity';
 import { AutopostService } from '@gitroom/nestjs-libraries/database/prisma/autopost/autopost.service';
 
 @Injectable()
@@ -22,6 +10,33 @@ export class AutopostActivity {
 
   @ActivityMethod()
   async autoPost(id: string) {
-    return this._autoPostService.startAutopost(id)
+    const context = Context.current();
+    const { info } = context;
+    // The SDK exposes the attempt's scheduled time, not its start time. Using
+    // it conservatively also counts queue time, and leaves time to roll back.
+    const deadline = Math.min(
+      Date.now() + 9 * 60_000,
+      info.currentAttemptScheduledTimestampMs +
+        info.startToCloseTimeoutMs -
+        15_000,
+      info.scheduleToCloseTimeoutMs > 0
+        ? info.scheduledTimestampMs + info.scheduleToCloseTimeoutMs - 15_000
+        : Infinity
+    );
+    const timeout = new AbortController();
+    const expire = () =>
+      timeout.abort(new Error('Autopost activity deadline exceeded'));
+    const timer = setTimeout(expire, Math.max(0, deadline - Date.now()));
+    const signal = AbortSignal.any([
+      context.cancellationSignal,
+      timeout.signal,
+    ]);
+    try {
+      if (Date.now() >= deadline) expire();
+      signal.throwIfAborted();
+      return await this._autoPostService.startAutopost(id, signal);
+    } finally {
+      clearTimeout(timer);
+    }
   }
 }

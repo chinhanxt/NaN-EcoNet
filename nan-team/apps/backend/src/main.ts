@@ -61,9 +61,15 @@ async function start() {
   app.use(['/copilot/{*splat}', '/posts'], (req: any, res: any, next: any) => {
     json({ limit: '50mb' })(req, res, next);
   });
+  // AI design edit may carry the page screenshot as a data URL (<= 4 MB decoded).
+  app.use('/media/ai-design-edit', (req: any, res: any, next: any) => {
+    json({ limit: '8mb' })(req, res, next);
+  });
 
   app.use(cookieParser());
-  app.use(compression());
+  // Server-sent events (Copilot agent runs) must reach the browser as they happen, not in gzip blocks.
+  app.use(compression({ filter: (req: any, res: any) =>
+    !String(res.getHeader('Content-Type') || '').includes('text/event-stream') && compression.filter(req, res) }));
   app.useGlobalFilters(new SubscriptionExceptionFilter());
   app.useGlobalFilters(new PostValidationExceptionFilter());
   app.useGlobalFilters(new HttpExceptionFilter());

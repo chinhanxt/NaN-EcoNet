@@ -1,0 +1,200 @@
+{
+  "source": "openshorts-core local snapshot 2026-09-28",
+  "upstreamPath": "/home/chinhan/openshorts-core",
+  "patches": [
+    "Gemini SDK replaced by authenticated AGY job RPC compatibility",
+    "dotenv loading disabled",
+    "YOLO local weights required; no implicit download",
+    "Whisper uses local_files_only; model downloads are outside worker lifecycle",
+    "main moment-selection methods delegate to canonical moment_picker",
+    "Native RPC compatibility base_url logging preserves canonical speech selection",
+    "Explicit screencast/speaker-cut bypass matching-aspect passthrough",
+    "Optional reframe decision receipt records actual strategies/trajectory/camera-inset/speaker attribution",
+    "Reframe crop scene metadata preserves detector sceneIndex after dropping empty ranges",
+    "FFmpeg encoder thread count bounded by OPENSHORTS_THREADS (default 1 for local machine responsiveness)",
+    "Hook temporary images stay beside the private job output, supporting read-only working directories",
+    "Canonical moment picker propagates native RPC/auth failures rather than falling back to unverified clips",
+    "Recut discards zero-duration ASR words before caption rendering",
+    "Rawvideo analysis and TransNet preserve VFR decoded frame indices",
+    "Source cuts normalize CFR during existing encode; exact frame-count scene rendering and midpoint seek/sendcmd prevent skipped cut frames",
+    "Hook overlay accepts sampled face and caption protected regions; pipeline places captions after hook and passes SPLIT seam ranges",
+    "Frame timeline accepts modern FFprobe/WebM durations and validates missing frame rates; TransNet and active speaker use exact decoded counts",
+    "Local ASR binds model provenance and acoustic word confidence; Vietnamese dev defaults to pinned VinAI PhoWhisper-small CT2 int8",
+    "Hook caption bands measured from a libass render of the real subtitle file over the hook interval (estimate fallback); hookPlacement records durationSeconds/fps/sampledFrames; hook enable window half-open lt(t,D)",
+    "Speaker attribution by voice pitch clusters with mouth-motion mapping; multicam dialogue identity by clothing color; validated ALTERNATE crop on two-person wide shots; speakerAttribution/speakerDiagnostics receipts",
+    "Vietnamese ASR: pinned faster-whisper large-v3-turbo only, Silero silence-bounded <=25s clips, sub-second remainder drop, end-window hallucination trim, edit cuts snapped to pauses",
+    "AGY-grounded per-clip content (title, post text, hashtags, hook, continuous narration, selection rationale) with invented-number rejection",
+    "Sentence-unit fit-not-fail selection (punctuation/pause/segment/VAD units, word-pause fallback with sentenceComplete:false); timestamped units in selection payload; exact user duration band; overlap dedupe",
+    "Default karaoke = upstream AUTO_CAPTION_STYLE (Anton 44 uppercase pop, 16 chars/1.4s); hook and captions burned in one encode",
+    "Constrained AGY ASR repair (same-syllable replacements <=15%, sentence ends) after transcription; raw words preserved",
+    "ASR models released after transcription; AGY RPC deadline = AGY deadline + 60s reset on ai-started; nativeReview explicit",
+    "Granular progress stages incl. live ASR percentage; TOPMAX hook pattern library (data/hook_patterns.vi.json) with scored candidates",
+    "Speaker attribution modes two-voice/single-voice/unresolved/mouth; keypoint-aligned articulation identifies the speaking face; ambiguous audio evidence falls back to GENERAL instead of framing the listener",
+    "Caption PlayResY scales with frame aspect (sqrt(9/16 / aspect), 1.0 for vertical) so landscape/square captions keep their on-screen size; hook font follows the same scale and placement searches narrower boxes and side/between-face columns",
+    "Speed: revisions reuse parent analysis (scenes + repaired transcript) when source/engine/ASR identity match; skip score pass when windows<=shortlist; parallel AGY content/effects/screencast/ASR-repair chunks when worker concurrency>1; background auto-layout AGY; RPC deadline covers queue time; intermediate encodes x264 veryfast CRF14 (delivery unchanged)",
+    "ASR repair uses role asr-repair (no copywriting skills)",
+    "Screencast INSET: measured face-cam bubble (circle ring / rect), presenter <=2x PIP on top, screen panel follows frame-difference activity with held shots + eased pans, bubble excluded",
+    "Effects plan folded into the per-clip content AGY call when a designBrief is present (shared EditPlan schema/validator); standalone planner kept as fallback",
+    "Selection runs parallel with AGY ASR repair; scoped repair for edit segments; scene detection parallel with ASR (W2)",
+    "Worker exits when its owner process dies (X1)",
+    "Narration captions aligned to script text via difflib; loudness normalized to -14 LUFS; ducking for mix-narration (X4)",
+    "Post-wave integration: l3-layout.patch",
+    "Post-wave integration: e4-engine-p2.patch",
+    "Post-wave integration: x4-caption-contrast.patch",
+    "Caption paging break-cost (no page break inside tight joins like \"xe | tải\"); hook avoids static burned-in channel names/logos in the top 40% when room allows (J)",
+    "Zoom effects accept optional centerX/centerY focus (clamped window), eased zoom_in release and punch_in snap (J)",
+    "Screen-only screencast scenes use FOCUS: the WIDE frame, eased (0.7 s) into a margin-padded output-aspect crop of each narration-timed focus region (<=2.5x) and back out; no continuous activity following"
+  ],
+  "files": [
+    {
+      "path": "core/active_speaker.py",
+      "sourceSha256": "6523ef35098300db69efbc7ff20f7b26c89889b1234806a5fbe0b78eec5c22cd",
+      "snapshotSha256": "3a461da71b3c5c20874cfdbad1477deeea5c09a0548c2e8a688c19787266e7b3"
+    },
+    {
+      "path": "core/camera_inset.py",
+      "sourceSha256": "6a46a25304e1834690d9c7e9029d5a8db2c8aebe1a8cdb3da6285ae3c8ca5294",
+      "snapshotSha256": "6809155c8471092e04019b3986c70da2c216ad25c3e273a517911546f489ed3e"
+    },
+    {
+      "path": "core/clip_selection.py",
+      "sourceSha256": "36e7bbe348e64179dd3235f5e2dfefeca55b4330084e0fa007c5c0fbade02c0a",
+      "snapshotSha256": "f6ea83a11e2ed4f845d86d7bb2864a0e956923c7c03b362e54ccf130378b6e3d"
+    },
+    {
+      "path": "core/edit_builder.py",
+      "sourceSha256": "9a0c6834becaac817581bd299bd224f14eda18f6606a98f0130a87bc99bad991",
+      "snapshotSha256": "1c1483bb5f2353428777dfe560a572f58f181e2cfc5e56b2b9f7110e2b18efc1"
+    },
+    {
+      "path": "core/editor.py",
+      "sourceSha256": "6b5aff4a13be360f1b49fe99eac73d9e52c4f6ef51e8da2fd73b04657d508a22",
+      "snapshotSha256": "1da46f73dab7ae541218f7b648b47c509866ae3982949df99e5d63a4d6b84e97"
+    },
+    {
+      "path": "core/ffmpeg_utils.py",
+      "sourceSha256": "315cb0ab07e4d83beed4abff98d83981850357d56887a543941820de7b8faad8",
+      "snapshotSha256": "57cc83dbe1b60a1815c1eff72b33972f9f169a86eaff08909a5eda9ff2a328b4"
+    },
+    {
+      "path": "core/frame_sampler.py",
+      "sourceSha256": "733c3aefb0be418ec427afc771fd271d6f410948532684db743eda59c011abdd",
+      "snapshotSha256": "733c3aefb0be418ec427afc771fd271d6f410948532684db743eda59c011abdd"
+    },
+    {
+      "path": "core/gemini_worker.py",
+      "sourceSha256": "27f57632cfaf53ac71be4dcdf7a9242871dab69250a99ec464f370393afe4296",
+      "snapshotSha256": "edb8018ca0f58c89e405d4030d937b33083cead54d1dd8aa9aec907a284d01d2"
+    },
+    {
+      "path": "core/hook_grounding.py",
+      "sourceSha256": "f6a402e369890d0c0a6c945186d79b6040974840d67bec54da6fe9c52e28557c",
+      "snapshotSha256": "3150cce5c8a80ea34b33017a962bafb596d6499e19b16203caf99b7ca149a94d"
+    },
+    {
+      "path": "core/hooks.py",
+      "sourceSha256": "96beb8947472baf88765ef18f6f57f8568e41d6b4780fd6b5a58b5e66b880917",
+      "snapshotSha256": "c85720c2b491dad00857415568bc3a52d7cd13861bd34c7a3fa2e6b8d812f76c"
+    },
+    {
+      "path": "core/layout_picker.py",
+      "sourceSha256": "893a8889fe8a68f4da05f703d2b05ff7fdad6e54e6cc6b802be35b651c6ecc76",
+      "snapshotSha256": "2e179323eaf1a47f68b7d835729e8ad0996f2d9820114070acee24bdd6a62426"
+    },
+    {
+      "path": "core/layout_ranges.py",
+      "sourceSha256": "f676862f0a8878ddf7d1c835e3844c393acee2406fbcc969dd8369f9aa037a58",
+      "snapshotSha256": "f676862f0a8878ddf7d1c835e3844c393acee2406fbcc969dd8369f9aa037a58"
+    },
+    {
+      "path": "core/main.py",
+      "sourceSha256": "c969620783906f4516345213573f999b17adf17de0d2a9a2c72dbbf05297caf8",
+      "snapshotSha256": "ff028794bb3a81447bcef4f2be4dfeb2348c859a22050cf8249334bb7dc6d0a4"
+    },
+    {
+      "path": "core/moment_picker.py",
+      "sourceSha256": "21f2c4f5d0baf4a7b229336af4f774f83021c197b27fc1a7e9bbfdf11bc9326c",
+      "snapshotSha256": "b41363d0632868a0e78635db72955420be98cd79ceb63b57a35ab5ccbc8ddf70"
+    },
+    {
+      "path": "core/punch_in.py",
+      "sourceSha256": "fa0197851dc7386f07f82b786056654fbf386c42b490962eeee247e2b110d629",
+      "snapshotSha256": "057601803b75fb42b0a547117dbb23ee533faff46c2818b6eb2c94479a6aad98"
+    },
+    {
+      "path": "core/recut.py",
+      "sourceSha256": "6a737cd28a5407e71253282f9fc1c9a2cbefe7c5ad8decf9724710bef7d96f9d",
+      "snapshotSha256": "e7e34582d0cdf6e1bd89de989f482d6f72d1e531d51f1f2efacc2cee7020be68"
+    },
+    {
+      "path": "core/reframe_v2.py",
+      "sourceSha256": "a09e645ff28d4c2b1d54a446fc7d71351bac8bd5a46c47636f893e2086e92f6c",
+      "snapshotSha256": "6fb9c27fd25cfb551e1ebc243b260897b0f4b90eb27311b1a2e687668097b4de"
+    },
+    {
+      "path": "core/scene_detection.py",
+      "sourceSha256": "919553a4b7649dcf3ee61fa82ac865000dfbc3520708d7b538c813d112ccc322",
+      "snapshotSha256": "ac9b028ee3470026bbb229cbd600b5a709e2409757746261ccb26919941ae8e4"
+    },
+    {
+      "path": "core/screencast_layout.py",
+      "sourceSha256": "90024279b19b061b83fbe47a13e99195e43b87d1207eacc34cbdc8d13a4f46e2",
+      "snapshotSha256": "bc780d9ef9d1cbec963009b62b94c82d6f3279a2c97f8e193847dc358d828b6f"
+    },
+    {
+      "path": "core/security_utils.py",
+      "sourceSha256": "dbae2575be9721f985217b174133735c8649172fc61e37394de91111b96caa14",
+      "snapshotSha256": "dbae2575be9721f985217b174133735c8649172fc61e37394de91111b96caa14"
+    },
+    {
+      "path": "core/split_layout.py",
+      "sourceSha256": "51e2c04542f1a44ad9899e4fcea45308f04afb98044225d97e6414642a0fedb8",
+      "snapshotSha256": "51e2c04542f1a44ad9899e4fcea45308f04afb98044225d97e6414642a0fedb8"
+    },
+    {
+      "path": "core/subtitles.py",
+      "sourceSha256": "ee2398d1006d17f726c82bd1762ce462f39195b2aac1ca5be4885ba52d21e0b5",
+      "snapshotSha256": "889a83da2e0cbafc0ad9188488099b5727433e30dcbd7c8135a4f291cc0c4572"
+    },
+    {
+      "path": "core/tracking.py",
+      "sourceSha256": "5c8d730ffbb36270db74ea1cec6d3a791976f495f861b9362a38d7e5445c5bc0",
+      "snapshotSha256": "2c8ab21f75b060c1e1f54d3eccb8b021b04c3cea89e8ba273672989559c99188"
+    },
+    {
+      "path": "core/transcribe_backends.py",
+      "sourceSha256": "aa97e4cd4b2de13a6378bc7b673664e3d57ba6531c9f1f5456830e785d346a2a",
+      "snapshotSha256": "1acb12533656fa66b8fa5731ad8edbda84dbccc8b6fef9c49b7466fa08db5f52"
+    },
+    {
+      "path": "core/fonts/Montserrat-OFL.txt",
+      "sourceSha256": "8b7141c03fa4f8d44e6345d5d4931709290f0f67875e452e95ac1fd3a027802e",
+      "snapshotSha256": "8b7141c03fa4f8d44e6345d5d4931709290f0f67875e452e95ac1fd3a027802e"
+    },
+    {
+      "path": "core/fonts/NotoSerif-Bold.ttf",
+      "sourceSha256": "3b2086a869bcded2aeb4416fc281ceec9d6ce3c06756cda19f8f763636204e7d",
+      "snapshotSha256": "3b2086a869bcded2aeb4416fc281ceec9d6ce3c06756cda19f8f763636204e7d"
+    },
+    {
+      "path": "core/fonts/Montserrat-ExtraBold.ttf",
+      "sourceSha256": "d3ac6a843d3ba6d5cafd44cf39e437055c8aed7e261010f595f57d3c7b3e2c1b",
+      "snapshotSha256": "d3ac6a843d3ba6d5cafd44cf39e437055c8aed7e261010f595f57d3c7b3e2c1b"
+    },
+    {
+      "path": "core/fonts/Anton-Regular.ttf",
+      "sourceSha256": "a4ba3a92350ebb031da0cb47630ac49eb265082ca1bc0450442f4a83ab947cab",
+      "snapshotSha256": "a4ba3a92350ebb031da0cb47630ac49eb265082ca1bc0450442f4a83ab947cab"
+    },
+    {
+      "path": "core/fonts/openshorts-fontmap.conf",
+      "sourceSha256": "133d66998c7060a7340a8e9df377912d50dba5cf51ae40c558792cd19cd0e4d4",
+      "snapshotSha256": "133d66998c7060a7340a8e9df377912d50dba5cf51ae40c558792cd19cd0e4d4"
+    },
+    {
+      "path": "core/llm_backend.py",
+      "sourceSha256": "c471baba2b38b3418fa161ecaae14b4b99c6ae4944872ab5164975ee47043dac",
+      "snapshotSha256": "b1497a6f48e3fea519c6064cdb0c23941b50c6beac0210a5cee8a97db74dbf70"
+    }
+  ]
+}

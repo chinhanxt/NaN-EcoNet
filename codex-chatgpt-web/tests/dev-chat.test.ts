@@ -1,0 +1,470 @@
+import { afterEach, expect, test } from "bun:test";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import type { ProviderAdapter } from "../src/adapters/base";
+import { ChatGptBrowserWorker, type BrowserTurn } from "../src/adapters/chatgpt-web/browser-worker";
+import { createChatGptWebAdapter } from "../src/adapters/chatgpt-web";
+import { chatGptTurnSessions } from "../src/adapters/chatgpt-web/turn-execution";
+import {
+  callTurnBroker,
+  RemoteTurnBroker,
+  TurnBroker,
+  type BrokerToolResult,
+} from "../src/adapters/chatgpt-web/turn-broker";
+import { defaultBrokerEndpoint, defaultConfig, providerConfig } from "../src/config";
+import { defaultDevChatModel, DEV_CHAT_TOOLS, DevChatDriver } from "../src/dev-chat/driver";
+import {
+  createDevCoherentContextPayload,
+  createDevContextFiller,
+  DEV_CHAT_MODELS,
+  DevChatStore,
+} from "../src/dev-chat/session";
+import { startDevChatTransport } from "../src/dev-chat/transport";
+import type { CodexProviderConfig } from "../src/types";
+
+const roots: string[] = [];
+
+function scratch(name: string): string {
+  const root = mkdtempSync(join(tmpdir(), `${name}-`));
+  roots.push(root);
+  return root;
+}
+
+afterEach(() => {
+  chatGptTurnSessions.clear();
+  for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
+});
+
+test("remote outer harness owns a turn through the live broker protocol", async () => {
+  const root = scratch("cgw-dev-owner");
+  const socketPath = defaultBrokerEndpoint(root);
+  const broker = TurnBroker.forSocket(socketPath);
+  const remote = new RemoteTurnBroker(socketPath);
+  await broker.listen();
+  try {
+    await remote.assertCompatible();
+    await expect(remote.register({ cwd: "relative", roots: [], tools: [] } as never, 60_000, "invalid-owner"))
+      .rejects.toThrow("environment is invalid");
+    const environment = {
+      cwd: root,
+      roots: [root],
+      writableRoots: [root],
+      sandboxPolicy: { type: "dangerFullAccess" as const },
+      tools: [{ name: "exec_command", description: "Simulated command", parameters: { type: "object" } }],
+    };
+    const token = await remote.register(environment, 60_000, "dev-owner-test");
+    const retirement = remote.waitForRetirement(token);
+    const claimed = await callTurnBroker<{ bindingId: string }>(socketPath, { method: "claim", token });
+    const invocation = callTurnBroker<BrokerToolResult>(socketPath, {
+      method: "invoke",
+      bindingId: claimed.bindingId,
+      wireName: "exec_command",
+      arguments: { cmd: "pwd" },
+    }, 10_000);
+    const batch = await remote.nextToolBatch(token);
+    expect(batch).toHaveLength(1);
+    expect(batch[0]).toMatchObject({ wireName: "exec_command", arguments: { cmd: "pwd" } });
+    await remote.completeTool(token, batch[0]!.callId, {
+      content: [{ type: "text", text: "simulated" }],
+      structuredContent: { simulated: true },
+    });
+    expect(await invocation).toMatchObject({ structuredContent: { simulated: true } });
+    await remote.revoke(token);
+    await expect(retirement).resolves.toBeUndefined();
+    await expect(callTurnBroker(socketPath, { method: "claim", token })).rejects.toThrow("already finished");
+  } finally {
+    await broker.close();
+  }
+});
+
+test("disconnecting a remote owner_next removes its broker waiter", async () => {
+  const root = scratch("cgw-dev-owner-waiter");
+  const socketPath = defaultBrokerEndpoint(root);
+  const broker = TurnBroker.forSocket(socketPath);
+  const remote = new RemoteTurnBroker(socketPath);
+  await broker.listen();
+  const environment = {
+    cwd: root,
+    roots: [root],
+    writableRoots: [root],
+    sandboxPolicy: { type: "dangerFullAccess" as const },
+    tools: [{ name: "exec_command", description: "Command", parameters: { type: "object" } }],
+  };
+  const token = await remote.register(environment, 60_000, "remote-waiter-test");
+  try {
+    const abandoned = new AbortController();
+    const firstWait = remote.nextToolBatch(token, abandoned.signal);
+    await new Promise(resolve => setTimeout(resolve, 20));
+    abandoned.abort();
+    await expect(firstWait).rejects.toMatchObject({ name: "AbortError" });
+
+    const secondWait = remote.nextToolBatch(token);
+    const activityId = "activity_remote_waiter_000001";
+    const claimed = await callTurnBroker<{ bindingId: string }>(socketPath, {
+      method: "claim",
+      token,
+      activityId,
+    });
+    const invocation = callTurnBroker<BrokerToolResult>(socketPath, {
+      method: "invoke",
+      bindingId: claimed.bindingId,
+      wireName: "exec_command",
+      arguments: { cmd: "pwd" },
+    }, 10_000);
+    const [request] = await secondWait;
+    broker.completeTool(token, request!.callId, { content: [{ type: "text", text: "ok" }] });
+    await invocation;
+    await callTurnBroker(socketPath, { method: "activity_complete", token, activityId });
+  } finally {
+    await broker.close();
+  }
+});
+
+test("named DEV state and deterministic context filler persist independently", () => {
+  const root = scratch("cgw-dev-store");
+  const store = new DevChatStore(join(root, "chats"));
+  const opened = store.loadOrCreate("compaction-lab", "chatgpt-web/high", root);
+  expect(opened.created).toBe(true);
+  const filler = createDevContextFiller(3_000);
+  expect(filler.tokens).toBeGreaterThanOrEqual(3_000);
+  expect(filler.tokens).toBeLessThan(3_050);
+  opened.state.input.push({ type: "message", role: "user", content: filler.text });
+  opened.state.syntheticFills += 1;
+  store.save(opened.state);
+  expect(store.load("compaction-lab")).toMatchObject({ syntheticFills: 1, input: [expect.any(Object)] });
+  expect(store.list()).toMatchObject([{ name: "compaction-lab", inputItems: 1 }]);
+  store.reset(opened.state);
+  expect(store.load("compaction-lab")).toMatchObject({ input: [], turns: 0, syntheticFills: 0 });
+});
+
+test("coherent DEV MCP payloads are bounded, deterministic, and distinct", () => {
+  const first = createDevCoherentContextPayload(1, 3_000);
+  const repeated = createDevCoherentContextPayload(1, 3_000);
+  const second = createDevCoherentContextPayload(2, 3_000);
+  expect(first).toEqual(repeated);
+  expect(first.tokens).toBeGreaterThanOrEqual(3_000);
+  expect(first.tokens).toBeLessThan(3_500);
+  expect(first.text).toContain("Segment 1/3: Architecture and data ownership");
+  expect(first.text).toContain("No action is requested by this record");
+  expect(second.text).toContain("Segment 2/3: Operations and incident chronology");
+  expect(second.text).not.toBe(first.text);
+  expect(() => createDevCoherentContextPayload(0, 3_000)).toThrow("segment must be 1, 2, or 3");
+  expect(() => createDevCoherentContextPayload(1, 999)).toThrow("1000 to 95000 tokens");
+  expect(DEV_CHAT_TOOLS).toContainEqual(expect.objectContaining({
+    type: "function",
+    name: "mcp__dev_simulator__large_context_payload",
+  }));
+});
+
+test("new DEV chats default to the cheapest account-supported browser model", () => {
+  expect(defaultDevChatModel({ ...defaultConfig("full"), solAvailable: true })).toBe("chatgpt-web/gpt-5.6-sol-instant");
+  expect(defaultDevChatModel({ ...defaultConfig("full"), solAvailable: false })).toBe("chatgpt-web/gpt-5.6-luna");
+  expect(DEV_CHAT_MODELS).toContain("chatgpt-web/think");
+  expect(defaultDevChatModel({
+    ...defaultConfig("full"),
+    browserInteractionMode: "manual",
+  })).toBe("chatgpt-web/zero-risk");
+});
+
+test("Zero Risk DEV chats open only the generic route", () => {
+  const root = scratch("cgw-dev-safe-model");
+  const config = {
+    ...defaultConfig("full"),
+    browserInteractionMode: "manual" as const,
+  };
+  const driver = new DevChatDriver(
+    config,
+    new DevChatStore(join(root, "chats")),
+    (_provider: CodexProviderConfig): ProviderAdapter => {
+      throw new Error("adapter is not needed to open a DEV chat");
+    },
+    root,
+  );
+  expect(driver.open("safe").state.model).toBe("chatgpt-web/zero-risk");
+  expect(() => driver.open("automatic", "chatgpt-web/high")).toThrow(
+    "not available while Zero Risk is enabled",
+  );
+});
+
+test("an existing DEV chat changes route only when the user explicitly requests it", () => {
+  const root = scratch("cgw-dev-safe-model-migration");
+  const store = new DevChatStore(join(root, "chats"));
+  const automatic = new DevChatDriver(
+    defaultConfig("full"),
+    store,
+    (_provider: CodexProviderConfig): ProviderAdapter => {
+      throw new Error("adapter is not needed to open a DEV chat");
+    },
+    root,
+  );
+  const original = automatic.open("switchable", "chatgpt-web/high").state;
+  original.input.push({ type: "message", role: "user", content: "preserve me" });
+  store.save(original);
+
+  const manual = new DevChatDriver(
+    { ...defaultConfig("full"), browserInteractionMode: "manual" },
+    store,
+    (_provider: CodexProviderConfig): ProviderAdapter => {
+      throw new Error("adapter is not needed to open a DEV chat");
+    },
+    root,
+  );
+  expect(() => manual.open("switchable")).toThrow(
+    "not available while Zero Risk is enabled",
+  );
+  const migrated = manual.open("switchable", "chatgpt-web/zero-risk").state;
+  expect(migrated).toMatchObject({
+    model: "chatgpt-web/zero-risk",
+    input: [{ type: "message", role: "user", content: "preserve me" }],
+  });
+});
+
+test("Bigger Context triples the DEV compaction window and fails closed for Luna", async () => {
+  const root = scratch("cgw-dev-bigger-context");
+  const config = {
+    ...defaultConfig("browser-only"),
+    purpose: "dev-harness" as const,
+    solAvailable: true,
+    extraHighAvailable: true, proAvailable: true,
+  };
+  const factory = (): ProviderAdapter => ({
+    name: "dev-bigger-context-test",
+    async runTurn(_parsed, _incoming, emit) {
+      emit({ type: "text_delta", text: "unused", phase: "final_answer" });
+      emit({
+        type: "done", stopReason: "stop", endTurn: true,
+        usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2, estimated: true },
+      });
+    },
+  });
+  const store = new DevChatStore(join(root, "chats"));
+  const normal = new DevChatDriver(config, store, factory, root);
+  const normalState = normal.open("normal-window", "chatgpt-web/high").state;
+  expect(normal.status(normalState).autoCompactTokenLimit).toBe(95_000);
+
+  const biggerConfig = { ...config, experimentalBiggerContext: true };
+  const bigger = new DevChatDriver(biggerConfig, store, factory, root, { biggerContext: true });
+  const biggerState = bigger.open("bigger-window", "chatgpt-web/high").state;
+  const biggerStatus = bigger.status(biggerState);
+  expect(biggerStatus).toMatchObject({
+    autoCompactTokenLimit: 285_000,
+    contextWindow: 333_579,
+  });
+  expect(biggerStatus.percent).toBe(Math.round((biggerStatus.inputTokens / 285_000) * 1_000) / 10);
+  const luna = new DevChatDriver({
+    ...biggerConfig,
+    solAvailable: false,
+    extraHighAvailable: false, proAvailable: false,
+  }, store, factory, root, { biggerContext: true });
+  expect(() => luna.open("luna-window", "chatgpt-web/luna")).toThrow("unavailable for Luna");
+  expect(() => luna.open("think-window", "chatgpt-web/think")).toThrow("unavailable for Luna");
+  await Promise.all([normal.close(), bigger.close(), luna.close()]);
+});
+
+test("browser-only DEV driver runs real turns without advertising simulated tools", async () => {
+  const root = scratch("cgw-dev-browser-only");
+  const config = {
+    ...defaultConfig("browser-only"),
+    purpose: "dev-harness" as const,
+    solAvailable: true,
+    extraHighAvailable: true, proAvailable: true,
+  };
+  const factory = (): ProviderAdapter => ({
+    name: "dev-browser-only-test",
+    async runTurn(parsed, _incoming, emit) {
+      expect(parsed.context.tools ?? []).toEqual([]);
+      emit({ type: "text_delta", text: "Browser-only DEV turn completed.", phase: "final_answer" });
+      emit({
+        type: "done", stopReason: "stop", endTurn: true,
+        usage: { inputTokens: 100, outputTokens: 5, totalTokens: 105, estimated: true },
+      });
+    },
+  });
+  const driver = new DevChatDriver(config, new DevChatStore(join(root, "chats")), factory, root);
+  try {
+    const state = driver.open("browser-only", "chatgpt-web/extra-high").state;
+    await expect(driver.send(state, "Exercise Extra High without MCP credentials."))
+      .resolves.toMatchObject({ text: "Browser-only DEV turn completed.", toolCalls: 0 });
+  } finally {
+    await driver.close();
+  }
+});
+
+test("DEV chat attaches its broker to the launcher-owned tunnel without a Responses listener", async () => {
+  const root = scratch("cgw-dev-transport");
+  const occupied = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: () => new Response("normal Codex route") });
+  const devBroker = defaultBrokerEndpoint(join(root, "dev"));
+  const config = {
+    ...defaultConfig("full"),
+    purpose: "dev-harness" as const,
+    port: occupied.port!,
+    brokerSocketPath: devBroker,
+    tunnel: {
+      binaryPath: join(root, "tunnel-client"),
+      tunnelId: `tunnel_${"a".repeat(32)}`,
+      runtimeKeyFile: join(root, "runtime.key"),
+      profileDir: join(root, "profiles"),
+      profileName: "production-profile",
+      alias: "production-alias",
+    },
+  };
+  let transport: Awaited<ReturnType<typeof startDevChatTransport>> | undefined;
+  try {
+    transport = await startDevChatTransport(config, join(root, "dev"), {
+      status: () => ({
+        ok: true,
+        processRunning: true,
+        healthy: true,
+        ready: true,
+        state: "ready",
+        detail: "launcher-owned DEV tunnel ready",
+      }),
+    });
+    expect(transport.config).toBe(config);
+    expect(await callTurnBroker(transport.config.brokerSocketPath, { method: "owner_status" }))
+      .toMatchObject({ protocolVersion: 5 });
+    expect(await (await fetch(`http://127.0.0.1:${occupied.port}`)).text()).toBe("normal Codex route");
+  } finally {
+    await transport?.close();
+    await occupied.stop(true);
+  }
+  await expect(callTurnBroker(devBroker, { method: "owner_status" }))
+    .rejects.toThrow("unavailable");
+});
+
+test("DEV chat fails closed until the launcher-owned MCP tunnel is ready", async () => {
+  const root = scratch("cgw-dev-production-owner");
+  const config = {
+    ...defaultConfig("full"),
+    purpose: "dev-harness" as const,
+    tunnel: {
+      binaryPath: join(root, "tunnel-client"),
+      tunnelId: `tunnel_${"b".repeat(32)}`,
+      runtimeKeyFile: join(root, "runtime.key"),
+      profileDir: join(root, "profiles"),
+      profileName: "production-profile",
+      alias: "production-alias",
+    },
+  };
+  await expect(startDevChatTransport(config, join(root, "dev"), {
+    status: () => ({
+      ok: false,
+      processRunning: false,
+      healthy: false,
+      ready: false,
+      state: "stopped",
+      detail: "stopped",
+    }),
+  })).rejects.toThrow("launcher-owned DEV MCP tunnel is not ready");
+});
+
+test("DEV driver uses shared browser methods and its own broker while an unrelated Responses port stays occupied", async () => {
+  const root = scratch("cgw-dev-driver");
+  const codexConfig = join(root, "codex", "config.toml");
+  mkdirSync(join(root, "codex"), { recursive: true });
+  writeFileSync(codexConfig, "openai_base_url = \"http://127.0.0.1:17841/v1\"\n");
+  const sentinel = readFileSync(codexConfig, "utf8");
+  const occupied = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch: () => new Response("live") });
+  const config = { ...defaultConfig("full"), port: occupied.port!, brokerSocketPath: defaultBrokerEndpoint(join(root, "broker")) };
+  const localBroker = TurnBroker.forSocket(config.brokerSocketPath);
+  await localBroker.listen();
+  const remote = new RemoteTurnBroker(config.brokerSocketPath);
+  const stateRoot = join(root, "state");
+  const devProvider = (provider: CodexProviderConfig): CodexProviderConfig => ({
+    ...provider,
+    chatgptWeb: {
+      ...provider.chatgptWeb,
+      brokerSocketPath: config.brokerSocketPath,
+      threadEnvironmentStatePath: join(stateRoot, "thread-environments.json"),
+      lunaCheckpointStatePath: join(stateRoot, "luna-checkpoints.json"),
+    },
+  });
+  const worker = ChatGptBrowserWorker.forProvider(devProvider(providerConfig(config)));
+  const originalRun = worker.run.bind(worker);
+  let browserStarts = 0;
+  (worker as unknown as { run: (turn: BrowserTurn) => Promise<string> }).run = async turn => {
+    browserStarts += 1;
+    const prepared = await turn.prepare();
+    try {
+      const token = prepared.text.match(/turn_token (turn_[A-Za-z0-9_-]+)/)?.[1];
+      if (!token) throw new Error("missing DEV broker token");
+      const claimed = await callTurnBroker<{ bindingId: string }>(config.brokerSocketPath, { method: "claim", token });
+      turn.onReasoningSummary?.("Exercising the real broker round");
+      const progress = turn.externalProgress;
+      if (!progress) throw new Error("DEV tool-capable browser has no progress transport");
+      const previousBatchRevision = progress.snapshot().lastToolBatchRevision;
+      const invocation = callTurnBroker<BrokerToolResult>(config.brokerSocketPath, {
+        method: "invoke",
+        bindingId: claimed.bindingId,
+        wireName: "exec_command",
+        arguments: { cmd: "git status --short" },
+      }, 30_000);
+      let snapshot = progress.snapshot();
+      while (snapshot.lastToolBatchRevision <= previousBatchRevision) {
+        snapshot = await progress.waitForChange(snapshot.revision, turn.abortSignal);
+      }
+      await progress.acknowledgeToolBatch(snapshot.lastToolBatchRevision);
+      const result = await invocation;
+      const simulated = (result.structuredContent as { simulated: boolean }).simulated;
+      const answer = `DEV receipt simulated=${simulated}`;
+      turn.onTextDelta(answer);
+      return answer;
+    } finally {
+      prepared.release();
+    }
+  };
+  const factory = (provider: CodexProviderConfig) => createChatGptWebAdapter(devProvider(provider), { broker: remote });
+  const driver = new DevChatDriver(config, new DevChatStore(join(root, "chats")), factory, root);
+  try {
+    const state = driver.open("tool-round").state;
+    const result = await driver.send(state, "Use a command tool, then report its receipt.");
+    expect(result).toMatchObject({ text: "DEV receipt simulated=true", toolCalls: 1 });
+    expect(state.input.find(item => (item as { role?: string }).role === "assistant"))
+      .toMatchObject({ internal_chat_message_metadata_passthrough: { turn_id: expect.stringContaining("dev_turn_") } });
+    expect(browserStarts).toBe(1);
+    expect(await (await fetch(`http://127.0.0.1:${occupied.port}`)).text()).toBe("live");
+    expect(readFileSync(codexConfig, "utf8")).toBe(sentinel);
+  } finally {
+    (worker as unknown as { run: (turn: BrowserTurn) => Promise<string> }).run = originalRun;
+    await driver.close();
+    chatGptTurnSessions.clear();
+    await Bun.sleep(0);
+    await localBroker.close();
+    await occupied.stop(true);
+  }
+});
+
+test("synthetic fill crosses the production threshold and triggers the real compact handler", async () => {
+  const root = scratch("cgw-dev-compact");
+  const config = defaultConfig("full");
+  let compactRuns = 0;
+  const factory = (): ProviderAdapter => ({
+    name: "dev-compaction-test",
+    async runTurn(parsed, _incoming, emit) {
+      if (parsed._compactionRequest) {
+        compactRuns += 1;
+        emit({ type: "text_delta", text: "Synthetic history compacted for the next DEV turn.", phase: "final_answer" });
+      } else {
+        emit({ type: "text_delta", text: "DEV turn completed after compaction.", phase: "final_answer" });
+      }
+      emit({
+        type: "done", stopReason: "stop", endTurn: true,
+        usage: { inputTokens: 1_000, outputTokens: 20, totalTokens: 1_020, estimated: true },
+      });
+    },
+  });
+  const store = new DevChatStore(join(root, "chats"));
+  const driver = new DevChatDriver(config, store, factory, root);
+  const state = driver.open("auto-compact", "chatgpt-web/light").state;
+  driver.fill(state, 30_000);
+  expect(driver.status(state).inputTokens).toBeGreaterThanOrEqual(32_000);
+  const events: string[] = [];
+  const result = await driver.send(state, "Continue after compacting the synthetic history.", event => events.push(event.type));
+  expect(result).toMatchObject({ text: "DEV turn completed after compaction.", compactions: 1 });
+  expect(compactRuns).toBe(1);
+  expect(events).toContain("compaction_start");
+  expect(events).toContain("compaction_done");
+  expect(store.load("auto-compact")?.compactions).toBe(1);
+  await driver.close();
+}, 30_000);

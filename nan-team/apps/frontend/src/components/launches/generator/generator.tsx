@@ -1,5 +1,6 @@
 'use client';
 
+import { readNdjson } from '@gitroom/helpers/utils/read.ndjson';
 import React, { FC, useCallback, useMemo, useState } from 'react';
 import { useUser } from '@gitroom/frontend/components/layout/user.context';
 import { useRouter } from 'next/navigation';
@@ -22,9 +23,13 @@ import { Select } from '@gitroom/react/form/select';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import dynamic from 'next/dynamic';
 import { useToaster } from '@gitroom/react/toaster/toaster';
+import { AiWaitStream } from '@gitroom/frontend/components/ui/ai.wait.stream';
 
 const AddEditModal = dynamic(
-  () => import('@gitroom/frontend/components/new-launch/add.edit.modal').then((module) => module.AddEditModal),
+  () =>
+    import('@gitroom/frontend/components/new-launch/add.edit.modal').then(
+      (module) => module.AddEditModal
+    ),
   { ssr: false }
 );
 
@@ -52,87 +57,74 @@ const FirstStep: FC = (props) => {
   const [research] = form.watch(['research']);
   const generateStep = useCallback(
     async (reader: ReadableStreamDefaultReader) => {
-      const decoder = new TextDecoder('utf-8');
-      let lastResponse = {} as any;
-      // eslint-disable-next-line no-constant-condition
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) return lastResponse.data.output;
+      let output: any;
+      for await (const data of readNdjson(reader)) {
+        // Server emits this when a node in the generation graph throws.
+        if (data?.error) {
+          throw new Error(
+            data.message ||
+              t(
+                'generation_failed',
+                'Failed to generate posts, please try again.'
+              )
+          );
+        }
 
-        // Convert chunked binary data to string
-        const chunkStr = decoder.decode(value, {
-          stream: true,
-        });
-        for (const chunk of chunkStr
-          .split('\n')
-          .filter((f) => f && f.indexOf('{') > -1)) {
-          let data: any;
-          try {
-            data = JSON.parse(chunk);
-          } catch (e) {
-            /** ignore partial / unparseable chunks **/
-            continue;
+        {
+          switch (data.name) {
+            case 'agent':
+              setShowStep(t('agent_starting', 'Agent starting'));
+              break;
+            case 'research':
+              setShowStep(
+                t('researching_your_content', 'Researching your content...')
+              );
+              break;
+            case 'find-category':
+              setShowStep(
+                t('understanding_the_category', 'Understanding the category...')
+              );
+              break;
+            case 'find-topic':
+              setShowStep(t('finding_the_topic', 'Finding the topic...'));
+              break;
+            case 'find-popular-posts':
+              setShowStep(
+                t(
+                  'finding_popular_posts_to_match_with',
+                  'Finding popular posts to match with...'
+                )
+              );
+              break;
+            case 'generate-hook':
+              setShowStep(t('generating_hook', 'Generating hook...'));
+              break;
+            case 'generate-content':
+              setShowStep(t('generating_content', 'Generating content...'));
+              break;
+            case 'generate-picture':
+              setShowStep(t('generating_pictures', 'Generating pictures...'));
+              break;
+            case 'upload-pictures':
+              setShowStep(t('uploading_pictures', 'Uploading pictures...'));
+              break;
+            case 'post-time':
+              setShowStep(t('finding_time_to_post', 'Finding time to post...'));
+              break;
           }
-
-          // Server emits this when a node in the generation graph throws.
-          if (data?.error) {
-            throw new Error(
-              data.message ||
-                t('generation_failed', 'Failed to generate posts, please try again.')
-            );
-          }
-
-          {
-            switch (data.name) {
-              case 'agent':
-                setShowStep(t('agent_starting', 'Agent starting'));
-                break;
-              case 'research':
-                setShowStep(
-                  t('researching_your_content', 'Researching your content...')
-                );
-                break;
-              case 'find-category':
-                setShowStep(
-                  t(
-                    'understanding_the_category',
-                    'Understanding the category...'
-                  )
-                );
-                break;
-              case 'find-topic':
-                setShowStep(t('finding_the_topic', 'Finding the topic...'));
-                break;
-              case 'find-popular-posts':
-                setShowStep(
-                  t(
-                    'finding_popular_posts_to_match_with',
-                    'Finding popular posts to match with...'
-                  )
-                );
-                break;
-              case 'generate-hook':
-                setShowStep(t('generating_hook', 'Generating hook...'));
-                break;
-              case 'generate-content':
-                setShowStep(t('generating_content', 'Generating content...'));
-                break;
-              case 'generate-picture':
-                setShowStep(t('generating_pictures', 'Generating pictures...'));
-                break;
-              case 'upload-pictures':
-                setShowStep(t('uploading_pictures', 'Uploading pictures...'));
-                break;
-              case 'post-time':
-                setShowStep(
-                  t('finding_time_to_post', 'Finding time to post...')
-                );
-                break;
-            }
-            lastResponse = data;
-          }
+          if (
+            typeof data?.data?.output?.hook === 'string' &&
+            Array.isArray(data.data.output.content) &&
+            data.data.output.date
+          )
+            output = data.data.output;
         }
       }
+      if (!output)
+        throw new Error(
+          t('generation_failed', 'Failed to generate posts, please try again.')
+        );
+      return output;
     },
     [t]
   );
@@ -148,14 +140,20 @@ const FirstStep: FC = (props) => {
         });
         if (!response.body) {
           throw new Error(
-            t('generation_failed', 'Failed to generate posts, please try again.')
+            t(
+              'generation_failed',
+              'Failed to generate posts, please try again.'
+            )
           );
         }
         const reader = response.body.getReader();
         const load = await generateStep(reader);
         if (!load?.content) {
           throw new Error(
-            t('generation_failed', 'Failed to generate posts, please try again.')
+            t(
+              'generation_failed',
+              'Failed to generate posts, please try again.'
+            )
           );
         }
         const messages = load.content.map((p: any, index: number) => {
@@ -209,7 +207,10 @@ const FirstStep: FC = (props) => {
       } catch (e: any) {
         toaster.show(
           e?.message ||
-            t('generation_failed', 'Failed to generate posts, please try again.'),
+            t(
+              'generation_failed',
+              'Failed to generate posts, please try again.'
+            ),
           'warning'
         );
       } finally {
@@ -229,7 +230,16 @@ const FirstStep: FC = (props) => {
           <div className="pb-[10px] rounded-[4px]">
             <div className="flex">
               <div className="flex-1">
-                {!showStep ? (
+                {loading ? (
+                  <AiWaitStream
+                    kind="caption"
+                    title="AI đang viết bài"
+                    expectedSeconds={60}
+                    label={showStep || undefined}
+                    fullWidth
+                    className="mb-[10px]"
+                  />
+                ) : !showStep ? (
                   <div className="loading-shimmer pb-[10px]">&nbsp;</div>
                 ) : (
                   <div

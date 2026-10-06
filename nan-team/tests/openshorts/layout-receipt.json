@@ -1,0 +1,214 @@
+{
+  "imageId": "sha256:bb3a5c5b38150730c8a3bde616d8a5f735de378d7c0f58d557655e08092e9d52",
+  "sourceHashes": {
+    "packages/openshorts-engine/README.md": "ac5ebdd3523869b271a76ea52541356a38b2d6b2e657af0c39e34481ee158a08",
+    "packages/openshorts-engine/bin/docker-python": "bb0016bd7e439cea48d842914c5f01858e45104ad7778d28343f4bb081780e98",
+    "packages/openshorts-engine/bin/provision-models.py": "74aaaa03c8a5bef341245800ec8f042e1119de201cf99e42fcc4a3d2cdd21d10",
+    "packages/openshorts-engine/core/active_speaker.py": "6523ef35098300db69efbc7ff20f7b26c89889b1234806a5fbe0b78eec5c22cd",
+    "packages/openshorts-engine/core/camera_inset.py": "6a46a25304e1834690d9c7e9029d5a8db2c8aebe1a8cdb3da6285ae3c8ca5294",
+    "packages/openshorts-engine/core/clip_selection.py": "36e7bbe348e64179dd3235f5e2dfefeca55b4330084e0fa007c5c0fbade02c0a",
+    "packages/openshorts-engine/core/edit_builder.py": "9a0c6834becaac817581bd299bd224f14eda18f6606a98f0130a87bc99bad991",
+    "packages/openshorts-engine/core/editor.py": "90b21eee77883cd623a287eb43b7094f84692e249a8617f7360c11b246100260",
+    "packages/openshorts-engine/core/ffmpeg_utils.py": "315cb0ab07e4d83beed4abff98d83981850357d56887a543941820de7b8faad8",
+    "packages/openshorts-engine/core/fonts/Anton-Regular.ttf": "a4ba3a92350ebb031da0cb47630ac49eb265082ca1bc0450442f4a83ab947cab",
+    "packages/openshorts-engine/core/fonts/Montserrat-ExtraBold.ttf": "d3ac6a843d3ba6d5cafd44cf39e437055c8aed7e261010f595f57d3c7b3e2c1b",
+    "packages/openshorts-engine/core/fonts/Montserrat-OFL.txt": "8b7141c03fa4f8d44e6345d5d4931709290f0f67875e452e95ac1fd3a027802e",
+    "packages/openshorts-engine/core/fonts/NotoSerif-Bold.ttf": "3b2086a869bcded2aeb4416fc281ceec9d6ce3c06756cda19f8f763636204e7d",
+    "packages/openshorts-engine/core/fonts/openshorts-fontmap.conf": "133d66998c7060a7340a8e9df377912d50dba5cf51ae40c558792cd19cd0e4d4",
+    "packages/openshorts-engine/core/frame_sampler.py": "733c3aefb0be418ec427afc771fd271d6f410948532684db743eda59c011abdd",
+    "packages/openshorts-engine/core/gemini_worker.py": "e7edc46a8718180671368cd810d78412470638c7abd0326739fc12c12c2a065c",
+    "packages/openshorts-engine/core/hook_grounding.py": "3150cce5c8a80ea34b33017a962bafb596d6499e19b16203caf99b7ca149a94d",
+    "packages/openshorts-engine/core/hooks.py": "96beb8947472baf88765ef18f6f57f8568e41d6b4780fd6b5a58b5e66b880917",
+    "packages/openshorts-engine/core/layout_picker.py": "2e179323eaf1a47f68b7d835729e8ad0996f2d9820114070acee24bdd6a62426",
+    "packages/openshorts-engine/core/layout_ranges.py": "f676862f0a8878ddf7d1c835e3844c393acee2406fbcc969dd8369f9aa037a58",
+    "packages/openshorts-engine/core/llm_backend.py": "b1497a6f48e3fea519c6064cdb0c23941b50c6beac0210a5cee8a97db74dbf70",
+    "packages/openshorts-engine/core/main.py": "ff028794bb3a81447bcef4f2be4dfeb2348c859a22050cf8249334bb7dc6d0a4",
+    "packages/openshorts-engine/core/moment_picker.py": "7ff4acc9c15413ba88d07071b471a87d22e86c560701a18d2c3f71e3b24f6555",
+    "packages/openshorts-engine/core/punch_in.py": "fa0197851dc7386f07f82b786056654fbf386c42b490962eeee247e2b110d629",
+    "packages/openshorts-engine/core/recut.py": "6a737cd28a5407e71253282f9fc1c9a2cbefe7c5ad8decf9724710bef7d96f9d",
+    "packages/openshorts-engine/core/reframe_v2.py": "582069ab8f29c359602ddf01dea1ed46643ff4677d9082bc2a0437dde760a02c",
+    "packages/openshorts-engine/core/scene_detection.py": "919553a4b7649dcf3ee61fa82ac865000dfbc3520708d7b538c813d112ccc322",
+    "packages/openshorts-engine/core/screencast_layout.py": "ada043478ae630170f306ac6edaf6119cbba71ea245f51f92586983482fd7825",
+    "packages/openshorts-engine/core/security_utils.py": "dbae2575be9721f985217b174133735c8649172fc61e37394de91111b96caa14",
+    "packages/openshorts-engine/core/split_layout.py": "51e2c04542f1a44ad9899e4fcea45308f04afb98044225d97e6414642a0fedb8",
+    "packages/openshorts-engine/core/subtitles.py": "ee2398d1006d17f726c82bd1762ce462f39195b2aac1ca5be4885ba52d21e0b5",
+    "packages/openshorts-engine/core/tracking.py": "2c8ab21f75b060c1e1f54d3eccb8b021b04c3cea89e8ba273672989559c99188",
+    "packages/openshorts-engine/core/transcribe_backends.py": "6b59641d56bca41c853b833462df91d909cd908fb284e738521cd0ddfca61c17",
+    "packages/openshorts-engine/requirements.txt": "c463ea6084bc60d692946fa9d55ce68faa46fc20ab38be579d374e1a9d776147",
+    "packages/openshorts-engine/source-manifest.json": "9893327fe8b9c274e455185367d52fba3e5d6ac03b531ce3bd2a558abd50c1c1",
+    "packages/openshorts-engine/src/agy_compat.py": "1078e51fa07ed1104c5174dad90cfe1ef04b8bcf5341a3070cb4dbebbce7a4ae",
+    "packages/openshorts-engine/src/ai_provider.py": "51d14842d21908cc71081de04f4b15f7e2636cbdaf470154f1aad793214693d8",
+    "packages/openshorts-engine/src/analysis.py": "b76c796c2a6acf97a8bbcbd0d7fd5a3a3b53649dff9ed9c499e192fbe471d8b2",
+    "packages/openshorts-engine/src/budgets.py": "40cdb9ec2f46069e9e5476c2b36a22aad2c2d520d264584c800faebe141b8391",
+    "packages/openshorts-engine/src/capabilities.py": "0b1713b28e5e876defd5c120905b657923875e88b9aec5f86a06a0f581010857",
+    "packages/openshorts-engine/src/checkpoints.py": "94a893a3912ff5b4cfb5c176e4b3e7141941a130d7b8a521624c2613b5583718",
+    "packages/openshorts-engine/src/contracts.py": "4ea8b628bcfcf04eed0296c22a74b465f6d7d739f50bdcd32b32a145d39db281",
+    "packages/openshorts-engine/src/pipeline.py": "75076eaf367f08a08064bd69487b390cbb80fcf4458a8319316443da3f948c99",
+    "packages/openshorts-engine/src/render_phase.py": "6d8cd10255fb92ae723f8565bb3a2f017167e22e4f4c2a3fbccdea5e12a2a856",
+    "packages/openshorts-engine/src/rendering.py": "d384f6f15cf6fb191c1aaae796dc7d654f45e709837ca58214114286b09fbea3",
+    "packages/openshorts-engine/src/retention.py": "fc88f6ddaa9865fdccf28432f88d1c0a2708d391660f0a3ca4c2166b95c820cf",
+    "packages/openshorts-engine/src/revisions.py": "37d7fe81efb7c6ea5cc3b378759e2a187782d60b1857a5b76cbd3f983b44de0a",
+    "packages/openshorts-engine/src/timelines.py": "1d3ca00d821a45fdfc06d1399934a8bbee4afb82c1c1e375efc5a947ad72dca4",
+    "packages/openshorts-engine/src/worker.py": "130d9c0436367be2c5bde142bec4f56b298ff3f3820ea3da422a3e372165e618"
+  },
+  "fixtureSource": "skimage.data.astronaut (bundled NASA public-domain photo); synthesized slide/mouth motion",
+  "scope": "Geometry and synthetic mouth attribution; live AI scene-content accuracy and real conversations remain separate tests",
+  "checks": [
+    {
+      "layout": "screencast",
+      "durationSeconds": 6.0,
+      "decision": {
+        "engine": "reframe-v2",
+        "scenes": [
+          {
+            "startSeconds": 0.0,
+            "endSeconds": 6.0,
+            "strategy": "INSET"
+          }
+        ],
+        "speakerCuts": [],
+        "trajectory": {
+          "minX": null,
+          "maxX": null
+        },
+        "cameraInset": [
+          920,
+          142,
+          360,
+          202
+        ],
+        "screencastPresenterCenters": []
+      },
+      "warnings": [],
+      "aiCalls": [
+        {
+          "role": "visual-editor",
+          "frames": 6
+        }
+      ],
+      "outputSha256": "608ceada6c7c5b42424c52675b274c096422fa14fecb2302b3e60d12557f152d",
+      "scenes": [
+        {
+          "startSeconds": 0,
+          "endSeconds": 6.0,
+          "sourceStartSeconds": 0,
+          "sourceEndSeconds": 6.0
+        }
+      ]
+    },
+    {
+      "layout": "speaker-cut",
+      "durationSeconds": 8.0,
+      "decision": {
+        "engine": "reframe-v2",
+        "scenes": [
+          {
+            "startSeconds": 0.0,
+            "endSeconds": 8.0,
+            "strategy": "ALTERNATE"
+          }
+        ],
+        "speakerCuts": [
+          {
+            "startSeconds": 0.0,
+            "speaker": 0
+          },
+          {
+            "startSeconds": 0.4,
+            "speaker": 0
+          },
+          {
+            "startSeconds": 0.8,
+            "speaker": 0
+          },
+          {
+            "startSeconds": 1.2000000000000002,
+            "speaker": 0
+          },
+          {
+            "startSeconds": 1.6,
+            "speaker": 0
+          },
+          {
+            "startSeconds": 2.0,
+            "speaker": 0
+          },
+          {
+            "startSeconds": 2.4000000000000004,
+            "speaker": 0
+          },
+          {
+            "startSeconds": 2.8000000000000003,
+            "speaker": 0
+          },
+          {
+            "startSeconds": 3.2,
+            "speaker": 1
+          },
+          {
+            "startSeconds": 3.6,
+            "speaker": 1
+          },
+          {
+            "startSeconds": 4.0,
+            "speaker": 1
+          },
+          {
+            "startSeconds": 4.4,
+            "speaker": 1
+          },
+          {
+            "startSeconds": 4.800000000000001,
+            "speaker": 1
+          },
+          {
+            "startSeconds": 5.2,
+            "speaker": 1
+          },
+          {
+            "startSeconds": 5.6000000000000005,
+            "speaker": 1
+          },
+          {
+            "startSeconds": 6.0,
+            "speaker": 0
+          },
+          {
+            "startSeconds": 6.4,
+            "speaker": 0
+          },
+          {
+            "startSeconds": 6.800000000000001,
+            "speaker": 0
+          },
+          {
+            "startSeconds": 7.2,
+            "speaker": 0
+          },
+          {
+            "startSeconds": 7.6000000000000005,
+            "speaker": 0
+          }
+        ],
+        "trajectory": {
+          "minX": 45,
+          "maxX": 563
+        },
+        "cameraInset": null,
+        "screencastPresenterCenters": [],
+        "fixtureAttributionAccuracyOutsideHold": 1.0
+      },
+      "warnings": [],
+      "aiCalls": [],
+      "outputSha256": "5b7794db9fb34799e9e2810939d1341af2cf8bd3fd26129941ac74754dc3f12b",
+      "scenes": [
+        {
+          "startSeconds": 0,
+          "endSeconds": 8.0,
+          "sourceStartSeconds": 0,
+          "sourceEndSeconds": 8.0
+        }
+      ]
+    }
+  ]
+}

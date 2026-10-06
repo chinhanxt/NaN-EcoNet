@@ -1013,4 +1013,20 @@ export class PostsRepository {
       },
     });
   }
+
+  // Non-deleted top-level posts of one channel at an exact publish date
+  // (duplicate / same-time guard for agent scheduling).
+  getPostsForSlot(orgId: string, integrationId: string, publishDate: string) {
+    return this._post.model.post.findMany({
+      where: {
+        organizationId: orgId,
+        integrationId,
+        publishDate: new Date(publishDate),
+        deletedAt: null,
+        parentPostId: null,
+      },
+      select: { id: true, content: true, createdAt: true },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
 }

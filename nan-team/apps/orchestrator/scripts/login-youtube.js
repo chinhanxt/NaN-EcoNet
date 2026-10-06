@@ -1,1 +1,1 @@
-/home/chinhan/MMO/postiz/scripts/login-youtube.js
+/home/chinhan/MMO/NaN-Team/scripts/login-youtube.js

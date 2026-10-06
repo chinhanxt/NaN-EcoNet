@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# Private backend Python binary adapter. No production container is reused.
+set -euo pipefail
+package_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
+job_root="${SOURCE_VIDEO_JOB_DIRECTORY:?Set SOURCE_VIDEO_JOB_DIRECTORY to the backend private job root}"
+model_root="${OPENSHORTS_WHISPER_MODEL_DIRECTORY:?Set a pre-provisioned faster-whisper directory}"
+yolo_file="${OPENSHORTS_YOLO_MODEL_PATH:?Set a pre-provisioned YOLO weights file}"
+image_ref="${OPENSHORTS_DOCKER_IMAGE:?Set an immutable local image sha256 digest}"
+[[ "$image_ref" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo 'OPENSHORTS_DOCKER_IMAGE must be a local sha256 image ID' >&2; exit 64; }
+[[ "$job_root" = /* && "$model_root" = /* && "$yolo_file" = /* ]] || { echo 'Runtime paths must be absolute' >&2; exit 64; }
+[[ -d "$job_root" && -f "$model_root/model.bin" && -f "$yolo_file" ]] || { echo 'Job root or provisioned model assets are missing' >&2; exit 64; }
+# Names are unique per wrapper process; trap cleanup survives ordinary cancellation.
+container_name="nan-openshorts-${BASHPID}"
+# Host-side owner watchdog: inside the container getppid() is tini and the owner's PID
+# namespace is unreachable, so the worker's own watchdog cannot see the owner die. This
+# loop runs in its own session (it survives a SIGKILL of the wrapper's process group) and
+# removes the container once the owner (OPENSHORTS_OWNER_PID) or this wrapper is gone.
+owner_pid="${OPENSHORTS_OWNER_PID:-}"
+[[ "$owner_pid" =~ ^[1-9][0-9]*$ ]] || owner_pid=''
+poll="${OPENSHORTS_PARENT_POLL_SECONDS:-2}"
+[[ "$poll" =~ ^[0-9]+([.][0-9]+)?$ ]] || poll=2
+setsid bash -c '
+  wrapper=$1 owner=$2 name=$3 poll=$4
+  while kill -0 "$wrapper" 2>/dev/null && { [[ -z "$owner" ]] || kill -0 "$owner" 2>/dev/null; }; do sleep "$poll"; done
+  # The container may still be starting: keep removing it while the wrapper lives.
+  while kill -0 "$wrapper" 2>/dev/null; do docker rm -f "$name" >/dev/null 2>&1; sleep 1; done
+  docker rm -f "$name" >/dev/null 2>&1
+' nan-openshorts-watchdog "$$" "$owner_pid" "$container_name" "$poll" </dev/null >/dev/null 2>&1 &
+watchdog_pid=$!
+cleanup() {
+  kill "$watchdog_pid" 2>/dev/null || true
+  docker rm -f "$container_name" >/dev/null 2>&1 || true
+}
+trap cleanup EXIT
+trap 'cleanup; exit 143' TERM INT HUP
+# Preserve host absolute paths: AGY reads the same staged JPEG files on the host.
+# Bare `-e NAME` forwards the owner's AGY limits only when set, so the engine overlaps
+# AGY calls (ai_provider.parallelism) exactly as the Node owner allows.
+docker run --rm --init --name "$container_name" --network none --read-only \
+  --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges \
+  --cpus "${OPENSHORTS_DOCKER_CPUS:-1}" --cpu-shares 256 --memory "${OPENSHORTS_DOCKER_MEMORY:-2g}" --pids-limit 256 \
+  --tmpfs /tmp:rw,size=256m \
+  -e OPENSHORTS_EXIT_WITH_PARENT=0 -e OPENSHORTS_THREADS="${OPENSHORTS_THREADS:-1}" -e OMP_NUM_THREADS=1 -e OPENBLAS_NUM_THREADS=1 -e MKL_NUM_THREADS=1 \
+  -e PYTHONDONTWRITEBYTECODE=1 -e HF_HUB_OFFLINE=1 -e TRANSFORMERS_OFFLINE=1 \
+  -e WHISPER_MODEL=/models/whisper -e WHISPER_DEVICE=cpu -e WHISPER_COMPUTE=int8 \
+  -e WHISPER_LANGUAGE="${WHISPER_LANGUAGE:-auto}" \
+  -e YOLO_MODEL_PATH=/weights/yolo.pt -e SOURCE_VIDEO_JOB_DIRECTORY="$job_root" \
+  -e OPENSHORTS_MAX_INPUT_BYTES="${OPENSHORTS_MAX_INPUT_BYTES:-1073741824}" \
+  -e OPENSHORTS_MAX_WORK_BYTES="${OPENSHORTS_MAX_WORK_BYTES:-5368709120}" \
+  -e OPENSHORTS_MAX_DURATION_SECONDS="${OPENSHORTS_MAX_DURATION_SECONDS:-21600}" \
+  -e AGY_MCP_WORKER_CONCURRENCY -e AGY_MCP_TIMEOUT_MS \
+  -v "$package_root:$package_root:ro" -v "$job_root:$job_root:rw" \
+  -v "$model_root:/models/whisper:ro" -v "$yolo_file:/weights/yolo.pt:ro" \
+  -i "$image_ref" python3 "$@" <&0 &
+wait "$!"

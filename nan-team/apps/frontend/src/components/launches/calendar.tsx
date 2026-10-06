@@ -72,6 +72,8 @@ const MissingReleaseModal = dynamic(
   { ssr: false }
 );
 
+const EmptyWrapper: FC<{ children?: React.ReactNode; value?: any }> = ({ children }) => <>{children}</>;
+
 // Extend dayjs with necessary plugins
 extend(isSameOrAfter);
 extend(isSameOrBefore);
@@ -164,7 +166,7 @@ const usePostActions = (onMutate?: () => void) => {
         .local();
       const ExistingData = !isDuplicate
         ? ExistingDataContextProvider
-        : Fragment;
+        : EmptyWrapper;
       modal.openModal({
         id: 'add-edit-modal',
         closeOnClickOutside: false,

@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
   Param,
   Post,
   Query,
@@ -25,6 +26,8 @@ import { UploadFactory } from '@gitroom/nestjs-libraries/upload/upload.factory';
 import { SaveMediaInformationDto } from '@gitroom/nestjs-libraries/dtos/media/save.media.information.dto';
 import { VideoDto } from '@gitroom/nestjs-libraries/dtos/videos/video.dto';
 import { VideoFunctionDto } from '@gitroom/nestjs-libraries/dtos/videos/video.function.dto';
+import { AiDesignEditDto } from '@gitroom/nestjs-libraries/dtos/media/ai.design.edit.dto';
+import { RemoveBackgroundDto } from '@gitroom/nestjs-libraries/dtos/media/remove.background.dto';
 
 @ApiTags('Media')
 @Controller('/media')
@@ -55,7 +58,8 @@ export class MediaController {
     @Req() req: Request,
     @Body('prompt') prompt: string,
     isPicturePrompt = false,
-    @Body('aspect_ratio') aspectRatio?: string
+    @Body('aspect_ratio') aspectRatio?: string,
+    referenceImageUrls?: string[]
   ) {
     const total = await this._subscriptionService.checkCredits(org);
     if (process.env.STRIPE_PUBLISHABLE_KEY && total.credits <= 0) {
@@ -63,14 +67,14 @@ export class MediaController {
     }
 
     return {
-      output:
-        'data:image/jpeg;base64,' +
-        (await this._mediaService.generateImage(
+      output: await this._mediaService.generateImage(
           prompt,
           org,
           isPicturePrompt,
-          aspectRatio
-        )),
+          aspectRatio,
+          undefined,
+          referenceImageUrls
+        ),
     };
   }
 
@@ -79,22 +83,99 @@ export class MediaController {
     @GetOrgFromRequest() org: Organization,
     @Req() req: Request,
     @Body('prompt') prompt: string,
-    @Body('aspect_ratio') aspectRatio?: string
+    @Body('aspect_ratio') aspectRatio?: string,
+    @Body('count') count?: number,
+    // Sample images to follow (AI design chat generateImage ops), at most 4 upload URLs.
+    @Body('referenceImageUrls') referenceImageUrls?: string[]
   ) {
+    // count > 1: parallel fan-out (one AGY job per image); the response keeps the first image's
+    // fields for existing clients and adds `images` + `failed`.
+    if (Number(count) > 1) {
+      const total = await this._subscriptionService.checkCredits(org);
+      if (process.env.STRIPE_PUBLISHABLE_KEY && total.credits <= 0) {
+        return false;
+      }
+      return this._mediaService.generateImageBatch(prompt, org, Number(count), aspectRatio, referenceImageUrls);
+    }
     const image = await this.generateImage(
       org,
       req,
       prompt,
       true,
-      aspectRatio
+      aspectRatio,
+      referenceImageUrls
     );
     if (!image) {
       return false;
     }
 
-    const file = await this.storage.uploadSimple(image.output);
+    const file = image.output;
 
     return this._mediaService.saveFile(org.id, file.split('/').pop(), file);
+  }
+
+  /**
+   * Same generation as /generate-image-with-prompt, streamed as NDJSON lines: {type:'start',count},
+   * {type:'image',index,media} per saved image as it finishes, {type:'error',index?,message}, {type:'done'}.
+   * Generation is aborted when the client disconnects.
+   */
+  @Post('/generate-image-with-prompt/stream')
+  async generateImageFromTextStream(
+    @GetOrgFromRequest() org: Organization,
+    @Body('prompt') prompt: string,
+    @Res({ passthrough: false }) res: Response,
+    @Body('aspect_ratio') aspectRatio?: string,
+    @Body('count') count?: number,
+    @Body('referenceImageUrls') referenceImageUrls?: string[]
+  ) {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    // Keep global compression from buffering images until the whole batch ends.
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.flushHeaders();
+    const cancellation = new AbortController();
+    const disconnected = () => { if (!res.writableEnded) cancellation.abort(new Error('Image client disconnected')); };
+    res.once('close', disconnected);
+    const write = (event: object) => { if (!res.destroyed && !cancellation.signal.aborted) res.write(JSON.stringify(event) + '\n'); };
+    try {
+      const total = await this._subscriptionService.checkCredits(org);
+      if (process.env.STRIPE_PUBLISHABLE_KEY && total.credits <= 0) {
+        write({ type: 'error', message: 'You have no AI image credits left.' });
+      } else {
+        await this._mediaService.generateImageStream(prompt, org, Number(count) || 1, write, aspectRatio, referenceImageUrls, cancellation.signal);
+      }
+    } catch (err) {
+      write({ type: 'error', message: err instanceof HttpException ? err.message : 'Something went wrong while generating your image, please try again.' });
+    } finally { res.off('close', disconnected); }
+    write({ type: 'done' });
+    if (!res.destroyed) res.end();
+  }
+
+  /** "AI thiết kế" chat: the model views the page screenshot and returns a reply plus Polotno operations (no credit). */
+  @Post('/ai-design-edit')
+  async aiDesignEdit(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: AiDesignEditDto,
+    @Res({ passthrough: true }) res: Response
+  ) {
+    // Free: chat-style design editing uses no AI credit.
+    // The AGY job stops when the editor closes or the user cancels the request.
+    const cancellation = new AbortController();
+    const disconnected = () => { if (!res.writableEnded) cancellation.abort(new Error('AI design client disconnected')); };
+    res.once('close', disconnected);
+    try {
+      return await this._mediaService.aiDesignEdit(org, body, cancellation.signal);
+    } finally {
+      res.off('close', disconnected);
+    }
+  }
+
+  /** Transparent PNG of an uploaded image (rembg on this server, no credit); saved as new media. */
+  @Post('/remove-background')
+  removeBackground(
+    @GetOrgFromRequest() org: Organization,
+    @Body() body: RemoveBackgroundDto
+  ) {
+    return this._mediaService.removeBackground(org, body.path);
   }
 
   @Post('/upload-server')

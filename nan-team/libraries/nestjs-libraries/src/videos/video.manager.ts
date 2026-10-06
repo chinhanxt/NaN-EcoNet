@@ -43,8 +43,10 @@ export class VideoManager {
     identifier: string
   ): (VideoParams & { instance: VideoAbstract<any> }) | undefined {
     const video = (Reflect.getMetadata('video', VideoAbstract) || []).find(
-      (p: any) => p.identifier === identifier
+      (p: any) => p.identifier === identifier && p.available
     );
+
+    if (!video) return undefined;
 
     return {
       ...video,

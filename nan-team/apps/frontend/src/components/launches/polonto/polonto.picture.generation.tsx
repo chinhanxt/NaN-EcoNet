@@ -13,6 +13,8 @@ import { useToaster } from '@gitroom/react/toaster/toaster';
 import { useVariables } from '@gitroom/react/helpers/variable.context';
 import { useT } from '@gitroom/react/translation/get.transation.service.client';
 import { clsx } from 'clsx';
+import { AiWaitStream } from '@gitroom/frontend/components/ui/ai.wait.stream';
+import { readNdjson } from '@gitroom/helpers/utils/read.ndjson';
 
 const RATIO_OPTIONS = [
   { value: 'auto', label: 'Tự động' },
@@ -43,6 +45,9 @@ const GenerateTab = observer(({ store }: any) => {
   const [progress, setProgress] = useState(0);
   const [seconds, setSeconds] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  // Images per request (backend fans out one AGY job per image, max 6); a batch is not auto-inserted.
+  const [count, setCount] = useState(1);
+  const [batchInfo, setBatchInfo] = useState<{ made: number; failed: number } | null>(null);
 
   const { billingEnabled } = useVariables();
   const fetch = useFetch();
@@ -62,31 +67,22 @@ const GenerateTab = observer(({ store }: any) => {
 
   const { data, mutate } = useSWR('copilot-credits', loadCredits);
 
-  // Timer & progress bar during generation
+  // Timer during generation; progress is the real share of images received (set by the stream).
   useEffect(() => {
     let timer: any;
-    let progressTimer: any;
 
     if (loading) {
-      setProgress(5);
+      setProgress(0);
       setSeconds(0);
       const startTime = Date.now();
 
       timer = setInterval(() => {
         setSeconds(Math.floor((Date.now() - startTime) / 1000));
       }, 1000);
-
-      progressTimer = setInterval(() => {
-        const elapsed = (Date.now() - startTime) / 1000;
-        if (elapsed <= 28) {
-          setProgress(Math.min(95, Math.floor(5 + (elapsed / 28) * 90)));
-        }
-      }, 400);
     }
 
     return () => {
       clearInterval(timer);
-      clearInterval(progressTimer);
     };
   }, [loading]);
 
@@ -156,6 +152,8 @@ const GenerateTab = observer(({ store }: any) => {
 
     setLoading(true);
     setError(null);
+    setBatchInfo(null);
+    if (count > 1) setImage(null);
 
     const targetRatio = ratio === 'auto' ? getBestAspectRatio() : ratio;
     const fullPrompt =
@@ -164,14 +162,52 @@ const GenerateTab = observer(({ store }: any) => {
         : promptText.trim();
 
     try {
-      // 1. Try /media/generate-image-with-prompt (saves to media storage & returns URL)
-      let res = await fetch('/media/generate-image-with-prompt', {
+      // 1. Stream /media/generate-image-with-prompt/stream (each image is saved to media storage and shown as it is ready)
+      let res = await fetch('/media/generate-image-with-prompt/stream', {
         method: 'POST',
         body: JSON.stringify({
           prompt: fullPrompt,
           aspect_ratio: targetRatio,
+          ...(count > 1 ? { count } : {}),
         }),
       });
+
+      if (res.ok && res.body) {
+        const made: string[] = [];
+        let total = count;
+        let failed = 0;
+        let lastError = '';
+        for await (const event of readNdjson(res.body.getReader())) {
+          if (event?.type === 'start') {
+            total = Math.max(1, Number(event.count) || count);
+          } else if (event?.type === 'image' && event.media?.path) {
+            const src: string = event.media.path;
+            made.push(src);
+            setProgress(Math.round(((made.length + failed) / total) * 100));
+            setHistory((prev) => [src, ...prev.filter((p) => p !== src)]);
+            if (count > 1) {
+              // Several variations: each one joins the grid below to click or drag onto the canvas.
+              setBatchInfo({ made: made.length, failed });
+            } else {
+              setImage(src);
+              // Automatically add to canvas
+              await addImageToCanvas(src);
+            }
+          } else if (event?.type === 'error') {
+            lastError = event.message || '';
+            if (typeof event.index !== 'number') break;
+            failed++;
+            setProgress(Math.round(((made.length + failed) / total) * 100));
+            if (count > 1) setBatchInfo({ made: made.length, failed });
+          }
+        }
+        mutate();
+        if (!made.length) {
+          throw new Error(lastError || 'Không nhận được dữ liệu hình ảnh từ máy chủ');
+        }
+        setProgress(100);
+        return;
+      }
 
       // 2. Fallback to /media/generate-image if needed
       if (!res.ok) {
@@ -195,6 +231,17 @@ const GenerateTab = observer(({ store }: any) => {
       }
 
       setProgress(100);
+      const batch: string[] = count > 1 && Array.isArray(resData.images)
+        ? resData.images.map((item: { path?: string }) => item?.path).filter(Boolean)
+        : [];
+      if (batch.length) {
+        // Several variations: show them all in the grid below to click or drag onto the canvas.
+        setImage(null);
+        setBatchInfo({ made: batch.length, failed: Math.max(0, Number(resData.failed) || 0) });
+        setHistory((prev) => [...batch, ...prev.filter((p) => !batch.includes(p))]);
+        mutate();
+        return;
+      }
       setImage(outputSrc);
       setHistory((prev) => [outputSrc, ...prev.filter((p) => p !== outputSrc)]);
       mutate();
@@ -291,36 +338,41 @@ const GenerateTab = observer(({ store }: any) => {
         </div>
       </div>
 
+      {/* Number of images */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-[12px] font-semibold text-gray-700">
+          Số lượng ảnh
+        </label>
+        <div className="grid grid-cols-6 gap-1.5">
+          {[1, 2, 3, 4, 5, 6].map((value) => (
+            <button
+              key={value}
+              type="button"
+              disabled={loading}
+              onClick={() => setCount(value)}
+              className={clsx(
+                'h-[28px] text-[11px] font-medium rounded-[5px] border transition-all duration-150 flex items-center justify-center',
+                count === value
+                  ? 'bg-[#059669] text-white border-[#059669] shadow-sm font-semibold'
+                  : 'bg-gray-50 text-gray-700 border-gray-200 hover:border-[#059669]/50'
+              )}
+            >
+              {value}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Progress & Status while generating */}
       {loading && (
-        <div className="flex flex-col gap-2 p-3 bg-emerald-50/70 border border-emerald-200 rounded-[8px]">
-          <div className="flex justify-between items-center text-[12px]">
-            <span className="font-semibold text-emerald-800 flex items-center gap-1.5">
-              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-              Đang tạo ảnh AI...
-            </span>
-            <span className="font-mono text-emerald-700 font-bold">
-              {progress}%
-            </span>
-          </div>
-
-          <div className="w-full bg-emerald-200/60 h-[7px] rounded-full overflow-hidden">
-            <div
-              className="bg-[#059669] h-full rounded-full transition-all duration-300 shadow-[0_0_8px_rgba(5,150,105,0.4)]"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-
-          <div className="flex justify-between items-center text-[11px] text-emerald-700">
-            <span>
-              {progress < 25 && 'Phân tích ý tưởng & phong cách...'}
-              {progress >= 25 && progress < 60 && 'Thiết lập bố cục & ánh sáng studio...'}
-              {progress >= 60 && progress < 90 && 'Đang kết xuất ảnh qua Antigravity...'}
-              {progress >= 90 && 'Hoàn tất & chèn vào thiết kế...'}
-            </span>
-            <span className="font-mono text-gray-500">⏱️ {seconds}s</span>
-          </div>
-        </div>
+        <AiWaitStream
+          kind="image"
+          title={count > 1 ? `Đang tạo ${count} ảnh AI` : 'Đang tạo ảnh AI'}
+          percent={count > 1 ? progress : undefined}
+          ratio={(ratio === 'auto' ? getBestAspectRatio() : ratio).replace(':', ' / ')}
+          steps={['Phân tích ý tưởng & phong cách', 'Thiết lập bố cục & ánh sáng', 'Kết xuất ảnh', 'Chèn vào thiết kế']}
+          fullWidth
+        />
       )}
 
       {/* Error state */}
@@ -344,7 +396,7 @@ const GenerateTab = observer(({ store }: any) => {
         disabled={loading}
         className="w-full !bg-[#059669] hover:!bg-[#047857] text-white font-medium rounded-[6px] h-[38px] shadow-sm flex items-center justify-center gap-2"
       >
-        {loading ? `Đang tạo ảnh (${progress}%)...` : t('generate_image', 'Tạo ảnh')}
+        {loading ? (count > 1 ? `Đang tạo ảnh (${progress}%)...` : 'Đang tạo ảnh...') : t('generate_image', 'Tạo ảnh')}
       </Button>
 
       {/* Generated Result Preview */}
@@ -381,9 +433,15 @@ const GenerateTab = observer(({ store }: any) => {
         </div>
       )}
 
-      {/* Session History Grid */}
-      {history.length > 1 && (
+      {/* Session History Grid (also shows every image of a multi-image batch) */}
+      {(history.length > 1 || (!!batchInfo && history.length > 0)) && (
         <div className="flex flex-col gap-1.5 mt-2 pt-2 border-t">
+          {batchInfo && (
+            <div className="text-[11px] text-emerald-700 font-medium">
+              ✓ Đã tạo {loading ? `${batchInfo.made}/${count}` : batchInfo.made} ảnh — bấm hoặc kéo ảnh vào khung vẽ.
+              {batchInfo.failed > 0 && <span className="text-red-600"> {batchInfo.failed} ảnh lỗi.</span>}
+            </div>
+          )}
           <div className="text-[12px] font-semibold text-gray-700">
             Ảnh đã tạo gần đây ({history.length})
           </div>

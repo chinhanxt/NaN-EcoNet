@@ -1,35 +1,27 @@
-import { internalFetch } from '@gitroom/helpers/utils/internal.fetch';
 export const dynamic = 'force-dynamic';
 import { Register } from '@gitroom/frontend/components/auth/register';
 import { Metadata } from 'next';
-import { isGeneralServerSide } from '@gitroom/helpers/utils/is.general.server.side';
-import Link from 'next/link';
-import { getT } from '@gitroom/react/translation/get.translation.service.backend';
-import { LoginWithOidc } from '@gitroom/frontend/components/auth/login.with.oidc';
+import { redirect } from 'next/navigation';
 export const metadata: Metadata = {
-  title: 'NaN Register',
+  title: 'NaN - Đăng nhập',
   description: '',
 };
-export default async function Auth(params: {searchParams: Promise<{provider: string}>}) {
-  const t = await getT();
-  if (process.env.DISABLE_REGISTRATION === 'true') {
-    const canRegister = (
-      await (await internalFetch('/auth/can-register')).json()
-    ).register;
-    if (!canRegister && !(await params?.searchParams)?.provider) {
-      return (
-        <>
-          <LoginWithOidc />
-          <div className="text-center">
-            {t('registration_is_disabled', 'Registration is disabled')}
-            <br />
-            <Link className="underline hover:font-bold" href="/auth/login">
-              {t('login_instead', 'Login instead')}
-            </Link>
-          </div>
-        </>
-      );
+export default async function Auth(params: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const searchParams = (await params?.searchParams) || {};
+  // OAuth provider callbacks (?provider=...&code=...) still need the register flow.
+  if (searchParams.provider) {
+    return <Register />;
+  }
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(searchParams)) {
+    if (Array.isArray(value)) {
+      value.forEach((v) => query.append(key, v));
+    } else if (value !== undefined) {
+      query.append(key, value);
     }
   }
-  return <Register />;
+  const qs = query.toString();
+  redirect(`/auth/login${qs ? `?${qs}` : ''}`);
 }

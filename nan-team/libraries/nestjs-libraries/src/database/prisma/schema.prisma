@@ -9,6 +9,7 @@ datasource db {
 }
 
 model Organization {
+  sourceVideoJobs SourceVideoJob[]
   id                  String               @id @default(uuid())
   name                String
   description         String?
@@ -1800,4 +1801,107 @@ model Announcement {
   description String
   color       AnnouncementColor @default(INFO)
   createdAt   DateTime          @default(now())
+}
+
+// Add `sourceVideoJobs SourceVideoJob[]` to Organization. No changes to existing Media model required.
+model SourceVideoJob {
+  id String @id
+  orgId String
+  projectId String
+  revision Int
+  parentJobId String?
+  workflowId String @unique
+  idempotencyKey String
+  inputHash String
+  status String @default("queued")
+  stage String @default("queued")
+  progress Int @default(0)
+  receipt Json
+  sourceSha256 String?
+  engineSha256 String?
+  workflowStarted Boolean @default(false)
+  cancellationRequested Boolean @default(false)
+  epoch Int @default(0)
+  leaseOwner String?
+  leaseUntil DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  organization Organization @relation(fields:[orgId], references:[id])
+  revisionRecord SourceVideoRevision?
+  clips SourceVideoClip[]
+  publications SourceVideoPublication[]
+  webhookDelivery SourceVideoWebhookDelivery?
+  @@unique([orgId,idempotencyKey])
+  @@unique([orgId,projectId,revision])
+  @@index([orgId,createdAt])
+  @@index([workflowStarted,status])
+}
+model SourceVideoWebhookDelivery {
+  jobId String @id
+  orgId String
+  targetCiphertext String
+  secretCiphertext String
+  payload String?
+  status String @default("waiting")
+  attempts Int @default(0)
+  nextAttemptAt DateTime @default(now())
+  epoch Int @default(0)
+  leaseOwner String?
+  leaseUntil DateTime?
+  lastStatusCode Int?
+  lastError String?
+  deliveredAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  job SourceVideoJob @relation(fields:[jobId],references:[id],onDelete:Cascade)
+  @@index([status,nextAttemptAt])
+  @@index([orgId,jobId])
+}
+model SourceVideoRevision {
+  id String @id
+  orgId String
+  projectId String
+  version Int
+  jobId String @unique
+  input Json
+  plan Json?
+  planVersion Int @default(0)
+  approvedPlan Json?
+  approvedAt DateTime?
+  createdAt DateTime @default(now())
+  job SourceVideoJob @relation(fields:[jobId],references:[id],onDelete:Cascade)
+  @@unique([orgId,projectId,version])
+}
+model SourceVideoClip {
+  id String @id
+  orgId String
+  jobId String
+  clipId String
+  title String
+  artifactPath String
+  cleanPath String?
+  sha256 String
+  metadata Json
+  mediaId String? @unique
+  createdAt DateTime @default(now())
+  job SourceVideoJob @relation(fields:[jobId],references:[id],onDelete:Cascade)
+  @@unique([jobId,clipId])
+  @@index([orgId,jobId])
+}
+model SourceVideoPublication {
+  id String @id
+  orgId String
+  jobId String
+  clipId String
+  mediaId String @unique
+  storageKey String @unique
+  storagePath String
+  sha256 String
+  status String @default("prepared")
+  epoch Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  job SourceVideoJob @relation(fields:[jobId],references:[id],onDelete:Cascade)
+  @@unique([jobId,clipId])
+  @@index([orgId,status])
 }
