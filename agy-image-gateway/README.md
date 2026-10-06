@@ -32,22 +32,37 @@ Cổng dịch vụ API (REST Gateway) quản lý **Antigravity CLI (`agy`)** đ�
 ## ⚡ Bắt đầu nhanh
 
 ### 1. Khởi động Service
+
+**Cách 1: Sử dụng Makefile (Khuyên dùng):**
 ```bash
-/home/chinhan/agy-image-gateway/start.sh
+# Chế độ phát triển (Hot reload + log trực tiếp):
+make dev
+
+# Chế độ chạy ngầm (Background Daemon):
+make start
 ```
-* Service chạy ngầm tại: **`http://localhost:8080`**
+
+**Cách 2: Sử dụng Shell script:**
+```bash
+./start.sh
+```
+
+* Service chạy tại: **`http://localhost:8080`**
 * Swagger Documentation: **`http://localhost:8080/docs`**
-* Web UI Dashboard: **`http://localhost:8080`**
+* Web UI Dashboard & Studio: **`http://localhost:8080`**
 
 ### 2. Kiểm tra trạng thái
 ```bash
-/home/chinhan/agy-image-gateway/status.sh
+make status
+# hoặc: ./status.sh
 ```
 
 ### 3. Dừng Service
 ```bash
-/home/chinhan/agy-image-gateway/stop.sh
+make stop
+# hoặc: ./stop.sh
 ```
+
 
 ---
 
